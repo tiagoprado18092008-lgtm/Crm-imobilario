@@ -2,6 +2,7 @@ import prisma from '../../config/database';
 import { sendWhatsAppMessage } from '../../utils/whatsapp.service';
 import { sendEmail } from '../../utils/email.service';
 import { sendInstagramDM } from '../../utils/instagram.service';
+import { qualifyLeadFromMessage } from '../../utils/ai.service';
 
 // ─── RBAC helpers ────────────────────────────────────────────────────────────
 
@@ -226,6 +227,13 @@ export const receiveInbound = async (
     where: { id: conversation.id },
     data: { lastMessageAt: new Date() },
   });
+
+  // IA de Qualificação — extrai dados automaticamente de mensagens inbound
+  if (conversation.contactId && content.length > 10) {
+    qualifyLeadFromMessage(content, conversation.contactId).catch(err =>
+      console.error('[AI Qualify] Error:', err)
+    );
+  }
 
   return { conversation, message };
 };

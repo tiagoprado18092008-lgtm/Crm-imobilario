@@ -216,6 +216,50 @@ export const DashboardPage: React.FC = () => {
         />
       </div>
 
+      {/* Row 2b: Conversão por fonte */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="font-semibold text-slate-800 text-sm">Taxa de Conversão por Fonte de Lead</h3>
+          <span className="text-xs text-slate-400">ROI por canal de aquisição</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100">
+                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Fonte</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Leads</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Ganhos</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Taxa</th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Performance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sourceRows.length === 0 ? (
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-400">Sem dados</td></tr>
+              ) : (
+                sourceRows.map(([src, data]) => {
+                  const rate = data.total > 0 ? Math.round((data.won / data.total) * 100) : 0
+                  const color = rate >= 30 ? '#22c55e' : rate >= 15 ? '#f59e0b' : '#ef4444'
+                  return (
+                    <tr key={src} className="border-b border-slate-50 hover:bg-slate-50">
+                      <td className="px-6 py-3 font-medium text-slate-700">{src}</td>
+                      <td className="px-4 py-3 text-right text-slate-600">{data.total}</td>
+                      <td className="px-4 py-3 text-right text-emerald-600 font-medium">{data.won}</td>
+                      <td className="px-4 py-3 text-right font-bold" style={{ color }}>{rate}%</td>
+                      <td className="px-4 py-3">
+                        <div className="w-full h-2 rounded-full bg-slate-100">
+                          <div className="h-full rounded-full" style={{ width: `${Math.min(rate * 2, 100)}%`, background: color }} />
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Row 3: Tasks + Funnel */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">

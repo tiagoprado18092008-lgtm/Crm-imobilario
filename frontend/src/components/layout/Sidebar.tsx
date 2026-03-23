@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Kanban, Building2, CheckSquare,
   Calendar, BarChart3, UserCog, Building, ChevronLeft,
-  ChevronRight, LogOut, MessageCircle, Settings
+  ChevronRight, LogOut, MessageCircle, Settings, Zap, Package
 } from 'lucide-react'
 import { useAuthStore } from '../../store/auth.store'
 import { getInitials } from '../../utils/formatters'
@@ -18,6 +18,8 @@ const mainNav = [
   { to: '/calendar',    icon: Calendar,        label: 'Calendário' },
   { to: '/reports',       icon: BarChart3,       label: 'Relatórios' },
   { to: '/conversations', icon: MessageCircle,   label: 'Conversas' },
+  { to: '/automations',   icon: Zap,             label: 'Automações' },
+  { to: '/snapshots',     icon: Package,         label: 'Snapshots' },
 ]
 
 const adminNav = [

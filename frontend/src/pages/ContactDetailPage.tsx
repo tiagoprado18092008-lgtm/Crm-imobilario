@@ -14,6 +14,7 @@ import { PageSpinner } from '../components/ui/Spinner'
 import { InteractionLog } from '../components/interactions/InteractionLog'
 import { CommunicationModal } from '../components/interactions/CommunicationModal'
 import { ContactForm } from '../components/contacts/ContactForm'
+import { LeadScoreBadge, calcLeadScore } from '../components/contacts/LeadScoreBadge'
 import { useUIStore } from '../store/ui.store'
 import { formatDate, formatPhone } from '../utils/formatters'
 import {
@@ -63,6 +64,7 @@ export const ContactDetailPage: React.FC = () => {
   const interactions: Interaction[] = contact.interactions || []
   const opportunities: Opportunity[] = contact.opportunities || []
   const tasks: Task[] = contact.tasks || []
+  const leadScore = calcLeadScore({ interactions, opportunities, tasks, status: contact.status })
 
   const tabs: Array<{ key: TabType; label: string; count: number }> = [
     { key: 'interactions', label: 'Interações', count: interactions.length },
@@ -96,6 +98,7 @@ export const ContactDetailPage: React.FC = () => {
                     <Badge variant={typeVariant[contact.type]} small>
                       {CONTACT_TYPE_LABELS[contact.type]}
                     </Badge>
+                    <LeadScoreBadge score={leadScore} size="sm" />
                     <Badge variant={statusVariant[contact.status]} small>
                       {CONTACT_STATUS_LABELS[contact.status]}
                     </Badge>

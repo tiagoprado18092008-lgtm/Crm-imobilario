@@ -162,11 +162,33 @@ app.post('/webhook/twilio/client', (req, res) => {
   res.type('text/xml').send(twiml)
 })
 
-// Call status updates
+// Call status updates + Missed Call Text Back
 app.post('/webhook/twilio/status', async (req, res) => {
   res.status(200).send('ok')
-  const { CallSid, CallStatus, CallDuration } = req.body
+  const { CallSid, CallStatus, CallDuration, From, To } = req.body
   console.log(`[Twilio] Call ${CallSid}: ${CallStatus}, duration: ${CallDuration}s`)
+
+  // Missed Call Text Back — envia SMS automático se chamada não foi atendida
+  if (CallStatus === 'no-answer' || CallStatus === 'busy') {
+    try {
+      const { sendSMS } = await import('./utils/twilio.service')
+      const callerNumber = From
+      const consultorNumber = To
+      const consultorName = 'o consultor'
+
+      // Tenta encontrar o nome do consultor pela base de dados
+      const user = await prisma.user.findFirst({ where: { phone: consultorNumber } })
+      const name = user?.name || consultorName
+
+      await sendSMS(
+        callerNumber,
+        `Olá! Sou ${name}. Estou numa visita agora, mas vi a sua chamada. O que procura exatamente? Responda aqui e entrarei em contacto brevemente. 🏠`
+      )
+      console.log(`[Missed Call Text Back] SMS enviado para ${callerNumber}`)
+    } catch (err) {
+      console.error('[Missed Call Text Back] Erro ao enviar SMS:', err)
+    }
+  }
 })
 
 // 404 handler

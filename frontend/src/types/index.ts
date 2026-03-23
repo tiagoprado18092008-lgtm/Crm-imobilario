@@ -32,11 +32,38 @@ export interface Contact {
   source?: string
   notes?: string
   preferences?: string
+  leadScore?: number
   assignedToId: string
   assignedTo?: User
   opportunities?: Opportunity[]
   interactions?: Interaction[]
   tasks?: Task[]
+  createdAt: string
+}
+
+export interface AutomationRule {
+  id: string
+  name: string
+  trigger: string
+  condition?: string
+  actions: AutomationAction[]
+  isActive: boolean
+  createdAt: string
+}
+
+export interface AutomationAction {
+  type: 'SEND_WHATSAPP' | 'SEND_EMAIL' | 'CREATE_TASK' | 'MOVE_STAGE' | 'SEND_SMS'
+  delay?: number
+  template?: string
+  value?: string
+}
+
+export interface Snapshot {
+  id: string
+  name: string
+  description?: string
+  category: 'BUYERS' | 'SELLERS' | 'RENTAL'
+  rules: AutomationRule[]
   createdAt: string
 }
 

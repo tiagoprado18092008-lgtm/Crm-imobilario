@@ -18,6 +18,8 @@ const pageTitles: Record<string, string> = {
   '/conversations':  'Conversas',
   '/settings':       'Configurações',
   '/profile':        'O meu perfil',
+  '/automations':    'Automações',
+  '/snapshots':      'Snapshots',
 }
 
 function getBreadcrumbs(pathname: string) {

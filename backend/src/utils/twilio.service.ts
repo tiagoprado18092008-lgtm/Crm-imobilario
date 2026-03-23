@@ -34,6 +34,20 @@ export function generateTwilioToken(identity: string): string {
   return token.toJwt()
 }
 
+export async function sendSMS(to: string, body: string): Promise<{ sid: string; status: string }> {
+  if (!isTwilioConfigured()) {
+    console.log(`[Twilio DEMO] SMS to ${to}: ${body}`)
+    return { sid: `demo_sms_${Date.now()}`, status: 'demo-sent' }
+  }
+  const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
+  const msg = await client.messages.create({
+    to,
+    from: process.env.TWILIO_PHONE_NUMBER!,
+    body,
+  })
+  return { sid: msg.sid, status: msg.status }
+}
+
 export async function makeOutboundCall(
   to: string,
   from?: string

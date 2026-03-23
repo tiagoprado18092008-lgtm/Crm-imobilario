@@ -17,6 +17,8 @@ import { UsersPage } from './pages/UsersPage'
 import { ConversationsPage } from './pages/ConversationsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { AutomationsPage } from './pages/AutomationsPage'
+import { SnapshotsPage } from './pages/SnapshotsPage'
 
 function App() {
   const { hydrate } = useAuthStore()
@@ -57,6 +59,8 @@ function App() {
           }
         />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="automations" element={<AutomationsPage />} />
+        <Route path="snapshots" element={<SnapshotsPage />} />
         <Route path="conversations" element={<ConversationsPage />} />
         <Route
           path="settings"
