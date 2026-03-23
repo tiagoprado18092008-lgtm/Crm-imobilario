@@ -1,0 +1,380 @@
+import React, { useState } from 'react'
+import { MessageSquare, MessageCircle, FileText, CheckSquare, X, Loader2 } from 'lucide-react'
+import type { Opportunity } from '../../types'
+import { createInteraction } from '../../api/interactions.api'
+import { createTask } from '../../api/tasks.api'
+import { createConversation } from '../../api/conversations.api'
+import { useUIStore } from '../../store/ui.store'
+import { useAuthStore } from '../../store/auth.store'
+import { useNavigate } from 'react-router-dom'
+
+interface QuickActionModalProps {
+  opportunity: Opportunity
+  action: string
+  onClose: () => void
+}
+
+export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity, action, onClose }) => {
+  const { showToast } = useUIStore()
+  const { user } = useAuthStore()
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+  const [noteText, setNoteText] = useState('')
+  const [taskTitle, setTaskTitle] = useState('')
+  const [taskDue, setTaskDue] = useState('')
+  const [taskPriority, setTaskPriority] = useState('MEDIUM')
+  const [msgText, setMsgText] = useState('')
+
+  const contact = opportunity.contact
+
+  // ── Phone ────────────────────────────────────────────────────────────────
+  if (action === 'call') {
+    const phone = contact?.phone || contact?.whatsapp || ''
+    if (phone) {
+      window.dispatchEvent(new CustomEvent('softphone:dial', { detail: { number: phone, contactName: contact?.name } }))
+      showToast(`A ligar para ${contact?.name}…`, 'success')
+    } else {
+      showToast('Contacto sem número de telefone', 'error')
+    }
+    onClose()
+    return null
+  }
+
+  // ── Calendar ─────────────────────────────────────────────────────────────
+  if (action === 'calendar') {
+    navigate('/calendar')
+    onClose()
+    return null
+  }
+
+  // ── Note modal ───────────────────────────────────────────────────────────
+  if (action === 'note') {
+    const saveNote = async () => {
+      if (!noteText.trim()) return
+      setLoading(true)
+      try {
+        await createInteraction({
+          type: 'NOTE',
+          body: noteText.trim(),
+          contactId: opportunity.contactId,
+          opportunityId: opportunity.id,
+        })
+        showToast('Nota guardada com sucesso', 'success')
+        onClose()
+      } catch {
+        showToast('Erro ao guardar nota', 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    return (
+      <Overlay onClose={onClose} title="Adicionar Nota" icon={<FileText size={16} />} color="#6366f1">
+        <textarea
+          autoFocus
+          value={noteText}
+          onChange={e => setNoteText(e.target.value)}
+          placeholder="Escreva a sua nota sobre esta oportunidade..."
+          rows={5}
+          style={{
+            width: '100%', padding: '10px 12px', borderRadius: 8,
+            border: '1px solid #e2e8f0', fontSize: 13, resize: 'vertical',
+            outline: 'none', fontFamily: 'inherit', color: '#1e293b',
+          }}
+        />
+        <ContextRow opportunity={opportunity} />
+        <ActionButtons onCancel={onClose} onConfirm={saveNote} loading={loading} confirmLabel="Guardar Nota" />
+      </Overlay>
+    )
+  }
+
+  // ── Task modal ────────────────────────────────────────────────────────────
+  if (action === 'task') {
+    const saveTask = async () => {
+      if (!taskTitle.trim()) return
+      setLoading(true)
+      try {
+        await createTask({
+          title: taskTitle.trim(),
+          priority: taskPriority,
+          dueDate: taskDue || undefined,
+          contactId: opportunity.contactId,
+          opportunityId: opportunity.id,
+          assignedToId: user?.id,
+          status: 'PENDING',
+        })
+        showToast('Tarefa criada com sucesso', 'success')
+        onClose()
+      } catch {
+        showToast('Erro ao criar tarefa', 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    return (
+      <Overlay onClose={onClose} title="Nova Tarefa" icon={<CheckSquare size={16} />} color="#f59e0b">
+        <input
+          autoFocus
+          type="text"
+          value={taskTitle}
+          onChange={e => setTaskTitle(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && saveTask()}
+          placeholder="Título da tarefa..."
+          style={{
+            width: '100%', padding: '10px 12px', borderRadius: 8,
+            border: '1px solid #e2e8f0', fontSize: 13,
+            outline: 'none', fontFamily: 'inherit', color: '#1e293b',
+            boxSizing: 'border-box',
+          }}
+        />
+        <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>Prazo</label>
+            <input
+              type="date"
+              value={taskDue}
+              onChange={e => setTaskDue(e.target.value)}
+              style={{
+                width: '100%', padding: '8px 10px', borderRadius: 8,
+                border: '1px solid #e2e8f0', fontSize: 12,
+                outline: 'none', fontFamily: 'inherit', color: '#1e293b',
+              }}
+            />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>Prioridade</label>
+            <select
+              value={taskPriority}
+              onChange={e => setTaskPriority(e.target.value)}
+              style={{
+                width: '100%', padding: '8px 10px', borderRadius: 8,
+                border: '1px solid #e2e8f0', fontSize: 12,
+                outline: 'none', fontFamily: 'inherit', color: '#1e293b', background: '#fff',
+              }}
+            >
+              <option value="LOW">Baixa</option>
+              <option value="MEDIUM">Média</option>
+              <option value="HIGH">Alta</option>
+            </select>
+          </div>
+        </div>
+        <ContextRow opportunity={opportunity} />
+        <ActionButtons onCancel={onClose} onConfirm={saveTask} loading={loading} confirmLabel="Criar Tarefa" />
+      </Overlay>
+    )
+  }
+
+  // ── WhatsApp modal ─────────────────────────────────────────────────────────
+  if (action === 'whatsapp') {
+    const phone = contact?.whatsapp || contact?.phone || ''
+    const sendWhatsApp = async () => {
+      if (!msgText.trim()) return
+      setLoading(true)
+      try {
+        const convRes = await createConversation({
+          channel: 'WHATSAPP',
+          contactId: opportunity.contactId,
+          externalId: phone,
+        })
+        const convId = convRes.data?.id || convRes.data?.conversation?.id
+        if (convId) {
+          navigate(`/conversations?id=${convId}`)
+          showToast('Conversa WhatsApp aberta', 'success')
+        } else {
+          navigate('/conversations')
+        }
+        onClose()
+      } catch {
+        navigate('/conversations')
+        showToast('A abrir WhatsApp…', 'success')
+        onClose()
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    return (
+      <Overlay onClose={onClose} title="Mensagem WhatsApp" icon={<MessageCircle size={16} />} color="#25d366">
+        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
+          Para: <strong style={{ color: '#1e293b' }}>{contact?.name}</strong>
+          {phone && <span style={{ marginLeft: 6, color: '#94a3b8' }}>{phone}</span>}
+          {!phone && <span style={{ marginLeft: 6, color: '#ef4444' }}>Sem número registado</span>}
+        </div>
+        <textarea
+          autoFocus
+          value={msgText}
+          onChange={e => setMsgText(e.target.value)}
+          placeholder="Escreva a sua mensagem..."
+          rows={4}
+          style={{
+            width: '100%', padding: '10px 12px', borderRadius: 8,
+            border: '1px solid #e2e8f0', fontSize: 13, resize: 'vertical',
+            outline: 'none', fontFamily: 'inherit', color: '#1e293b',
+          }}
+        />
+        <ContextRow opportunity={opportunity} />
+        <ActionButtons onCancel={onClose} onConfirm={sendWhatsApp} loading={loading} confirmLabel="Enviar" confirmColor="#25d366" />
+      </Overlay>
+    )
+  }
+
+  // ── SMS modal ──────────────────────────────────────────────────────────────
+  if (action === 'sms') {
+    const sendSMS = async () => {
+      if (!msgText.trim()) return
+      setLoading(true)
+      try {
+        await createInteraction({
+          type: 'NOTE',
+          subject: 'SMS',
+          body: `[SMS] ${msgText.trim()}`,
+          contactId: opportunity.contactId,
+          opportunityId: opportunity.id,
+        })
+        showToast('SMS registado com sucesso', 'success')
+        onClose()
+      } catch {
+        showToast('Erro ao registar SMS', 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    return (
+      <Overlay onClose={onClose} title="Enviar SMS" icon={<MessageSquare size={16} />} color="#3b82f6">
+        <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
+          Para: <strong style={{ color: '#1e293b' }}>{contact?.name}</strong>
+          {contact?.phone && <span style={{ marginLeft: 6, color: '#94a3b8' }}>{contact.phone}</span>}
+        </div>
+        <textarea
+          autoFocus
+          value={msgText}
+          onChange={e => setMsgText(e.target.value)}
+          placeholder="Escreva a mensagem SMS..."
+          rows={3}
+          style={{
+            width: '100%', padding: '10px 12px', borderRadius: 8,
+            border: '1px solid #e2e8f0', fontSize: 13, resize: 'none',
+            outline: 'none', fontFamily: 'inherit', color: '#1e293b',
+          }}
+        />
+        <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+          O SMS será registado no histórico de interações do contacto.
+        </p>
+        <ContextRow opportunity={opportunity} />
+        <ActionButtons onCancel={onClose} onConfirm={sendSMS} loading={loading} confirmLabel="Registar SMS" />
+      </Overlay>
+    )
+  }
+
+  return null
+}
+
+// ── Shared sub-components ──────────────────────────────────────────────────
+
+const Overlay: React.FC<{
+  onClose: () => void
+  title: string
+  icon: React.ReactNode
+  color: string
+  children: React.ReactNode
+}> = ({ onClose, title, icon, color, children }) => (
+  <div
+    style={{
+      position: 'fixed', inset: 0, zIndex: 100,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(2px)',
+    }}
+    onClick={e => { if (e.target === e.currentTarget) onClose() }}
+  >
+    <div
+      style={{
+        background: '#fff', borderRadius: 14, width: 420, maxWidth: '95vw',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 18px',
+          borderBottom: '1px solid #f1f5f9',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div
+            style={{
+              width: 28, height: 28, borderRadius: 7,
+              background: color + '18',
+              color: color,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {icon}
+          </div>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{title}</span>
+        </div>
+        <button
+          onClick={onClose}
+          style={{ padding: 4, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8' }}
+        >
+          <X size={16} />
+        </button>
+      </div>
+      {/* Body */}
+      <div style={{ padding: '16px 18px 18px' }}>
+        {children}
+      </div>
+    </div>
+  </div>
+)
+
+const ContextRow: React.FC<{ opportunity: Opportunity }> = ({ opportunity }) => (
+  <div
+    style={{
+      display: 'flex', alignItems: 'center', gap: 8, marginTop: 12,
+      padding: '8px 10px', borderRadius: 8, background: '#f8fafc',
+      border: '1px solid #f1f5f9',
+    }}
+  >
+    <span style={{ fontSize: 11, color: '#94a3b8' }}>Oportunidade:</span>
+    <span style={{ fontSize: 11, fontWeight: 600, color: '#475569', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      {opportunity.title}
+    </span>
+  </div>
+)
+
+const ActionButtons: React.FC<{
+  onCancel: () => void
+  onConfirm: () => void
+  loading: boolean
+  confirmLabel: string
+  confirmColor?: string
+}> = ({ onCancel, onConfirm, loading, confirmLabel, confirmColor = '#2563eb' }) => (
+  <div style={{ display: 'flex', gap: 8, marginTop: 14, justifyContent: 'flex-end' }}>
+    <button
+      onClick={onCancel}
+      style={{
+        padding: '8px 16px', borderRadius: 8, border: '1px solid #e2e8f0',
+        background: '#f8fafc', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+      }}
+    >
+      Cancelar
+    </button>
+    <button
+      onClick={onConfirm}
+      disabled={loading}
+      style={{
+        padding: '8px 18px', borderRadius: 8, border: 'none',
+        background: confirmColor, color: '#fff',
+        fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
+        display: 'flex', alignItems: 'center', gap: 6, opacity: loading ? 0.7 : 1,
+      }}
+    >
+      {loading && <Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} />}
+      {confirmLabel}
+    </button>
+  </div>
+)

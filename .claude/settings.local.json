@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(npm run:*)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"admin@crm.pt\"\",\"\"password\"\":\"\"Admin123!\"\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d \"{\"\"email\"\":\"\"admin@crm.pt\"\",\"\"password\"\":\"\"Admin123!\"\"}\")",
+      "WebSearch",
+      "Bash(npx tsc:*)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -H \"Origin: http://localhost:5174\" -v)",
+      "Bash(netstat -ano)",
+      "Bash(cmd.exe /c \"taskkill /PID 41200 /F 2>&1\")",
+      "Bash(cmd.exe /c \"taskkill /PID 15788 /F 2>&1 && taskkill /PID 18720 /F 2>&1\")",
+      "Bash(cmd.exe /c \"taskkill /PID 18720 /F 2>&1\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -H \"Origin: http://localhost:5173\" -d '{\"\"\"\"email\"\"\"\":\"\"\"\"admin@crm.pt\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"admin123\"\"\"\"}')"
+    ]
+  }
+}

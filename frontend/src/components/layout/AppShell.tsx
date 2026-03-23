@@ -1,0 +1,67 @@
+import React from 'react'
+import { Outlet } from 'react-router-dom'
+import { Sidebar } from './Sidebar'
+import { TopBar } from './TopBar'
+import { Toast } from '../ui/Toast'
+import { SoftPhone } from '../calls/SoftPhone'
+import { useUIStore } from '../../store/ui.store'
+
+export const AppShell: React.FC = () => {
+  const { sidebarOpen, setSidebarOpen } = useUIStore()
+
+  return (
+    <div className="flex h-screen overflow-hidden" style={{ background: '#f1f5f9' }}>
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 lg:hidden"
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)' }}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - desktop always visible, mobile as drawer */}
+      <div
+        className="fixed lg:static inset-y-0 left-0 z-30 lg:flex-shrink-0"
+        style={{
+          transform: sidebarOpen ? 'translateX(0)' : undefined,
+        }}
+      >
+        <div
+          className="lg:block"
+          style={{
+            height: '100vh',
+            display: 'flex',
+          }}
+        >
+          <Sidebar />
+        </div>
+      </div>
+
+      {/* Mobile sidebar */}
+      <div
+        className="fixed inset-y-0 left-0 z-30 lg:hidden"
+        style={{
+          transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 200ms cubic-bezier(0.4,0,0.2,1)',
+        }}
+      >
+        <Sidebar />
+      </div>
+
+      {/* Main content area */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <TopBar />
+        <main
+          className="flex-1 overflow-y-auto"
+          style={{ padding: '24px 28px' }}
+        >
+          <Outlet />
+        </main>
+      </div>
+
+      <Toast />
+      <SoftPhone />
+    </div>
+  )
+}

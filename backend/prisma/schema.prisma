@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER")
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String  @id @default(cuid())
+  name         String
+  email        String  @unique
+  passwordHash String
+  role         String  @default("SUB_AGENT")
+  phone        String?
+  avatarUrl    String?
+  isActive     Boolean @default(true)
+
+  supervisorId String?
+  supervisor   User?   @relation("SupervisorSubAgents", fields: [supervisorId], references: [id])
+  subAgents    User[]  @relation("SupervisorSubAgents")
+
+  contacts      Contact[]
+  opportunities Opportunity[]
+  tasks         Task[]
+  interactions  Interaction[]
+
+  assignedConversations Conversation[] @relation("ConversationAssigned")
+  sentMessages          Message[]      @relation("MessageSentBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Contact {
+  id          String  @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  whatsapp    String?
+  type        String  @default("LEAD")
+  status      String  @default("NEW")
+  source      String?
+  notes       String?
+  preferences String?
+
+  assignedToId String
+  assignedTo   User   @relation(fields: [assignedToId], references: [id])
+
+  opportunities Opportunity[]
+  interactions  Interaction[]
+  tasks         Task[]
+  conversations Conversation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Property {
+  id          String  @id @default(cuid())
+  title       String
+  description String?
+  type        String
+  status      String  @default("AVAILABLE")
+  price       Float
+  address     String
+  area        Float?
+  bedrooms    Int?
+  bathrooms   Int?
+  parking     Int?
+  reference   String? @unique
+  imageUrls   String  @default("[]")
+
+  opportunities Opportunity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Opportunity {
+  id                String    @id @default(cuid())
+  title             String
+  stage             String    @default("LEAD_IN")
+  value             Float?
+  source            String?
+  expectedCloseDate DateTime?
+  lostReason        String?
+  notes             String?
+  position          Int       @default(0)
+
+  contactId    String
+  contact      Contact   @relation(fields: [contactId], references: [id])
+  propertyId   String?
+  property     Property? @relation(fields: [propertyId], references: [id])
+  assignedToId String
+  assignedTo   User      @relation(fields: [assignedToId], references: [id])
+
+  interactions Interaction[]
+  tasks        Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Interaction {
+  id        String  @id @default(cuid())
+  type      String
+  subject   String?
+  body      String
+  direction String  @default("OUTBOUND")
+
+  contactId     String
+  contact       Contact      @relation(fields: [contactId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+  createdById   String
+  createdBy     User         @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  status      String    @default("PENDING")
+  priority    String    @default("MEDIUM")
+  dueDate     DateTime?
+  completedAt DateTime?
+
+  contactId     String?
+  contact       Contact?     @relation(fields: [contactId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+  assignedToId  String
+  assignedTo    User         @relation(fields: [assignedToId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Conversation {
+  id          String    @id @default(cuid())
+  channel     String    // WHATSAPP, EMAIL, INSTAGRAM, INTERNAL
+  externalId  String?   // thread ID / phone / email address
+  status      String    @default("OPEN") // OPEN, RESOLVED, ARCHIVED
+
+  contactId   String?
+  contact     Contact?  @relation(fields: [contactId], references: [id])
+  assignedToId String?
+  assignedTo   User?    @relation("ConversationAssigned", fields: [assignedToId], references: [id])
+
+  messages    Message[]
+
+  lastMessageAt DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  direction      String   // INBOUND, OUTBOUND
+  channel        String   // WHATSAPP, EMAIL, INSTAGRAM, INTERNAL
+  content        String
+  subject        String?  // for email
+  status         String   @default("SENT") // SENT, DELIVERED, READ, FAILED
+  externalId     String?  // message ID from WhatsApp/Meta
+
+  sentById       String?
+  sentBy         User?    @relation("MessageSentBy", fields: [sentById], references: [id])
+
+  metadata       String?  // JSON string for extra data (attachments, etc.)
+  createdAt      DateTime @default(now())
+}
