@@ -10,12 +10,12 @@ import { getInitials } from '../../utils/formatters'
 import { ROLE_LABELS } from '../../utils/constants'
 
 const mainNav = [
-  { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/contacts',    icon: Users,           label: 'Contactos' },
-  { to: '/pipeline',    icon: Kanban,          label: 'Oportunidades' },
-  { to: '/properties',  icon: Building2,       label: 'Propriedades' },
-  { to: '/tasks',       icon: CheckSquare,     label: 'Tarefas' },
-  { to: '/calendar',    icon: Calendar,        label: 'Calendário' },
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/contacts',      icon: Users,           label: 'Contactos' },
+  { to: '/pipeline',      icon: Kanban,          label: 'Oportunidades' },
+  { to: '/properties',    icon: Building2,       label: 'Propriedades' },
+  { to: '/tasks',         icon: CheckSquare,     label: 'Tarefas' },
+  { to: '/calendar',      icon: Calendar,        label: 'Calendário' },
   { to: '/reports',       icon: BarChart3,       label: 'Relatórios' },
   { to: '/conversations', icon: MessageCircle,   label: 'Conversas' },
   { to: '/automations',   icon: Zap,             label: 'Automações' },
@@ -41,18 +41,19 @@ export const Sidebar: React.FC = () => {
     <aside
       className="flex flex-col h-full relative"
       style={{
-        width: collapsed ? 68 : 240,
-        background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
-        transition: 'width 200ms cubic-bezier(0.4,0,0.2,1)',
+        width: collapsed ? 68 : 236,
+        background: 'linear-gradient(180deg, #0a0f1e 0%, #0d1530 100%)',
+        transition: 'width 220ms cubic-bezier(0.4,0,0.2,1)',
         flexShrink: 0,
+        borderRight: '1px solid rgba(255,255,255,0.05)',
       }}
     >
       {/* Logo */}
       <div
-        className="flex items-center px-4 border-b"
+        className="flex items-center px-4 flex-shrink-0"
         style={{
           height: 64,
-          borderColor: 'rgba(255,255,255,0.07)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
           overflow: 'hidden',
         }}
       >
@@ -62,16 +63,16 @@ export const Sidebar: React.FC = () => {
             style={{
               width: 36,
               height: 36,
-              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-              boxShadow: '0 4px 12px rgba(59,130,246,0.4)',
+              background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+              boxShadow: '0 4px 14px rgba(99,102,241,0.45)',
             }}
           >
-            <Building className="text-white" size={18} />
+            <Building className="text-white" size={17} />
           </div>
           {!collapsed && (
             <div style={{ overflow: 'hidden' }}>
-              <p className="text-white font-bold text-sm leading-tight">CRM</p>
-              <p className="text-xs" style={{ color: '#64748b' }}>Imobiliário</p>
+              <p className="text-white font-bold text-sm leading-tight tracking-tight">CRM Imobiliário</p>
+              <p className="text-xs" style={{ color: '#4a5578', letterSpacing: '0.02em' }}>Plataforma Premium</p>
             </div>
           )}
         </div>
@@ -83,26 +84,33 @@ export const Sidebar: React.FC = () => {
         className="absolute flex items-center justify-center rounded-full"
         style={{
           top: 44,
-          right: -12,
-          width: 24,
-          height: 24,
-          background: '#1e40af',
-          border: '2px solid #0f172a',
-          color: '#fff',
+          right: -11,
+          width: 22,
+          height: 22,
+          background: '#1e2540',
+          border: '1.5px solid rgba(255,255,255,0.08)',
+          color: '#6b7a99',
           zIndex: 10,
           cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
         }}
         title={collapsed ? 'Expandir' : 'Recolher'}
       >
-        {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+        {collapsed ? <ChevronRight size={11} /> : <ChevronLeft size={11} />}
       </button>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4" style={{ paddingLeft: 10, paddingRight: 10 }}>
 
         {!collapsed && (
-          <p className="section-label" style={{ fontSize: 10, color: '#475569', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0 8px 8px' }}>
+          <p style={{
+            fontSize: 10,
+            color: '#2d3654',
+            fontWeight: 700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            padding: '0 8px 8px',
+          }}>
             Principal
           </p>
         )}
@@ -116,7 +124,7 @@ export const Sidebar: React.FC = () => {
                 title={collapsed ? label : undefined}
                 style={collapsed ? { justifyContent: 'center', paddingLeft: 0, paddingRight: 0 } : {}}
               >
-                <Icon size={18} style={{ flexShrink: 0 }} />
+                <Icon size={17} style={{ flexShrink: 0 }} />
                 {!collapsed && <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>}
               </NavLink>
             </li>
@@ -125,9 +133,16 @@ export const Sidebar: React.FC = () => {
 
         {user?.role === 'ADMIN' && (
           <>
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '12px 4px' }} />
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '12px 4px' }} />
             {!collapsed && (
-              <p style={{ fontSize: 10, color: '#475569', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0 8px 8px' }}>
+              <p style={{
+                fontSize: 10,
+                color: '#2d3654',
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                padding: '0 8px 8px',
+              }}>
                 Administração
               </p>
             )}
@@ -140,7 +155,7 @@ export const Sidebar: React.FC = () => {
                     title={collapsed ? label : undefined}
                     style={collapsed ? { justifyContent: 'center', paddingLeft: 0, paddingRight: 0 } : {}}
                   >
-                    <Icon size={18} style={{ flexShrink: 0 }} />
+                    <Icon size={17} style={{ flexShrink: 0 }} />
                     {!collapsed && <span>{label}</span>}
                   </NavLink>
                 </li>
@@ -151,37 +166,46 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* User footer */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '12px 10px' }}>
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px 10px' }}>
         {!collapsed ? (
-          <div className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: 'rgba(255,255,255,0.05)' }}>
+          <div
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)' }}
+          >
             <div
               className="flex items-center justify-center rounded-full text-white text-xs font-bold flex-shrink-0"
               style={{
                 width: 32, height: 32,
-                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
+                fontSize: 11,
               }}
             >
               {getInitials(user?.name || '')}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-semibold truncate leading-tight">{user?.name}</p>
-              <p className="text-xs truncate" style={{ color: '#64748b' }}>{ROLE_LABELS[user?.role || ''] || user?.role}</p>
+              <p className="text-white text-xs font-semibold truncate leading-tight">{user?.name}</p>
+              <p className="text-xs truncate" style={{ color: '#3d4f72', marginTop: 1 }}>{ROLE_LABELS[user?.role || ''] || user?.role}</p>
             </div>
             <button
               onClick={handleLogout}
               title="Sair"
-              className="flex-shrink-0 rounded-lg p-1.5 hover:bg-red-500/20 text-slate-500 hover:text-red-400"
+              className="flex-shrink-0 rounded-lg p-1.5"
+              style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#3d4f72' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#f87171'; (e.currentTarget as HTMLElement).style.background = 'rgba(248,113,113,0.1)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#3d4f72'; (e.currentTarget as HTMLElement).style.background = 'none'; }}
             >
-              <LogOut size={15} />
+              <LogOut size={14} />
             </button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
             <div
-              className="flex items-center justify-center rounded-full text-white text-xs font-bold"
+              className="flex items-center justify-center rounded-full text-white font-bold"
               style={{
                 width: 36, height: 36,
-                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                fontSize: 11,
               }}
               title={user?.name}
             >
@@ -190,9 +214,10 @@ export const Sidebar: React.FC = () => {
             <button
               onClick={handleLogout}
               title="Sair"
-              className="rounded-lg p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/20"
+              className="rounded-lg p-1.5"
+              style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#3d4f72' }}
             >
-              <LogOut size={15} />
+              <LogOut size={14} />
             </button>
           </div>
         )}

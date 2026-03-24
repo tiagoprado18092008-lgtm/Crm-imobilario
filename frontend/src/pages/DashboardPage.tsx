@@ -13,7 +13,7 @@ import { getContacts } from '../api/contacts.api'
 import { getConversationStats } from '../api/conversations.api'
 import type { ReportSummary, PipelineStage, Task, Contact } from '../types'
 
-const FUNNEL_COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#f97316', '#ec4899', '#10b981', '#ef4444']
+const FUNNEL_COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#f59e0b', '#f97316', '#10b981', '#f43f5e']
 
 const STAGE_LABELS: Record<string, string> = {
   LEAD_IN: 'Entrada',
@@ -42,34 +42,41 @@ interface KpiCardProps {
 const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon, iconBg }) => {
   const positive = trend === undefined || trend >= 0
   return (
-    <div className="metric-card bg-white rounded-xl p-6 border border-slate-200 shadow-sm flex flex-col gap-3">
+    <div className="metric-card bg-white rounded-2xl p-6 flex flex-col gap-4" style={{ border: '1px solid #eaecf3', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
       <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-500 font-medium">{title}</span>
+        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{title}</span>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: iconBg }}>
           {icon}
         </div>
       </div>
       <div>
-        <div className="text-4xl font-bold text-slate-900 mt-1">{value}</div>
+        <div className="font-bold text-slate-900 mt-1" style={{ fontSize: 32, letterSpacing: '-0.02em' }}>{value}</div>
         {trend !== undefined && (
-          <div className="flex items-center gap-1 mt-2">
+          <div className="flex items-center gap-1.5 mt-2">
             <span
               className="flex items-center gap-0.5 text-xs font-semibold px-1.5 py-0.5 rounded-full"
               style={{
-                background: positive ? '#dcfce7' : '#fee2e2',
+                background: positive ? '#f0fdf4' : '#fef2f2',
                 color: positive ? '#16a34a' : '#dc2626',
               }}
             >
               {positive ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
               {Math.abs(trend)}%
             </span>
-            <span className="text-xs text-slate-400">vs últimos 30 dias</span>
+            <span className="text-xs text-slate-400">vs 30 dias</span>
           </div>
         )}
       </div>
     </div>
   )
 }
+
+const PERIODS = [
+  { label: 'Últimos 7 dias', value: 7 },
+  { label: 'Últimos 30 dias', value: 30 },
+  { label: 'Últimos 90 dias', value: 90 },
+  { label: 'Este ano', value: 365 },
+]
 
 export const DashboardPage: React.FC = () => {
   const [summary, setSummary] = useState<ReportSummary | null>(null)
@@ -78,6 +85,17 @@ export const DashboardPage: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([])
   const [convStats, setConvStats] = useState<{ open: number; resolved: number; total: number } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [period, setPeriod] = useState(30)
+  const [showPeriodMenu, setShowPeriodMenu] = useState(false)
+  const periodRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (periodRef.current && !periodRef.current.contains(e.target as Node)) setShowPeriodMenu(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   useEffect(() => {
     const load = async () => {
@@ -128,10 +146,10 @@ export const DashboardPage: React.FC = () => {
   const lostStage = pipeline.find((s) => s.stage === 'CLOSED_LOST')
   const donutData = [
     ...(pipelineForDonut.length > 0
-      ? [{ name: 'Abertas', value: pipelineForDonut.reduce((acc, s) => acc + s.count, 0), fill: '#3b82f6' }]
+      ? [{ name: 'Abertas', value: pipelineForDonut.reduce((acc, s) => acc + s.count, 0), fill: '#6366f1' }]
       : []),
     ...(wonStage ? [{ name: 'Ganhas', value: wonStage.count, fill: '#10b981' }] : []),
-    ...(lostStage ? [{ name: 'Perdidas', value: lostStage.count, fill: '#ef4444' }] : []),
+    ...(lostStage ? [{ name: 'Perdidas', value: lostStage.count, fill: '#f43f5e' }] : []),
   ].filter((d) => d.value > 0)
 
   // Funnel data
@@ -148,23 +166,48 @@ export const DashboardPage: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#6366f1', borderTopColor: 'transparent' }} />
       </div>
     )
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 shadow-sm">
-          <CalendarDays size={15} className="text-slate-400" />
-          Últimos 30 dias
-        </button>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:bg-slate-100 border border-transparent">
-          <PencilLine size={14} />
-          Editar painel
-        </button>
+        <div className="relative" ref={periodRef}>
+          <button
+            onClick={() => setShowPeriodMenu(!showPeriodMenu)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-slate-700"
+            style={{ border: '1px solid #eaecf3', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', cursor: 'pointer' }}
+          >
+            <CalendarDays size={14} className="text-slate-400" />
+            {PERIODS.find(p => p.value === period)?.label ?? 'Últimos 30 dias'}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: '#94a3b8', transform: showPeriodMenu ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 150ms' }}><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          {showPeriodMenu && (
+            <div style={{ position: 'absolute', top: 40, left: 0, zIndex: 50, background: '#fff', borderRadius: 12, border: '1px solid #eaecf3', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 6, minWidth: 190 }}>
+              {PERIODS.map(p => (
+                <button
+                  key={p.value}
+                  onClick={() => { setPeriod(p.value); setShowPeriodMenu(false) }}
+                  style={{
+                    display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px',
+                    borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13,
+                    background: period === p.value ? '#eef2ff' : 'transparent',
+                    color: period === p.value ? '#6366f1' : '#374151',
+                    fontWeight: period === p.value ? 600 : 400,
+                  }}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <span className="text-xs text-slate-400" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <PencilLine size={12} /> Dados em tempo real
+        </span>
       </div>
 
       {/* Row 1: 4 KPIs */}
@@ -173,28 +216,28 @@ export const DashboardPage: React.FC = () => {
           title="Total de Contactos"
           value={summary?.totalContacts ?? 0}
           trend={12}
-          icon={<Users size={18} className="text-blue-600" />}
-          iconBg="#dbeafe"
+          icon={<Users size={17} style={{ color: '#6366f1' }} />}
+          iconBg="#eef2ff"
         />
         <KpiCard
           title="Leads Ativos"
           value={summary?.totalLeads ?? 0}
           trend={8}
-          icon={<TrendingUp size={18} className="text-purple-600" />}
-          iconBg="#ede9fe"
+          icon={<TrendingUp size={17} style={{ color: '#8b5cf6' }} />}
+          iconBg="#f5f3ff"
         />
         <KpiCard
           title="Oportunidades Abertas"
           value={summary?.openOpportunities ?? 0}
           trend={-3}
-          icon={<TrendingUp size={18} className="text-amber-600" />}
-          iconBg="#fef3c7"
+          icon={<TrendingUp size={17} style={{ color: '#f59e0b' }} />}
+          iconBg="#fffbeb"
         />
         <KpiCard
           title="Tarefas para Hoje"
           value={summary?.tasksDueToday ?? 0}
-          icon={<CheckSquare size={18} className="text-emerald-600" />}
-          iconBg="#d1fae5"
+          icon={<CheckSquare size={17} style={{ color: '#10b981' }} />}
+          iconBg="#f0fdf4"
         />
       </div>
 
@@ -204,20 +247,20 @@ export const DashboardPage: React.FC = () => {
           title="Valor no Pipeline"
           value={summary ? formatCurrency(summary.pipelineValue) : '€0'}
           trend={15}
-          icon={<DollarSign size={18} className="text-blue-600" />}
-          iconBg="#dbeafe"
+          icon={<DollarSign size={17} style={{ color: '#6366f1' }} />}
+          iconBg="#eef2ff"
         />
         <KpiCard
           title="Negócios Fechados (mês)"
           value={summary?.closedWonThisMonth ?? 0}
           trend={22}
-          icon={<TrendingUp size={18} className="text-emerald-600" />}
-          iconBg="#d1fae5"
+          icon={<TrendingUp size={17} style={{ color: '#10b981' }} />}
+          iconBg="#f0fdf4"
         />
       </div>
 
       {/* Row 2b: Conversão por fonte */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #eaecf3', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <h3 className="font-semibold text-slate-800 text-sm">Taxa de Conversão por Fonte de Lead</h3>
           <span className="text-xs text-slate-400">ROI por canal de aquisição</span>
@@ -265,7 +308,7 @@ export const DashboardPage: React.FC = () => {
         <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
             <h3 className="font-semibold text-slate-800 text-sm">Tarefas Pendentes</h3>
-            <a href="/tasks" className="text-xs text-blue-600 hover:underline font-medium">Ver todas</a>
+            <a href="/tasks" className="text-xs font-semibold hover:underline" style={{ color: '#6366f1', textDecoration: 'none' }}>Ver todas →</a>
           </div>
           {tasks.length === 0 ? (
             <div className="px-6 py-10 text-center text-slate-400 text-sm">Sem tarefas pendentes</div>
@@ -275,7 +318,7 @@ export const DashboardPage: React.FC = () => {
                 const overdue = task.dueDate ? isPast(parseISO(task.dueDate)) : false
                 return (
                   <li key={task.id} className="flex items-start gap-3 px-6 py-3.5 hover:bg-slate-50">
-                    <div className="mt-0.5 w-4 h-4 rounded border-2 border-slate-300 flex-shrink-0 cursor-pointer hover:border-blue-500" />
+                    <div className="mt-0.5 w-4 h-4 rounded-md flex-shrink-0 cursor-pointer" style={{ border: '2px solid #e2e8f0', flexShrink: 0 }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#6366f1')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#e2e8f0')} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-800 truncate">{task.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -306,7 +349,7 @@ export const DashboardPage: React.FC = () => {
           )}
         </div>
 
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="lg:col-span-2 bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #eaecf3', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
           <div className="px-6 py-4 border-b border-slate-100">
             <h3 className="font-semibold text-slate-800 text-sm">Funil de Vendas</h3>
           </div>
@@ -340,7 +383,7 @@ export const DashboardPage: React.FC = () => {
 
       {/* Row 4: Source table + Donut */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #eaecf3', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
           <div className="px-6 py-4 border-b border-slate-100">
             <h3 className="font-semibold text-slate-800 text-sm">Contactos por Fonte</h3>
           </div>
@@ -376,7 +419,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #eaecf3', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
           <div className="px-6 py-4 border-b border-slate-100">
             <h3 className="font-semibold text-slate-800 text-sm">Distribuição de Oportunidades</h3>
           </div>

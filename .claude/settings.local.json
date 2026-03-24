@@ -15,7 +15,11 @@
       "Bash(cmd.exe /c \"taskkill /PID 15788 /F 2>&1 && taskkill /PID 18720 /F 2>&1\")",
       "Bash(cmd.exe /c \"taskkill /PID 18720 /F 2>&1\")",
       "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -H \"Origin: http://localhost:5173\" -d '{\"\"\"\"email\"\"\"\":\"\"\"\"admin@crm.pt\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"admin123\"\"\"\"}')",
-      "Bash(curl -v http://127.0.0.1:5173)"
+      "Bash(curl -v http://127.0.0.1:5173)",
+      "Bash(powershell.exe -Command \"Stop-Process -Id 59524 -Force\" sleep 3 cd \"c:\\\\Users\\\\Notpr\\\\OneDrive\\\\Ambiente de Trabalho\\\\Crm Consultores Imobiliarios\\\\backend\")",
+      "Bash(npx --yes localtunnel --version)",
+      "Bash(powershell.exe -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(npx tsx -e \":*)"
     ]
   }
 }

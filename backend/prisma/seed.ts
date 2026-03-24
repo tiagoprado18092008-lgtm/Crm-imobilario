@@ -743,6 +743,94 @@ async function main() {
 
   console.log(`✅ Created ${10} tasks`);
 
+  // ─── AUTOMATION RULES ────────────────────────────────────────────────────────
+  await prisma.automationRule.deleteMany();
+
+  const automationRules = [
+    {
+      name: 'Speed to Lead — WhatsApp imediato',
+      trigger: 'NEW_LEAD',
+      isActive: true,
+      actions: JSON.stringify([
+        {
+          type: 'SEND_WHATSAPP',
+          delay: 0,
+          message:
+            'Olá {{nome}}! 👋 Sou {{consultor}}, consultor imobiliário. Vi o seu interesse e estou aqui para ajudar a encontrar o imóvel ideal para si. Que tipo de imóvel procura?',
+        },
+        {
+          type: 'CREATE_TASK',
+          delay: 60,
+          message: 'Ligar para novo lead: {{nome}} — seguimento Speed to Lead',
+        },
+      ]),
+    },
+    {
+      name: 'Missed Call — SMS automático',
+      trigger: 'MISSED_CALL',
+      isActive: true,
+      actions: JSON.stringify([
+        {
+          type: 'SEND_SMS',
+          delay: 0,
+          message:
+            'Olá {{nome}}! Sou {{consultor}}. Vi que me ligou mas não consegui atender. Deixe-me saber o que procura e responderei brevemente! 🏠',
+        },
+      ]),
+    },
+    {
+      name: 'Visita Confirmada — WhatsApp de confirmação',
+      trigger: 'VISIT_SCHEDULED',
+      isActive: true,
+      actions: JSON.stringify([
+        {
+          type: 'SEND_WHATSAPP',
+          delay: 0,
+          message:
+            'Olá {{nome}}! ✅ A sua visita está confirmada. Estarei à sua espera no local acordado. Caso precise de alterar, contacte-me! Até breve! 🏡',
+        },
+      ]),
+    },
+    {
+      name: 'Lead Qualificado — Email de apresentação',
+      trigger: 'LEAD_QUALIFIED',
+      isActive: true,
+      actions: JSON.stringify([
+        {
+          type: 'SEND_EMAIL',
+          delay: 30,
+          subject: 'Imóveis selecionados para si — {{data}}',
+          message:
+            'Olá {{nome}},\n\nCom base no nosso contacto, selecionei alguns imóveis que correspondem perfeitamente ao seu perfil.\n\nEntrarei em contacto brevemente para agendar visitas.\n\nCom os melhores cumprimentos,\n{{consultor}}',
+        },
+      ]),
+    },
+    {
+      name: 'Proposta Enviada — Follow-up 48h',
+      trigger: 'PROPOSAL_SENT',
+      isActive: true,
+      actions: JSON.stringify([
+        {
+          type: 'CREATE_TASK',
+          delay: 2880,
+          message: 'Follow-up proposta enviada para {{nome}} — confirmar interesse',
+        },
+        {
+          type: 'SEND_WHATSAPP',
+          delay: 2880,
+          message:
+            'Olá {{nome}}! 😊 Queria saber se teve oportunidade de analisar a proposta. Estou disponível para esclarecer qualquer dúvida!',
+        },
+      ]),
+    },
+  ];
+
+  for (const rule of automationRules) {
+    await prisma.automationRule.create({ data: rule });
+  }
+
+  console.log(`✅ Created ${automationRules.length} automation rules`);
+
   console.log('\n🎉 Seed completed successfully!');
   console.log('\n📋 Login credentials:');
   console.log('   admin@crm.pt     | Admin123! | ADMIN');

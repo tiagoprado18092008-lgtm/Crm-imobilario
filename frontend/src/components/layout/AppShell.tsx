@@ -10,32 +10,19 @@ export const AppShell: React.FC = () => {
   const { sidebarOpen, setSidebarOpen } = useUIStore()
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#f1f5f9' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: '#f0f2f8' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-20 lg:hidden"
-          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)' }}
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(3px)' }}
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar - desktop always visible, mobile as drawer */}
-      <div
-        className="fixed lg:static inset-y-0 left-0 z-30 lg:flex-shrink-0"
-        style={{
-          transform: sidebarOpen ? 'translateX(0)' : undefined,
-        }}
-      >
-        <div
-          className="lg:block"
-          style={{
-            height: '100vh',
-            display: 'flex',
-          }}
-        >
-          <Sidebar />
-        </div>
+      {/* Sidebar - desktop always visible */}
+      <div className="hidden lg:flex flex-shrink-0" style={{ height: '100vh' }}>
+        <Sidebar />
       </div>
 
       {/* Mobile sidebar */}
@@ -43,7 +30,7 @@ export const AppShell: React.FC = () => {
         className="fixed inset-y-0 left-0 z-30 lg:hidden"
         style={{
           transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
-          transition: 'transform 200ms cubic-bezier(0.4,0,0.2,1)',
+          transition: 'transform 220ms cubic-bezier(0.4,0,0.2,1)',
         }}
       >
         <Sidebar />

@@ -16,7 +16,9 @@ import reportsRouter from './modules/reports/reports.router';
 import conversationsRouter from './modules/conversations/conversations.router';
 import settingsRouter from './modules/settings/settings.router';
 import callsRouter from './modules/calls/calls.router';
+import automationsRouter from './modules/automations/automations.router';
 import { errorMiddleware } from './middleware/error.middleware';
+import prisma from './config/database';
 
 const app = express();
 
@@ -136,6 +138,7 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/conversations', conversationsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/calls', callsRouter);
+app.use('/api/automations', automationsRouter);
 
 // ─── Twilio Webhooks ─────────────────────────────────────────────────────────
 

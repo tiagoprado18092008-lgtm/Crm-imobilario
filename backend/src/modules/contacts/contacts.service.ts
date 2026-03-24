@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { fireTrigger } from '../../utils/automation.engine';
 
 const buildWhereClause = async (user: any): Promise<any> => {
   if (user.role === 'ADMIN') {
@@ -96,6 +97,12 @@ export const create = async (
       assignedTo: { select: { id: true, name: true, email: true } },
     },
   });
+
+  // Fire NEW_LEAD automation trigger (non-blocking)
+  fireTrigger('NEW_LEAD', contact.id).catch(err =>
+    console.error('[Automation] NEW_LEAD trigger error:', err)
+  );
+
   return contact;
 };
 

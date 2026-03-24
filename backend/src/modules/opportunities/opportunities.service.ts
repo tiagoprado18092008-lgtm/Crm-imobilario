@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { fireTrigger } from '../../utils/automation.engine';
 
 const buildWhereClause = async (user: any): Promise<any> => {
   if (user.role === 'ADMIN') return {};
@@ -144,7 +145,7 @@ export const update = async (
     throw err;
   }
 
-  return prisma.opportunity.update({
+  const updated = await prisma.opportunity.update({
     where: { id },
     data: {
       title: dto.title,
@@ -165,6 +166,20 @@ export const update = async (
       assignedTo: { select: { id: true, name: true } },
     },
   });
+
+  // Fire automation triggers based on stage change
+  if (dto.stage && dto.stage !== existing.stage) {
+    const contactId = updated.contactId;
+    if (dto.stage === 'VISIT_SCHEDULED') {
+      fireTrigger('VISIT_SCHEDULED', contactId).catch(() => {});
+    } else if (dto.stage === 'PROPOSAL_SENT') {
+      fireTrigger('PROPOSAL_SENT', contactId).catch(() => {});
+    } else if (dto.stage === 'QUALIFIED') {
+      fireTrigger('LEAD_QUALIFIED', contactId).catch(() => {});
+    }
+  }
+
+  return updated;
 };
 
 export const moveStage = async (
@@ -207,6 +222,17 @@ export const moveStage = async (
 
     return updated;
   });
+
+  // Fire automation triggers on stage change
+  if (newStage !== existing.stage) {
+    if (newStage === 'VISIT_SCHEDULED') {
+      fireTrigger('VISIT_SCHEDULED', result.contactId).catch(() => {});
+    } else if (newStage === 'PROPOSAL_SENT') {
+      fireTrigger('PROPOSAL_SENT', result.contactId).catch(() => {});
+    } else if (newStage === 'QUALIFIED') {
+      fireTrigger('LEAD_QUALIFIED', result.contactId).catch(() => {});
+    }
+  }
 
   return result;
 };
