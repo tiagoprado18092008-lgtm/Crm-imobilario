@@ -318,7 +318,6 @@ export const LoginPage: React.FC = () => {
                   onError={() => setError('Falha no login com Google.')}
                   width="100%"
                   text="continue_with"
-                  locale="pt-PT"
                   shape="rectangular"
                   theme="outline"
                 />
