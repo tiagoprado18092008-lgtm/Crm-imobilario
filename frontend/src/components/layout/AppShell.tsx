@@ -5,6 +5,7 @@ import { TopBar } from './TopBar'
 import { Toast } from '../ui/Toast'
 import { SoftPhone } from '../calls/SoftPhone'
 import { useUIStore } from '../../store/ui.store'
+import { ErrorBoundary } from './ErrorBoundary'
 
 export const AppShell: React.FC = () => {
   const { sidebarOpen, setSidebarOpen } = useUIStore()
@@ -43,7 +44,9 @@ export const AppShell: React.FC = () => {
           className="flex-1 overflow-y-auto"
           style={{ padding: '24px 28px' }}
         >
-          <Outlet />
+          <ErrorBoundary inline>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
 

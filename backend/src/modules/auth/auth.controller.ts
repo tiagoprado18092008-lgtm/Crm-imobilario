@@ -23,10 +23,24 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      res.status(400).json({ error: 'Email and password are required', status: 400 });
+      res.status(400).json({ error: 'Email e password são obrigatórios', status: 400 });
       return;
     }
     const result = await authService.login(email, password);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const googleAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) {
+      res.status(400).json({ error: 'Token Google em falta', status: 400 });
+      return;
+    }
+    const result = await authService.googleAuth(idToken);
     res.status(200).json(result);
   } catch (err) {
     next(err);

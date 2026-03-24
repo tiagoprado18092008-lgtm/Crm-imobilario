@@ -41,7 +41,9 @@ export const STAGE_HEADER_COLORS: Record<string, string> = {
 export const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrador',
   PRINCIPAL_CONSULTANT: 'Consultor Principal',
-  SUB_AGENT: 'Sub-Agente'
+  CONSULTANT: 'Consultor',
+  SUB_CONSULTANT: 'Sub-Consultor',
+  VIEWER: 'Visualizador'
 }
 
 export const SOURCE_OPTIONS = [

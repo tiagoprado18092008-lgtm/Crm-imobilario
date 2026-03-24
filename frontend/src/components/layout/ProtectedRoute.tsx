@@ -9,7 +9,16 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { token, user } = useAuthStore()
+  const { token, user, hydrated } = useAuthStore()
+
+  if (!hydrated) {
+    return (
+      <div className="flex items-center justify-center h-screen" style={{ background: '#f0f2f8' }}>
+        <div className="w-8 h-8 rounded-full border-4 border-t-transparent animate-spin"
+          style={{ borderColor: '#6366f1', borderTopColor: 'transparent' }} />
+      </div>
+    )
+  }
 
   if (!token || !user) {
     return <Navigate to="/login" replace />

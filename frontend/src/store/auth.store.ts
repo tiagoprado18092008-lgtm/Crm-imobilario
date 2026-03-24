@@ -4,6 +4,7 @@ import type { User } from '../types'
 interface AuthState {
   user: User | null
   token: string | null
+  hydrated: boolean
   setAuth: (user: User, token: string) => void
   logout: () => void
   hydrate: () => void
@@ -12,6 +13,7 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   token: null,
+  hydrated: false,
   setAuth: (user: User, token: string) => {
     localStorage.setItem('crm_token', token)
     localStorage.setItem('crm_user', JSON.stringify(user))
@@ -28,11 +30,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr) as User
-        set({ user, token })
+        set({ user, token, hydrated: true })
+        return
       } catch {
         localStorage.removeItem('crm_token')
         localStorage.removeItem('crm_user')
       }
     }
+    set({ hydrated: true })
   }
 }))

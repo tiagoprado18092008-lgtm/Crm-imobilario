@@ -147,6 +147,9 @@ export const changePassword = async (id: string, currentPassword: string, newPas
   if (!user) {
     const err: any = new Error('User not found'); err.status = 404; throw err;
   }
+  if (!user.passwordHash) {
+    const err: any = new Error('Esta conta usa login com Google. Não é possível alterar a password.'); err.status = 400; throw err;
+  }
   const valid = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!valid) {
     const err: any = new Error('Password atual incorreta'); err.status = 401; throw err;
