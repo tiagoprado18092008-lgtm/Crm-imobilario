@@ -19,6 +19,10 @@ import { SettingsPage } from './pages/SettingsPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { AutomationsPage } from './pages/AutomationsPage'
 import { SnapshotsPage } from './pages/SnapshotsPage'
+import { PhoneNumbersPage } from './pages/PhoneNumbersPage'
+import { AppointmentsPage } from './pages/AppointmentsPage'
+import { CampaignsPage } from './pages/CampaignsPage'
+import { FormsPage } from './pages/FormsPage'
 
 function App() {
   const { hydrate } = useAuthStore()
@@ -62,6 +66,10 @@ function App() {
         <Route path="automations" element={<AutomationsPage />} />
         <Route path="snapshots" element={<SnapshotsPage />} />
         <Route path="conversations" element={<ConversationsPage />} />
+        <Route path="phone-numbers" element={<PhoneNumbersPage />} />
+        <Route path="appointments" element={<AppointmentsPage />} />
+        <Route path="campaigns" element={<CampaignsPage />} />
+        <Route path="forms" element={<FormsPage />} />
         <Route
           path="settings"
           element={

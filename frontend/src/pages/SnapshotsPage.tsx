@@ -47,12 +47,47 @@ const CATEGORY_CONFIG = {
   RENTAL: { label: 'Arrendamento', icon: Key, color: '#f59e0b', bg: '#fef3c7' },
 }
 
+import api from '../api/axios'
+
 export const SnapshotsPage: React.FC = () => {
   const [applied, setApplied] = useState<string[]>([])
+  const [loading, setLoading] = useState<string | null>(null)
 
-  const applySnapshot = (id: string) => {
-    setApplied(a => [...a, id])
-    setTimeout(() => setApplied(a => a.filter(x => x !== id)), 3000)
+  const SNAPSHOT_AUTOMATIONS: Record<string, any[]> = {
+    '1': [
+      { name: 'Boas-vindas ao novo lead', trigger: 'NEW_LEAD', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', message: 'Olá {{nome}}! Obrigado pelo interesse. Sou consultor imobiliário e estou aqui para ajudar. Que tipo de imóvel procura?' }]) },
+      { name: 'Lembrete de visita', trigger: 'VISIT_SCHEDULED', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', message: 'Olá {{nome}}! Lembro-lhe que tem uma visita agendada amanhã. Confirma?' }]) },
+      { name: 'Follow-up pós-proposta', trigger: 'PROPOSAL_SENT', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', message: 'Olá {{nome}}! Já teve oportunidade de analisar a proposta? Estou disponível para esclarecer dúvidas.' }]) },
+      { name: 'Chamada perdida - SMS automático', trigger: 'MISSED_CALL', isActive: true, actions: JSON.stringify([{ type: 'SEND_SMS', message: 'Olá! Vi a sua chamada. Estou numa visita mas entrarei em contacto brevemente. 🏠' }]) },
+      { name: 'Lead qualificado - criar tarefa', trigger: 'LEAD_QUALIFIED', isActive: true, actions: JSON.stringify([{ type: 'CREATE_TASK', title: 'Enviar proposta ao lead qualificado', priority: 'HIGH' }]) },
+    ],
+    '2': [
+      { name: 'Contacto com proprietário', trigger: 'NEW_LEAD', isActive: true, actions: JSON.stringify([{ type: 'SEND_EMAIL', subject: 'Avaliação gratuita do seu imóvel', message: 'Olá! Gostaria de lhe apresentar os nossos serviços de angariação...' }]) },
+      { name: 'Lembrete avaliação', trigger: 'VISIT_SCHEDULED', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', message: 'Olá! A avaliação do seu imóvel está agendada para amanhã. Confirma?' }]) },
+      { name: 'Follow-up mandato', trigger: 'PROPOSAL_SENT', isActive: true, actions: JSON.stringify([{ type: 'CREATE_TASK', title: 'Ligar ao proprietário sobre mandato', priority: 'HIGH' }]) },
+      { name: 'Chamada perdida proprietário', trigger: 'MISSED_CALL', isActive: true, actions: JSON.stringify([{ type: 'SEND_SMS', message: 'Olá! Vi a sua chamada. Entrarei em contacto brevemente.' }]) },
+    ],
+    '3': [
+      { name: 'Boas-vindas arrendamento', trigger: 'NEW_LEAD', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', message: 'Olá {{nome}}! Obrigado pelo interesse. Que tipo de imóvel procura para arrendamento?' }]) },
+      { name: 'Confirmar visita', trigger: 'VISIT_SCHEDULED', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', message: 'Olá! A visita ao imóvel está confirmada. Qualquer dúvida, contacte-nos.' }]) },
+      { name: 'Lembrete documentação', trigger: 'LEAD_QUALIFIED', isActive: true, actions: JSON.stringify([{ type: 'CREATE_TASK', title: 'Solicitar documentação ao inquilino', priority: 'MEDIUM' }]) },
+    ],
+  }
+
+  const applySnapshot = async (id: string) => {
+    setLoading(id)
+    try {
+      const automations = SNAPSHOT_AUTOMATIONS[id] || []
+      for (const automation of automations) {
+        await api.post('/automations', automation)
+      }
+      setApplied(a => [...a, id])
+      setTimeout(() => setApplied(a => a.filter(x => x !== id)), 4000)
+    } catch (e) {
+      console.error('Snapshot error', e)
+    } finally {
+      setLoading(null)
+    }
   }
 
   return (
@@ -110,17 +145,20 @@ export const SnapshotsPage: React.FC = () => {
 
                 <button
                   onClick={() => applySnapshot(snap.id)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold flex-shrink-0 ml-4"
+                  disabled={loading === snap.id}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold flex-shrink-0 ml-4 disabled:opacity-60"
                   style={{
-                    background: isApplied ? '#dcfce7' : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                    background: isApplied ? '#dcfce7' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                     color: isApplied ? '#16a34a' : '#fff',
                     border: 'none',
-                    cursor: 'pointer',
+                    cursor: loading === snap.id ? 'wait' : 'pointer',
                     transition: 'all 0.3s',
                   }}
                 >
                   {isApplied ? (
                     <><CheckCircle size={15} /> Aplicado!</>
+                  ) : loading === snap.id ? (
+                    <>A aplicar...</>
                   ) : (
                     <><Copy size={15} /> Aplicar Snapshot</>
                   )}

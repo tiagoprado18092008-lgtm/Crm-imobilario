@@ -30,6 +30,10 @@ model User {
 
   assignedConversations Conversation[] @relation("ConversationAssigned")
   sentMessages          Message[]      @relation("MessageSentBy")
+  phoneNumbers          PhoneNumber[]
+  appointments          Appointment[]
+  campaigns             EmailCampaign[] @relation("CampaignCreatedBy")
+  assignedForms         Form[]          @relation("FormAssignedTo")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -50,10 +54,13 @@ model Contact {
   assignedToId String
   assignedTo   User   @relation(fields: [assignedToId], references: [id])
 
-  opportunities Opportunity[]
-  interactions  Interaction[]
-  tasks         Task[]
-  conversations Conversation[]
+  opportunities    Opportunity[]
+  interactions     Interaction[]
+  tasks            Task[]
+  conversations    Conversation[]
+  appointments     Appointment[]
+  campaignRecipients EmailCampaignRecipient[]
+  formSubmissions  FormSubmission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -100,6 +107,7 @@ model Opportunity {
 
   interactions Interaction[]
   tasks        Task[]
+  appointments Appointment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -188,7 +196,7 @@ model Message {
   conversation   Conversation @relation(fields: [conversationId], references: [id])
 
   direction      String   // INBOUND, OUTBOUND
-  channel        String   // WHATSAPP, EMAIL, INSTAGRAM, INTERNAL
+  channel        String   // WHATSAPP, EMAIL, INSTAGRAM, INTERNAL, SMS
   content        String
   subject        String?  // for email
   status         String   @default("SENT") // SENT, DELIVERED, READ, FAILED
@@ -199,4 +207,114 @@ model Message {
 
   metadata       String?  // JSON string for extra data (attachments, etc.)
   createdAt      DateTime @default(now())
+}
+
+model PhoneNumber {
+  id           String  @id @default(cuid())
+  number       String  @unique
+  friendlyName String?
+  twilioSid    String
+  status       String  @default("ACTIVE") // ACTIVE, RELEASED
+  countryCode  String
+  numberType   String  @default("LOCAL") // LOCAL, TOLLFREE, MOBILE
+  capabilities String  @default("{\"voice\":true,\"sms\":true}")
+  monthlyPrice Float   @default(1.15)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Appointment {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startAt     DateTime
+  endAt       DateTime
+  status      String   @default("SCHEDULED") // SCHEDULED, CONFIRMED, CANCELLED, COMPLETED, NO_SHOW
+  type        String   @default("VISIT") // VISIT, CALL, MEETING, OTHER
+
+  contactId     String?
+  contact       Contact?     @relation(fields: [contactId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+  assignedToId  String
+  assignedTo    User         @relation(fields: [assignedToId], references: [id])
+
+  reminderSent Boolean @default(false)
+  notes        String?
+  location     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmailCampaign {
+  id        String @id @default(cuid())
+  name      String
+  subject   String
+  body      String // HTML content
+  status    String @default("DRAFT") // DRAFT, SCHEDULED, SENDING, SENT, CANCELLED
+  type      String @default("BROADCAST") // BROADCAST, SEQUENCE
+
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  sentCount   Int       @default(0)
+  openCount   Int       @default(0)
+  clickCount  Int       @default(0)
+
+  // Target: JSON filter criteria (e.g., {"type":"LEAD","status":"NEW"})
+  targetFilter String @default("{}")
+
+  createdById String
+  createdBy   User   @relation("CampaignCreatedBy", fields: [createdById], references: [id])
+
+  recipients EmailCampaignRecipient[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmailCampaignRecipient {
+  id         String @id @default(cuid())
+  campaignId String
+  campaign   EmailCampaign @relation(fields: [campaignId], references: [id])
+  contactId  String
+  contact    Contact @relation(fields: [contactId], references: [id])
+  email      String
+  status     String @default("PENDING") // PENDING, SENT, OPENED, CLICKED, BOUNCED, UNSUBSCRIBED
+  sentAt     DateTime?
+  openedAt   DateTime?
+  createdAt  DateTime @default(now())
+}
+
+model Form {
+  id          String @id @default(cuid())
+  name        String
+  description String?
+  fields      String // JSON array of field definitions
+  isActive    Boolean @default(true)
+  submitAction String @default("CREATE_CONTACT") // CREATE_CONTACT, CREATE_LEAD
+  thankYouMessage String @default("Obrigado! Entraremos em contacto em breve.")
+
+  assignedToId String?
+  assignedTo   User?   @relation("FormAssignedTo", fields: [assignedToId], references: [id])
+
+  submissions FormSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FormSubmission {
+  id     String @id @default(cuid())
+  formId String
+  form   Form   @relation(fields: [formId], references: [id])
+  data   String // JSON of submitted field values
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id])
+  ipAddress String?
+  createdAt DateTime @default(now())
 }

@@ -2,8 +2,9 @@ import React, { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Kanban, Building2, CheckSquare,
-  Calendar, BarChart3, UserCog, Building, ChevronLeft,
-  ChevronRight, LogOut, MessageCircle, Settings, Zap, Package
+  Calendar, BarChart3, UserCog, ChevronLeft,
+  ChevronRight, LogOut, MessageCircle, Settings, Zap, Package,
+  Phone, Mail, FileText, CalendarClock
 } from 'lucide-react'
 import { useAuthStore } from '../../store/auth.store'
 import { getInitials } from '../../utils/formatters'
@@ -11,14 +12,17 @@ import { ROLE_LABELS } from '../../utils/constants'
 
 const mainNav = [
   { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/conversations', icon: MessageCircle,   label: 'Conversas' },
   { to: '/contacts',      icon: Users,           label: 'Contactos' },
   { to: '/pipeline',      icon: Kanban,          label: 'Oportunidades' },
+  { to: '/appointments',  icon: CalendarClock,   label: 'Agendamentos' },
   { to: '/properties',    icon: Building2,       label: 'Propriedades' },
   { to: '/tasks',         icon: CheckSquare,     label: 'Tarefas' },
-  { to: '/calendar',      icon: Calendar,        label: 'Calendário' },
-  { to: '/reports',       icon: BarChart3,       label: 'Relatórios' },
-  { to: '/conversations', icon: MessageCircle,   label: 'Conversas' },
+  { to: '/campaigns',     icon: Mail,            label: 'Campanhas Email' },
+  { to: '/forms',         icon: FileText,        label: 'Formulários' },
+  { to: '/phone-numbers', icon: Phone,           label: 'Números Tel.' },
   { to: '/automations',   icon: Zap,             label: 'Automações' },
+  { to: '/reports',       icon: BarChart3,       label: 'Relatórios' },
   { to: '/snapshots',     icon: Package,         label: 'Snapshots' },
 ]
 

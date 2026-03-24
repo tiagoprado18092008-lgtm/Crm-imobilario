@@ -17,6 +17,10 @@ import conversationsRouter from './modules/conversations/conversations.router';
 import settingsRouter from './modules/settings/settings.router';
 import callsRouter from './modules/calls/calls.router';
 import automationsRouter from './modules/automations/automations.router';
+import phoneNumbersRouter from './modules/phone-numbers/phone-numbers.router';
+import appointmentsRouter from './modules/appointments/appointments.router';
+import campaignsRouter from './modules/campaigns/campaigns.router';
+import formsRouter from './modules/forms/forms.router';
 import { errorMiddleware } from './middleware/error.middleware';
 import prisma from './config/database';
 
@@ -139,8 +143,40 @@ app.use('/api/conversations', conversationsRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/calls', callsRouter);
 app.use('/api/automations', automationsRouter);
+app.use('/api/phone-numbers', phoneNumbersRouter);
+app.use('/api/appointments', appointmentsRouter);
+app.use('/api/campaigns', campaignsRouter);
+app.use('/api/forms', formsRouter);
 
 // ─── Twilio Webhooks ─────────────────────────────────────────────────────────
+
+// ─── Twilio Inbound SMS ───────────────────────────────────────────────────────
+app.post('/webhook/twilio/sms', async (req, res) => {
+  res.type('text/xml').send('<Response></Response>');
+  try {
+    const { From, To, Body } = req.body;
+    const { receiveInbound } = await import('./modules/conversations/conversations.service');
+    // Find which user owns this number
+    await receiveInbound('SMS' as any, From, Body, JSON.stringify({ to: To }));
+  } catch (err) { console.error('[Twilio SMS Webhook]', err); }
+});
+
+// ─── Twilio Inbound Call ──────────────────────────────────────────────────────
+app.post('/webhook/twilio/inbound-call', async (req, res) => {
+  const { From, To } = req.body;
+  try {
+    const { receiveInbound } = await import('./modules/conversations/conversations.service');
+    await receiveInbound('CALL' as any, From, `Chamada recebida de ${From}`, JSON.stringify({ to: To }));
+  } catch (err) { console.error('[Twilio Inbound Call]', err); }
+  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say language="pt-PT">Olá, obrigado por ligar. Será atendido em breve.</Say>
+  <Dial timeout="20" record="record-from-ringing">
+    <Number>${process.env.TWILIO_PHONE_NUMBER || To}</Number>
+  </Dial>
+</Response>`;
+  res.type('text/xml').send(twiml);
+});
 
 // TwiML for outbound calls (browser SDK)
 app.post('/webhook/twilio/voice', (req, res) => {
