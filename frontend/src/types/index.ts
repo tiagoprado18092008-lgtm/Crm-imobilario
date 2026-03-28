@@ -14,10 +14,13 @@ export interface User {
   email: string
   role: Role
   phone?: string
+  agency?: string
   isActive: boolean
   supervisorId?: string
   supervisor?: User
   subAgents?: User[]
+  avatarUrl?: string
+  onboardingCompleted?: boolean
   createdAt: string
 }
 

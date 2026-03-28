@@ -54,3 +54,12 @@ export const archive = async (req: Request, res: Response, next: NextFunction): 
     next(err);
   }
 };
+
+export const remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    await contactsService.remove(req.params.id, req.user);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+};

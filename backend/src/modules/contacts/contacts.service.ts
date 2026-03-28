@@ -1,6 +1,19 @@
 import prisma from '../../config/database';
 import { fireTrigger } from '../../utils/automation.engine';
 
+const calculateLeadScore = (contact: any, interactionCount: number): number => {
+  let score = 0;
+  if (contact.email) score += 20;
+  if (contact.phone || contact.whatsapp) score += 20;
+  if (contact.source === 'Indicação') score += 15;
+  score += Math.min(interactionCount * 10, 30);
+  if (contact.updatedAt) {
+    const daysSinceUpdate = (Date.now() - new Date(contact.updatedAt).getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSinceUpdate > 30) score -= 10;
+  }
+  return Math.max(0, Math.min(100, score));
+};
+
 const buildWhereClause = async (user: any): Promise<any> => {
   if (user.role === 'ADMIN') {
     return {};
@@ -62,7 +75,12 @@ export const list = async (
     }),
   ]);
 
-  return { data: contacts, total, page, limit, totalPages: Math.ceil(total / limit) };
+  const contactsWithScore = contacts.map((c: any) => ({
+    ...c,
+    leadScore: calculateLeadScore(c, c._count?.interactions ?? 0),
+  }));
+
+  return { data: contactsWithScore, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
 export const create = async (
@@ -136,7 +154,10 @@ export const getById = async (id: string, user: any) => {
     err.status = 404;
     throw err;
   }
-  return contact;
+  return {
+    ...contact,
+    leadScore: calculateLeadScore(contact, contact.interactions?.length ?? 0),
+  };
 };
 
 export const update = async (
@@ -191,4 +212,16 @@ export const archive = async (id: string) => {
     where: { id },
     data: { status: 'INACTIVE' },
   });
+};
+
+export const remove = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const existing = await prisma.contact.findFirst({ where });
+  if (!existing) {
+    const err: any = new Error('Contact not found or access denied');
+    err.status = 404;
+    throw err;
+  }
+  return prisma.contact.delete({ where: { id } });
 };

@@ -18,6 +18,9 @@ model User {
   phone        String?
   avatarUrl    String?
   isActive     Boolean @default(true)
+  onboardingCompleted Boolean @default(false)
+
+  agency       String?
 
   supervisorId String?
   supervisor   User?   @relation("SupervisorSubAgents", fields: [supervisorId], references: [id])
@@ -34,6 +37,7 @@ model User {
   appointments          Appointment[]
   campaigns             EmailCampaign[] @relation("CampaignCreatedBy")
   assignedForms         Form[]          @relation("FormAssignedTo")
+  createdProperties     Property[]      @relation("PropertyCreator")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -80,6 +84,9 @@ model Property {
   parking     Int?
   reference   String? @unique
   imageUrls   String  @default("[]")
+
+  createdById String?
+  createdBy   User?   @relation("PropertyCreator", fields: [createdById], references: [id])
 
   opportunities Opportunity[]
 
@@ -317,4 +324,15 @@ model FormSubmission {
   contact   Contact? @relation(fields: [contactId], references: [id])
   ipAddress String?
   createdAt DateTime @default(now())
+}
+
+model Invitation {
+  id          String    @id @default(cuid())
+  email       String
+  role        String    @default("CONSULTANT")
+  token       String    @unique
+  invitedById String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
 }

@@ -3,7 +3,7 @@ import * as authService from './auth.service';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, email, password, phone, agency, invitationToken } = req.body;
     if (!name || !email || !password) {
       res.status(400).json({ error: 'Nome, email e password são obrigatórios', status: 400 });
       return;
@@ -12,7 +12,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       res.status(400).json({ error: 'Password deve ter pelo menos 6 caracteres', status: 400 });
       return;
     }
-    const result = await authService.register(name, email, password, phone);
+    const result = await authService.register(name, email, password, phone, agency, invitationToken);
     res.status(201).json(result);
   } catch (err) {
     next(err);

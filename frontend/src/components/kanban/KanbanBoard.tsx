@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
+import { useAuthStore } from '../../store/auth.store'
 import { DragDropContext } from '@hello-pangea/dnd'
 import type { DropResult } from '@hello-pangea/dnd'
 import {
@@ -56,6 +57,7 @@ const SOURCE_OPTIONS_FORM = [
 
 const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, onSuccess, onCancel }) => {
   const { showToast } = useUIStore()
+  const { user: currentUser } = useAuthStore()
   const [submitting, setSubmitting] = useState(false)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [properties, setProperties] = useState<Property[]>([])
@@ -82,7 +84,7 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, onSuccess,
       notes: opportunity?.notes || '',
       contactId: opportunity?.contactId || '',
       propertyId: opportunity?.propertyId || '',
-      assignedToId: opportunity?.assignedToId || '',
+      assignedToId: opportunity?.assignedToId || currentUser?.id || '',
       lostReason: opportunity?.lostReason || ''
     }
   })

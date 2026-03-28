@@ -7,11 +7,21 @@ async function main() {
   console.log('🌱 Starting seed...');
 
   // Clean existing data in order
+  await prisma.automationLog.deleteMany();
+  await prisma.emailCampaignRecipient.deleteMany();
+  await prisma.emailCampaign.deleteMany();
+  await prisma.formSubmission.deleteMany();
+  await prisma.form.deleteMany();
+  await prisma.message.deleteMany();
+  await prisma.conversation.deleteMany();
+  await prisma.appointment.deleteMany();
   await prisma.task.deleteMany();
   await prisma.interaction.deleteMany();
   await prisma.opportunity.deleteMany();
   await prisma.contact.deleteMany();
   await prisma.property.deleteMany();
+  await prisma.invitation.deleteMany();
+  await prisma.phoneNumber.deleteMany();
   await prisma.user.deleteMany();
 
   console.log('🗑️  Cleared existing data');

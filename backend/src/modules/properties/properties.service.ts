@@ -1,15 +1,30 @@
 import prisma from '../../config/database';
 
-export const list = async (filters: {
-  type?: string;
-  status?: string;
-  priceMin?: number;
-  priceMax?: number;
-  search?: string;
-  page?: number;
-  limit?: number;
-}) => {
-  const where: any = {};
+const buildWhereClause = async (user: any): Promise<any> => {
+  if (user.role === 'ADMIN') return {};
+  if (user.role === 'PRINCIPAL_CONSULTANT') {
+    const subAgents = await prisma.user.findMany({
+      where: { supervisorId: user.id },
+      select: { id: true },
+    });
+    return { createdById: { in: [user.id, ...subAgents.map((a: any) => a.id)] } };
+  }
+  return { createdById: user.id };
+};
+
+export const list = async (
+  filters: {
+    type?: string;
+    status?: string;
+    priceMin?: number;
+    priceMax?: number;
+    search?: string;
+    page?: number;
+    limit?: number;
+  },
+  user: any
+) => {
+  const where: any = await buildWhereClause(user);
   if (filters.type) where.type = filters.type;
   if (filters.status) where.status = filters.status;
   if (filters.priceMin !== undefined || filters.priceMax !== undefined) {
@@ -45,20 +60,23 @@ export const list = async (filters: {
   return { data: properties, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
-export const create = async (dto: {
-  title: string;
-  description?: string;
-  type: string;
-  status?: string;
-  price: number;
-  address: string;
-  area?: number;
-  bedrooms?: number;
-  bathrooms?: number;
-  parking?: number;
-  reference?: string;
-  imageUrls?: string;
-}) => {
+export const create = async (
+  dto: {
+    title: string;
+    description?: string;
+    type: string;
+    status?: string;
+    price: number;
+    address: string;
+    area?: number;
+    bedrooms?: number;
+    bathrooms?: number;
+    parking?: number;
+    reference?: string;
+    imageUrls?: string;
+  },
+  user: any
+) => {
   return prisma.property.create({
     data: {
       title: dto.title,
@@ -73,13 +91,17 @@ export const create = async (dto: {
       parking: dto.parking,
       reference: dto.reference,
       imageUrls: dto.imageUrls ?? '[]',
+      createdById: user.id,
     },
   });
 };
 
-export const getById = async (id: string) => {
-  const property = await prisma.property.findUnique({
-    where: { id },
+export const getById = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+
+  const property = await prisma.property.findFirst({
+    where,
     include: {
       opportunities: {
         include: {
@@ -112,8 +134,19 @@ export const update = async (
     parking?: number;
     reference?: string;
     imageUrls?: string;
-  }
+  },
+  user: any
 ) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+
+  const existing = await prisma.property.findFirst({ where });
+  if (!existing) {
+    const err: any = new Error('Property not found or access denied');
+    err.status = 404;
+    throw err;
+  }
+
   return prisma.property.update({
     where: { id },
     data: {
@@ -133,6 +166,16 @@ export const update = async (
   });
 };
 
-export const remove = async (id: string) => {
+export const remove = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+
+  const existing = await prisma.property.findFirst({ where });
+  if (!existing) {
+    const err: any = new Error('Property not found or access denied');
+    err.status = 404;
+    throw err;
+  }
+
   return prisma.property.delete({ where: { id } });
 };

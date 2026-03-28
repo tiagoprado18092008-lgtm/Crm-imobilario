@@ -9,6 +9,7 @@ import { createContact, updateContact } from '../../api/contacts.api'
 import { getUsers } from '../../api/users.api'
 import type { Contact, User } from '../../types'
 import { useUIStore } from '../../store/ui.store'
+import { useAuthStore } from '../../store/auth.store'
 import { SOURCE_OPTIONS, CONTACT_STATUS_LABELS, CONTACT_TYPE_LABELS } from '../../utils/constants'
 
 const schema = z.object({
@@ -34,6 +35,7 @@ interface ContactFormProps {
 
 export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, onCancel }) => {
   const { showToast } = useUIStore()
+  const { user: currentUser } = useAuthStore()
   const [users, setUsers] = useState<User[]>([])
   const [submitting, setSubmitting] = useState(false)
 
@@ -52,7 +54,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
       status: contact?.status || 'NEW',
       source: contact?.source || '',
       notes: contact?.notes || '',
-      assignedToId: contact?.assignedToId || '',
+      assignedToId: contact?.assignedToId || currentUser?.id || '',
       preferences: contact?.preferences || ''
     }
   })

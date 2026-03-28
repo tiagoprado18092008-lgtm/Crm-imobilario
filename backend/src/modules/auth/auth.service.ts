@@ -9,8 +9,36 @@ export const register = async (
   name: string,
   email: string,
   password: string,
-  phone?: string
+  phone?: string,
+  agency?: string,
+  invitationToken?: string
 ): Promise<{ token: string; user: object }> => {
+  // If a token was provided, validate it
+  let invitation: any = null;
+  if (invitationToken) {
+    invitation = await prisma.invitation.findUnique({ where: { token: invitationToken } });
+    if (!invitation) {
+      const err: any = new Error('Convite inválido');
+      err.status = 404;
+      throw err;
+    }
+    if (invitation.usedAt) {
+      const err: any = new Error('Convite já utilizado');
+      err.status = 410;
+      throw err;
+    }
+    if (invitation.expiresAt < new Date()) {
+      const err: any = new Error('Convite expirado');
+      err.status = 410;
+      throw err;
+    }
+    if (invitation.email.toLowerCase() !== email.toLowerCase()) {
+      const err: any = new Error('O email não corresponde ao convite');
+      err.status = 400;
+      throw err;
+    }
+  }
+
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     const err: any = new Error('Email já registado');
@@ -20,8 +48,23 @@ export const register = async (
 
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
-    data: { name, email, passwordHash, phone, role: 'CONSULTANT' },
+    data: {
+      name,
+      email,
+      passwordHash,
+      phone,
+      agency,
+      role: invitation?.role || 'CONSULTANT',
+    },
   });
+
+  // Mark the invitation as used
+  if (invitation) {
+    await prisma.invitation.update({
+      where: { id: invitation.id },
+      data: { usedAt: new Date() },
+    });
+  }
 
   const token = signToken({ userId: user.id, role: user.role });
   const { passwordHash: _, ...userWithoutHash } = user;
@@ -117,9 +160,11 @@ export const getMe = async (userId: string): Promise<object> => {
       email: true,
       role: true,
       phone: true,
+      agency: true,
       avatarUrl: true,
       googleId: true,
       isActive: true,
+      onboardingCompleted: true,
       supervisorId: true,
       createdAt: true,
       updatedAt: true,
