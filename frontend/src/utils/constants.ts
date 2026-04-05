@@ -1,66 +1,104 @@
 export const STAGE_LABELS: Record<string, string> = {
-  LEAD_IN: 'Contactar',
-  QUALIFYING: 'Follow Up',
-  VISIT_SCHEDULED: 'Quente (1 Mês)',
-  PROPOSAL_SENT: 'Morno (3 Meses)',
-  NEGOTIATION: 'Frio (+6 Meses)',
-  CLOSED_WON: 'CPCV / Escritura',
-  CLOSED_LOST: 'Perdido'
+  LEAD_IN:              'Lead Novo',
+  QUALIFYING:           'Primeiro Contacto',
+  VISIT_SCHEDULED:      'Visita Agendada',
+  VISIT_DONE:           'Visita Realizada',
+  PROPOSAL_SENT:        'Proposta Enviada',
+  NEGOTIATION:          'Negociação',
+  CPCV_SIGNED:          'CPCV Assinado',
+  FINANCING:            'Financiamento',
+  ESCRITURA_SCHEDULED:  'Escritura Marcada',
+  CLOSED_WON:           'Negócio Fechado',
+  CLOSED_LOST:          'Perdido',
 }
 
 export const STAGE_ORDER = [
   'LEAD_IN',
   'QUALIFYING',
   'VISIT_SCHEDULED',
+  'VISIT_DONE',
   'PROPOSAL_SENT',
   'NEGOTIATION',
+  'CPCV_SIGNED',
+  'FINANCING',
+  'ESCRITURA_SCHEDULED',
   'CLOSED_WON',
-  'CLOSED_LOST'
+  'CLOSED_LOST',
 ]
 
 export const STAGE_COLORS: Record<string, string> = {
-  LEAD_IN: '#6366f1',
-  QUALIFYING: '#3b82f6',
-  VISIT_SCHEDULED: '#f59e0b',
-  PROPOSAL_SENT: '#10b981',
-  NEGOTIATION: '#64748b',
-  CLOSED_WON: '#22c55e',
-  CLOSED_LOST: '#ef4444'
+  LEAD_IN:              '#6366f1',
+  QUALIFYING:           '#8b5cf6',
+  VISIT_SCHEDULED:      '#f59e0b',
+  VISIT_DONE:           '#10b981',
+  PROPOSAL_SENT:        '#3b82f6',
+  NEGOTIATION:          '#f97316',
+  CPCV_SIGNED:          '#c9a84c',
+  FINANCING:            '#06b6d4',
+  ESCRITURA_SCHEDULED:  '#1a2e4a',
+  CLOSED_WON:           '#22c55e',
+  CLOSED_LOST:          '#ef4444',
 }
 
 export const STAGE_HEADER_COLORS: Record<string, string> = {
-  LEAD_IN: 'border-t-gray-400',
-  QUALIFYING: 'border-t-blue-400',
-  VISIT_SCHEDULED: 'border-t-yellow-400',
-  PROPOSAL_SENT: 'border-t-orange-400',
-  NEGOTIATION: 'border-t-purple-400',
-  CLOSED_WON: 'border-t-green-500',
-  CLOSED_LOST: 'border-t-red-400'
+  LEAD_IN:              'border-t-indigo-400',
+  QUALIFYING:           'border-t-violet-400',
+  VISIT_SCHEDULED:      'border-t-yellow-400',
+  VISIT_DONE:           'border-t-emerald-400',
+  PROPOSAL_SENT:        'border-t-blue-400',
+  NEGOTIATION:          'border-t-orange-400',
+  CPCV_SIGNED:          'border-t-yellow-600',
+  FINANCING:            'border-t-cyan-400',
+  ESCRITURA_SCHEDULED:  'border-t-slate-600',
+  CLOSED_WON:           'border-t-green-500',
+  CLOSED_LOST:          'border-t-red-400',
 }
+
+export const PIPELINE_STAGES: { value: string; label: string; color: string }[] = [
+  { value: 'LEAD_IN',             label: '🎯 Lead Novo',          color: '#6366f1' },
+  { value: 'QUALIFYING',          label: '📞 Primeiro Contacto',  color: '#8b5cf6' },
+  { value: 'VISIT_SCHEDULED',     label: '🏠 Visita Agendada',    color: '#f59e0b' },
+  { value: 'VISIT_DONE',          label: '✅ Visita Realizada',   color: '#10b981' },
+  { value: 'PROPOSAL_SENT',       label: '💰 Proposta Enviada',   color: '#3b82f6' },
+  { value: 'NEGOTIATION',         label: '🤝 Negociação',         color: '#f97316' },
+  { value: 'CPCV_SIGNED',         label: '📋 CPCV Assinado',      color: '#c9a84c' },
+  { value: 'FINANCING',           label: '🏦 Financiamento',      color: '#06b6d4' },
+  { value: 'ESCRITURA_SCHEDULED', label: '📅 Escritura Marcada',  color: '#1a2e4a' },
+  { value: 'CLOSED_WON',          label: '✅ Negócio Fechado',    color: '#22c55e' },
+  { value: 'CLOSED_LOST',         label: '❌ Perdido',            color: '#ef4444' },
+]
 
 export const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrador',
   PRINCIPAL_CONSULTANT: 'Consultor Principal',
   CONSULTANT: 'Consultor',
+  SUB_AGENT: 'Sub-Agente',
   SUB_CONSULTANT: 'Sub-Consultor',
-  VIEWER: 'Visualizador'
+  VIEWER: 'Visualizador',
 }
 
 export const SOURCE_OPTIONS = [
+  'Portal Imobiliário',
   'Idealista',
   'Imovirtual',
   'Casa Sapo',
   'OLX',
-  'BPI Expresso Imobiliário',
+  'Habitarportugal',
   'Indicação',
   'Redes Sociais',
   'Instagram',
+  'Facebook',
   'Facebook Ads',
+  'Google',
   'Google Ads',
   'Walk-in',
   'Email',
+  'Telefone',
+  'WhatsApp',
+  'Site da Agência',
+  'Feirão Imobiliário',
   'Chamada Direta',
-  'Outro'
+  'Outro',
 ]
 
 export const PROPERTY_TYPE_LABELS: Record<string, string> = {
@@ -68,26 +106,54 @@ export const PROPERTY_TYPE_LABELS: Record<string, string> = {
   HOUSE: 'Moradia',
   COMMERCIAL: 'Comercial',
   LAND: 'Terreno',
-  OTHER: 'Outro'
+  GARAGE: 'Garagem',
+  WAREHOUSE: 'Armazém',
+  FARM: 'Quinta',
+  OTHER: 'Outro',
+}
+
+export const PROPERTY_PURPOSE_LABELS: Record<string, string> = {
+  SALE: 'Venda',
+  RENT: 'Arrendamento',
+  TRESPASSE: 'Trespasse',
 }
 
 export const PROPERTY_STATUS_LABELS: Record<string, string> = {
   AVAILABLE: 'Disponível',
   RESERVED: 'Reservado',
-  SOLD: 'Vendido',
-  RENTED: 'Arrendado'
+  SOLD: 'Vendido/Escriturado',
+  RENTED: 'Arrendado',
+  IN_PROCESS: 'Em Processo',
+}
+
+export const ENERGY_CERTIFICATES = ['A+', 'A', 'B', 'B-', 'C', 'D', 'E', 'F', 'G']
+
+export const PROPERTY_CONDITIONS: Record<string, string> = {
+  NEW: 'Novo',
+  EXCELLENT: 'Excelente',
+  GOOD: 'Bom',
+  NEEDS_RENOVATION: 'Para Renovar',
 }
 
 export const CONTACT_STATUS_LABELS: Record<string, string> = {
   NEW: 'Novo',
   QUALIFIED: 'Qualificado',
   CONTACTED: 'Contactado',
-  INACTIVE: 'Inativo'
+  INACTIVE: 'Inativo',
 }
 
 export const CONTACT_TYPE_LABELS: Record<string, string> = {
   LEAD: 'Lead',
-  CLIENT: 'Cliente'
+  CLIENT: 'Cliente',
+  OWNER: 'Proprietário',
+  PARTNER: 'Parceiro',
+}
+
+export const TIMELINE_OPTIONS: Record<string, string> = {
+  IMMEDIATE: 'Imediato',
+  '1_3_MONTHS': '1 a 3 meses',
+  '3_6_MONTHS': '3 a 6 meses',
+  '6_PLUS_MONTHS': 'Mais de 6 meses',
 }
 
 export const INTERACTION_TYPE_LABELS: Record<string, string> = {
@@ -95,18 +161,18 @@ export const INTERACTION_TYPE_LABELS: Record<string, string> = {
   WHATSAPP: 'WhatsApp',
   CALL: 'Chamada',
   MEETING: 'Reunião',
-  NOTE: 'Nota'
+  NOTE: 'Nota',
 }
 
 export const TASK_STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pendente',
   IN_PROGRESS: 'Em Progresso',
   COMPLETED: 'Concluído',
-  CANCELLED: 'Cancelado'
+  CANCELLED: 'Cancelado',
 }
 
 export const TASK_PRIORITY_LABELS: Record<string, string> = {
   LOW: 'Baixa',
   MEDIUM: 'Média',
-  HIGH: 'Alta'
+  HIGH: 'Alta',
 }

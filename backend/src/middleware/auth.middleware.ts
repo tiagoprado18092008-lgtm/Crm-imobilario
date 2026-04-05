@@ -17,12 +17,14 @@ export const authenticate = async (
 ): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Also accept token via query param (for SSE EventSource which can't set headers)
+    const queryToken = req.query.token as string | undefined;
+    if (!authHeader?.startsWith('Bearer ') && !queryToken) {
       res.status(401).json({ error: 'No token provided', status: 401 });
       return;
     }
 
-    const token = authHeader.substring(7);
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : queryToken!;
     const decoded = verifyToken(token) as { userId: string };
 
     const user = await prisma.user.findUnique({

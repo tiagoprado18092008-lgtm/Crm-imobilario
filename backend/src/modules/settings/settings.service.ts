@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { isWhatsAppConfigured, isEmailConfigured, isInstagramConfigured } from '../../config/comms.config';
+import { isWhatsAppConfigured, isEmailConfigured, isInstagramConfigured, isTwilioConfigured } from '../../config/comms.config';
 
 // Path to the .env file (two levels up from src/modules/settings)
 const ENV_FILE_PATH = path.resolve(__dirname, '..', '..', '..', '.env');
@@ -14,34 +14,46 @@ function maskValue(value: string): string {
 
 export const getCommunicationsConfig = () => {
   return {
-    whatsapp: {
-      token: maskValue(process.env.WHATSAPP_TOKEN || ''),
-      phoneNumberId: maskValue(process.env.WHATSAPP_PHONE_NUMBER_ID || ''),
-      verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || '',
-    },
-    email: {
-      smtpHost: process.env.SMTP_HOST || '',
-      smtpPort: process.env.SMTP_PORT || '587',
-      smtpUser: process.env.SMTP_USER || '',
-      smtpPass: maskValue(process.env.SMTP_PASS || ''),
-      smtpFrom: process.env.SMTP_FROM || '',
-      imapHost: process.env.IMAP_HOST || '',
-      imapPort: process.env.IMAP_PORT || '993',
-      imapUser: process.env.IMAP_USER || '',
-      imapPass: maskValue(process.env.IMAP_PASS || ''),
-    },
-    instagram: {
-      accessToken: maskValue(process.env.INSTAGRAM_ACCESS_TOKEN || ''),
-      pageId: process.env.INSTAGRAM_PAGE_ID || '',
-    },
+    // WhatsApp — also return flat keys for frontend compatibility
+    whatsappToken: maskValue(process.env.WHATSAPP_TOKEN || ''),
+    phoneNumberId: maskValue(process.env.WHATSAPP_PHONE_NUMBER_ID || ''),
+    verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || '',
+    // Email SMTP
+    smtpHost: process.env.SMTP_HOST || '',
+    smtpPort: process.env.SMTP_PORT || '587',
+    smtpUser: process.env.SMTP_USER || '',
+    smtpPass: maskValue(process.env.SMTP_PASS || ''),
+    smtpFrom: process.env.SMTP_FROM || '',
+    fromName: process.env.SMTP_FROM_NAME || '',
+    fromEmail: process.env.SMTP_FROM || '',
+    // IMAP
+    imapHost: process.env.IMAP_HOST || '',
+    imapPort: process.env.IMAP_PORT || '993',
+    imapUser: process.env.IMAP_USER || '',
+    imapPass: maskValue(process.env.IMAP_PASS || ''),
+    // Instagram
+    igAccessToken: maskValue(process.env.INSTAGRAM_ACCESS_TOKEN || ''),
+    igPageId: process.env.INSTAGRAM_PAGE_ID || '',
+    // Twilio
+    twilioAccountSid: maskValue(process.env.TWILIO_ACCOUNT_SID || ''),
+    twilioAuthToken: maskValue(process.env.TWILIO_AUTH_TOKEN || ''),
+    twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER || '',
+    twilioTwimlAppSid: process.env.TWILIO_TWIML_APP_SID || '',
+    twilioApiKey: maskValue(process.env.TWILIO_API_KEY || ''),
+    twilioApiSecret: maskValue(process.env.TWILIO_API_SECRET || ''),
+    // General
+    crmName: process.env.CRM_NAME || 'CRM Imobiliário',
+    timezone: process.env.TZ || 'Europe/Lisbon',
+    language: process.env.APP_LANGUAGE || 'pt-PT',
   };
 };
 
 export const getChannelStatus = () => {
   return {
-    whatsapp: isWhatsAppConfigured(),
-    email: isEmailConfigured(),
-    instagram: isInstagramConfigured(),
+    whatsapp: isWhatsAppConfigured() ? 'configured' : 'unconfigured',
+    email: isEmailConfigured() ? 'configured' : 'unconfigured',
+    instagram: isInstagramConfigured() ? 'configured' : 'unconfigured',
+    phone: isTwilioConfigured() ? 'configured' : 'unconfigured',
   };
 };
 
@@ -73,20 +85,41 @@ function updateEnvFile(updates: Record<string, string>): void {
 
 // Map of allowed settable keys (so we don't allow arbitrary env overrides)
 const ALLOWED_KEYS: Record<string, string> = {
+  // WhatsApp
   whatsappToken: 'WHATSAPP_TOKEN',
+  phoneNumberId: 'WHATSAPP_PHONE_NUMBER_ID',
+  verifyToken: 'WHATSAPP_VERIFY_TOKEN',
   whatsappPhoneNumberId: 'WHATSAPP_PHONE_NUMBER_ID',
   whatsappVerifyToken: 'WHATSAPP_VERIFY_TOKEN',
+  // Email SMTP
   smtpHost: 'SMTP_HOST',
   smtpPort: 'SMTP_PORT',
   smtpUser: 'SMTP_USER',
   smtpPass: 'SMTP_PASS',
   smtpFrom: 'SMTP_FROM',
+  fromName: 'SMTP_FROM_NAME',
+  fromEmail: 'SMTP_FROM',
+  // Email IMAP
   imapHost: 'IMAP_HOST',
   imapPort: 'IMAP_PORT',
   imapUser: 'IMAP_USER',
   imapPass: 'IMAP_PASS',
+  // Instagram
   instagramAccessToken: 'INSTAGRAM_ACCESS_TOKEN',
   instagramPageId: 'INSTAGRAM_PAGE_ID',
+  accessToken: 'INSTAGRAM_ACCESS_TOKEN',
+  pageId: 'INSTAGRAM_PAGE_ID',
+  // Twilio
+  twilioAccountSid: 'TWILIO_ACCOUNT_SID',
+  twilioAuthToken: 'TWILIO_AUTH_TOKEN',
+  twilioPhoneNumber: 'TWILIO_PHONE_NUMBER',
+  twilioTwimlAppSid: 'TWILIO_TWIML_APP_SID',
+  twilioApiKey: 'TWILIO_API_KEY',
+  twilioApiSecret: 'TWILIO_API_SECRET',
+  // General
+  crmName: 'CRM_NAME',
+  timezone: 'TZ',
+  language: 'APP_LANGUAGE',
 };
 
 export const updateCommunicationsConfig = (body: Record<string, string>) => {
@@ -99,7 +132,8 @@ export const updateCommunicationsConfig = (body: Record<string, string>) => {
   }
 
   if (Object.keys(updates).length === 0) {
-    throw Object.assign(new Error('No valid configuration keys provided'), { status: 400 });
+    // Nothing to update is OK — just return current config
+    return { updated: [], config: getCommunicationsConfig() };
   }
 
   updateEnvFile(updates);

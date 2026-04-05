@@ -1,46 +1,55 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useLocation, Link, useNavigate } from 'react-router-dom'
-import { Bell, LogOut, User, Menu, Settings, ChevronDown, CheckSquare, Clock, AlertCircle, X } from 'lucide-react'
+import { Bell, LogOut, User, Menu, Settings, ChevronDown, CheckSquare, Clock, AlertCircle, X, Moon, Sun } from 'lucide-react'
 import { useAuthStore } from '../../store/auth.store'
 import { useUIStore } from '../../store/ui.store'
 import { getInitials } from '../../utils/formatters'
 import { ROLE_LABELS } from '../../utils/constants'
 import { getTasks } from '../../api/tasks.api'
+import { useNotifications } from '../../hooks/useNotifications'
 import type { Task } from '../../types'
 import { format, isPast, parseISO, isToday, isTomorrow } from 'date-fns'
 
 const pageTitles: Record<string, string> = {
-  '/dashboard':     'Dashboard',
-  '/contacts':      'Contactos',
-  '/pipeline':      'Oportunidades',
-  '/properties':    'Propriedades',
-  '/tasks':         'Tarefas',
-  '/calendar':      'Calendário',
-  '/reports':       'Relatórios',
-  '/users':         'Utilizadores',
-  '/conversations': 'Conversas',
-  '/settings':      'Configurações',
-  '/profile':       'O meu perfil',
-  '/automations':   'Automações',
-  '/snapshots':     'Snapshots',
+  '/dashboard':      'Dashboard',
+  '/contacts':       'Contactos',
+  '/pipeline':       'Oportunidades',
+  '/properties':     'Propriedades',
+  '/tasks':          'Tarefas',
+  '/calendar':       'Calendário',
+  '/reports':        'Relatórios',
+  '/users':          'Utilizadores',
+  '/conversations':  'Conversas',
+  '/settings':       'Configurações',
+  '/profile':        'O meu perfil',
+  '/automations':    'Automações',
+  '/snapshots':      'Snapshots',
+  '/appointments':   'Agendamentos',
+  '/campaigns':      'Campanhas Email',
+  '/phone-numbers':  'Números de Telefone',
+  '/forms':          'Formulários',
 }
 
 const pageSubtitles: Record<string, string> = {
-  '/dashboard':     'Visão geral do negócio',
-  '/contacts':      'Gestão de leads e clientes',
-  '/pipeline':      'Oportunidades em curso',
-  '/properties':    'Carteira de imóveis',
-  '/tasks':         'Atividades pendentes',
-  '/calendar':      'Agenda e visitas',
-  '/reports':       'Análise e performance',
-  '/conversations': 'Inbox unificado',
-  '/automations':   'Workflows automáticos',
-  '/snapshots':     'Templates de negócio',
+  '/dashboard':      'Visão geral do negócio',
+  '/contacts':       'Gestão de leads e clientes',
+  '/pipeline':       'Oportunidades em curso',
+  '/properties':     'Carteira de imóveis',
+  '/tasks':          'Atividades pendentes',
+  '/calendar':       'Agenda e visitas',
+  '/reports':        'Análise e performance',
+  '/conversations':  'Inbox unificado',
+  '/automations':    'Workflows automáticos',
+  '/snapshots':      'Templates de negócio',
+  '/appointments':   'Visitas, chamadas e reuniões',
+  '/campaigns':      'Envio de emails em massa',
+  '/phone-numbers':  'Gestão de números Twilio',
+  '/forms':          'Captura de leads',
 }
 
 export const TopBar: React.FC = () => {
   const { user, logout } = useAuthStore()
-  const { toggleSidebar } = useUIStore()
+  const { toggleSidebar, darkMode, toggleDarkMode } = useUIStore()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -53,6 +62,7 @@ export const TopBar: React.FC = () => {
   const [notifOpen, setNotifOpen] = useState(false)
   const [tasks, setTasks] = useState<Task[]>([])
   const [notifLoading, setNotifLoading] = useState(false)
+  const { notifications, unreadCount: sseUnreadCount, markRead, markAllRead } = useNotifications()
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
@@ -86,7 +96,7 @@ export const TopBar: React.FC = () => {
 
   const urgentTasks = tasks.filter(t => t.dueDate && isPast(parseISO(t.dueDate)))
   const todayTasks = tasks.filter(t => t.dueDate && isToday(parseISO(t.dueDate)))
-  const notifCount = urgentTasks.length + todayTasks.length
+  const notifCount = urgentTasks.length + todayTasks.length + sseUnreadCount
 
   const getTaskLabel = (t: Task) => {
     if (!t.dueDate) return null
@@ -102,10 +112,10 @@ export const TopBar: React.FC = () => {
       className="flex items-center gap-4 px-6 flex-shrink-0"
       style={{
         height: 64,
-        background: 'rgba(255,255,255,0.88)',
+        background: 'var(--bg-header)',
         backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #eaecf3',
-        boxShadow: '0 1px 0 #eaecf3',
+        borderBottom: '1px solid var(--border-color)',
+        boxShadow: '0 1px 0 var(--border-color)',
         position: 'relative',
         zIndex: 20,
       }}
@@ -121,7 +131,7 @@ export const TopBar: React.FC = () => {
 
       {/* Page title */}
       <div className="flex-1 min-w-0">
-        <h1 className="text-base font-semibold text-slate-900 leading-tight tracking-tight">{pageTitle}</h1>
+        <h1 className="text-base font-semibold leading-tight tracking-tight" style={{ color: 'var(--text-primary)' }}>{pageTitle}</h1>
         {pageSubtitle && (
           <p className="text-xs text-slate-400 mt-0.5 leading-tight">{pageSubtitle}</p>
         )}
@@ -130,13 +140,21 @@ export const TopBar: React.FC = () => {
       {/* Right side */}
       <div className="flex items-center gap-1.5">
 
+        {/* Dark mode toggle */}
+        <button
+          onClick={toggleDarkMode}
+          className="icon-btn p-2"
+          title={darkMode ? 'Modo claro' : 'Modo escuro'}
+        >
+          {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+
         {/* Notification bell */}
         <div className="relative" ref={notifRef}>
           <button
             onClick={openNotifications}
-            className="relative p-2 rounded-xl hover:bg-slate-100"
+            className="icon-btn p-2 relative"
             title="Notificações"
-            style={{ border: 'none', cursor: 'pointer', background: 'none', color: '#64748b' }}
           >
             <Bell size={18} />
             {notifCount > 0 && (
@@ -153,29 +171,29 @@ export const TopBar: React.FC = () => {
             <div
               style={{
                 position: 'absolute', right: 0, top: 42, width: 340, zIndex: 50,
-                background: '#fff', borderRadius: 16, border: '1px solid #eaecf3',
+                background: 'var(--bg-card)', borderRadius: 16, border: '1px solid var(--border-color)',
                 boxShadow: '0 16px 48px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06)',
                 overflow: 'hidden',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid #f1f3f9' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--border-color)' }}>
                 <div>
-                  <p style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>Notificações</p>
-                  <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{notifCount > 0 ? `${notifCount} tarefa(s) que precisam de atenção` : 'Tudo em dia'}</p>
+                  <p style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>Notificações</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{notifCount > 0 ? `${notifCount} tarefa(s) que precisam de atenção` : 'Tudo em dia'}</p>
                 </div>
-                <button onClick={() => setNotifOpen(false)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4 }}><X size={15} /></button>
+                <button onClick={() => setNotifOpen(false)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}><X size={15} /></button>
               </div>
 
               <div style={{ maxHeight: 360, overflowY: 'auto' }}>
                 {notifLoading ? (
-                  <div style={{ padding: '24px 16px', textAlign: 'center', color: '#94a3b8', fontSize: 13 }}>
+                  <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
                     A carregar...
                   </div>
                 ) : tasks.length === 0 ? (
                   <div style={{ padding: '32px 16px', textAlign: 'center' }}>
                     <CheckSquare size={32} style={{ color: '#10b981', margin: '0 auto 8px' }} />
-                    <p style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>Sem tarefas pendentes</p>
-                    <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>Estás em dia com tudo!</p>
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>Sem tarefas pendentes</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Estás em dia com tudo!</p>
                   </div>
                 ) : (
                   tasks.map(task => {
@@ -186,13 +204,13 @@ export const TopBar: React.FC = () => {
                         key={task.id}
                         onClick={() => { navigate('/tasks'); setNotifOpen(false) }}
                         style={{
-                          padding: '12px 16px', borderBottom: '1px solid #f8f9fc',
+                          padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)',
                           cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 10,
-                          background: isOverdue ? '#fff9f9' : '#fff',
+                          background: isOverdue ? 'rgba(239,68,68,0.06)' : 'var(--bg-card)',
                           transition: 'background 100ms',
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#fafbfd')}
-                        onMouseLeave={e => (e.currentTarget.style.background = isOverdue ? '#fff9f9' : '#fff')}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = isOverdue ? 'rgba(239,68,68,0.06)' : 'var(--bg-card)')}
                       >
                         <div style={{ flexShrink: 0, marginTop: 1 }}>
                           {isOverdue
@@ -201,10 +219,10 @@ export const TopBar: React.FC = () => {
                           }
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {task.title}
                           </p>
-                          {task.contact && <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>{task.contact.name}</p>}
+                          {task.contact && <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{task.contact.name}</p>}
                         </div>
                         {badge && (
                           <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: badge.bg, color: badge.color, flexShrink: 0 }}>
@@ -217,10 +235,31 @@ export const TopBar: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ padding: '10px 16px', borderTop: '1px solid #f1f3f9' }}>
+              {notifications.length > 0 && (
+                <div style={{ borderTop: '1px solid var(--border-color)', maxHeight: 160, overflowY: 'auto' }}>
+                  <p style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', padding: '8px 16px 4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tempo real</p>
+                  {notifications.slice(0, 5).map(n => (
+                    <div key={n.id} onClick={() => { markRead(n.id); if (n.link) navigate(n.link); setNotifOpen(false) }}
+                      style={{ padding: '8px 16px', cursor: 'pointer', background: n.read ? 'var(--bg-card)' : 'rgba(99,102,241,0.08)', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: n.read ? 'transparent' : '#6366f1', marginTop: 5, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{n.title}</p>
+                        {n.body && <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{n.body}</p>}
+                      </div>
+                    </div>
+                  ))}
+                  {sseUnreadCount > 0 && (
+                    <button onClick={markAllRead} style={{ width: '100%', padding: '6px', fontSize: 11, color: '#6366f1', fontWeight: 600, border: 'none', background: 'none', cursor: 'pointer' }}>
+                      Marcar todas como lidas
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border-color)' }}>
                 <button
                   onClick={() => { navigate('/tasks'); setNotifOpen(false) }}
-                  style={{ width: '100%', padding: '8px', borderRadius: 10, border: '1px solid #eaecf3', background: '#fafbfd', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#6366f1' }}
+                  style={{ width: '100%', padding: '8px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-page)', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#6366f1' }}
                 >
                   Ver todas as tarefas →
                 </button>
@@ -230,61 +269,84 @@ export const TopBar: React.FC = () => {
         </div>
 
         {/* Divider */}
-        <div style={{ width: 1, height: 28, background: '#eaecf3', margin: '0 4px' }} />
+        <div style={{ width: 1, height: 28, background: 'var(--border-color)', margin: '0 4px' }} />
 
         {/* User avatar dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-xl hover:bg-slate-100"
+            className="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-xl"
             style={{ border: 'none', cursor: 'pointer', background: 'none' }}
           >
-            <div
-              className="flex items-center justify-center rounded-full text-white font-bold flex-shrink-0"
-              style={{ width: 32, height: 32, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', fontSize: 11, boxShadow: '0 2px 8px rgba(99,102,241,0.3)' }}
-            >
-              {getInitials(user?.name || '')}
-            </div>
+            {user?.avatarUrl?.startsWith('data:') || user?.avatarUrl?.startsWith('http') ? (
+              <img src={user.avatarUrl} alt="avatar" className="rounded-full object-cover flex-shrink-0" style={{ width: 32, height: 32, boxShadow: '0 2px 8px rgba(99,102,241,0.3)' }} />
+            ) : (
+              <div className="flex items-center justify-center rounded-full text-white font-bold flex-shrink-0"
+                style={{ width: 32, height: 32, background: user?.avatarUrl || 'linear-gradient(135deg, #6366f1, #8b5cf6)', fontSize: 11, boxShadow: '0 2px 8px rgba(99,102,241,0.3)' }}>
+                {getInitials(user?.name || '')}
+              </div>
+            )}
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.name}</p>
-              <p className="text-xs text-slate-400 leading-tight">{ROLE_LABELS[user?.role || ''] || user?.role}</p>
+              <p className="text-sm font-semibold leading-tight" style={{ color: 'var(--text-primary)' }}>{user?.name}</p>
+              <p className="text-xs leading-tight" style={{ color: 'var(--text-muted)' }}>{ROLE_LABELS[user?.role || ''] || user?.role}</p>
             </div>
-            <ChevronDown size={14} className="text-slate-400 hidden sm:block" style={{ transition: 'transform 150ms', transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+            <ChevronDown size={14} className="hidden sm:block" style={{ transition: 'transform 150ms', transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', color: 'var(--text-muted)' }} />
           </button>
 
           {dropdownOpen && (
             <div
-              className="absolute right-0 mt-2 rounded-2xl bg-white overflow-hidden"
-              style={{ width: 230, boxShadow: '0 16px 48px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06)', border: '1px solid #eaecf3', zIndex: 50 }}
+              style={{
+                position: 'absolute', right: 0, top: 'calc(100% + 8px)', width: 230, zIndex: 50,
+                background: 'var(--bg-card)', borderRadius: 16,
+                boxShadow: '0 16px 48px rgba(0,0,0,0.25)',
+                border: '1px solid var(--border-color)', overflow: 'hidden',
+              }}
             >
-              <div className="px-4 py-3.5" style={{ borderBottom: '1px solid #f1f3f9' }}>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center rounded-full text-white font-bold flex-shrink-0" style={{ width: 38, height: 38, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', fontSize: 12 }}>
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                     {getInitials(user?.name || '')}
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate">{user?.name}</p>
-                    <p className="text-xs text-slate-400 truncate mt-0.5">{user?.email}</p>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>{user?.name}</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>{user?.email}</p>
                   </div>
                 </div>
-                <span className="inline-block mt-2.5 px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ background: '#eef2ff', color: '#4f46e5' }}>
+                <span style={{ display: 'inline-block', marginTop: 10, padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: 'rgba(99,102,241,0.15)', color: '#818cf8' }}>
                   {ROLE_LABELS[user?.role || ''] || user?.role}
                 </span>
               </div>
-              <div className="py-1.5">
-                <Link to="/profile" onClick={() => setDropdownOpen(false)} className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50" style={{ textDecoration: 'none' }}>
-                  <User size={15} className="text-slate-400" />
+              <div style={{ padding: '6px 0' }}>
+                <Link
+                  to="/profile"
+                  onClick={() => setDropdownOpen(false)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}
+                >
+                  <User size={14} style={{ color: 'var(--text-muted)' }} />
                   O meu perfil
                 </Link>
                 {user?.role === 'ADMIN' && (
-                  <Link to="/settings" onClick={() => setDropdownOpen(false)} className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50" style={{ textDecoration: 'none' }}>
-                    <Settings size={15} className="text-slate-400" />
+                  <Link
+                    to="/settings"
+                    onClick={() => setDropdownOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '')}
+                  >
+                    <Settings size={14} style={{ color: 'var(--text-muted)' }} />
                     Configurações
                   </Link>
                 )}
-                <div style={{ height: 1, background: '#f1f3f9', margin: '4px 12px' }} />
-                <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50" style={{ border: 'none', background: 'none', cursor: 'pointer' }}>
-                  <LogOut size={15} />
+                <div style={{ height: 1, background: 'var(--border-color)', margin: '4px 12px' }} />
+                <button
+                  onClick={handleLogout}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 16px', fontSize: 13, color: '#f87171', border: 'none', background: 'none', cursor: 'pointer' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.08)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}
+                >
+                  <LogOut size={14} />
                   Terminar sessão
                 </button>
               </div>

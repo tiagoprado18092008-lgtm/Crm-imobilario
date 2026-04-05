@@ -77,7 +77,8 @@ export const ContactDetailPage: React.FC = () => {
       {/* Back button */}
       <button
         onClick={() => navigate('/contacts')}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        className="flex items-center gap-2 text-sm transition-colors"
+        style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
       >
         <ArrowLeft className="w-4 h-4" />
         Voltar aos Contactos
@@ -89,11 +90,12 @@ export const ContactDetailPage: React.FC = () => {
           <Card>
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <User className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 rounded-full flex items-center justify-center"
+                  style={{ background: 'rgba(99,102,241,0.12)' }}>
+                  <User className="w-6 h-6" style={{ color: '#6366f1' }} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">{contact.name}</h2>
+                  <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{contact.name}</h2>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant={typeVariant[contact.type]} small>
                       {CONTACT_TYPE_LABELS[contact.type]}
@@ -116,70 +118,71 @@ export const ContactDetailPage: React.FC = () => {
 
             <div className="space-y-3 text-sm">
               {contact.email && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <a href={`mailto:${contact.email}`} className="hover:text-blue-600 truncate">
+                <div className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                  <Mail className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                  <a href={`mailto:${contact.email}`} className="hover:text-blue-600 truncate" style={{ color: 'inherit' }}>
                     {contact.email}
                   </a>
                 </div>
               )}
               {contact.phone && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  <a href={`tel:${contact.phone}`} className="hover:text-blue-600">
+                <div className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                  <Phone className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                  <a href={`tel:${contact.phone}`} className="hover:text-blue-600" style={{ color: 'inherit' }}>
                     {formatPhone(contact.phone)}
                   </a>
                 </div>
               )}
               {contact.whatsapp && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <MessageCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <div className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                  <MessageCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                   <a
                     href={`https://wa.me/${contact.whatsapp.replace(/\D/g, '')}`}
                     target="_blank"
                     rel="noreferrer"
                     className="hover:text-green-600"
+                    style={{ color: 'inherit' }}
                   >
                     {formatPhone(contact.whatsapp)}
                   </a>
                 </div>
               )}
               {contact.source && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Tag className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <div className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                  <Tag className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                   <span>{contact.source}</span>
                 </div>
               )}
               {contact.assignedTo && (
-                <div className="flex items-center gap-2 text-gray-700">
-                  <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <div className="flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+                  <User className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                   <span>{contact.assignedTo.name}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2 text-gray-500">
-                <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <div className="flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+                <Calendar className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
                 <span>Criado em {formatDate(contact.createdAt)}</span>
               </div>
             </div>
 
             {contact.notes && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Notas</p>
-                <p className="text-sm text-gray-700">{contact.notes}</p>
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                <p className="text-xs font-semibold uppercase mb-1" style={{ color: 'var(--text-secondary)' }}>Notas</p>
+                <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{contact.notes}</p>
               </div>
             )}
 
             {contact.preferences && (
               <div className="mt-3">
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Preferências</p>
-                <p className="text-sm text-gray-700">{contact.preferences}</p>
+                <p className="text-xs font-semibold uppercase mb-1" style={{ color: 'var(--text-secondary)' }}>Preferências</p>
+                <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{contact.preferences}</p>
               </div>
             )}
           </Card>
 
           {/* Action Buttons */}
           <Card>
-            <p className="text-xs font-semibold text-gray-500 uppercase mb-3">Ações Rápidas</p>
+            <p className="text-xs font-semibold uppercase mb-3" style={{ color: 'var(--text-secondary)' }}>Ações Rápidas</p>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="secondary"
@@ -231,23 +234,27 @@ export const ContactDetailPage: React.FC = () => {
         <div className="lg:col-span-2">
           <Card padding={false}>
             {/* Tab Headers */}
-            <div className="flex border-b border-gray-200">
+            <div className="flex" style={{ borderBottom: '1px solid var(--border-color)' }}>
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors ${
-                    activeTab === tab.key
-                      ? 'border-b-2 border-blue-600 text-blue-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className="flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors"
+                  style={{
+                    color: activeTab === tab.key ? '#6366f1' : 'var(--text-secondary)',
+                    borderBottom: activeTab === tab.key ? '2px solid #6366f1' : '2px solid transparent',
+                    background: 'none',
+                    cursor: 'pointer',
+                  }}
                 >
                   {tab.label}
-                  <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                    activeTab === tab.key
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
+                  <span
+                    className="px-1.5 py-0.5 rounded-full text-xs"
+                    style={{
+                      background: activeTab === tab.key ? 'rgba(99,102,241,0.12)' : 'var(--bg-page)',
+                      color: activeTab === tab.key ? '#6366f1' : 'var(--text-secondary)',
+                    }}
+                  >
                     {tab.count}
                   </span>
                 </button>
@@ -262,23 +269,24 @@ export const ContactDetailPage: React.FC = () => {
               {activeTab === 'opportunities' && (
                 <div className="space-y-3">
                   {opportunities.length === 0 ? (
-                    <p className="text-center py-8 text-gray-400 text-sm">Sem oportunidades</p>
+                    <p className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Sem oportunidades</p>
                   ) : (
                     opportunities.map((opp) => (
                       <div
                         key={opp.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
+                        className="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors"
+                        style={{ background: 'var(--hover-bg)' }}
                         onClick={() => navigate('/pipeline')}
                       >
                         <div>
-                          <p className="font-medium text-gray-900 text-sm">{opp.title}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">
+                          <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{opp.title}</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                             {STAGE_LABELS[opp.stage]}
                             {opp.property && ` • ${opp.property.title}`}
                           </p>
                         </div>
                         {opp.value && (
-                          <span className="text-sm font-semibold text-green-700">
+                          <span className="text-sm font-semibold text-green-600">
                             €{opp.value.toLocaleString('pt-PT')}
                           </span>
                         )}
@@ -291,15 +299,16 @@ export const ContactDetailPage: React.FC = () => {
               {activeTab === 'tasks' && (
                 <div className="space-y-3">
                   {tasks.length === 0 ? (
-                    <p className="text-center py-8 text-gray-400 text-sm">Sem tarefas</p>
+                    <p className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Sem tarefas</p>
                   ) : (
                     tasks.map((task) => (
                       <div
                         key={task.id}
-                        className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                        className="flex items-start gap-3 p-3 rounded-lg"
+                        style={{ background: 'var(--hover-bg)' }}
                       >
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900 text-sm">{task.title}</p>
+                          <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge
                               variant={
@@ -310,11 +319,11 @@ export const ContactDetailPage: React.FC = () => {
                             >
                               {TASK_PRIORITY_LABELS[task.priority]}
                             </Badge>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                               {TASK_STATUS_LABELS[task.status]}
                             </span>
                             {task.dueDate && (
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                                 Prazo: {formatDate(task.dueDate)}
                               </span>
                             )}

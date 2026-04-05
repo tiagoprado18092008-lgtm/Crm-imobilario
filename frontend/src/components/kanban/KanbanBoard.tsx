@@ -271,7 +271,7 @@ export const KanbanBoard: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 0, position: 'relative' }}>
       {/* Top Bar */}
       <div style={{
-        background: '#fff', border: '1px solid #eaecf3', borderRadius: 12,
+        background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 12,
         padding: '10px 14px', marginBottom: 14,
         display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
         boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
@@ -283,7 +283,7 @@ export const KanbanBoard: React.FC = () => {
             title="Vista Kanban"
             style={{
               padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-              background: viewMode === 'kanban' ? '#fff' : 'transparent',
+              background: viewMode === 'kanban' ? 'var(--bg-card)' : 'transparent',
               color: viewMode === 'kanban' ? '#6366f1' : '#94a3b8',
               border: 'none', cursor: 'pointer',
               boxShadow: viewMode === 'kanban' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
@@ -297,7 +297,7 @@ export const KanbanBoard: React.FC = () => {
             title="Vista Lista"
             style={{
               padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-              background: viewMode === 'list' ? '#fff' : 'transparent',
+              background: viewMode === 'list' ? 'var(--bg-card)' : 'transparent',
               color: viewMode === 'list' ? '#6366f1' : '#94a3b8',
               border: 'none', cursor: 'pointer',
               boxShadow: viewMode === 'list' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
@@ -333,12 +333,12 @@ export const KanbanBoard: React.FC = () => {
           {showFilterPanel && (
             <div style={{
               position: 'absolute', top: 36, left: 0, zIndex: 50,
-              background: '#fff', borderRadius: 12, border: '1px solid #eaecf3',
+              background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)',
               boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 16, minWidth: 240,
             }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Filtros avançados</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Filtros avançados</p>
               <div style={{ marginBottom: 10 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Fonte</label>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Fonte</label>
                 <select
                   value={filterSource}
                   onChange={e => setFilterSource(e.target.value)}
@@ -349,7 +349,7 @@ export const KanbanBoard: React.FC = () => {
                 </select>
               </div>
               <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 }}>Responsável</label>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Responsável</label>
                 <select
                   value={filterAssignee}
                   onChange={e => setFilterAssignee(e.target.value)}
@@ -378,7 +378,7 @@ export const KanbanBoard: React.FC = () => {
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
               padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-              background: '#f8fafc', color: '#475569',
+              background: 'var(--bg-page)', color: 'var(--text-muted)',
               border: '1px solid #e2e8f0', cursor: 'pointer',
             }}
           >
@@ -387,10 +387,10 @@ export const KanbanBoard: React.FC = () => {
           {showSortPanel && (
             <div style={{
               position: 'absolute', top: 36, left: 0, zIndex: 50,
-              background: '#fff', borderRadius: 12, border: '1px solid #eaecf3',
+              background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)',
               boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 12, minWidth: 200,
             }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Ordenar por</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Ordenar por</p>
               {([
                 { field: 'createdAt', label: 'Data de criação' },
                 { field: 'value', label: 'Valor' },
@@ -421,7 +421,7 @@ export const KanbanBoard: React.FC = () => {
 
         {/* Search */}
         <div style={{ position: 'relative' }}>
-          <Search size={13} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <Search size={13} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             type="text"
             placeholder="Pesquisar..."
@@ -430,7 +430,7 @@ export const KanbanBoard: React.FC = () => {
             style={{
               paddingLeft: 28, paddingRight: 12, paddingTop: 6, paddingBottom: 6,
               borderRadius: 7, border: '1px solid #e2e8f0', fontSize: 12,
-              background: '#f8fafc', color: '#1e293b', width: 200, outline: 'none',
+              background: 'var(--bg-page)', color: 'var(--text-primary)', width: 200, outline: 'none',
             }}
             onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.12)' }}
             onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none' }}
@@ -445,7 +445,7 @@ export const KanbanBoard: React.FC = () => {
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
                 padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-                background: '#f8fafc', color: '#475569',
+                background: 'var(--bg-page)', color: 'var(--text-muted)',
                 border: '1px solid #e2e8f0', cursor: 'pointer',
               }}
             >
@@ -454,10 +454,10 @@ export const KanbanBoard: React.FC = () => {
             {showColumnPanel && (
               <div style={{
                 position: 'absolute', top: 36, right: 0, zIndex: 50,
-                background: '#fff', borderRadius: 12, border: '1px solid #eaecf3',
+                background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 12, minWidth: 180,
               }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mostrar colunas</p>
+                <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mostrar colunas</p>
                 {([
                   { key: 'value', label: 'Valor' },
                   { key: 'source', label: 'Fonte' },
@@ -480,7 +480,7 @@ export const KanbanBoard: React.FC = () => {
         )}
 
         {/* Count */}
-        <span style={{ fontSize: 11, color: '#94a3b8', marginLeft: 2 }}>
+        <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 2 }}>
           {totalOpps} oportunidades
         </span>
 
@@ -520,23 +520,23 @@ export const KanbanBoard: React.FC = () => {
       {/* ── LIST VIEW ── */}
       {viewMode === 'list' && (
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #eaecf3', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+          <div style={{ background: 'var(--bg-card)', borderRadius: 14, border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #f1f3f9', background: '#fafbfd' }}>
-                  <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600, fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Título</th>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Fase</th>
-                  <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Contacto</th>
-                  {showColumns.value && <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Valor</th>}
-                  {showColumns.source && <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Fonte</th>}
-                  {showColumns.assignee && <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Responsável</th>}
-                  {showColumns.date && <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Fecho</th>}
+                  <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Título</th>
+                  <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Fase</th>
+                  <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Contacto</th>
+                  {showColumns.value && <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Valor</th>}
+                  {showColumns.source && <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Fonte</th>}
+                  {showColumns.assignee && <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Responsável</th>}
+                  {showColumns.date && <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Fecho</th>}
                   <th style={{ padding: '10px 12px', width: 80 }} />
                 </tr>
               </thead>
               <tbody>
                 {listOpps.length === 0 ? (
-                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px 16px', color: '#94a3b8', fontSize: 13 }}>Nenhuma oportunidade encontrada</td></tr>
+                  <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--text-muted)', fontSize: 13 }}>Nenhuma oportunidade encontrada</td></tr>
                 ) : (
                   listOpps.map(opp => {
                     const stageColors: Record<string, string> = {
@@ -552,15 +552,15 @@ export const KanbanBoard: React.FC = () => {
                         onMouseEnter={e => (e.currentTarget.style.background = '#fafbfd')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                       >
-                        <td style={{ padding: '12px 16px', fontWeight: 600, color: '#1e293b' }}>{opp.title}</td>
+                        <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-primary)' }}>{opp.title}</td>
                         <td style={{ padding: '12px 12px' }}>
                           <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 20, background: `${sc}15`, color: sc }}>
                             {STAGE_LABELS[opp.stage]}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 12px', color: '#64748b' }}>{opp.contact?.name || '—'}</td>
+                        <td style={{ padding: '12px 12px', color: 'var(--text-secondary)' }}>{opp.contact?.name || '—'}</td>
                         {showColumns.value && <td style={{ padding: '12px 12px', textAlign: 'right', fontWeight: 600, color: '#16a34a' }}>{opp.value ? formatCurrency(opp.value) : '—'}</td>}
-                        {showColumns.source && <td style={{ padding: '12px 12px', color: '#64748b' }}>{opp.source || '—'}</td>}
+                        {showColumns.source && <td style={{ padding: '12px 12px', color: 'var(--text-secondary)' }}>{opp.source || '—'}</td>}
                         {showColumns.assignee && (
                           <td style={{ padding: '12px 12px' }}>
                             {opp.assignedTo ? (
@@ -573,12 +573,12 @@ export const KanbanBoard: React.FC = () => {
                             ) : '—'}
                           </td>
                         )}
-                        {showColumns.date && <td style={{ padding: '12px 12px', color: '#64748b', fontSize: 12 }}>{opp.expectedCloseDate ? formatDate(opp.expectedCloseDate) : '—'}</td>}
+                        {showColumns.date && <td style={{ padding: '12px 12px', color: 'var(--text-secondary)', fontSize: 12 }}>{opp.expectedCloseDate ? formatDate(opp.expectedCloseDate) : '—'}</td>}
                         <td style={{ padding: '12px 12px' }}>
                           <div style={{ display: 'flex', gap: 4 }} onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => setEditOpp(opp)}
-                              style={{ padding: 5, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8' }}
+                              style={{ padding: 5, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
                               onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
                               onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
                               title="Editar"
@@ -587,7 +587,7 @@ export const KanbanBoard: React.FC = () => {
                             </button>
                             <button
                               onClick={() => setDeleteId(opp.id)}
-                              style={{ padding: 5, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8' }}
+                              style={{ padding: 5, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
                               onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
                               onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
                               title="Eliminar"
@@ -620,21 +620,21 @@ export const KanbanBoard: React.FC = () => {
       {selectedOpp && (
         <div style={{
           position: 'fixed', right: 0, top: 0, height: '100%', width: 380,
-          background: '#fff', borderLeft: '1px solid #eaecf3',
+          background: 'var(--bg-card)', borderLeft: '1px solid #eaecf3',
           boxShadow: '-4px 0 32px rgba(0,0,0,0.08)', zIndex: 40,
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #f1f3f9' }}>
-            <h3 style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>Oportunidade</h3>
+            <h3 style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Oportunidade</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <button onClick={() => setEditOpp(selectedOpp)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: '#64748b' }} title="Editar"><Edit size={15} /></button>
-              <button onClick={() => setDeleteId(selectedOpp.id)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: '#64748b' }} title="Eliminar"><Trash2 size={15} /></button>
-              <button onClick={() => setSelectedOpp(null)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: '#64748b' }}><X size={15} /></button>
+              <button onClick={() => setEditOpp(selectedOpp)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)' }} title="Editar"><Edit size={15} /></button>
+              <button onClick={() => setDeleteId(selectedOpp.id)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)' }} title="Eliminar"><Trash2 size={15} /></button>
+              <button onClick={() => setSelectedOpp(null)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={15} /></button>
             </div>
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
             <div style={{ marginBottom: 20 }}>
-              <h4 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>{selectedOpp.title}</h4>
+              <h4 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>{selectedOpp.title}</h4>
               <Badge variant="info">{STAGE_LABELS[selectedOpp.stage]}</Badge>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -644,12 +644,12 @@ export const KanbanBoard: React.FC = () => {
               {selectedOpp.property && <InfoRow label="Propriedade" value={selectedOpp.property.title} />}
               {selectedOpp.assignedTo && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 13, color: '#64748b' }}>Responsável</span>
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Responsável</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff' }}>
                       {getInitials(selectedOpp.assignedTo.name)}
                     </div>
-                    <span style={{ fontSize: 13, color: '#1e293b', fontWeight: 500 }}>{selectedOpp.assignedTo.name}</span>
+                    <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{selectedOpp.assignedTo.name}</span>
                   </div>
                 </div>
               )}
@@ -658,14 +658,14 @@ export const KanbanBoard: React.FC = () => {
             </div>
             {selectedOpp.notes && (
               <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
-                <p style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6 }}>Notas</p>
-                <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>{selectedOpp.notes}</p>
+                <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Notas</p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>{selectedOpp.notes}</p>
               </div>
             )}
             {selectedOpp.lostReason && (
               <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #fef2f2' }}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: '#ef4444', textTransform: 'uppercase', marginBottom: 6 }}>Motivo da Perda</p>
-                <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>{selectedOpp.lostReason}</p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>{selectedOpp.lostReason}</p>
               </div>
             )}
           </div>
@@ -677,7 +677,7 @@ export const KanbanBoard: React.FC = () => {
       )}
 
       <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Confirmar Eliminação" size="sm">
-        <p style={{ fontSize: 13, color: '#64748b', marginBottom: 20 }}>Deseja eliminar esta oportunidade?</p>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>Deseja eliminar esta oportunidade?</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
           <Button variant="secondary" onClick={() => setDeleteId(null)}>Cancelar</Button>
           <Button variant="danger" onClick={handleDelete}>Eliminar</Button>
@@ -689,7 +689,7 @@ export const KanbanBoard: React.FC = () => {
 
 const InfoRow: React.FC<{ label: string; value: string; valueStyle?: React.CSSProperties }> = ({ label, value, valueStyle }) => (
   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-    <span style={{ fontSize: 13, color: '#64748b' }}>{label}</span>
-    <span style={{ fontSize: 13, color: '#1e293b', fontWeight: 500, ...valueStyle }}>{value}</span>
+    <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</span>
+    <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500, ...valueStyle }}>{value}</span>
   </div>
 )

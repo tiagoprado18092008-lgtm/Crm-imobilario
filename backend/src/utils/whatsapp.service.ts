@@ -10,9 +10,9 @@ export async function sendWhatsAppMessage(
   const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
   if (!token || !phoneId) {
-    // Simulate for demo mode
-    console.log(`[WhatsApp DEMO] To: ${to} | Message: ${message}`);
-    return { success: true, messageId: `demo_${Date.now()}` };
+    // Credenciais não configuradas
+    console.log(`[WhatsApp SIM] To: ${to} | Message: ${message}`);
+    return { success: true, messageId: `sim_${Date.now()}` };
   }
 
   try {
@@ -50,8 +50,8 @@ export async function sendWhatsAppTemplate(
   const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
   if (!token || !phoneId) {
-    console.log(`[WhatsApp DEMO Template] To: ${to} | Template: ${templateName}`);
-    return { success: true, messageId: `demo_tpl_${Date.now()}` };
+    console.log(`[WhatsApp SIM Template] To: ${to} | Template: ${templateName}`);
+    return { success: true, messageId: `sim_tpl_${Date.now()}` };
   }
 
   try {

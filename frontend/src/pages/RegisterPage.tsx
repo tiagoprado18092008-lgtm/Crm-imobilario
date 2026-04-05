@@ -33,13 +33,13 @@ export const RegisterPage: React.FC = () => {
     }
   }
 
-  const IS = {
+  const IS: React.CSSProperties = {
     width: '100%', paddingLeft: 40, paddingRight: 16, paddingTop: 11, paddingBottom: 11,
-    fontSize: 14, borderRadius: 12, outline: 'none', border: '1.5px solid #e2e8f0',
-    background: '#fafbfd', color: '#0f172a', transition: 'border-color 150ms, box-shadow 150ms',
+    fontSize: 14, borderRadius: 12, outline: 'none', border: '1.5px solid var(--input-border)',
+    background: 'var(--input-bg)', color: 'var(--text-primary)', transition: 'border-color 150ms, box-shadow 150ms',
   }
   const onFocus = (e: React.FocusEvent<HTMLInputElement>) => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)' }
-  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none' }
+  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => { e.target.style.borderColor = 'var(--input-border)'; e.target.style.boxShadow = 'none' }
 
   return (
     <div className="min-h-screen flex" style={{ background: '#080d1a' }}>
@@ -67,12 +67,12 @@ export const RegisterPage: React.FC = () => {
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-8" style={{ background: '#f0f2f8' }}>
+      <div className="flex-1 flex items-center justify-center p-8" style={{ background: 'var(--bg-page)' }}>
         <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl p-8" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04)', border: '1px solid #eaecf3' }}>
+          <div className="rounded-2xl p-8" style={{ background: 'var(--bg-card)', boxShadow: '0 4px 24px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)' }}>
             <div className="mb-6">
-              <h1 className="font-bold text-slate-900 leading-tight" style={{ fontSize: 22, letterSpacing: '-0.02em' }}>Criar conta</h1>
-              <p className="text-sm text-slate-400 mt-1">Registe-se gratuitamente</p>
+              <h1 className="font-bold leading-tight" style={{ fontSize: 22, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>Criar conta</h1>
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Registe-se gratuitamente</p>
             </div>
 
             {error && (
@@ -84,54 +84,54 @@ export const RegisterPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Name */}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Nome completo</label>
+                <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Nome completo</label>
                 <div className="relative">
-                  <User size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+                  <User size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                   <input type="text" value={form.name} onChange={set('name')} placeholder="João Silva" required autoFocus style={IS} onFocus={onFocus} onBlur={onBlur} />
                 </div>
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Email</label>
+                <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Email</label>
                 <div className="relative">
-                  <Mail size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+                  <Mail size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                   <input type="email" value={form.email} onChange={set('email')} placeholder="joao@agencia.pt" required style={IS} onFocus={onFocus} onBlur={onBlur} />
                 </div>
               </div>
 
               {/* Agency */}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
-                  Agência <span className="text-slate-300 font-normal normal-case">(opcional)</span>
+                <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+                  Agência <span className="font-normal normal-case" style={{ color: 'var(--text-muted)' }}>(opcional)</span>
                 </label>
                 <div className="relative">
-                  <Building2 size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+                  <Building2 size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                   <input type="text" value={form.agency} onChange={set('agency')} placeholder="Nome da agência" style={IS} onFocus={onFocus} onBlur={onBlur} />
                 </div>
               </div>
 
               {/* Phone */}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
-                  Telefone <span className="text-slate-300 font-normal normal-case">(opcional)</span>
+                <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
+                  Telefone <span className="font-normal normal-case" style={{ color: 'var(--text-muted)' }}>(opcional)</span>
                 </label>
                 <div className="relative">
-                  <Phone size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+                  <Phone size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                   <input type="tel" value={form.phone} onChange={set('phone')} placeholder="+351 910 000 000" style={IS} onFocus={onFocus} onBlur={onBlur} />
                 </div>
               </div>
 
               {/* Password */}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Password</label>
+                <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Password</label>
                 <div className="relative">
-                  <Lock size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+                  <Lock size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                   <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={set('password')}
                     placeholder="Mínimo 6 caracteres" required minLength={6}
                     style={{ ...IS, paddingRight: 48 }} onFocus={onFocus} onBlur={onBlur} />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', border: 'none', background: 'none', cursor: 'pointer', padding: 4 }} tabIndex={-1}>
+                    style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', border: 'none', background: 'none', cursor: 'pointer', padding: 4 }} tabIndex={-1}>
                     {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
@@ -139,9 +139,9 @@ export const RegisterPage: React.FC = () => {
 
               {/* Confirm password */}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Confirmar password</label>
+                <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Confirmar password</label>
                 <div className="relative">
-                  <Lock size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }} />
+                  <Lock size={15} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                   <input type={showPassword ? 'text' : 'password'} value={form.confirm} onChange={set('confirm')}
                     placeholder="Repita a password" required style={IS} onFocus={onFocus} onBlur={onBlur} />
                 </div>
@@ -155,7 +155,7 @@ export const RegisterPage: React.FC = () => {
               </button>
             </form>
 
-            <p className="text-center text-sm text-slate-400 mt-6">
+            <p className="text-center text-sm mt-6" style={{ color: 'var(--text-muted)' }}>
               Já tem conta?{' '}
               <Link to="/login" className="font-semibold hover:underline" style={{ color: '#6366f1', textDecoration: 'none' }}>Entrar</Link>
             </p>

@@ -27,7 +27,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
           onClick={() => onClick(opportunity)}
           style={{
             ...provided.draggableProps.style,
-            background: snapshot.isDragging ? '#f0f7ff' : '#fff',
+            background: snapshot.isDragging ? 'rgba(99,102,241,0.08)' : 'var(--bg-card)',
             boxShadow: snapshot.isDragging
               ? '0 8px 24px rgba(59,130,246,0.18)'
               : '0 1px 4px rgba(0,0,0,0.07)',
@@ -70,7 +70,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
             style={{
               fontSize: 13,
               fontWeight: 600,
-              color: '#0f172a',
+              color: 'var(--text-primary)',
               marginBottom: 8,
               paddingRight: opportunity.assignedTo ? 36 : 0,
               lineHeight: 1.4,
@@ -85,22 +85,22 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
 
           {/* Contact name */}
           {opportunity.contact && (
-            <p style={{ fontSize: 12, color: '#64748b', marginBottom: 5, fontWeight: 500 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 5, fontWeight: 500 }}>
               {opportunity.contact.name}
             </p>
           )}
 
           {/* Source row */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-            <span style={{ fontSize: 11, color: '#94a3b8' }}>Fonte da oportu...</span>
-            <span style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Fonte da oportu...</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
               {opportunity.source || opportunity.contact?.source || '—'}
             </span>
           </div>
 
           {/* Value row */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 10 }}>
-            <span style={{ fontSize: 11, color: '#94a3b8' }}>Valor da oportu...</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Valor da oportu...</span>
             <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>
               {opportunity.value ? formatCurrency(opportunity.value) : '—'}
             </span>
@@ -148,7 +148,7 @@ const ActionBtn: React.FC<{
       height: 26,
       borderRadius: 6,
       border: '1px solid #e2e8f0',
-      background: '#f8fafc',
+      background: 'var(--bg-page)',
       color,
       cursor: 'pointer',
       flexShrink: 0,

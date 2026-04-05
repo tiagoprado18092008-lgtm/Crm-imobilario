@@ -11,17 +11,33 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode
 }
 
-const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 border border-transparent',
-  secondary: 'bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-300 border border-gray-300',
-  danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 border border-transparent',
-  ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 focus:ring-gray-300 border border-transparent'
+const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
+  primary: {
+    background: 'linear-gradient(135deg, #1a2e4a, #243d5e)',
+    color: '#fff',
+    border: 'none',
+  },
+  secondary: {
+    background: 'var(--bg-page)',
+    color: 'var(--text-secondary)',
+    border: '1px solid var(--border-color)',
+  },
+  danger: {
+    background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+    color: '#fff',
+    border: 'none',
+  },
+  ghost: {
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    border: '1px solid transparent',
+  },
 }
 
-const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-3 text-base'
+const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
+  sm: { padding: '5px 12px', fontSize: 12 },
+  md: { padding: '8px 16px', fontSize: 13 },
+  lg: { padding: '11px 24px', fontSize: 14 },
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -31,22 +47,30 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   children,
   className = '',
+  style,
   ...props
 }) => {
   return (
     <button
       {...props}
       disabled={disabled || loading}
-      className={`
-        inline-flex items-center justify-center gap-2 font-medium rounded-lg
-        transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-1
-        disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer
-        ${variantClasses[variant]}
-        ${sizeClasses[size]}
-        ${className}
-      `}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        fontWeight: 600,
+        borderRadius: 8,
+        cursor: disabled || loading ? 'not-allowed' : 'pointer',
+        opacity: disabled || loading ? 0.55 : 1,
+        transition: 'opacity 150ms, transform 80ms',
+        ...variantStyles[variant],
+        ...sizeStyles[size],
+        ...style,
+      }}
+      className={className}
     >
-      {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+      {loading && <Loader2 size={14} style={{ animation: 'spin 0.8s linear infinite' }} />}
       {children}
     </button>
   )

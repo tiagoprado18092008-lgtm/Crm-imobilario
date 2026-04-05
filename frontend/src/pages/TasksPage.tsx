@@ -10,6 +10,7 @@ import type { Task, Contact, User } from '../types'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
+import { CustomSelect } from '../components/ui/CustomSelect'
 import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -136,11 +137,16 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel }) => {
         </div>
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700">Descrição</label>
+        <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Descrição</label>
         <textarea
           {...register('description')}
           rows={3}
-          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          style={{
+            background: 'var(--input-bg)',
+            border: '1px solid var(--input-border)',
+            color: 'var(--text-primary)',
+          }}
         />
       </div>
       <div className="flex justify-end gap-3">
@@ -213,20 +219,30 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
     <div className="space-y-4">
       {/* Tab + Actions */}
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex border border-gray-200 rounded-lg overflow-hidden">
+        <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-color)' }}>
           <button
             onClick={() => setActiveTab('list')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
+            className="px-4 py-2 text-sm font-medium transition-colors"
+            style={
+              activeTab === 'list'
+                ? { background: '#2563eb', color: '#ffffff' }
+                : { background: 'var(--bg-card)', color: 'var(--text-secondary)' }
+            }
+            onMouseEnter={e => { if (activeTab !== 'list') e.currentTarget.style.background = 'var(--hover-bg)' }}
+            onMouseLeave={e => { if (activeTab !== 'list') e.currentTarget.style.background = 'var(--bg-card)' }}
           >
             Lista
           </button>
           <button
             onClick={() => setActiveTab('calendar')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'calendar' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
-            }`}
+            className="px-4 py-2 text-sm font-medium transition-colors"
+            style={
+              activeTab === 'calendar'
+                ? { background: '#2563eb', color: '#ffffff' }
+                : { background: 'var(--bg-card)', color: 'var(--text-secondary)' }
+            }
+            onMouseEnter={e => { if (activeTab !== 'calendar') e.currentTarget.style.background = 'var(--hover-bg)' }}
+            onMouseLeave={e => { if (activeTab !== 'calendar') e.currentTarget.style.background = 'var(--bg-card)' }}
           >
             Calendário
           </button>
@@ -234,24 +250,28 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
 
         {activeTab === 'list' && (
           <>
-            <Select
-              options={[
-                { value: '', label: 'Todos os estados' },
-                ...Object.entries(TASK_STATUS_LABELS).map(([v, l]) => ({ value: v, label: l }))
-              ]}
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-44"
-            />
-            <Select
-              options={[
-                { value: '', label: 'Todas as prioridades' },
-                ...Object.entries(TASK_PRIORITY_LABELS).map(([v, l]) => ({ value: v, label: l }))
-              ]}
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              className="w-44"
-            />
+            <div style={{ width: 176 }}>
+              <CustomSelect
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={[
+                  { value: '', label: 'Todos os estados' },
+                  ...Object.entries(TASK_STATUS_LABELS).map(([v, l]) => ({ value: v, label: l as string }))
+                ]}
+                size="sm"
+              />
+            </div>
+            <div style={{ width: 176 }}>
+              <CustomSelect
+                value={priorityFilter}
+                onChange={setPriorityFilter}
+                options={[
+                  { value: '', label: 'Todas as prioridades' },
+                  ...Object.entries(TASK_PRIORITY_LABELS).map(([v, l]) => ({ value: v, label: l as string }))
+                ]}
+                size="sm"
+              />
+            </div>
           </>
         )}
 
@@ -267,7 +287,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
       {loading ? (
         <PageSpinner />
       ) : activeTab === 'calendar' ? (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <div className="rounded-xl p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <CalendarView tasks={tasks} />
         </div>
       ) : tasks.length === 0 ? (
@@ -278,27 +298,32 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
           onAction={() => { setEditTask(undefined); setShowModal(true) }}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Título</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Contacto</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Prioridade</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Prazo</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Estado</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Responsável</th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-700">Ações</th>
+                <tr style={{ background: 'var(--hover-bg)', borderBottom: '1px solid var(--border-color)' }}>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Título</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Contacto</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Prioridade</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Prazo</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Estado</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Responsável</th>
+                  <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {tasks.map((task) => {
                   const overdue = isOverdue(task.dueDate) && task.status !== 'COMPLETED' && task.status !== 'CANCELLED'
                   return (
-                    <tr key={task.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{task.title}</td>
-                      <td className="px-4 py-3 text-gray-600">{task.contact?.name || '-'}</td>
+                    <tr
+                      key={task.id}
+                      style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{task.title}</td>
+                      <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{task.contact?.name || '-'}</td>
                       <td className="px-4 py-3">
                         <Badge variant={priorityVariant[task.priority]} small>
                           {TASK_PRIORITY_LABELS[task.priority]}
@@ -306,12 +331,12 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
                       </td>
                       <td className="px-4 py-3">
                         {task.dueDate ? (
-                          <span className={overdue ? 'text-red-600 font-medium' : 'text-gray-600'}>
+                          <span style={{ color: overdue ? '#dc2626' : 'var(--text-secondary)', fontWeight: overdue ? 500 : undefined }}>
                             {formatDate(task.dueDate)}
                             {overdue && ' ⚠'}
                           </span>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span style={{ color: 'var(--text-muted)' }}>-</span>
                         )}
                       </td>
                       <td className="px-4 py-3">
@@ -319,13 +344,14 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
                           {TASK_STATUS_LABELS[task.status]}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{task.assignedTo?.name || '-'}</td>
+                      <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{task.assignedTo?.name || '-'}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
                           {task.status !== 'COMPLETED' && task.status !== 'CANCELLED' && (
                             <button
                               onClick={() => handleComplete(task)}
-                              className="p-1.5 rounded text-gray-400 hover:text-green-600 hover:bg-green-50"
+                              className="p-1.5 rounded hover:text-green-600 hover:bg-green-50"
+                              style={{ color: 'var(--text-muted)' }}
                               title="Marcar como concluída"
                             >
                               <CheckCircle className="w-4 h-4" />
@@ -333,13 +359,15 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
                           )}
                           <button
                             onClick={() => { setEditTask(task); setShowModal(true) }}
-                            className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                            className="p-1.5 rounded hover:text-blue-600 hover:bg-blue-50"
+                            style={{ color: 'var(--text-muted)' }}
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => setDeleteId(task.id)}
-                            className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50"
+                            className="p-1.5 rounded hover:text-red-600 hover:bg-red-50"
+                            style={{ color: 'var(--text-muted)' }}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -368,7 +396,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
       </Modal>
 
       <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Confirmar Eliminação" size="sm">
-        <p className="text-sm text-gray-600 mb-6">Deseja eliminar esta tarefa?</p>
+        <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>Deseja eliminar esta tarefa?</p>
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={() => setDeleteId(null)}>Cancelar</Button>
           <Button variant="danger" onClick={handleDelete}>Eliminar</Button>

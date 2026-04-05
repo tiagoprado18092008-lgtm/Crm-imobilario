@@ -10,11 +10,28 @@ const select = {
   createdAt: true, updatedAt: true,
 };
 
-export const list = async () => prisma.emailCampaign.findMany({ select, orderBy: { createdAt: 'desc' } });
+const buildWhereClause = async (user: any): Promise<any> => {
+  if (user.role === 'ADMIN') return {};
+  if (user.role === 'PRINCIPAL_CONSULTANT') {
+    const subAgents = await prisma.user.findMany({
+      where: { supervisorId: user.id },
+      select: { id: true },
+    });
+    return { createdById: { in: [user.id, ...subAgents.map((a: any) => a.id)] } };
+  }
+  return { createdById: user.id };
+};
 
-export const getById = async (id: string) => {
-  const c = await prisma.emailCampaign.findUnique({
-    where: { id },
+export const list = async (user: any) => {
+  const where = await buildWhereClause(user);
+  return prisma.emailCampaign.findMany({ where, select, orderBy: { createdAt: 'desc' } });
+};
+
+export const getById = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const c = await prisma.emailCampaign.findFirst({
+    where,
     include: { createdBy: { select: { id: true, name: true } }, recipients: { take: 100 } },
   });
   if (!c) throw Object.assign(new Error('Campanha não encontrada'), { status: 404 });
@@ -36,7 +53,12 @@ export const create = async (userId: string, dto: any) => {
   });
 };
 
-export const update = async (id: string, dto: any) => {
+export const update = async (id: string, dto: any, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const existing = await prisma.emailCampaign.findFirst({ where });
+  if (!existing) throw Object.assign(new Error('Campanha não encontrada ou acesso negado'), { status: 404 });
+
   const data: any = {};
   if (dto.name) data.name = dto.name;
   if (dto.subject) data.subject = dto.subject;
@@ -47,22 +69,29 @@ export const update = async (id: string, dto: any) => {
   return prisma.emailCampaign.update({ where: { id }, data, select });
 };
 
-export const remove = async (id: string) => {
+export const remove = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const existing = await prisma.emailCampaign.findFirst({ where });
+  if (!existing) throw Object.assign(new Error('Campanha não encontrada ou acesso negado'), { status: 404 });
+
   await prisma.emailCampaignRecipient.deleteMany({ where: { campaignId: id } });
   await prisma.emailCampaign.delete({ where: { id } });
 };
 
-export const send = async (id: string) => {
-  const campaign = await prisma.emailCampaign.findUnique({ where: { id } });
+export const send = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const campaign = await prisma.emailCampaign.findFirst({ where });
   if (!campaign) throw Object.assign(new Error('Campanha não encontrada'), { status: 404 });
   if (campaign.status === 'SENT') throw Object.assign(new Error('Campanha já enviada'), { status: 400 });
 
   // Build recipient list from target filter
   const filter = JSON.parse(campaign.targetFilter || '{}');
-  const where: any = {};
-  if (filter.type) where.type = filter.type;
-  if (filter.status) where.status = filter.status;
-  const contacts = await prisma.contact.findMany({ where, select: { id: true, email: true, name: true } });
+  const contactWhere: any = {};
+  if (filter.type) contactWhere.type = filter.type;
+  if (filter.status) contactWhere.status = filter.status;
+  const contacts = await prisma.contact.findMany({ where: contactWhere, select: { id: true, email: true, name: true } });
   const withEmail = contacts.filter(c => c.email);
 
   await prisma.emailCampaign.update({ where: { id }, data: { status: 'SENDING' } });

@@ -1,17 +1,23 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { Toast } from '../ui/Toast'
 import { SoftPhone } from '../calls/SoftPhone'
 import { useUIStore } from '../../store/ui.store'
+import { useAuthStore } from '../../store/auth.store'
 import { ErrorBoundary } from './ErrorBoundary'
+import { OnboardingWizard } from '../onboarding/OnboardingWizard'
+import { GlobalSearch } from './GlobalSearch'
 
 export const AppShell: React.FC = () => {
   const { sidebarOpen, setSidebarOpen } = useUIStore()
+  const user = useAuthStore((s) => s.user)
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false)
+  const showOnboarding = user?.onboardingCompleted === false && !onboardingDismissed
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#f0f2f8' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-page)' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -52,6 +58,8 @@ export const AppShell: React.FC = () => {
 
       <Toast />
       <SoftPhone />
+      <GlobalSearch />
+      {showOnboarding && <OnboardingWizard onComplete={() => setOnboardingDismissed(true)} />}
     </div>
   )
 }

@@ -26,10 +26,10 @@ export async function sendEmail(opts: {
   const from = process.env.SMTP_FROM || process.env.SMTP_USER || 'crm@demo.pt';
 
   if (!transporter) {
-    // Demo mode
+    // Credenciais não configuradas
     console.log(`[Email DEMO] To: ${opts.to} | Subject: ${opts.subject}`);
     console.log(`[Email DEMO] Body: ${opts.text || opts.html}`);
-    return { success: true, messageId: `demo_email_${Date.now()}` };
+    return { success: true, messageId: `sim_email_${Date.now()}` };
   }
 
   try {

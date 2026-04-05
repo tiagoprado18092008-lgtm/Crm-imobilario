@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { FileText, Plus, Trash2, Copy, Eye, X, GripVertical, ToggleLeft, ToggleRight } from 'lucide-react'
 import { listForms, createForm, deleteForm, updateForm } from '../api/forms.api'
 import { useAuthStore } from '../store/auth.store'
-
-const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3000/api').replace('/api', '')
+import { CustomSelect } from '../components/ui/CustomSelect'
 
 const FIELD_TYPES = [
   { value: 'text', label: 'Texto curto' },
@@ -84,7 +83,6 @@ export const FormsPage: React.FC = () => {
   }
 
   const copyLink = (id: string) => {
-    const url = `${API_BASE}/forms/public/${id}/submit`
     navigator.clipboard.writeText(`${window.location.origin}/f/${id}`)
     setCopied(id)
     setTimeout(() => setCopied(null), 2000)
@@ -94,8 +92,8 @@ export const FormsPage: React.FC = () => {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Formulários</h1>
-          <p className="text-slate-500 text-sm mt-1">Captura leads com formulários personalizados</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Formulários</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Captura leads com formulários personalizados</p>
         </div>
         <button onClick={openCreate}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium"
@@ -105,12 +103,12 @@ export const FormsPage: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-400">A carregar...</div>
+        <div className="text-center py-12" style={{ color: 'var(--text-muted)' }}>A carregar...</div>
       ) : forms.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center">
-          <FileText size={40} className="mx-auto text-slate-200 mb-3" />
-          <p className="text-slate-500 font-medium">Sem formulários</p>
-          <p className="text-slate-400 text-sm mt-1">Cria formulários para capturar leads automaticamente</p>
+        <div className="rounded-2xl border p-12 text-center" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+          <FileText size={40} className="mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
+          <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>Sem formulários</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Cria formulários para capturar leads automaticamente</p>
           <button onClick={openCreate}
             className="mt-4 px-4 py-2 rounded-xl text-white text-sm font-medium"
             style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
@@ -120,30 +118,36 @@ export const FormsPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {forms.map(f => (
-            <div key={f.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 hover:shadow-md transition-shadow">
+            <div key={f.id} className="rounded-2xl border shadow-sm p-4 hover:shadow-md transition-shadow" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-semibold text-slate-800">{f.name}</h3>
-                  {f.description && <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">{f.description}</p>}
+                  <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{f.name}</h3>
+                  {f.description && <p className="text-xs mt-0.5 line-clamp-2" style={{ color: 'var(--text-muted)' }}>{f.description}</p>}
                 </div>
-                <button onClick={() => handleToggle(f)} className="text-slate-300 hover:text-slate-500 shrink-0">
+                <button onClick={() => handleToggle(f)} className="shrink-0" style={{ color: 'var(--text-muted)' }}>
                   {f.isActive ? <ToggleRight size={22} className="text-indigo-500" /> : <ToggleLeft size={22} />}
                 </button>
               </div>
-              <div className="flex items-center gap-2 text-xs text-slate-400 mb-4">
+              <div className="flex items-center gap-2 text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
                 <span>{JSON.parse(f.fields || '[]').length} campos</span>
                 <span>·</span>
                 <span>{f._count?.submissions || 0} submissões</span>
                 <span>·</span>
-                <span className={f.isActive ? 'text-green-500' : 'text-slate-400'}>{f.isActive ? 'Ativo' : 'Inativo'}</span>
+                <span style={{ color: f.isActive ? '#22c55e' : 'var(--text-muted)' }}>{f.isActive ? 'Ativo' : 'Inativo'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => copyLink(f.id)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium"
+                  style={{ border: '1px solid var(--input-border)', color: 'var(--text-secondary)', background: 'var(--bg-card)' }}
+                  onMouseOver={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                  onMouseOut={e => (e.currentTarget.style.background = 'var(--bg-card)')}>
                   <Copy size={12} />{copied === f.id ? 'Copiado!' : 'Copiar link'}
                 </button>
                 <button onClick={() => openEdit(f)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50">
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium"
+                  style={{ border: '1px solid var(--input-border)', color: 'var(--text-secondary)', background: 'var(--bg-card)' }}
+                  onMouseOver={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                  onMouseOut={e => (e.currentTarget.style.background = 'var(--bg-card)')}>
                   <Eye size={12} /> Editar
                 </button>
                 <button onClick={() => handleDelete(f.id)}
@@ -159,55 +163,63 @@ export const FormsPage: React.FC = () => {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900">{editing ? 'Editar formulário' : 'Novo formulário'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-400"><X size={20} /></button>
+          <div className="rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg-card)' }}>
+            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
+              <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{editing ? 'Editar formulário' : 'Novo formulário'}</h2>
+              <button onClick={() => setShowModal(false)} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
             <div className="p-6 space-y-5">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Nome *</label>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Nome *</label>
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                  style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
                   placeholder="ex: Formulário de contacto" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Descrição</label>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Descrição</label>
                 <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400" />
+                  className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                  style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Mensagem de confirmação</label>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Mensagem de confirmação</label>
                 <input value={form.thankYouMessage} onChange={e => setForm(f => ({ ...f, thankYouMessage: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400" />
+                  className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                  style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }} />
               </div>
 
               {/* Fields */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Campos do formulário</label>
+                  <label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Campos do formulário</label>
                   <button onClick={addField}
-                    className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+                    className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700">
                     <Plus size={12} /> Adicionar campo
                   </button>
                 </div>
                 {form.fields.length === 0 ? (
-                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-slate-400 text-sm">
+                  <div className="border-2 border-dashed rounded-xl p-6 text-center text-sm" style={{ borderColor: 'var(--input-border)', color: 'var(--text-muted)' }}>
                     Adiciona pelo menos um campo ao formulário
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {form.fields.map((field, idx) => (
-                      <div key={field.id} className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl">
-                        <GripVertical size={14} className="text-slate-300 shrink-0" />
+                    {form.fields.map((field) => (
+                      <div key={field.id} className="flex items-center gap-2 p-3 rounded-xl" style={{ background: 'var(--hover-bg)' }}>
+                        <GripVertical size={14} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
                         <input value={field.label} onChange={e => updateField(field.id, 'label', e.target.value)}
-                          className="flex-1 border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-indigo-400"
+                          className="flex-1 rounded-lg px-2 py-1.5 text-sm focus:outline-none"
+                          style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
                           placeholder="Etiqueta do campo" />
-                        <select value={field.type} onChange={e => updateField(field.id, 'type', e.target.value)}
-                          className="border border-slate-200 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-indigo-400">
-                          {FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                        </select>
-                        <label className="flex items-center gap-1 text-xs text-slate-500 whitespace-nowrap">
+                        <div style={{ width: 150 }}>
+                          <CustomSelect
+                            value={field.type}
+                            onChange={val => updateField(field.id, 'type', val)}
+                            options={FIELD_TYPES}
+                            size="sm"
+                          />
+                        </div>
+                        <label className="flex items-center gap-1 text-xs whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                           <input type="checkbox" checked={field.required} onChange={e => updateField(field.id, 'required', e.target.checked)} />
                           Obrig.
                         </label>
@@ -222,7 +234,8 @@ export const FormsPage: React.FC = () => {
 
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium">
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+                  style={{ border: '1px solid var(--input-border)', color: 'var(--text-secondary)', background: 'var(--bg-card)' }}>
                   Cancelar
                 </button>
                 <button onClick={handleSave} disabled={saving || !form.name || form.fields.length === 0}

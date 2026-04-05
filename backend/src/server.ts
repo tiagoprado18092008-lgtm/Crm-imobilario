@@ -1,6 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -21,8 +22,15 @@ import phoneNumbersRouter from './modules/phone-numbers/phone-numbers.router';
 import appointmentsRouter from './modules/appointments/appointments.router';
 import campaignsRouter from './modules/campaigns/campaigns.router';
 import formsRouter from './modules/forms/forms.router';
+import invitationsRouter from './modules/invitations/invitations.router';
+import notificationsRouter from './modules/notifications/notifications.router';
+import exportsRouter from './modules/exports/exports.router';
+import searchRouter from './modules/search/search.router';
 import { errorMiddleware } from './middleware/error.middleware';
+import { requestLogger } from './utils/logger';
 import prisma from './config/database';
+import { eventBus } from './utils/event-bus';
+import { startImapPolling } from './utils/imap.service';
 
 const app = express();
 
@@ -35,12 +43,51 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '5mb' }));
+app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+app.use(requestLogger);
+
+// ─── SSE (Server-Sent Events) for real-time updates ────────────────────────────
+
+const sseClients = new Map<string, any>()
+
+app.get('/api/sse', (req, res) => {
+  const token = (req.headers.authorization?.replace('Bearer ', '') || req.query.token) as string
+  if (!token) return res.status(401).json({ error: 'Unauthorized' })
+
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.setHeader('X-Accel-Buffering', 'no')
+  res.flushHeaders()
+
+  const clientId = `${Date.now()}-${Math.random()}`
+  sseClients.set(clientId, res)
+
+  res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`)
+
+  const ping = setInterval(() => {
+    res.write(`data: ${JSON.stringify({ type: 'ping' })}\n\n`)
+  }, 30000)
+
+  req.on('close', () => {
+    clearInterval(ping)
+    sseClients.delete(clientId)
+  })
+})
+
+eventBus.on('new_message', (payload: any) => {
+  const data = `data: ${JSON.stringify({ type: 'new_message', ...payload })}\n\n`
+  sseClients.forEach((client) => {
+    try { client.write(data) } catch {}
+  })
+})
 
 // Health check
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/health', async (_req, res) => {
+  let db = 'disconnected';
+  try { await prisma.$queryRaw`SELECT 1`; db = 'connected'; } catch {}
+  res.json({ status: 'ok', db, version: process.env.npm_package_version || '1.0.0', timestamp: new Date().toISOString() });
 });
 
 // ─── WhatsApp Webhook ───────────────────────────────────────────────────────
@@ -129,9 +176,28 @@ app.post('/webhook/instagram', async (req, res) => {
   }
 });
 
+// ─── Rate Limiting ───────────────────────────────────────────────────────────
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 min
+  max: 20,
+  message: { error: 'Demasiadas tentativas. Aguarde 15 minutos.', status: 429 },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 min
+  max: 200,
+  message: { error: 'Demasiados pedidos. Aguarde um momento.', status: 429 },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // ─── API Routes ─────────────────────────────────────────────────────────────
 
-app.use('/api/auth', authRouter);
+app.use('/api/auth', authLimiter, authRouter);
+app.use('/api', apiLimiter);
 app.use('/api/users', usersRouter);
 app.use('/api/contacts', contactsRouter);
 app.use('/api/properties', propertiesRouter);
@@ -147,6 +213,10 @@ app.use('/api/phone-numbers', phoneNumbersRouter);
 app.use('/api/appointments', appointmentsRouter);
 app.use('/api/campaigns', campaignsRouter);
 app.use('/api/forms', formsRouter);
+app.use('/api/invitations', invitationsRouter);
+app.use('/api/notifications', notificationsRouter);
+app.use('/api/exports', exportsRouter);
+app.use('/api/search', searchRouter);
 
 // ─── Twilio Webhooks ─────────────────────────────────────────────────────────
 
@@ -240,9 +310,12 @@ app.use(errorMiddleware);
 
 const PORT = parseInt(process.env.PORT ?? '3000', 10);
 
-app.listen(PORT, () => {
-  console.log(`🚀 CRM Backend running on http://localhost:${PORT}`);
-  console.log(`   Environment: ${process.env.NODE_ENV ?? 'development'}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 CRM Backend running on http://localhost:${PORT}`);
+    console.log(`   Environment: ${process.env.NODE_ENV ?? 'development'}`);
+    startImapPolling();
+  });
+}
 
 export default app;

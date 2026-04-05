@@ -3,6 +3,7 @@ import { sendWhatsAppMessage } from '../../utils/whatsapp.service';
 import { sendEmail } from '../../utils/email.service';
 import { sendInstagramDM } from '../../utils/instagram.service';
 import { qualifyLeadFromMessage } from '../../utils/ai.service';
+import { eventBus } from '../../utils/event-bus';
 
 // ─── RBAC helpers ────────────────────────────────────────────────────────────
 
@@ -13,11 +14,20 @@ const buildConversationWhere = async (user: any): Promise<any> => {
       where: { supervisorId: user.id },
       select: { id: true },
     });
+    const ids = [user.id, ...subAgents.map((a: any) => a.id)];
     return {
-      assignedToId: { in: [user.id, ...subAgents.map((a: any) => a.id)] },
+      OR: [
+        { assignedToId: { in: ids } },
+        { assignedToId: null },
+      ],
     };
   }
-  return { assignedToId: user.id };
+  return {
+    OR: [
+      { assignedToId: user.id },
+      { assignedToId: null },
+    ],
+  };
 };
 
 // ─── list ─────────────────────────────────────────────────────────────────────
@@ -199,6 +209,9 @@ export const sendMessage = async (
     data: { lastMessageAt: new Date() },
   });
 
+  // Broadcast real-time event
+  eventBus.emit('new_message', { conversationId, message });
+
   return { message, sendResult };
 };
 
@@ -227,6 +240,9 @@ export const receiveInbound = async (
     where: { id: conversation.id },
     data: { lastMessageAt: new Date() },
   });
+
+  // Broadcast real-time event
+  eventBus.emit('new_message', { conversationId: conversation.id, message });
 
   // IA de Qualificação — extrai dados automaticamente de mensagens inbound
   if (conversation.contactId && content.length > 10) {

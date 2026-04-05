@@ -1,4 +1,4 @@
-import api from './axios';
+import api from './client';
 
 export const listForms = () => api.get('/forms');
 export const getForm = (id: string) => api.get(`/forms/${id}`);

@@ -121,7 +121,7 @@ export const OnboardingWizard: React.FC<Props> = ({ onComplete }) => {
   }
 
   const cardStyle: React.CSSProperties = {
-    background: '#fff', borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto',
+    background: 'var(--bg-card)', borderRadius: 20, width: '100%', maxWidth: 560, maxHeight: '90vh', overflow: 'auto',
     boxShadow: '0 25px 50px rgba(0,0,0,0.25)', padding: '40px 36px',
   }
 

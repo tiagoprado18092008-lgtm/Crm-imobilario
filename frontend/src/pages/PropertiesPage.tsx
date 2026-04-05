@@ -9,6 +9,7 @@ import type { Property } from '../types'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
+import { CustomSelect } from '../components/ui/CustomSelect'
 import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -30,8 +31,8 @@ const statusVariant: Record<string, any> = {
 const propSchema = z.object({
   title: z.string().min(2, 'Título obrigatório'),
   description: z.string().optional(),
-  type: z.enum(['APARTMENT', 'HOUSE', 'COMMERCIAL', 'LAND', 'OTHER']),
-  status: z.enum(['AVAILABLE', 'RESERVED', 'SOLD', 'RENTED']),
+  type: z.enum(['APARTMENT', 'HOUSE', 'COMMERCIAL', 'LAND', 'GARAGE', 'WAREHOUSE', 'FARM', 'OTHER']),
+  status: z.enum(['AVAILABLE', 'RESERVED', 'SOLD', 'RENTED', 'IN_PROCESS']),
   price: z.string(),
   address: z.string().min(3, 'Endereço obrigatório'),
   area: z.string().optional(),
@@ -95,7 +96,7 @@ const PropertyForm: React.FC<{
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
           <Input label="Título" required error={errors.title?.message} {...register('title')} />
@@ -227,27 +228,31 @@ export const PropertiesPage: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Pesquisar propriedades..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ width: '100%', paddingLeft: 36, paddingRight: 12, paddingTop: 8, paddingBottom: 8, fontSize: 13, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', outline: 'none' }}
           />
         </div>
-        <Select
-          options={[
-            { value: '', label: 'Todos os tipos' },
-            ...Object.entries(PROPERTY_TYPE_LABELS).map(([v, l]) => ({ value: v, label: l }))
-          ]}
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="w-44"
-        />
-        <Select
-          options={[
-            { value: '', label: 'Todos os estados' },
-            ...Object.entries(PROPERTY_STATUS_LABELS).map(([v, l]) => ({ value: v, label: l }))
-          ]}
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="w-44"
-        />
+        <div style={{ width: 176 }}>
+          <CustomSelect
+            value={typeFilter}
+            onChange={setTypeFilter}
+            options={[
+              { value: '', label: 'Todos os tipos' },
+              ...Object.entries(PROPERTY_TYPE_LABELS).map(([v, l]) => ({ value: v, label: l as string }))
+            ]}
+            size="sm"
+          />
+        </div>
+        <div style={{ width: 176 }}>
+          <CustomSelect
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: '', label: 'Todos os estados' },
+              ...Object.entries(PROPERTY_STATUS_LABELS).map(([v, l]) => ({ value: v, label: l as string }))
+            ]}
+            size="sm"
+          />
+        </div>
         <Button onClick={() => { setEditProp(undefined); setShowModal(true) }} className="ml-auto">
           <Plus className="w-4 h-4" /> Nova Propriedade
         </Button>
@@ -264,41 +269,42 @@ export const PropertiesPage: React.FC = () => {
           onAction={() => { setEditProp(undefined); setShowModal(true) }}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div style={{ background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Título</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Tipo</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Estado</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Preço</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Endereço</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Quartos</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Área</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Criado</th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-700">Ações</th>
+                <tr style={{ background: 'var(--bg-page)', borderBottom: '1px solid var(--border-color)' }}>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Título</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Tipo</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Estado</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Preço</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Endereço</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Quartos</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Área</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Criado</th>
+                  <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody style={{ borderColor: 'var(--border-subtle)' }}>
                 {filtered.map((prop) => (
                   <tr
                     key={prop.id}
-                    className="hover:bg-gray-50 cursor-pointer"
+                    style={{ borderBottom: '1px solid var(--border-subtle)', cursor: 'pointer' }}
+                    className="hover:bg-[var(--hover-bg)]"
                     onClick={() => navigate(`/properties/${prop.id}`)}
                   >
-                    <td className="px-4 py-3 font-medium text-gray-900">{prop.title}</td>
-                    <td className="px-4 py-3 text-gray-600">{PROPERTY_TYPE_LABELS[prop.type]}</td>
+                    <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{prop.title}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{PROPERTY_TYPE_LABELS[prop.type]}</td>
                     <td className="px-4 py-3">
                       <Badge variant={statusVariant[prop.status]} small>
                         {PROPERTY_STATUS_LABELS[prop.status]}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{formatCurrency(prop.price)}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-48 truncate">{prop.address}</td>
-                    <td className="px-4 py-3 text-gray-600">{prop.bedrooms ?? '-'}</td>
-                    <td className="px-4 py-3 text-gray-600">{prop.area ? `${prop.area} m²` : '-'}</td>
-                    <td className="px-4 py-3 text-gray-500">{formatDate(prop.createdAt)}</td>
+                    <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{formatCurrency(prop.price)}</td>
+                    <td className="px-4 py-3 max-w-48 truncate" style={{ color: 'var(--text-secondary)' }}>{prop.address}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{prop.bedrooms ?? '-'}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{prop.area ? `${prop.area} m²` : '-'}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{formatDate(prop.createdAt)}</td>
                     <td className="px-4 py-3">
                       <div
                         className="flex items-center justify-end gap-1"
@@ -306,13 +312,13 @@ export const PropertiesPage: React.FC = () => {
                       >
                         <button
                           onClick={() => { setEditProp(prop); setShowModal(true) }}
-                          className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                          style={{ padding: 6, borderRadius: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setDeleteId(prop.id)}
-                          className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50"
+                          style={{ padding: 6, borderRadius: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -325,23 +331,23 @@ export const PropertiesPage: React.FC = () => {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid var(--border-color)' }}>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
                 {(page - 1) * limit + 1}–{Math.min(page * limit, total)} de {total} propriedades
               </p>
-              <div className="flex items-center gap-1">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="p-1.5 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40"
+                  style={{ padding: 6, borderRadius: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', opacity: page === 1 ? 0.4 : 1 }}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="px-2 text-sm text-gray-700">{page} / {totalPages}</span>
+                <span style={{ padding: '0 8px', fontSize: 13, color: 'var(--text-primary)' }}>{page} / {totalPages}</span>
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="p-1.5 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40"
+                  style={{ padding: 6, borderRadius: 6, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', opacity: page === totalPages ? 0.4 : 1 }}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>

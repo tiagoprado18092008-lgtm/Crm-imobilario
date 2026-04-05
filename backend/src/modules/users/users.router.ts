@@ -7,7 +7,7 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get('/', requireRole('ADMIN'), usersController.list);
+router.get('/', usersController.list); // All authenticated users can list (needed for dropdowns)
 router.post('/', requireRole('ADMIN'), usersController.create);
 router.get('/:id', usersController.getById);
 router.put('/:id', requireRole('ADMIN'), usersController.update);

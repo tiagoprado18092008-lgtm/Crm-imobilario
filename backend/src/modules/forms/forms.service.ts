@@ -1,13 +1,31 @@
 import prisma from '../../config/database';
 
-export const list = async () => prisma.form.findMany({
-  include: { _count: { select: { submissions: true } } },
-  orderBy: { createdAt: 'desc' },
-});
+const buildWhereClause = async (user: any): Promise<any> => {
+  if (user.role === 'ADMIN') return {};
+  if (user.role === 'PRINCIPAL_CONSULTANT') {
+    const subAgents = await prisma.user.findMany({
+      where: { supervisorId: user.id },
+      select: { id: true },
+    });
+    return { assignedToId: { in: [user.id, ...subAgents.map((a: any) => a.id)] } };
+  }
+  return { assignedToId: user.id };
+};
 
-export const getById = async (id: string) => {
-  const f = await prisma.form.findUnique({
-    where: { id },
+export const list = async (user: any) => {
+  const where = await buildWhereClause(user);
+  return prisma.form.findMany({
+    where,
+    include: { _count: { select: { submissions: true } } },
+    orderBy: { createdAt: 'desc' },
+  });
+};
+
+export const getById = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const f = await prisma.form.findFirst({
+    where,
     include: { submissions: { orderBy: { createdAt: 'desc' }, take: 50 } },
   });
   if (!f) throw Object.assign(new Error('Formulário não encontrado'), { status: 404 });
@@ -20,18 +38,23 @@ export const getPublic = async (id: string) => {
   return { id: f.id, name: f.name, description: f.description, fields: f.fields, thankYouMessage: f.thankYouMessage };
 };
 
-export const create = async (dto: any) => prisma.form.create({
+export const create = async (dto: any, userId: string) => prisma.form.create({
   data: {
     name: dto.name,
     description: dto.description,
     fields: JSON.stringify(dto.fields || []),
     submitAction: dto.submitAction || 'CREATE_CONTACT',
     thankYouMessage: dto.thankYouMessage || 'Obrigado! Entraremos em contacto em breve.',
-    assignedToId: dto.assignedToId,
+    assignedToId: dto.assignedToId || userId,
   },
 });
 
-export const update = async (id: string, dto: any) => {
+export const update = async (id: string, dto: any, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const existing = await prisma.form.findFirst({ where });
+  if (!existing) throw Object.assign(new Error('Formulário não encontrado ou acesso negado'), { status: 404 });
+
   const data: any = {};
   if (dto.name) data.name = dto.name;
   if (dto.description !== undefined) data.description = dto.description;
@@ -42,7 +65,12 @@ export const update = async (id: string, dto: any) => {
   return prisma.form.update({ where: { id }, data });
 };
 
-export const remove = async (id: string) => {
+export const remove = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const existing = await prisma.form.findFirst({ where });
+  if (!existing) throw Object.assign(new Error('Formulário não encontrado ou acesso negado'), { status: 404 });
+
   await prisma.formSubmission.deleteMany({ where: { formId: id } });
   await prisma.form.delete({ where: { id } });
 };

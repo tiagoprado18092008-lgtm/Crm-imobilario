@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/auth.middleware';
+import { validate } from '../../middleware/validate.middleware';
+import { sendMessageSchema } from '../../schemas';
 import * as conversationsController from './conversations.controller';
 
 const router = Router();
@@ -19,7 +21,7 @@ router.get('/stats', conversationsController.getStats);
 router.get('/:id', conversationsController.getConversation);
 
 // POST /api/conversations/:id/messages - send a message
-router.post('/:id/messages', conversationsController.sendMessage);
+router.post('/:id/messages', validate(sendMessageSchema), conversationsController.sendMessage);
 
 // PATCH /api/conversations/:id/status  - update status
 router.patch('/:id/status', conversationsController.updateStatus);

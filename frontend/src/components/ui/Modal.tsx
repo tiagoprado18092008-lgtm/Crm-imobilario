@@ -10,11 +10,11 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
-const sizeClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-2xl'
+const sizeMap = {
+  sm: 400,
+  md: 520,
+  lg: 680,
+  xl: 860,
 }
 
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md' }) => {
@@ -36,33 +36,60 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9000,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
         onClick={onClose}
       />
       <div
-        className={`
-          relative w-full ${sizeClasses[size]} bg-white rounded-xl shadow-2xl
-          transform transition-all duration-200 max-h-[90vh] flex flex-col
-        `}
+        style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: sizeMap[size],
+          background: 'var(--bg-card)',
+          borderRadius: 16,
+          boxShadow: '0 24px 80px rgba(0,0,0,0.4)',
+          border: '1px solid var(--border-color)',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '16px 24px',
+            borderBottom: '1px solid var(--border-color)',
+            flexShrink: 0,
+          }}
+        >
+          <h2
+            id="modal-title"
+            style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}
+          >
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            style={{
+              width: 30, height: 30, borderRadius: 8, border: 'none',
+              background: 'var(--bg-page)', color: 'var(--text-muted)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+            }}
           >
-            <X className="w-5 h-5" />
+            <X size={16} />
           </button>
         </div>
-        <div className="overflow-y-auto flex-1 px-6 py-4">
+        <div style={{ overflowY: 'auto', flex: 1, padding: '20px 24px' }}>
           {children}
         </div>
       </div>

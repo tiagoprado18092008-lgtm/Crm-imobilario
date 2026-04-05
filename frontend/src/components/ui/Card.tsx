@@ -6,6 +6,7 @@ interface CardProps {
   children: React.ReactNode
   className?: string
   padding?: boolean
+  style?: React.CSSProperties
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -13,20 +14,37 @@ export const Card: React.FC<CardProps> = ({
   action,
   children,
   className = '',
-  padding = true
+  padding = true,
+  style,
 }) => {
   return (
     <div
-      className={`bg-white rounded-2xl ${className}`}
-      style={{ border: '1px solid #f1f5f9', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}
+      className={className}
+      style={{
+        background: 'var(--bg-card)',
+        borderRadius: 16,
+        border: '1px solid var(--border-color)',
+        boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
+        ...style,
+      }}
     >
       {(title || action) && (
-        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #f8fafc' }}>
-          {title && <h3 className="text-sm font-semibold text-slate-900">{title}</h3>}
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 20px',
+            borderBottom: '1px solid var(--border-subtle)',
+          }}
+        >
+          {title && (
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+              {title}
+            </h3>
+          )}
           {action && <div>{action}</div>}
         </div>
       )}
-      <div className={padding ? 'p-6' : ''}>{children}</div>
+      <div style={padding ? { padding: 20 } : {}}>{children}</div>
     </div>
   )
 }

@@ -78,8 +78,8 @@ export const create = async (
       notes: dto.notes,
       position: dto.position ?? 0,
       contactId: dto.contactId,
-      propertyId: dto.propertyId,
-      assignedToId: dto.assignedToId ?? user.id,
+      propertyId: dto.propertyId || undefined,
+      assignedToId: dto.assignedToId || user.id,
     },
     include: {
       contact: { select: { id: true, name: true, email: true } },
@@ -156,9 +156,10 @@ export const update = async (
       lostReason: dto.lostReason,
       notes: dto.notes,
       position: dto.position,
-      contactId: dto.contactId,
-      propertyId: dto.propertyId,
-      assignedToId: dto.assignedToId,
+      contactId: dto.contactId || undefined,
+      propertyId: dto.propertyId || undefined,
+      assignedToId: dto.assignedToId || undefined,
+
     },
     include: {
       contact: { select: { id: true, name: true, email: true } },

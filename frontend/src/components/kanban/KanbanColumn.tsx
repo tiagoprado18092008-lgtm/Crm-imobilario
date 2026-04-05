@@ -33,7 +33,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
         style={{
           width: 40,
           flexShrink: 0,
-          background: '#fff',
+          background: 'var(--bg-card)',
           border: '1px solid #e2e8f0',
           borderRadius: 10,
           display: 'flex',
@@ -63,7 +63,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
             transform: 'rotate(180deg)',
             fontSize: 11,
             fontWeight: 600,
-            color: '#475569',
+            color: 'var(--text-muted)',
             whiteSpace: 'nowrap',
           }}
         >
@@ -71,8 +71,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
         </p>
         <span
           style={{
-            background: '#f1f5f9',
-            color: '#64748b',
+            background: 'var(--hover-bg)',
+            color: 'var(--text-secondary)',
             fontSize: 10,
             fontWeight: 700,
             borderRadius: 10,
@@ -90,7 +90,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       {/* Column Header */}
       <div
         style={{
-          background: '#fff',
+          background: 'var(--bg-card)',
           border: '1px solid #e2e8f0',
           borderBottom: 'none',
           borderRadius: '10px 10px 0 0',
@@ -120,7 +120,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
               style={{
                 fontSize: 12,
                 fontWeight: 700,
-                color: '#1e293b',
+                color: 'var(--text-primary)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -140,8 +140,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 height: 22,
                 borderRadius: 5,
                 border: '1px solid #e2e8f0',
-                background: '#f8fafc',
-                color: '#64748b',
+                background: 'var(--bg-page)',
+                color: 'var(--text-secondary)',
                 cursor: 'pointer',
               }}
               title="Adicionar oportunidade"
@@ -158,8 +158,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                 height: 22,
                 borderRadius: 5,
                 border: '1px solid #e2e8f0',
-                background: '#f8fafc',
-                color: '#94a3b8',
+                background: 'var(--bg-page)',
+                color: 'var(--text-muted)',
                 cursor: 'pointer',
               }}
               title="Recolher"
@@ -169,7 +169,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
           </div>
         </div>
         {totalValue > 0 && (
-          <p style={{ fontSize: 11, color: '#64748b', marginTop: 3, fontWeight: 600 }}>
+          <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 3, fontWeight: 600 }}>
             {formatCurrency(totalValue)}
           </p>
         )}
@@ -188,7 +188,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
               borderRadius: '0 0 10px 10px',
               border: '1px solid #e2e8f0',
               borderTop: 'none',
-              background: snapshot.isDraggingOver ? '#eff6ff' : '#f8fafc',
+              background: snapshot.isDraggingOver ? 'rgba(99,102,241,0.08)' : 'var(--bg-page)',
               overflowY: 'auto',
               maxHeight: 'calc(100vh - 300px)',
               transition: 'background 150ms',

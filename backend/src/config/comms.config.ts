@@ -32,3 +32,7 @@ export function isEmailConfigured(): boolean {
 export function isInstagramConfigured(): boolean {
   return !!(process.env.INSTAGRAM_ACCESS_TOKEN && process.env.INSTAGRAM_PAGE_ID);
 }
+
+export function isTwilioConfigured(): boolean {
+  return !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN);
+}

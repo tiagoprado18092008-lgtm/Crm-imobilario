@@ -52,8 +52,8 @@ export const updateSelf = async (req: Request, res: Response, next: NextFunction
       res.status(403).json({ error: 'Sem permissão', status: 403 });
       return;
     }
-    const { name, phone } = req.body;
-    const user = await usersService.update(req.params.id, { name, phone });
+    const { name, phone, avatarUrl, onboardingCompleted } = req.body;
+    const user = await usersService.update(req.params.id, { name, phone, avatarUrl, onboardingCompleted });
     res.status(200).json(user);
   } catch (err) {
     next(err);

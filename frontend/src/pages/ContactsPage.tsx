@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ChevronLeft, ChevronRight, Trash2, Edit } from 'lucide-react'
+import { Plus, Search, ChevronLeft, ChevronRight, Trash2, Edit, Download } from 'lucide-react'
 import { getContacts, deleteContact } from '../api/contacts.api'
+import { exportContacts } from '../api/exports.api'
+import { downloadBlob } from '../utils/download'
 import type { Contact } from '../types'
 import { Button } from '../components/ui/Button'
-import { Select } from '../components/ui/Select'
+import { CustomSelect } from '../components/ui/CustomSelect'
 import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
 import { EmptyState } from '../components/ui/EmptyState'
@@ -106,49 +108,74 @@ export const ContactsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-48">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-muted)' }} />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Pesquisar contactos..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{
+              background: 'var(--input-bg)',
+              border: '1px solid var(--input-border)',
+              color: 'var(--text-primary)',
+            }}
           />
         </div>
 
-        <Select
-          options={[
-            { value: '', label: 'Todos os tipos' },
-            ...Object.entries(CONTACT_TYPE_LABELS).map(([v, l]) => ({ value: v, label: l }))
-          ]}
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="w-40"
-        />
+        <div style={{ width: 160 }}>
+          <CustomSelect
+            value={typeFilter}
+            onChange={setTypeFilter}
+            options={[
+              { value: '', label: 'Todos os tipos' },
+              ...Object.entries(CONTACT_TYPE_LABELS).map(([v, l]) => ({ value: v, label: l as string }))
+            ]}
+            size="sm"
+          />
+        </div>
 
-        <Select
-          options={[
-            { value: '', label: 'Todos os estados' },
-            ...Object.entries(CONTACT_STATUS_LABELS).map(([v, l]) => ({ value: v, label: l }))
-          ]}
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="w-44"
-        />
+        <div style={{ width: 176 }}>
+          <CustomSelect
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: '', label: 'Todos os estados' },
+              ...Object.entries(CONTACT_STATUS_LABELS).map(([v, l]) => ({ value: v, label: l as string }))
+            ]}
+            size="sm"
+          />
+        </div>
 
-        <Select
-          options={[
-            { value: '', label: 'Todas as origens' },
-            ...SOURCE_OPTIONS.map((s) => ({ value: s, label: s }))
-          ]}
-          value={sourceFilter}
-          onChange={(e) => setSourceFilter(e.target.value)}
-          className="w-44"
-        />
+        <div style={{ width: 176 }}>
+          <CustomSelect
+            value={sourceFilter}
+            onChange={setSourceFilter}
+            options={[
+              { value: '', label: 'Todas as origens' },
+              ...SOURCE_OPTIONS.map((s) => ({ value: s, label: s }))
+            ]}
+            size="sm"
+            searchable
+          />
+        </div>
+
+        <Button
+          variant="secondary"
+          onClick={async () => {
+            try {
+              const res = await exportContacts()
+              downloadBlob(res.data, 'contactos.csv')
+              showToast('CSV exportado', 'success')
+            } catch { showToast('Erro ao exportar', 'error') }
+          }}
+          className="ml-auto"
+        >
+          <Download className="w-4 h-4" /> Exportar CSV
+        </Button>
 
         <Button
           onClick={() => { setEditContact(undefined); setShowModal(true) }}
-          className="ml-auto"
         >
           <Plus className="w-4 h-4" /> Novo Contacto
         </Button>
@@ -165,32 +192,35 @@ export const ContactsPage: React.FC = () => {
           onAction={() => { setEditContact(undefined); setShowModal(true) }}
         />
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="rounded-xl shadow-sm overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Nome</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Email</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Telefone</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Tipo</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Estado</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Origem</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Responsável</th>
-                  <th className="text-left px-4 py-3 font-semibold text-gray-700">Criado</th>
-                  <th className="text-right px-4 py-3 font-semibold text-gray-700">Ações</th>
+                <tr style={{ background: 'var(--hover-bg)', borderBottom: '1px solid var(--border-color)' }}>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Nome</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Email</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Telefone</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Tipo</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Estado</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Origem</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Responsável</th>
+                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Criado</th>
+                  <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {contacts.map((contact) => (
                   <tr
                     key={contact.id}
-                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="cursor-pointer transition-colors"
+                    style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     onClick={() => navigate(`/contacts/${contact.id}`)}
                   >
-                    <td className="px-4 py-3 font-medium text-gray-900">{contact.name}</td>
-                    <td className="px-4 py-3 text-gray-600">{contact.email || '-'}</td>
-                    <td className="px-4 py-3 text-gray-600">{contact.phone || '-'}</td>
+                    <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{contact.name}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{contact.email || '-'}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{contact.phone || '-'}</td>
                     <td className="px-4 py-3">
                       <Badge variant={typeVariant[contact.type]} small>
                         {CONTACT_TYPE_LABELS[contact.type]}
@@ -201,9 +231,9 @@ export const ContactsPage: React.FC = () => {
                         {CONTACT_STATUS_LABELS[contact.status]}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{contact.source || '-'}</td>
-                    <td className="px-4 py-3 text-gray-600">{contact.assignedTo?.name || '-'}</td>
-                    <td className="px-4 py-3 text-gray-500">{formatDate(contact.createdAt)}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{contact.source || '-'}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{contact.assignedTo?.name || '-'}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{formatDate(contact.createdAt)}</td>
                     <td className="px-4 py-3">
                       <div
                         className="flex items-center justify-end gap-1"
@@ -211,13 +241,15 @@ export const ContactsPage: React.FC = () => {
                       >
                         <button
                           onClick={() => { setEditContact(contact); setShowModal(true) }}
-                          className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                          className="p-1.5 rounded transition-colors hover:text-blue-600 hover:bg-blue-50"
+                          style={{ color: 'var(--text-muted)' }}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setDeleteId(contact.id)}
-                          className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          className="p-1.5 rounded transition-colors hover:text-red-600 hover:bg-red-50"
+                          style={{ color: 'var(--text-muted)' }}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -231,25 +263,31 @@ export const ContactsPage: React.FC = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid var(--border-color)' }}>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 {(page - 1) * limit + 1}–{Math.min(page * limit, total)} de {total} contactos
               </p>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="p-1.5 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-1.5 rounded disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ color: 'var(--text-muted)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="px-2 text-sm text-gray-700">
+                <span className="px-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                   {page} / {totalPages}
                 </span>
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
-                  className="p-1.5 rounded text-gray-500 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-1.5 rounded disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ color: 'var(--text-muted)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -280,7 +318,7 @@ export const ContactsPage: React.FC = () => {
         title="Confirmar Eliminação"
         size="sm"
       >
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
           Tem a certeza que deseja eliminar este contacto? Esta ação não pode ser desfeita.
         </p>
         <div className="flex justify-end gap-3">

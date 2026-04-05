@@ -1,5 +1,17 @@
 import prisma from '../../config/database';
 
+const buildWhereClause = async (user: any): Promise<any> => {
+  if (user.role === 'ADMIN') return {};
+  if (user.role === 'PRINCIPAL_CONSULTANT') {
+    const subAgents = await prisma.user.findMany({
+      where: { supervisorId: user.id },
+      select: { id: true },
+    });
+    return { assignedToId: { in: [user.id, ...subAgents.map((a: any) => a.id)] } };
+  }
+  return { assignedToId: user.id };
+};
+
 export const list = async (filters: {
   status?: string;
   priority?: string;
@@ -10,8 +22,8 @@ export const list = async (filters: {
   opportunityId?: string;
   page?: number;
   limit?: number;
-}) => {
-  const where: any = {};
+}, user: any) => {
+  const where: any = await buildWhereClause(user);
   if (filters.status) where.status = filters.status;
   if (filters.priority) where.priority = filters.priority;
   if (filters.assignedToId) where.assignedToId = filters.assignedToId;
@@ -53,8 +65,8 @@ export const create = async (dto: {
   dueDate?: string;
   contactId?: string;
   opportunityId?: string;
-  assignedToId: string;
-}) => {
+  assignedToId?: string;
+}, userId: string) => {
   return prisma.task.create({
     data: {
       title: dto.title,
@@ -62,9 +74,9 @@ export const create = async (dto: {
       status: (dto.status as any) ?? 'PENDING',
       priority: (dto.priority as any) ?? 'MEDIUM',
       dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
-      contactId: dto.contactId,
-      opportunityId: dto.opportunityId,
-      assignedToId: dto.assignedToId,
+      contactId: dto.contactId || undefined,
+      opportunityId: dto.opportunityId || undefined,
+      assignedToId: dto.assignedToId || userId,
     },
     include: {
       assignedTo: { select: { id: true, name: true } },
@@ -74,9 +86,12 @@ export const create = async (dto: {
   });
 };
 
-export const getById = async (id: string) => {
-  const task = await prisma.task.findUnique({
-    where: { id },
+export const getById = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+
+  const task = await prisma.task.findFirst({
+    where,
     include: {
       assignedTo: { select: { id: true, name: true, email: true } },
       contact: { select: { id: true, name: true } },
@@ -103,8 +118,18 @@ export const update = async (
     contactId?: string;
     opportunityId?: string;
     assignedToId?: string;
-  }
+  },
+  user: any
 ) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const existing = await prisma.task.findFirst({ where });
+  if (!existing) {
+    const err: any = new Error('Task not found or access denied');
+    err.status = 404;
+    throw err;
+  }
+
   const updateData: any = {};
   if (dto.title !== undefined) updateData.title = dto.title;
   if (dto.description !== undefined) updateData.description = dto.description;
@@ -133,6 +158,14 @@ export const update = async (
   });
 };
 
-export const remove = async (id: string) => {
+export const remove = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const existing = await prisma.task.findFirst({ where });
+  if (!existing) {
+    const err: any = new Error('Task not found or access denied');
+    err.status = 404;
+    throw err;
+  }
   return prisma.task.delete({ where: { id } });
 };

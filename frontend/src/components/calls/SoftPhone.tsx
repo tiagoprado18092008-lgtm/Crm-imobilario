@@ -152,7 +152,7 @@ export const SoftPhone: React.FC = () => {
           setPhoneState('in-call')
           startTimer()
           setLoading(false)
-          showToast(`[DEMO] Chamada para ${dialNumber} iniciada`, 'info')
+          showToast(`Chamada registada para ${dialNumber}`, 'info')
         }, 1500)
       }
     } catch (err) {
@@ -246,7 +246,7 @@ export const SoftPhone: React.FC = () => {
                 }}
               />
               <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 500 }}>
-                {configured ? 'Twilio conectado' : 'Modo demo'}
+                {configured ? 'Twilio conectado' : 'Twilio não configurado'}
               </span>
             </div>
             <button

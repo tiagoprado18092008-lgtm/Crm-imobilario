@@ -47,7 +47,7 @@ const CATEGORY_CONFIG = {
   RENTAL: { label: 'Arrendamento', icon: Key, color: '#f59e0b', bg: '#fef3c7' },
 }
 
-import api from '../api/axios'
+import api from '../api/client'
 
 export const SnapshotsPage: React.FC = () => {
   const [applied, setApplied] = useState<string[]>([])
@@ -93,8 +93,8 @@ export const SnapshotsPage: React.FC = () => {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-slate-900">Snapshots</h2>
-        <p className="text-sm text-slate-500 mt-0.5">
+        <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Snapshots</h2>
+        <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
           Modelos prontos com automações e pipelines pré-configurados — como o GoHighLevel
         </p>
       </div>
@@ -106,7 +106,7 @@ export const SnapshotsPage: React.FC = () => {
           const isApplied = applied.includes(snap.id)
 
           return (
-            <div key={snap.id} className="bg-white rounded-2xl border border-slate-200 p-6">
+            <div key={snap.id} className="rounded-2xl border p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: cfg.bg }}>
@@ -114,28 +114,28 @@ export const SnapshotsPage: React.FC = () => {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-slate-900">{snap.name}</h3>
+                      <h3 className="font-bold" style={{ color: 'var(--text-primary)' }}>{snap.name}</h3>
                       <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: cfg.bg, color: cfg.color }}>
                         {cfg.label}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-500 leading-relaxed">{snap.description}</p>
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{snap.description}</p>
 
                     <div className="flex items-center gap-4 mt-3">
-                      <span className="text-xs text-slate-500">⚡ {snap.automations} automações</span>
-                      <span className="text-xs text-slate-500">📝 {snap.templates} templates</span>
-                      <span className="text-xs text-slate-500">📊 {snap.stages.length} etapas</span>
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>⚡ {snap.automations} automações</span>
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>📝 {snap.templates} templates</span>
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>📊 {snap.stages.length} etapas</span>
                     </div>
 
                     {/* Pipeline stages */}
                     <div className="flex items-center gap-1.5 mt-4 flex-wrap">
                       {snap.stages.map((stage, i) => (
                         <React.Fragment key={stage}>
-                          <span className="text-xs px-2.5 py-1 rounded-lg font-medium" style={{ background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0' }}>
+                          <span className="text-xs px-2.5 py-1 rounded-lg font-medium" style={{ background: 'var(--hover-bg)', color: 'var(--text-secondary)', border: '1px solid var(--input-border)' }}>
                             {stage}
                           </span>
                           {i < snap.stages.length - 1 && (
-                            <span className="text-slate-300 text-xs">→</span>
+                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>→</span>
                           )}
                         </React.Fragment>
                       ))}
@@ -169,10 +169,10 @@ export const SnapshotsPage: React.FC = () => {
         })}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
+      <div className="rounded-2xl border p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
         <div className="flex items-center gap-3 mb-4">
-          <Package size={20} className="text-slate-400" />
-          <h3 className="font-semibold text-slate-800">O que inclui cada Snapshot?</h3>
+          <Package size={20} style={{ color: 'var(--text-muted)' }} />
+          <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>O que inclui cada Snapshot?</h3>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {[
@@ -181,11 +181,11 @@ export const SnapshotsPage: React.FC = () => {
             { icon: '📊', title: 'Pipeline configurado', desc: 'Etapas do funil ajustadas ao tipo de negócio' },
             { icon: '✅', title: 'Tarefas automáticas', desc: 'Checklist de follow-up criado automaticamente' },
           ].map(item => (
-            <div key={item.title} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: '#f8fafc' }}>
+            <div key={item.title} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'var(--hover-bg)' }}>
               <span className="text-xl">{item.icon}</span>
               <div>
-                <p className="text-sm font-medium text-slate-800">{item.title}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{item.desc}</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.title}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
               </div>
             </div>
           ))}

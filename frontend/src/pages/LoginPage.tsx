@@ -24,7 +24,7 @@ export const LoginPage: React.FC = () => {
       setAuth(user, token)
       navigate('/dashboard', { replace: true })
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Email ou password incorretos.')
+      setError(err?.response?.data?.error || err?.response?.data?.message || 'Email ou password incorretos.')
     } finally {
       setLoading(false)
     }
@@ -121,7 +121,7 @@ export const LoginPage: React.FC = () => {
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-8" style={{ background: '#f0f2f8' }}>
+      <div className="flex-1 flex items-center justify-center p-8" style={{ background: 'var(--bg-page)' }}>
         <div className="w-full max-w-md">
 
           {/* Mobile logo */}
@@ -140,19 +140,19 @@ export const LoginPage: React.FC = () => {
               </svg>
             </div>
             <div>
-              <p className="font-bold text-slate-900 text-lg leading-tight">CRM Imobiliário</p>
+              <p className="font-bold text-lg leading-tight" style={{ color: 'var(--text-primary)' }}>CRM Imobiliário</p>
               <p className="text-xs font-medium" style={{ color: '#6366f1' }}>PLATAFORMA PREMIUM</p>
             </div>
           </div>
 
           {/* Card */}
-          <div className="bg-white rounded-2xl p-8" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04)', border: '1px solid #eaecf3' }}>
+          <div className="rounded-2xl p-8" style={{ background: 'var(--bg-card)', boxShadow: '0 4px 24px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)' }}>
 
             <div className="mb-7">
-              <h1 className="font-bold text-slate-900 leading-tight" style={{ fontSize: 22, letterSpacing: '-0.02em' }}>
+              <h1 className="font-bold leading-tight" style={{ fontSize: 22, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
                 Bem-vindo de volta
               </h1>
-              <p className="text-sm text-slate-400 mt-1.5">Entre na sua conta para continuar</p>
+              <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>Entre na sua conta para continuar</p>
             </div>
 
             {error && (
@@ -170,13 +170,13 @@ export const LoginPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email */}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
+                <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
                   Email
                 </label>
                 <div className="relative">
                   <Mail
                     size={15}
-                    style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}
+                    style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}
                   />
                   <input
                     type="email"
@@ -196,26 +196,26 @@ export const LoginPage: React.FC = () => {
                       fontSize: 14,
                       borderRadius: 12,
                       outline: 'none',
-                      border: '1.5px solid #e2e8f0',
-                      background: '#fafbfd',
-                      color: '#0f172a',
+                      border: '1.5px solid var(--input-border)',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       transition: 'border-color 150ms, box-shadow 150ms',
                     }}
                     onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)'; }}
-                    onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+                    onBlur={e => { e.target.style.borderColor = 'var(--input-border)'; e.target.style.boxShadow = 'none'; }}
                   />
                 </div>
               </div>
 
               {/* Password */}
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">
+                <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
                   Password
                 </label>
                 <div className="relative">
                   <Lock
                     size={15}
-                    style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}
+                    style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}
                   />
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -234,18 +234,18 @@ export const LoginPage: React.FC = () => {
                       fontSize: 14,
                       borderRadius: 12,
                       outline: 'none',
-                      border: '1.5px solid #e2e8f0',
-                      background: '#fafbfd',
-                      color: '#0f172a',
+                      border: '1.5px solid var(--input-border)',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       transition: 'border-color 150ms, box-shadow 150ms',
                     }}
                     onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)'; }}
-                    onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+                    onBlur={e => { e.target.style.borderColor = 'var(--input-border)'; e.target.style.boxShadow = 'none'; }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', border: 'none', background: 'none', cursor: 'pointer', padding: 4 }}
+                    style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', border: 'none', background: 'none', cursor: 'pointer', padding: 4 }}
                     tabIndex={-1}
                   >
                     {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -291,9 +291,9 @@ export const LoginPage: React.FC = () => {
 
             {/* Divider */}
             <div className="flex items-center gap-3 mt-5">
-              <div style={{ flex: 1, height: 1, background: '#eaecf3' }} />
-              <span className="text-xs text-slate-400 font-medium">ou continue com</span>
-              <div style={{ flex: 1, height: 1, background: '#eaecf3' }} />
+              <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
+              <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>ou continue com</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
             </div>
 
             {/* Google Login */}
@@ -324,8 +324,8 @@ export const LoginPage: React.FC = () => {
               ) : (
                 <button
                   disabled
-                  className="w-full flex items-center justify-center gap-3 py-3 rounded-xl text-sm font-medium text-slate-400"
-                  style={{ border: '1.5px solid #e2e8f0', background: '#fafbfd', cursor: 'not-allowed' }}
+                  className="w-full flex items-center justify-center gap-3 py-3 rounded-xl text-sm font-medium"
+                  style={{ border: '1.5px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-muted)', cursor: 'not-allowed' }}
                 >
                   <svg width="17" height="17" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -338,7 +338,7 @@ export const LoginPage: React.FC = () => {
               )}
             </div>
 
-            <p className="text-center text-sm text-slate-400 mt-5">
+            <p className="text-center text-sm mt-5" style={{ color: 'var(--text-muted)' }}>
               Ainda não tem conta?{' '}
               <Link to="/register" className="font-semibold hover:underline" style={{ color: '#6366f1', textDecoration: 'none' }}>
                 Criar conta

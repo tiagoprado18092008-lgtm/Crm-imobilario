@@ -1,9 +1,21 @@
-export type Role = 'ADMIN' | 'PRINCIPAL_CONSULTANT' | 'SUB_AGENT'
-export type ContactType = 'LEAD' | 'CLIENT'
+export type Role = 'ADMIN' | 'PRINCIPAL_CONSULTANT' | 'CONSULTANT' | 'SUB_AGENT' | 'VIEWER'
+export type ContactType = 'LEAD' | 'CLIENT' | 'OWNER' | 'PARTNER'
 export type ContactStatus = 'NEW' | 'QUALIFIED' | 'CONTACTED' | 'INACTIVE'
-export type PropertyType = 'APARTMENT' | 'HOUSE' | 'COMMERCIAL' | 'LAND' | 'OTHER'
-export type PropertyStatus = 'AVAILABLE' | 'RESERVED' | 'SOLD' | 'RENTED'
-export type OpportunityStage = 'LEAD_IN' | 'QUALIFYING' | 'VISIT_SCHEDULED' | 'PROPOSAL_SENT' | 'NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST'
+export type PropertyType = 'APARTMENT' | 'HOUSE' | 'COMMERCIAL' | 'LAND' | 'GARAGE' | 'WAREHOUSE' | 'FARM' | 'OTHER'
+export type PropertyPurpose = 'SALE' | 'RENT' | 'TRESPASSE'
+export type PropertyStatus = 'AVAILABLE' | 'RESERVED' | 'SOLD' | 'RENTED' | 'IN_PROCESS'
+export type OpportunityStage =
+  | 'LEAD_IN'
+  | 'QUALIFYING'
+  | 'VISIT_SCHEDULED'
+  | 'VISIT_DONE'
+  | 'PROPOSAL_SENT'
+  | 'NEGOTIATION'
+  | 'CPCV_SIGNED'
+  | 'FINANCING'
+  | 'ESCRITURA_SCHEDULED'
+  | 'CLOSED_WON'
+  | 'CLOSED_LOST'
 export type InteractionType = 'EMAIL' | 'WHATSAPP' | 'CALL' | 'MEETING' | 'NOTE'
 export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH'
@@ -35,7 +47,20 @@ export interface Contact {
   source?: string
   notes?: string
   preferences?: string
-  leadScore?: number
+  city?: string
+  postalCode?: string
+  nif?: string
+  birthday?: string
+  budget_min?: number
+  budget_max?: number
+  interest_type?: string
+  interest_zones?: string
+  timeline?: string
+  score?: number
+  gdprConsent?: boolean
+  gdprConsentDate?: string
+  gdprConsentOrigin?: string
+  lastContactedAt?: string
   assignedToId: string
   assignedTo?: User
   opportunities?: Opportunity[]
@@ -75,16 +100,33 @@ export interface Property {
   title: string
   description?: string
   type: PropertyType
+  purpose?: PropertyPurpose
   status: PropertyStatus
   price: number
   address: string
+  district?: string
+  lat?: number
+  lng?: number
   area?: number
   bedrooms?: number
   bathrooms?: number
   parking?: number
   reference?: string
+  energyCertificate?: string
+  yearBuilt?: number
+  condition?: string
+  features?: string
+  virtualTourUrl?: string
+  tags?: string
+  portalsPublished?: string
+  commission?: number
+  contractStart?: string
+  contractEnd?: string
+  viewCount?: number
   imageUrls: string
+  createdById?: string
   createdAt: string
+  updatedAt?: string
 }
 
 export interface Opportunity {

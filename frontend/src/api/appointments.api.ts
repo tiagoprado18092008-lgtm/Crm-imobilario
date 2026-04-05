@@ -1,4 +1,4 @@
-import api from './axios';
+import api from './client';
 
 export const listAppointments = (params?: any) => api.get('/appointments', { params });
 export const getUpcoming = () => api.get('/appointments/upcoming');

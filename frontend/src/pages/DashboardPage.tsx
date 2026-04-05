@@ -15,15 +15,7 @@ import type { ReportSummary, PipelineStage, Task, Contact } from '../types'
 
 const FUNNEL_COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#f59e0b', '#f97316', '#10b981', '#f43f5e']
 
-const STAGE_LABELS: Record<string, string> = {
-  LEAD_IN: 'Entrada',
-  QUALIFYING: 'Qualificação',
-  VISIT_SCHEDULED: 'Visita',
-  PROPOSAL_SENT: 'Proposta',
-  NEGOTIATION: 'Negociação',
-  CLOSED_WON: 'Ganho',
-  CLOSED_LOST: 'Perdido',
-}
+import { STAGE_LABELS } from '../utils/constants'
 
 function formatCurrency(v: number) {
   if (v >= 1_000_000) return `€${(v / 1_000_000).toFixed(1)}M`
@@ -42,15 +34,15 @@ interface KpiCardProps {
 const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon, iconBg }) => {
   const positive = trend === undefined || trend >= 0
   return (
-    <div className="metric-card bg-white rounded-2xl p-6 flex flex-col gap-4" style={{ border: '1px solid #eaecf3', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
+    <div className="metric-card rounded-2xl p-6 flex flex-col gap-4" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{title}</span>
+        <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{title}</span>
         <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: iconBg }}>
           {icon}
         </div>
       </div>
       <div>
-        <div className="font-bold text-slate-900 mt-1" style={{ fontSize: 32, letterSpacing: '-0.02em' }}>{value}</div>
+        <div className="font-bold mt-1" style={{ fontSize: 32, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>{value}</div>
         {trend !== undefined && (
           <div className="flex items-center gap-1.5 mt-2">
             <span
@@ -63,7 +55,7 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon, iconBg }) 
               {positive ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
               {Math.abs(trend)}%
             </span>
-            <span className="text-xs text-slate-400">vs 30 dias</span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>vs 30 dias</span>
           </div>
         )}
       </div>
@@ -178,15 +170,15 @@ export const DashboardPage: React.FC = () => {
         <div className="relative" ref={periodRef}>
           <button
             onClick={() => setShowPeriodMenu(!showPeriodMenu)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-slate-700"
-            style={{ border: '1px solid #eaecf3', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', cursor: 'pointer' }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium"
+            style={{ border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-secondary)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', cursor: 'pointer' }}
           >
-            <CalendarDays size={14} className="text-slate-400" />
+            <CalendarDays size={14} style={{ color: 'var(--text-muted)' }} />
             {PERIODS.find(p => p.value === period)?.label ?? 'Últimos 30 dias'}
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: '#94a3b8', transform: showPeriodMenu ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 150ms' }}><path d="m6 9 6 6 6-6"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ color: 'var(--text-muted)', transform: showPeriodMenu ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 150ms' }}><path d="m6 9 6 6 6-6"/></svg>
           </button>
           {showPeriodMenu && (
-            <div style={{ position: 'absolute', top: 40, left: 0, zIndex: 50, background: '#fff', borderRadius: 12, border: '1px solid #eaecf3', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 6, minWidth: 190 }}>
+            <div style={{ position: 'absolute', top: 40, left: 0, zIndex: 50, background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 6, minWidth: 190 }}>
               {PERIODS.map(p => (
                 <button
                   key={p.value}
@@ -195,7 +187,7 @@ export const DashboardPage: React.FC = () => {
                     display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px',
                     borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13,
                     background: period === p.value ? '#eef2ff' : 'transparent',
-                    color: period === p.value ? '#6366f1' : '#374151',
+                    color: period === p.value ? '#6366f1' : 'var(--text-secondary)',
                     fontWeight: period === p.value ? 600 : 400,
                   }}
                 >
@@ -205,7 +197,7 @@ export const DashboardPage: React.FC = () => {
             </div>
           )}
         </div>
-        <span className="text-xs text-slate-400" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <span className="text-xs" style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
           <PencilLine size={12} /> Dados em tempo real
         </span>
       </div>
@@ -260,37 +252,42 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Row 2b: Conversão por fonte */}
-      <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #eaecf3', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="font-semibold text-slate-800 text-sm">Taxa de Conversão por Fonte de Lead</h3>
-          <span className="text-xs text-slate-400">ROI por canal de aquisição</span>
+      <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
+        <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+          <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Taxa de Conversão por Fonte de Lead</h3>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>ROI por canal de aquisição</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-100">
-                <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Fonte</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Leads</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Ganhos</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Taxa</th>
-                <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Performance</th>
+              <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Fonte</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Leads</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Ganhos</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Taxa</th>
+                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Performance</th>
               </tr>
             </thead>
             <tbody>
               {sourceRows.length === 0 ? (
-                <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-400">Sem dados</td></tr>
+                <tr><td colSpan={5} className="px-6 py-8 text-center" style={{ color: 'var(--text-muted)' }}>Sem dados</td></tr>
               ) : (
                 sourceRows.map(([src, data]) => {
                   const rate = data.total > 0 ? Math.round((data.won / data.total) * 100) : 0
                   const color = rate >= 30 ? '#22c55e' : rate >= 15 ? '#f59e0b' : '#ef4444'
                   return (
-                    <tr key={src} className="border-b border-slate-50 hover:bg-slate-50">
-                      <td className="px-6 py-3 font-medium text-slate-700">{src}</td>
-                      <td className="px-4 py-3 text-right text-slate-600">{data.total}</td>
+                    <tr
+                      key={src}
+                      style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <td className="px-6 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{src}</td>
+                      <td className="px-4 py-3 text-right" style={{ color: 'var(--text-secondary)' }}>{data.total}</td>
                       <td className="px-4 py-3 text-right text-emerald-600 font-medium">{data.won}</td>
                       <td className="px-4 py-3 text-right font-bold" style={{ color }}>{rate}%</td>
                       <td className="px-4 py-3">
-                        <div className="w-full h-2 rounded-full bg-slate-100">
+                        <div className="w-full h-2 rounded-full" style={{ background: 'var(--border-color)' }}>
                           <div className="h-full rounded-full" style={{ width: `${Math.min(rate * 2, 100)}%`, background: color }} />
                         </div>
                       </td>
@@ -305,30 +302,36 @@ export const DashboardPage: React.FC = () => {
 
       {/* Row 3: Tasks + Funnel */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-            <h3 className="font-semibold text-slate-800 text-sm">Tarefas Pendentes</h3>
+        <div className="lg:col-span-3 rounded-xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Tarefas Pendentes</h3>
             <a href="/tasks" className="text-xs font-semibold hover:underline" style={{ color: '#6366f1', textDecoration: 'none' }}>Ver todas →</a>
           </div>
           {tasks.length === 0 ? (
-            <div className="px-6 py-10 text-center text-slate-400 text-sm">Sem tarefas pendentes</div>
+            <div className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Sem tarefas pendentes</div>
           ) : (
-            <ul className="divide-y divide-slate-50">
+            <ul>
               {tasks.map((task) => {
                 const overdue = task.dueDate ? isPast(parseISO(task.dueDate)) : false
                 return (
-                  <li key={task.id} className="flex items-start gap-3 px-6 py-3.5 hover:bg-slate-50">
-                    <div className="mt-0.5 w-4 h-4 rounded-md flex-shrink-0 cursor-pointer" style={{ border: '2px solid #e2e8f0', flexShrink: 0 }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#6366f1')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#e2e8f0')} />
+                  <li
+                    key={task.id}
+                    className="flex items-start gap-3 px-6 py-3.5"
+                    style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <div className="mt-0.5 w-4 h-4 rounded-md flex-shrink-0 cursor-pointer" style={{ border: '2px solid var(--border-color)', flexShrink: 0 }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#6366f1')} onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border-color)')} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">{task.title}</p>
+                      <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        {task.contact && <span className="text-xs text-slate-400">{task.contact.name}</span>}
+                        {task.contact && <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{task.contact.name}</span>}
                         {task.dueDate && (
                           <span
                             className="text-xs font-medium px-1.5 py-0.5 rounded"
                             style={{
-                              background: overdue ? '#fee2e2' : '#f1f5f9',
-                              color: overdue ? '#dc2626' : '#64748b',
+                              background: overdue ? '#fee2e2' : 'var(--border-color)',
+                              color: overdue ? '#dc2626' : 'var(--text-secondary)',
                             }}
                           >
                             {overdue
@@ -337,9 +340,9 @@ export const DashboardPage: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      {task.assignedTo && <p className="text-xs text-slate-400 mt-0.5">{task.assignedTo.name}</p>}
+                      {task.assignedTo && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{task.assignedTo.name}</p>}
                     </div>
-                    <button className="text-slate-300 hover:text-slate-500 p-1">
+                    <button className="p-1" style={{ color: 'var(--text-muted)' }}>
                       <MoreHorizontal size={14} />
                     </button>
                   </li>
@@ -349,18 +352,18 @@ export const DashboardPage: React.FC = () => {
           )}
         </div>
 
-        <div className="lg:col-span-2 bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #eaecf3', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h3 className="font-semibold text-slate-800 text-sm">Funil de Vendas</h3>
+        <div className="lg:col-span-2 rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
+          <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Funil de Vendas</h3>
           </div>
           {funnelData.length === 0 ? (
-            <div className="px-6 py-10 text-center text-slate-400 text-sm">Sem dados de pipeline</div>
+            <div className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Sem dados de pipeline</div>
           ) : (
             <div className="px-4 py-4 space-y-2">
               {funnelData.map((stage, i) => (
                 <div key={stage.stage} className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500 w-20 flex-shrink-0 truncate">{stage.label}</span>
-                  <div className="flex-1 h-6 rounded bg-slate-100 overflow-hidden">
+                  <span className="text-xs w-20 flex-shrink-0 truncate" style={{ color: 'var(--text-secondary)' }}>{stage.label}</span>
+                  <div className="flex-1 h-6 rounded overflow-hidden" style={{ background: 'var(--border-color)' }}>
                     <div
                       className="h-full rounded transition-all duration-500"
                       style={{
@@ -371,8 +374,8 @@ export const DashboardPage: React.FC = () => {
                     />
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <span className="text-xs font-bold text-slate-700 w-5 text-right">{stage.count}</span>
-                    <span className="text-xs text-slate-400 w-8">{stage.conversion}%</span>
+                    <span className="text-xs font-bold w-5 text-right" style={{ color: 'var(--text-primary)' }}>{stage.count}</span>
+                    <span className="text-xs w-8" style={{ color: 'var(--text-muted)' }}>{stage.conversion}%</span>
                   </div>
                 </div>
               ))}
@@ -383,31 +386,36 @@ export const DashboardPage: React.FC = () => {
 
       {/* Row 4: Source table + Donut */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #eaecf3', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h3 className="font-semibold text-slate-800 text-sm">Contactos por Fonte</h3>
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
+          <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Contactos por Fonte</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-100">
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Fonte</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Total</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Abertas</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Ganhas</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Perdidas</th>
+                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                  <th className="text-left px-6 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Fonte</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Total</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Abertas</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Ganhas</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Perdidas</th>
                 </tr>
               </thead>
               <tbody>
                 {sourceRows.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-slate-400">Sem dados</td>
+                    <td colSpan={5} className="px-6 py-8 text-center" style={{ color: 'var(--text-muted)' }}>Sem dados</td>
                   </tr>
                 ) : (
                   sourceRows.map(([src, data]) => (
-                    <tr key={src} className="border-b border-slate-50 hover:bg-slate-50">
-                      <td className="px-6 py-3 font-medium text-slate-700">{src}</td>
-                      <td className="px-4 py-3 text-right text-slate-600">{data.total}</td>
+                    <tr
+                      key={src}
+                      style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <td className="px-6 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{src}</td>
+                      <td className="px-4 py-3 text-right" style={{ color: 'var(--text-secondary)' }}>{data.total}</td>
                       <td className="px-4 py-3 text-right text-blue-600">{data.open}</td>
                       <td className="px-4 py-3 text-right text-emerald-600">{data.won}</td>
                       <td className="px-4 py-3 text-right text-red-500">{data.lost}</td>
@@ -419,12 +427,12 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl overflow-hidden" style={{ border: '1px solid #eaecf3', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h3 className="font-semibold text-slate-800 text-sm">Distribuição de Oportunidades</h3>
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03)' }}>
+          <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Distribuição de Oportunidades</h3>
           </div>
           {donutData.length === 0 ? (
-            <div className="px-6 py-10 text-center text-slate-400 text-sm">Sem oportunidades</div>
+            <div className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>Sem oportunidades</div>
           ) : (
             <div className="flex items-center justify-center py-4">
               <ResponsiveContainer width="100%" height={220}>
@@ -444,22 +452,22 @@ export const DashboardPage: React.FC = () => {
                   </Pie>
                   <Tooltip
                     formatter={(value: any, name: any) => [value, name]}
-                    contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }}
+                    contentStyle={{ borderRadius: 8, border: '1px solid var(--border-color)', fontSize: 12 }}
                   />
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: '#64748b' }} />
+                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: 'var(--text-secondary)' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           )}
           {convStats && (
             <div className="flex items-center gap-4 px-6 pb-4">
-              <div className="flex-1 text-center border-r border-slate-100">
-                <div className="text-2xl font-bold text-slate-800">{convStats.open}</div>
-                <div className="text-xs text-slate-400 mt-0.5">Conversas abertas</div>
+              <div className="flex-1 text-center" style={{ borderRight: '1px solid var(--border-subtle)' }}>
+                <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{convStats.open}</div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Conversas abertas</div>
               </div>
               <div className="flex-1 text-center">
-                <div className="text-2xl font-bold text-slate-800">{convStats.resolved}</div>
-                <div className="text-xs text-slate-400 mt-0.5">Resolvidas</div>
+                <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{convStats.resolved}</div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Resolvidas</div>
               </div>
             </div>
           )}

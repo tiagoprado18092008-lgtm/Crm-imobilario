@@ -8,8 +8,8 @@ export async function sendInstagramDM(
   const pageId = process.env.INSTAGRAM_PAGE_ID;
 
   if (!token || !pageId) {
-    console.log(`[Instagram DEMO] To: ${recipientId} | Message: ${message}`);
-    return { success: true, messageId: `demo_ig_${Date.now()}` };
+    console.log(`[Instagram SIM] To: ${recipientId} | Message: ${message}`);
+    return { success: true, messageId: `sim_ig_${Date.now()}` };
   }
 
   try {

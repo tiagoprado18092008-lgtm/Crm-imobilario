@@ -36,8 +36,8 @@ export function generateTwilioToken(identity: string): string {
 
 export async function sendSMS(to: string, body: string): Promise<{ sid: string; status: string }> {
   if (!isTwilioConfigured()) {
-    console.log(`[Twilio DEMO] SMS to ${to}: ${body}`)
-    return { sid: `demo_sms_${Date.now()}`, status: 'demo-sent' }
+    console.log(`[Twilio SIM] SMS to ${to}: ${body}`)
+    return { sid: `sim_sms_${Date.now()}`, status: 'queued' }
   }
   const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)
   const msg = await client.messages.create({
@@ -53,8 +53,8 @@ export async function makeOutboundCall(
   from?: string
 ): Promise<{ sid: string; status: string }> {
   if (!isTwilioConfigured()) {
-    console.log(`[Twilio DEMO] Calling ${to} from ${from || process.env.TWILIO_PHONE_NUMBER}`)
-    return { sid: `demo_call_${Date.now()}`, status: 'demo-initiated' }
+    console.log(`[Twilio SIM] Calling ${to} from ${from || process.env.TWILIO_PHONE_NUMBER}`)
+    return { sid: `sim_call_${Date.now()}`, status: 'queued' }
   }
 
   const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!)

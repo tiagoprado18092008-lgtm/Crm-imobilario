@@ -11,6 +11,7 @@ export const list = async () => {
       phone: true,
       avatarUrl: true,
       isActive: true,
+      onboardingCompleted: true,
       supervisorId: true,
       createdAt: true,
       updatedAt: true,
@@ -59,6 +60,7 @@ export const create = async (dto: {
       phone: true,
       avatarUrl: true,
       isActive: true,
+      onboardingCompleted: true,
       supervisorId: true,
       createdAt: true,
       updatedAt: true,
@@ -78,6 +80,7 @@ export const getById = async (id: string) => {
       phone: true,
       avatarUrl: true,
       isActive: true,
+      onboardingCompleted: true,
       supervisorId: true,
       createdAt: true,
       updatedAt: true,
@@ -109,6 +112,7 @@ export const update = async (
     avatarUrl?: string;
     supervisorId?: string;
     isActive?: boolean;
+    onboardingCompleted?: boolean;
   }
 ) => {
   const updateData: any = {};
@@ -119,6 +123,7 @@ export const update = async (
   if (dto.avatarUrl !== undefined) updateData.avatarUrl = dto.avatarUrl;
   if (dto.supervisorId !== undefined) updateData.supervisorId = dto.supervisorId;
   if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
+  if (dto.onboardingCompleted !== undefined) updateData.onboardingCompleted = dto.onboardingCompleted;
   if (dto.password) {
     updateData.passwordHash = await bcrypt.hash(dto.password, 12);
   }
@@ -134,6 +139,7 @@ export const update = async (
       phone: true,
       avatarUrl: true,
       isActive: true,
+      onboardingCompleted: true,
       supervisorId: true,
       createdAt: true,
       updatedAt: true,

@@ -1,4 +1,4 @@
-import api from './axios';
+import api from './client';
 
 export const searchNumbers = (country: string, areaCode?: string, type?: string) =>
   api.get('/phone-numbers/search', { params: { country, areaCode, type } });

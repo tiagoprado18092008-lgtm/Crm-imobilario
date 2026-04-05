@@ -11,7 +11,10 @@ import { useUIStore } from '../store/ui.store'
 import { useAuthStore } from '../store/auth.store'
 import { formatCurrency } from '../utils/formatters'
 import { STAGE_LABELS, ROLE_LABELS } from '../utils/constants'
-import { Users, TrendingUp, DollarSign, CheckSquare } from 'lucide-react'
+import { Users, TrendingUp, DollarSign, CheckSquare, Download } from 'lucide-react'
+import { Button } from '../components/ui/Button'
+import { exportContacts, exportOpportunities } from '../api/exports.api'
+import { downloadBlob } from '../utils/download'
 
 const FUNNEL_COLORS = [
   '#64748b', '#3b82f6', '#f59e0b', '#f97316', '#8b5cf6', '#22c55e', '#ef4444'
@@ -55,52 +58,80 @@ export const ReportsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Export Buttons */}
+      <div className="flex items-center gap-3 justify-end">
+        <Button
+          variant="secondary"
+          onClick={async () => {
+            try {
+              const res = await exportContacts()
+              downloadBlob(res.data, 'contactos.csv')
+              showToast('Contactos exportados', 'success')
+            } catch { showToast('Erro ao exportar', 'error') }
+          }}
+        >
+          <Download className="w-4 h-4" /> Exportar Contactos
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={async () => {
+            try {
+              const res = await exportOpportunities()
+              downloadBlob(res.data, 'oportunidades.csv')
+              showToast('Oportunidades exportadas', 'success')
+            } catch { showToast('Erro ao exportar', 'error') }
+          }}
+        >
+          <Download className="w-4 h-4" /> Exportar Oportunidades
+        </Button>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center">
-              <Users className="w-5 h-5 text-blue-600" />
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#dbeafe' }}>
+              <Users className="w-5 h-5" style={{ color: '#2563eb' }} />
             </div>
-            <span className="text-sm text-gray-600">Total Contactos</span>
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Total Contactos</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{summary?.totalContacts ?? 0}</p>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{summary?.totalContacts ?? 0}</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
             {summary?.totalLeads ?? 0} leads • {summary?.totalClients ?? 0} clientes
           </p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-purple-600" />
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#ede9fe' }}>
+              <TrendingUp className="w-5 h-5" style={{ color: '#7c3aed' }} />
             </div>
-            <span className="text-sm text-gray-600">Oportunidades Abertas</span>
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Oportunidades Abertas</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{summary?.openOpportunities ?? 0}</p>
+          <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{summary?.openOpportunities ?? 0}</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-green-600" />
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#dcfce7' }}>
+              <DollarSign className="w-5 h-5" style={{ color: '#16a34a' }} />
             </div>
-            <span className="text-sm text-gray-600">Valor Pipeline</span>
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Valor Pipeline</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{formatCurrency(summary?.pipelineValue ?? 0)}</p>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{formatCurrency(summary?.pipelineValue ?? 0)}</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
             {summary?.closedWonThisMonth ?? 0} fechados este mês
           </p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-9 h-9 bg-orange-50 rounded-lg flex items-center justify-center">
-              <CheckSquare className="w-5 h-5 text-orange-600" />
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#ffedd5' }}>
+              <CheckSquare className="w-5 h-5" style={{ color: '#ea580c' }} />
             </div>
-            <span className="text-sm text-gray-600">Tarefas Hoje</span>
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Tarefas Hoje</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{summary?.tasksDueToday ?? 0}</p>
+          <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{summary?.tasksDueToday ?? 0}</p>
         </div>
       </div>
 
@@ -110,18 +141,18 @@ export const ReportsPage: React.FC = () => {
           {pipelineChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={pipelineChartData} margin={{ top: 5, right: 10, left: -10, bottom: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
                 <XAxis
                   dataKey="stage"
-                  tick={{ fontSize: 10, fill: '#64748b' }}
+                  tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
                   tickLine={false}
                   axisLine={false}
                   angle={-30}
                   textAnchor="end"
                 />
-                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
                 <Tooltip
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                   formatter={(value: any, name: any) => [
                     name === 'count' ? value + ' oportunidades' : formatCurrency(Number(value)),
                     name === 'count' ? 'Quantidade' : 'Valor'
@@ -135,7 +166,7 @@ export const ReportsPage: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
+            <div className="flex items-center justify-center h-48 text-sm" style={{ color: 'var(--text-muted)' }}>
               Sem dados de pipeline
             </div>
           )}
@@ -146,23 +177,23 @@ export const ReportsPage: React.FC = () => {
           {pipelineChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={pipelineChartData} margin={{ top: 5, right: 10, left: 10, bottom: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
                 <XAxis
                   dataKey="stage"
-                  tick={{ fontSize: 10, fill: '#64748b' }}
+                  tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
                   tickLine={false}
                   axisLine={false}
                   angle={-30}
                   textAnchor="end"
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#64748b' }}
+                  tick={{ fontSize: 11, fill: 'var(--text-muted)' }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`}
                 />
                 <Tooltip
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
                   formatter={(value: any) => [formatCurrency(Number(value)), 'Valor Total']}
                 />
                 <Bar dataKey="totalValue" radius={[4, 4, 0, 0]}>
@@ -173,7 +204,7 @@ export const ReportsPage: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
+            <div className="flex items-center justify-center h-48 text-sm" style={{ color: 'var(--text-muted)' }}>
               Sem dados
             </div>
           )}
@@ -184,28 +215,30 @@ export const ReportsPage: React.FC = () => {
       {user?.role === 'ADMIN' && (
         <Card title="Performance por Agente">
           {agents.length === 0 ? (
-            <div className="text-center py-8 text-gray-400 text-sm">Sem dados de performance</div>
+            <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Sem dados de performance</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Agente</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Função</th>
-                    <th className="text-right py-3 px-4 font-semibold text-gray-700">Contactos</th>
-                    <th className="text-right py-3 px-4 font-semibold text-gray-700">Oportunidades</th>
-                    <th className="text-right py-3 px-4 font-semibold text-gray-700">Fechados (Ganhos)</th>
+                  <tr className="border-b" style={{ borderColor: 'var(--border-color)' }}>
+                    <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>Agente</th>
+                    <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>Função</th>
+                    <th className="text-right py-3 px-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>Contactos</th>
+                    <th className="text-right py-3 px-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>Oportunidades</th>
+                    <th className="text-right py-3 px-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>Fechados (Ganhos)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
                   {agents.map((perf, i) => (
-                    <tr key={i} className="hover:bg-gray-50">
+                    <tr key={i}
+                      onMouseOver={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                      onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: '#dbeafe', color: '#1d4ed8' }}>
                             {perf.agent?.name ? perf.agent.name.charAt(0).toUpperCase() : '?'}
                           </div>
-                          <span className="font-medium text-gray-900">{perf.agent?.name || 'N/A'}</span>
+                          <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{perf.agent?.name || 'N/A'}</span>
                         </div>
                       </td>
                       <td className="py-3 px-4">
@@ -213,10 +246,10 @@ export const ReportsPage: React.FC = () => {
                           {ROLE_LABELS[perf.agent?.role] || perf.agent?.role}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4 text-right text-gray-700 font-medium">{perf.contacts}</td>
-                      <td className="py-3 px-4 text-right text-gray-700 font-medium">{perf.openOpportunities}</td>
+                      <td className="py-3 px-4 text-right font-medium" style={{ color: 'var(--text-secondary)' }}>{perf.contacts}</td>
+                      <td className="py-3 px-4 text-right font-medium" style={{ color: 'var(--text-secondary)' }}>{perf.openOpportunities}</td>
                       <td className="py-3 px-4 text-right">
-                        <span className="font-semibold text-green-700">{perf.closedWon}</span>
+                        <span className="font-semibold" style={{ color: '#16a34a' }}>{perf.closedWon}</span>
                       </td>
                     </tr>
                   ))}

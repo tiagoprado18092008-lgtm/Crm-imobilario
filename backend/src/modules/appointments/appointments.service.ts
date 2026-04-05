@@ -9,9 +9,20 @@ const select = {
   createdAt: true, updatedAt: true,
 };
 
-export const list = async (userId: string, role: string, filters: any = {}) => {
-  const where: any = {};
-  if (role !== 'ADMIN' && role !== 'PRINCIPAL_CONSULTANT') where.assignedToId = userId;
+const buildWhereClause = async (user: any): Promise<any> => {
+  if (user.role === 'ADMIN') return {};
+  if (user.role === 'PRINCIPAL_CONSULTANT') {
+    const subAgents = await prisma.user.findMany({
+      where: { supervisorId: user.id },
+      select: { id: true },
+    });
+    return { assignedToId: { in: [user.id, ...subAgents.map((a: any) => a.id)] } };
+  }
+  return { assignedToId: user.id };
+};
+
+export const list = async (user: any, filters: any = {}) => {
+  const where: any = await buildWhereClause(user);
   if (filters.status) where.status = filters.status;
   if (filters.type) where.type = filters.type;
   if (filters.contactId) where.contactId = filters.contactId;
@@ -23,8 +34,10 @@ export const list = async (userId: string, role: string, filters: any = {}) => {
   return prisma.appointment.findMany({ where, select, orderBy: { startAt: 'asc' } });
 };
 
-export const getById = async (id: string) => {
-  const a = await prisma.appointment.findUnique({ where: { id }, select });
+export const getById = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const a = await prisma.appointment.findFirst({ where, select });
   if (!a) throw Object.assign(new Error('Agendamento não encontrado'), { status: 404 });
   return a;
 };
@@ -40,15 +53,20 @@ export const create = async (userId: string, dto: any) => {
       type: dto.type || 'VISIT',
       notes: dto.notes,
       location: dto.location,
-      contactId: dto.contactId,
-      opportunityId: dto.opportunityId,
+      contactId: dto.contactId || undefined,
+      opportunityId: dto.opportunityId || undefined,
       assignedToId: dto.assignedToId || userId,
     },
     select,
   });
 };
 
-export const update = async (id: string, dto: any) => {
+export const update = async (id: string, dto: any, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const existing = await prisma.appointment.findFirst({ where });
+  if (!existing) throw Object.assign(new Error('Agendamento não encontrado ou acesso negado'), { status: 404 });
+
   const data: any = {};
   if (dto.title !== undefined) data.title = dto.title;
   if (dto.description !== undefined) data.description = dto.description;
@@ -58,20 +76,22 @@ export const update = async (id: string, dto: any) => {
   if (dto.type) data.type = dto.type;
   if (dto.notes !== undefined) data.notes = dto.notes;
   if (dto.location !== undefined) data.location = dto.location;
-  if (dto.contactId !== undefined) data.contactId = dto.contactId;
+  if (dto.contactId !== undefined) data.contactId = dto.contactId || null;
   if (dto.assignedToId) data.assignedToId = dto.assignedToId;
   return prisma.appointment.update({ where: { id }, data, select });
 };
 
-export const remove = async (id: string) => {
+export const remove = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const existing = await prisma.appointment.findFirst({ where });
+  if (!existing) throw Object.assign(new Error('Agendamento não encontrado ou acesso negado'), { status: 404 });
   await prisma.appointment.delete({ where: { id } });
 };
 
-export const getUpcoming = async (userId: string, role: string) => {
-  const where: any = {
-    startAt: { gte: new Date() },
-    status: { in: ['SCHEDULED', 'CONFIRMED'] },
-  };
-  if (role !== 'ADMIN' && role !== 'PRINCIPAL_CONSULTANT') where.assignedToId = userId;
+export const getUpcoming = async (user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.startAt = { gte: new Date() };
+  where.status = { in: ['SCHEDULED', 'CONFIRMED'] };
   return prisma.appointment.findMany({ where, select, orderBy: { startAt: 'asc' }, take: 10 });
 };

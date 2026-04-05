@@ -79,7 +79,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
           style={{
             width: '100%', padding: '10px 12px', borderRadius: 8,
             border: '1px solid #e2e8f0', fontSize: 13, resize: 'vertical',
-            outline: 'none', fontFamily: 'inherit', color: '#1e293b',
+            outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)',
           }}
         />
         <ContextRow opportunity={opportunity} />
@@ -124,7 +124,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
           style={{
             width: '100%', padding: '10px 12px', borderRadius: 8,
             border: '1px solid #e2e8f0', fontSize: 13,
-            outline: 'none', fontFamily: 'inherit', color: '#1e293b',
+            outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)',
             boxSizing: 'border-box',
           }}
         />
@@ -138,7 +138,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
               style={{
                 width: '100%', padding: '8px 10px', borderRadius: 8,
                 border: '1px solid #e2e8f0', fontSize: 12,
-                outline: 'none', fontFamily: 'inherit', color: '#1e293b',
+                outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)',
               }}
             />
           </div>
@@ -150,7 +150,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
               style={{
                 width: '100%', padding: '8px 10px', borderRadius: 8,
                 border: '1px solid #e2e8f0', fontSize: 12,
-                outline: 'none', fontFamily: 'inherit', color: '#1e293b', background: '#fff',
+                outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--bg-card)',
               }}
             >
               <option value="LOW">Baixa</option>
@@ -197,7 +197,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
     return (
       <Overlay onClose={onClose} title="Mensagem WhatsApp" icon={<MessageCircle size={16} />} color="#25d366">
         <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
-          Para: <strong style={{ color: '#1e293b' }}>{contact?.name}</strong>
+          Para: <strong style={{ color: 'var(--text-primary)' }}>{contact?.name}</strong>
           {phone && <span style={{ marginLeft: 6, color: '#94a3b8' }}>{phone}</span>}
           {!phone && <span style={{ marginLeft: 6, color: '#ef4444' }}>Sem número registado</span>}
         </div>
@@ -210,7 +210,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
           style={{
             width: '100%', padding: '10px 12px', borderRadius: 8,
             border: '1px solid #e2e8f0', fontSize: 13, resize: 'vertical',
-            outline: 'none', fontFamily: 'inherit', color: '#1e293b',
+            outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)',
           }}
         />
         <ContextRow opportunity={opportunity} />
@@ -244,7 +244,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
     return (
       <Overlay onClose={onClose} title="Enviar SMS" icon={<MessageSquare size={16} />} color="#3b82f6">
         <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
-          Para: <strong style={{ color: '#1e293b' }}>{contact?.name}</strong>
+          Para: <strong style={{ color: 'var(--text-primary)' }}>{contact?.name}</strong>
           {contact?.phone && <span style={{ marginLeft: 6, color: '#94a3b8' }}>{contact.phone}</span>}
         </div>
         <textarea
@@ -256,7 +256,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
           style={{
             width: '100%', padding: '10px 12px', borderRadius: 8,
             border: '1px solid #e2e8f0', fontSize: 13, resize: 'none',
-            outline: 'none', fontFamily: 'inherit', color: '#1e293b',
+            outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)',
           }}
         />
         <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
@@ -290,7 +290,7 @@ const Overlay: React.FC<{
   >
     <div
       style={{
-        background: '#fff', borderRadius: 14, width: 420, maxWidth: '95vw',
+        background: 'var(--bg-card)', borderRadius: 14, width: 420, maxWidth: '95vw',
         boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
         overflow: 'hidden',
       }}
@@ -335,12 +335,12 @@ const ContextRow: React.FC<{ opportunity: Opportunity }> = ({ opportunity }) => 
   <div
     style={{
       display: 'flex', alignItems: 'center', gap: 8, marginTop: 12,
-      padding: '8px 10px', borderRadius: 8, background: '#f8fafc',
+      padding: '8px 10px', borderRadius: 8, background: 'var(--bg-page)',
       border: '1px solid #f1f5f9',
     }}
   >
     <span style={{ fontSize: 11, color: '#94a3b8' }}>Oportunidade:</span>
-    <span style={{ fontSize: 11, fontWeight: 600, color: '#475569', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
       {opportunity.title}
     </span>
   </div>
@@ -358,7 +358,7 @@ const ActionButtons: React.FC<{
       onClick={onCancel}
       style={{
         padding: '8px 16px', borderRadius: 8, border: '1px solid #e2e8f0',
-        background: '#f8fafc', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+        background: 'var(--bg-page)', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer',
       }}
     >
       Cancelar

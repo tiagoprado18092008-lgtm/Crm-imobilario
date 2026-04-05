@@ -56,68 +56,68 @@ export const PropertyDetailPage: React.FC = () => {
     <div className="space-y-4">
       <button
         onClick={() => navigate('/properties')}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700"
+        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
       >
-        <ArrowLeft className="w-4 h-4" /> Voltar às Propriedades
+        <ArrowLeft size={15} /> Voltar às Propriedades
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           <Card>
-            <div className="flex items-start justify-between mb-4">
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{property.title}</h2>
-                <div className="flex items-center gap-2 mt-2">
+                <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{property.title}</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
                   <Badge variant="default">{PROPERTY_TYPE_LABELS[property.type]}</Badge>
                   <Badge variant={statusVariant[property.status]}>
                     {PROPERTY_STATUS_LABELS[property.status]}
                   </Badge>
                   {property.reference && (
-                    <span className="text-xs text-gray-500">Ref: {property.reference}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Ref: {property.reference}</span>
                   )}
                 </div>
               </div>
-              <span className="text-2xl font-bold text-green-700">
+              <span style={{ fontSize: 22, fontWeight: 800, color: '#4ade80' }}>
                 {formatCurrency(property.price)}
               </span>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-              <MapPin className="w-4 h-4 text-gray-400" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+              <MapPin size={14} style={{ color: 'var(--text-muted)' }} />
               {property.address}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-4 border-y border-gray-100">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, padding: '12px 0', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
               {property.bedrooms !== undefined && (
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <BedDouble className="w-4 h-4 text-gray-400" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
+                  <BedDouble size={14} style={{ color: 'var(--text-muted)' }} />
                   <span>{property.bedrooms} quartos</span>
                 </div>
               )}
               {property.bathrooms !== undefined && (
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <Bath className="w-4 h-4 text-gray-400" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
+                  <Bath size={14} style={{ color: 'var(--text-muted)' }} />
                   <span>{property.bathrooms} WC</span>
                 </div>
               )}
               {property.parking !== undefined && (
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <Car className="w-4 h-4 text-gray-400" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
+                  <Car size={14} style={{ color: 'var(--text-muted)' }} />
                   <span>{property.parking} lugares</span>
                 </div>
               )}
               {property.area !== undefined && (
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <Maximize className="w-4 h-4 text-gray-400" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
+                  <Maximize size={14} style={{ color: 'var(--text-muted)' }} />
                   <span>{property.area} m²</span>
                 </div>
               )}
             </div>
 
             {property.description && (
-              <div className="mt-4">
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Descrição</p>
-                <p className="text-sm text-gray-700 leading-relaxed">{property.description}</p>
+              <div style={{ marginTop: 16 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Descrição</p>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{property.description}</p>
               </div>
             )}
           </Card>
@@ -125,28 +125,28 @@ export const PropertyDetailPage: React.FC = () => {
 
         <div className="space-y-4">
           <Card title="Informação">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Criado em</span>
-                <span className="text-gray-800">{formatDate(property.createdAt)}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Criado em</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatDate(property.createdAt)}</span>
               </div>
             </div>
           </Card>
 
           <Card title={`Oportunidades (${opportunities.length})`}>
             {opportunities.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">Sem oportunidades ligadas</p>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>Sem oportunidades ligadas</p>
             ) : (
-              <div className="space-y-3">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {opportunities.map((opp) => (
-                  <div key={opp.id} className="p-3 bg-gray-50 rounded-lg">
-                    <p className="font-medium text-gray-900 text-sm">{opp.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                  <div key={opp.id} style={{ padding: 12, background: 'var(--bg-page)', borderRadius: 10 }}>
+                    <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)', margin: 0 }}>{opp.title}</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
                       {STAGE_LABELS[opp.stage]}
                       {opp.contact && ` • ${opp.contact.name}`}
                     </p>
                     {opp.value && (
-                      <p className="text-sm font-semibold text-green-700 mt-1">
+                      <p style={{ fontSize: 13, fontWeight: 700, color: '#4ade80', marginTop: 4 }}>
                         {formatCurrency(opp.value)}
                       </p>
                     )}

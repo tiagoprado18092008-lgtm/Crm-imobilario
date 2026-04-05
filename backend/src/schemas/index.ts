@@ -21,11 +21,20 @@ export const createContactSchema = z.object({
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   phone: z.string().optional(),
   whatsapp: z.string().optional(),
-  type: z.enum(['LEAD', 'CLIENT']).default('LEAD'),
+  type: z.enum(['LEAD', 'CLIENT', 'OWNER', 'PARTNER']).default('LEAD'),
   status: z.enum(['NEW', 'QUALIFIED', 'CONTACTED', 'INACTIVE']).default('NEW'),
   source: z.string().optional(),
   notes: z.string().optional(),
+  preferences: z.string().optional(),
   assignedToId: z.string().optional(),
+  city: z.string().optional(),
+  postalCode: z.string().optional(),
+  budget_min: z.number().optional(),
+  budget_max: z.number().optional(),
+  interest_type: z.string().optional(),
+  timeline: z.string().optional(),
+  gdprConsent: z.boolean().optional(),
+  gdprConsentOrigin: z.string().optional(),
 });
 
 export const updateContactSchema = createContactSchema.partial();
@@ -69,8 +78,8 @@ export const updateTaskSchema = createTaskSchema.partial();
 // Properties
 export const createPropertySchema = z.object({
   title: z.string().min(1, 'Título obrigatório'),
-  type: z.enum(['APARTMENT', 'HOUSE', 'COMMERCIAL', 'LAND', 'OTHER']).default('APARTMENT'),
-  status: z.enum(['AVAILABLE', 'RESERVED', 'SOLD', 'RENTED']).default('AVAILABLE'),
+  type: z.enum(['APARTMENT', 'HOUSE', 'COMMERCIAL', 'LAND', 'GARAGE', 'WAREHOUSE', 'FARM', 'OTHER']).default('APARTMENT'),
+  status: z.enum(['AVAILABLE', 'RESERVED', 'SOLD', 'RENTED', 'IN_PROCESS']).default('AVAILABLE'),
   price: z.number().nonnegative().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
@@ -78,8 +87,11 @@ export const createPropertySchema = z.object({
   area: z.number().nonnegative().optional(),
   bedrooms: z.number().int().nonnegative().optional(),
   bathrooms: z.number().int().nonnegative().optional(),
+  parking: z.number().int().nonnegative().optional(),
+  reference: z.string().optional(),
   description: z.string().optional(),
   features: z.string().optional(),
+  imageUrls: z.string().optional(),
   images: z.string().optional(),
 });
 

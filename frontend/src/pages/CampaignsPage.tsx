@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Mail, Plus, Send, Trash2, Eye, BarChart2, X, Users } from 'lucide-react'
+import { CustomSelect } from '../components/ui/CustomSelect'
+import DOMPurify from 'dompurify'
+import { Mail, Plus, Send, Trash2, Eye, X, Users } from 'lucide-react'
 import { listCampaigns, createCampaign, deleteCampaign, sendCampaign } from '../api/campaigns.api'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -63,8 +65,8 @@ export const CampaignsPage: React.FC = () => {
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Campanhas de Email</h1>
-          <p className="text-slate-500 text-sm mt-1">Envia emails em massa para os teus contactos</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Campanhas de Email</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Envia emails em massa para os teus contactos</p>
         </div>
         <button onClick={() => setShowModal(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium"
@@ -81,19 +83,19 @@ export const CampaignsPage: React.FC = () => {
           { label: 'Emails enviados', value: campaigns.reduce((s, c) => s + (c.sentCount || 0), 0), color: '#f59e0b' },
           { label: 'Rascunhos', value: campaigns.filter(c => c.status === 'DRAFT').length, color: '#94a3b8' },
         ].map(s => (
-          <div key={s.label} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+          <div key={s.label} className="rounded-2xl p-4 border shadow-sm" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
             <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
-            <p className="text-xs text-slate-500 mt-1">{s.label}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{s.label}</p>
           </div>
         ))}
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-400">A carregar...</div>
+        <div className="text-center py-12" style={{ color: 'var(--text-muted)' }}>A carregar...</div>
       ) : campaigns.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center">
-          <Mail size={40} className="mx-auto text-slate-200 mb-3" />
-          <p className="text-slate-500 font-medium">Sem campanhas</p>
+        <div className="rounded-2xl border p-12 text-center" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+          <Mail size={40} className="mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
+          <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>Sem campanhas</p>
           <button onClick={() => setShowModal(true)}
             className="mt-4 px-4 py-2 rounded-xl text-white text-sm font-medium"
             style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
@@ -101,20 +103,22 @@ export const CampaignsPage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
           <table className="w-full">
             <thead>
-              <tr className="border-b border-slate-100">
+              <tr className="border-b" style={{ borderColor: 'var(--border-color)' }}>
                 {['Nome', 'Assunto', 'Estado', 'Enviados', 'Data', 'Ações'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {campaigns.map(c => (
-                <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-800">{c.name}</td>
-                  <td className="px-4 py-3 text-slate-500 text-sm max-w-[200px] truncate">{c.subject}</td>
+                <tr key={c.id} className="border-b" style={{ borderColor: 'var(--border-subtle)' }}
+                  onMouseOver={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                  onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
+                  <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{c.name}</td>
+                  <td className="px-4 py-3 text-sm max-w-[200px] truncate" style={{ color: 'var(--text-secondary)' }}>{c.subject}</td>
                   <td className="px-4 py-3">
                     <span className="text-xs px-2 py-1 rounded-full font-medium"
                       style={{ background: STATUS_COLORS[c.status] + '15', color: STATUS_COLORS[c.status] }}>
@@ -122,18 +126,21 @@ export const CampaignsPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 text-sm text-slate-600">
-                      <Users size={12} className="text-slate-400" />
+                    <div className="flex items-center gap-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      <Users size={12} style={{ color: 'var(--text-muted)' }} />
                       {c.sentCount || 0}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-slate-400 text-sm">
+                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
                     {c.sentAt ? new Date(c.sentAt).toLocaleDateString('pt-PT') : '—'}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
                       <button onClick={() => setShowPreview(c)}
-                        className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400" title="Pré-visualizar">
+                        className="p-1.5 rounded-lg" style={{ color: 'var(--text-muted)' }}
+                        onMouseOver={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                        onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
+                        title="Pré-visualizar">
                         <Eye size={14} />
                       </button>
                       {c.status === 'DRAFT' && (
@@ -158,44 +165,51 @@ export const CampaignsPage: React.FC = () => {
       {/* Create Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900">Nova campanha de email</h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-400"><X size={20} /></button>
+          <div className="rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg-card)' }}>
+            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
+              <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Nova campanha de email</h2>
+              <button onClick={() => setShowModal(false)} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Nome da campanha *</label>
+                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Nome da campanha *</label>
                   <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400"
+                    className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                    style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
                     placeholder="ex: Novos imóveis Março" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Destinatários</label>
-                  <select value={form.targetFilter.type}
-                    onChange={e => setForm(f => ({ ...f, targetFilter: { ...f.targetFilter, type: e.target.value } }))}
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400">
-                    <option value="LEAD">Todos os Leads</option>
-                    <option value="CLIENT">Todos os Clientes</option>
-                  </select>
+                  <CustomSelect
+                    label="Destinatários"
+                    value={form.targetFilter.type}
+                    onChange={val => setForm(f => ({ ...f, targetFilter: { ...f.targetFilter, type: val } }))}
+                    options={[
+                      { value: 'LEAD', label: '👤 Todos os Leads' },
+                      { value: 'CLIENT', label: '🏠 Todos os Clientes' },
+                      { value: 'OWNER', label: '🔑 Todos os Proprietários' },
+                    ]}
+                  />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Assunto *</label>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Assunto *</label>
                 <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400"
+                  className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
+                  style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
                   placeholder="ex: Novos imóveis disponíveis para si" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wide">Corpo do email (HTML) *</label>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Corpo do email (HTML) *</label>
                 <textarea value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
-                  rows={8} className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 resize-none font-mono"
+                  rows={8} className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none resize-none font-mono"
+                  style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
                   placeholder="<h1>Olá!</h1><p>Temos novidades para si...</p>" />
               </div>
               <div className="flex gap-3 pt-2">
                 <button onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium">
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+                  style={{ border: '1px solid var(--input-border)', color: 'var(--text-secondary)', background: 'var(--bg-card)' }}>
                   Cancelar
                 </button>
                 <button onClick={handleCreate} disabled={saving || !form.name || !form.subject || !form.body}
@@ -212,12 +226,12 @@ export const CampaignsPage: React.FC = () => {
       {/* Preview Modal */}
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-semibold text-slate-800">{showPreview.subject}</h3>
-              <button onClick={() => setShowPreview(null)} className="text-slate-400"><X size={20} /></button>
+          <div className="rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg-card)' }}>
+            <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
+              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{showPreview.subject}</h3>
+              <button onClick={() => setShowPreview(null)} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
             </div>
-            <div className="p-6" dangerouslySetInnerHTML={{ __html: showPreview.body }} />
+            <div className="p-6" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(showPreview.body) }} />
           </div>
         </div>
       )}

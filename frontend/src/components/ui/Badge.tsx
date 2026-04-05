@@ -9,13 +9,13 @@ interface BadgeProps {
   className?: string
 }
 
-const variantClasses: Record<BadgeVariant, string> = {
-  success: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200',
-  warning: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200',
-  danger:  'bg-red-50 text-red-700 ring-1 ring-red-200',
-  info:    'bg-blue-50 text-blue-700 ring-1 ring-blue-200',
-  default: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200',
-  purple:  'bg-violet-50 text-violet-700 ring-1 ring-violet-200',
+const variantStyles: Record<BadgeVariant, React.CSSProperties> = {
+  success: { background: 'rgba(34,197,94,0.15)', color: '#4ade80' },
+  warning: { background: 'rgba(245,158,11,0.15)', color: '#fbbf24' },
+  danger:  { background: 'rgba(239,68,68,0.15)',  color: '#f87171' },
+  info:    { background: 'rgba(59,130,246,0.15)', color: '#60a5fa' },
+  default: { background: 'var(--bg-page)',        color: 'var(--text-muted)', outline: '1px solid var(--border-color)' },
+  purple:  { background: 'rgba(139,92,246,0.15)', color: '#a78bfa' },
 }
 
 export const Badge: React.FC<BadgeProps> = ({
@@ -26,12 +26,16 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   return (
     <span
-      className={`
-        inline-flex items-center font-medium rounded-full
-        ${small ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-0.5 text-xs'}
-        ${variantClasses[variant]}
-        ${className}
-      `}
+      className={className}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        fontWeight: 600,
+        borderRadius: 20,
+        padding: small ? '2px 8px' : '3px 10px',
+        fontSize: 11,
+        ...variantStyles[variant],
+      }}
     >
       {children}
     </span>

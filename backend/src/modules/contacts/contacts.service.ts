@@ -95,6 +95,14 @@ export const create = async (
     notes?: string;
     preferences?: string;
     assignedToId?: string;
+    city?: string;
+    postalCode?: string;
+    budget_min?: number;
+    budget_max?: number;
+    interest_type?: string;
+    timeline?: string;
+    gdprConsent?: boolean;
+    gdprConsentOrigin?: string;
   },
   userId: string
 ) => {
@@ -109,7 +117,16 @@ export const create = async (
       source: dto.source,
       notes: dto.notes,
       preferences: dto.preferences,
-      assignedToId: dto.assignedToId ?? userId,
+      assignedToId: dto.assignedToId || userId,
+      city: dto.city,
+      postalCode: dto.postalCode,
+      budget_min: dto.budget_min,
+      budget_max: dto.budget_max,
+      interest_type: dto.interest_type,
+      timeline: dto.timeline,
+      gdprConsent: dto.gdprConsent ?? false,
+      gdprConsentOrigin: dto.gdprConsentOrigin,
+      gdprConsentDate: dto.gdprConsent ? new Date() : undefined,
     },
     include: {
       assignedTo: { select: { id: true, name: true, email: true } },
@@ -173,6 +190,14 @@ export const update = async (
     notes?: string;
     preferences?: string;
     assignedToId?: string;
+    city?: string;
+    postalCode?: string;
+    budget_min?: number;
+    budget_max?: number;
+    interest_type?: string;
+    timeline?: string;
+    gdprConsent?: boolean;
+    gdprConsentOrigin?: string;
   },
   user: any
 ) => {
@@ -199,6 +224,15 @@ export const update = async (
       notes: dto.notes,
       preferences: dto.preferences,
       assignedToId: dto.assignedToId,
+      city: dto.city,
+      postalCode: dto.postalCode,
+      budget_min: dto.budget_min,
+      budget_max: dto.budget_max,
+      interest_type: dto.interest_type,
+      timeline: dto.timeline,
+      gdprConsent: dto.gdprConsent,
+      gdprConsentOrigin: dto.gdprConsentOrigin,
+      gdprConsentDate: dto.gdprConsent === true ? new Date() : undefined,
     },
     include: {
       assignedTo: { select: { id: true, name: true, email: true } },

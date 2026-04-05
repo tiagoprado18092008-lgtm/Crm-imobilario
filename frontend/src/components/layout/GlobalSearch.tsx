@@ -113,13 +113,13 @@ export const GlobalSearch: React.FC = () => {
               onClick={() => goTo(type === 'contact' ? `/contacts/${item.id}` : type === 'property' ? `/properties/${item.id}` : `/opportunities/${item.id}`)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', cursor: 'pointer',
-                background: isSelected ? '#f1f5f9' : 'transparent', transition: 'background 100ms',
+                background: isSelected ? 'var(--hover-bg)' : 'transparent', transition: 'background 100ms',
               }}
               onMouseEnter={() => setSelectedIndex(idx)}
             >
               {iconFor(type)}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {type === 'contact' ? item.name : item.title}
                 </div>
                 <div style={{ fontSize: 12, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -144,7 +144,7 @@ export const GlobalSearch: React.FC = () => {
       }}
     >
       <div style={{
-        width: '100%', maxWidth: 560, background: '#fff', borderRadius: 16,
+        width: '100%', maxWidth: 560, background: 'var(--bg-card)', borderRadius: 16,
         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden',
       }}>
         {/* Search input */}
@@ -157,7 +157,7 @@ export const GlobalSearch: React.FC = () => {
             onKeyDown={handleKeyDown}
             placeholder="Pesquisar contactos, propriedades, oportunidades..."
             style={{
-              flex: 1, border: 'none', outline: 'none', fontSize: 15, color: '#1e293b',
+              flex: 1, border: 'none', outline: 'none', fontSize: 15, color: 'var(--text-primary)',
               background: 'transparent', fontFamily: 'inherit',
             }}
           />
@@ -167,7 +167,7 @@ export const GlobalSearch: React.FC = () => {
               borderRadius: '50%', animation: 'spin 0.6s linear infinite', flexShrink: 0,
             }} />
           )}
-          <button onClick={() => setOpen(false)} style={{ display: 'flex', alignItems: 'center', padding: 4, border: 'none', background: '#f1f5f9', borderRadius: 6, cursor: 'pointer', color: '#64748b', fontSize: 11, gap: 2 }}>
+          <button onClick={() => setOpen(false)} style={{ display: 'flex', alignItems: 'center', padding: 4, border: 'none', background: 'var(--hover-bg)', borderRadius: 6, cursor: 'pointer', color: '#64748b', fontSize: 11, gap: 2 }}>
             <span>Esc</span>
           </button>
         </div>

@@ -21,6 +21,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(({
   required,
   className = '',
   id,
+  style,
   ...props
 }, ref) => {
   const selectId = id || label?.toLowerCase().replace(/\s+/g, '-')
@@ -28,21 +29,30 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(({
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label htmlFor={selectId} className="text-sm font-medium text-gray-700">
+        <label
+          htmlFor={selectId}
+          style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block' }}
+        >
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span style={{ color: '#f87171', marginLeft: 4 }}>*</span>}
         </label>
       )}
       <select
         ref={ref}
         id={selectId}
-        className={`
-          w-full px-3 py-2 text-sm border rounded-lg shadow-sm transition-colors
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-          disabled:bg-gray-100 disabled:cursor-not-allowed bg-white
-          ${error ? 'border-red-400 bg-red-50' : 'border-gray-300'}
-          ${className}
-        `}
+        style={{
+          width: '100%',
+          padding: '8px 12px',
+          fontSize: 13,
+          borderRadius: 8,
+          border: `1px solid ${error ? '#f87171' : 'var(--input-border)'}`,
+          background: 'var(--input-bg)',
+          color: 'var(--text-primary)',
+          outline: 'none',
+          transition: 'border-color 150ms',
+          ...style,
+        }}
+        className={className}
         {...props}
       >
         {placeholder && <option value="">{placeholder}</option>}
@@ -52,7 +62,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(({
           </option>
         ))}
       </select>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p style={{ fontSize: 11, color: '#f87171', marginTop: 2 }}>{error}</p>}
     </div>
   )
 })

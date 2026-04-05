@@ -9,9 +9,9 @@ interface CalendarViewProps {
 }
 
 const priorityDotColor: Record<string, string> = {
-  HIGH: 'bg-red-500',
-  MEDIUM: 'bg-yellow-500',
-  LOW: 'bg-green-500'
+  HIGH: '#ef4444',
+  MEDIUM: '#eab308',
+  LOW: '#22c55e'
 }
 
 const MONTH_NAMES = [
@@ -61,23 +61,26 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
         <div className="flex items-center gap-2">
           <button
             onClick={goToPrev}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100"
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h3 className="text-base font-semibold text-gray-900 min-w-40 text-center">
+          <h3 className="text-base font-semibold min-w-40 text-center" style={{ color: 'var(--text-primary)' }}>
             {MONTH_NAMES[month]} {year}
           </h3>
           <button
             onClick={goToNext}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100"
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
           >
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
         <button
           onClick={goToToday}
-          className="px-3 py-1.5 text-xs font-medium text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50"
+          className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
+          style={{ color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.06)', cursor: 'pointer' }}
         >
           Hoje
         </button>
@@ -86,7 +89,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
       {/* Day headers */}
       <div className="grid grid-cols-7 gap-1">
         {DAY_NAMES.map(d => (
-          <div key={d} className="text-xs font-semibold text-gray-500 text-center py-2">
+          <div key={d} className="text-xs font-semibold text-center py-2" style={{ color: 'var(--text-secondary)' }}>
             {d}
           </div>
         ))}
@@ -96,7 +99,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
       <div className="grid grid-cols-7 gap-1">
         {/* Empty cells for start padding */}
         {Array.from({ length: startPadding }).map((_, i) => (
-          <div key={`pad-${i}`} className="h-20 rounded-lg bg-gray-50" />
+          <div key={`pad-${i}`} className="h-20 rounded-lg" style={{ background: 'var(--bg-page)' }} />
         ))}
 
         {/* Day cells */}
@@ -111,18 +114,22 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
             <div
               key={day}
               onClick={() => setSelectedDate(isSelected ? null : dayKey)}
-              className={`
-                h-20 rounded-lg p-1.5 cursor-pointer border transition-colors relative
-                ${todayDay ? 'bg-blue-50 border-blue-300' : ''}
-                ${isSelected ? 'bg-blue-100 border-blue-400' : 'border-gray-200 hover:bg-gray-50'}
-                ${!todayDay && !isSelected ? 'bg-white' : ''}
-              `}
+              className="h-20 rounded-lg p-1.5 cursor-pointer transition-colors relative"
+              style={{
+                border: `1px solid ${todayDay ? '#6366f1' : isSelected ? '#818cf8' : 'var(--border-color)'}`,
+                background: todayDay
+                  ? 'rgba(99,102,241,0.08)'
+                  : isSelected
+                  ? 'rgba(99,102,241,0.12)'
+                  : 'var(--bg-card)',
+              }}
             >
               <span
-                className={`
-                  text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full
-                  ${todayDay ? 'bg-blue-600 text-white' : 'text-gray-700'}
-                `}
+                className="text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full"
+                style={{
+                  background: todayDay ? '#6366f1' : 'transparent',
+                  color: todayDay ? '#fff' : 'var(--text-primary)',
+                }}
               >
                 {day}
               </span>
@@ -131,12 +138,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
                   {dayTasks.slice(0, 4).map((task) => (
                     <span
                       key={task.id}
-                      className={`w-2 h-2 rounded-full ${priorityDotColor[task.priority]}`}
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: priorityDotColor[task.priority] }}
                       title={task.title}
                     />
                   ))}
                   {dayTasks.length > 4 && (
-                    <span className="text-xs text-gray-400">+{dayTasks.length - 4}</span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>+{dayTasks.length - 4}</span>
                   )}
                 </div>
               )}
@@ -148,23 +156,25 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
       {/* Selected Day Tasks */}
       {selectedDate && (
         <div className="mt-4">
-          <h4 className="text-sm font-semibold text-gray-700 mb-3">
+          <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
             Tarefas para {selectedDate} de {MONTH_NAMES[month]}
-            <span className="ml-2 text-xs font-normal text-gray-500">
+            <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>
               ({selectedTasks.length} {selectedTasks.length === 1 ? 'tarefa' : 'tarefas'})
             </span>
           </h4>
           {selectedTasks.length === 0 ? (
-            <p className="text-sm text-gray-400">Sem tarefas para este dia.</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Sem tarefas para este dia.</p>
           ) : (
             <div className="space-y-2">
               {selectedTasks.map(task => (
-                <div key={task.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <span className={`w-3 h-3 rounded-full flex-shrink-0 ${priorityDotColor[task.priority]}`} />
+                <div key={task.id} className="flex items-center gap-3 p-3 rounded-lg"
+                  style={{ background: 'var(--hover-bg)' }}>
+                  <span className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ background: priorityDotColor[task.priority] }} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{task.title}</p>
+                    <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</p>
                     {task.contact && (
-                      <p className="text-xs text-gray-500">{task.contact.name}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{task.contact.name}</p>
                     )}
                   </div>
                   <Badge
