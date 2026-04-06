@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.0.0",
+    "prisma": "^5.0.0",
     "@types/imap": "^0.8.43",
     "@types/mailparser": "^3.4.6",
     "axios": "^1.13.6",
@@ -42,7 +43,6 @@
     "@types/nodemailer": "^7.0.11",
     "@types/supertest": "^7.2.0",
     "jest": "^30.3.0",
-    "prisma": "^5.0.0",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.6",
     "tsx": "^4.0.0",
