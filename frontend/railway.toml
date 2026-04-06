@@ -1,8 +1,7 @@
 [build]
-buildCommand = "npm install && npm run build"
+builder = "dockerfile"
 
 [deploy]
-startCommand = "npm run preview"
 healthcheckPath = "/"
 healthcheckTimeout = 120
 restartPolicyType = "on_failure"
