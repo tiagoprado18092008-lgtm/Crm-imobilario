@@ -38,6 +38,7 @@ model User {
   campaigns             EmailCampaign[] @relation("CampaignCreatedBy")
   assignedForms         Form[]          @relation("FormAssignedTo")
   createdProperties     Property[]      @relation("PropertyCreator")
+  coAssignedProperties  Property[]      @relation("PropertyCoAssigned")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -57,6 +58,21 @@ model Contact {
 
   assignedToId String
   assignedTo   User   @relation(fields: [assignedToId], references: [id])
+
+  budget_min    Float?
+  budget_max    Float?
+  interest_type String?
+  interest_zones String?
+  timeline      String?
+  score         Int       @default(0)
+  gdprConsent   Boolean   @default(false)
+  gdprConsentDate DateTime?
+  gdprConsentOrigin String?
+  city          String?
+  postalCode    String?
+  nif           String?
+  birthday      DateTime?
+  lastContactedAt DateTime?
 
   opportunities    Opportunity[]
   interactions     Interaction[]
@@ -85,8 +101,26 @@ model Property {
   reference   String? @unique
   imageUrls   String  @default("[]")
 
-  createdById String?
-  createdBy   User?   @relation("PropertyCreator", fields: [createdById], references: [id])
+  purpose           String  @default("SALE")
+  lat               Float?
+  lng               Float?
+  district          String?
+  energyCertificate String?
+  yearBuilt         Int?
+  condition         String?
+  features          String  @default("[]")
+  virtualTourUrl    String?
+  tags              String  @default("[]")
+  portalsPublished  String  @default("{}")
+  commission        Float?
+  contractStart     DateTime?
+  contractEnd       DateTime?
+  viewCount         Int     @default(0)
+
+  createdById    String?
+  createdBy      User?   @relation("PropertyCreator", fields: [createdById], references: [id])
+  coAssignedToId String?
+  coAssignedTo   User?   @relation("PropertyCoAssigned", fields: [coAssignedToId], references: [id])
 
   opportunities Opportunity[]
 
@@ -99,6 +133,8 @@ model Opportunity {
   title             String
   stage             String    @default("LEAD_IN")
   value             Float?
+  commission        Float?
+  probability       Int       @default(50)
   source            String?
   expectedCloseDate DateTime?
   lostReason        String?
