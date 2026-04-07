@@ -3,6 +3,8 @@ builder = "nixpacks"
 buildCommand = "npm ci && npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "npx prisma migrate deploy && node dist/server.js"
+startCommand = "sh entrypoint.sh"
+healthcheckPath = "/health"
+healthcheckTimeout = 120
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
