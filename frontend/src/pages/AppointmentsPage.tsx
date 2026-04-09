@@ -647,7 +647,7 @@ export const AppointmentsPage: React.FC = () => {
                         </span>
                       </div>
                       {/* Events */}
-                      {dayAppts.slice(0, 2).map(a => (
+                      {dayAppts.slice(0, 3).map(a => (
                         <div
                           key={a.id}
                           onClick={() => openEdit(a)}
@@ -661,12 +661,12 @@ export const AppointmentsPage: React.FC = () => {
                           }}
                           title={a.title}
                         >
-                          {a.title}
+                          {formatTime(a.startAt)} {a.title}
                         </div>
                       ))}
-                      {dayAppts.length > 2 && (
+                      {dayAppts.length > 3 && (
                         <div style={{ fontSize: 10, color: 'var(--text-muted)', paddingLeft: 4, fontWeight: 600 }}>
-                          +{dayAppts.length - 2} mais
+                          +{dayAppts.length - 3} mais
                         </div>
                       )}
                     </>
