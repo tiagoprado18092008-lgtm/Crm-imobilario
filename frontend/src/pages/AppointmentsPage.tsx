@@ -26,6 +26,10 @@ const MONTHS_PT = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ]
 
+const HOURS = Array.from({ length: 16 }, (_, i) => i + 7) // 7 to 22
+const HOUR_HEIGHT = 60 // px per hour
+const GRID_START_HOUR = 7
+
 const EMPTY_FORM = {
   title: '', description: '', startAt: '', endAt: '', status: 'SCHEDULED',
   type: 'VISIT', location: '', notes: '', contactId: '', opportunityId: '',
@@ -218,6 +222,21 @@ export const AppointmentsPage: React.FC = () => {
   const getApptsForDay = (day: Date) =>
     visibleAppointments.filter(a => new Date(a.startAt).toDateString() === day.toDateString())
 
+  const getApptStyle = (appt: any): { top: number; height: number } => {
+    const start = new Date(appt.startAt)
+    const end = new Date(appt.endAt)
+    const startMinutes = (start.getHours() - GRID_START_HOUR) * 60 + start.getMinutes()
+    const durationMinutes = Math.max(15, (end.getTime() - start.getTime()) / 60000)
+    const top = (startMinutes / 60) * HOUR_HEIGHT
+    const height = Math.max(22, (durationMinutes / 60) * HOUR_HEIGHT - 2)
+    return { top, height }
+  }
+
+  const formatTime = (iso: string) => {
+    const d = new Date(iso)
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  }
+
   const days = getDaysInMonth()
 
   // Year range for dropdown (ref: calendar ddwn — 25 years back/forward)
@@ -401,6 +420,149 @@ export const AppointmentsPage: React.FC = () => {
             })}
           </div>
         )
+      )}
+
+      {/* ── WEEK VIEW ── */}
+      {view === 'week' && (
+        <div style={{ borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-card)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+
+          {/* Week header — navigation */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: '1px solid var(--border-color)' }}>
+            <button
+              onClick={prevWeek}
+              style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+                {weekDays[0].getDate()} – {weekDays[6].getDate()} {MONTHS_PT[weekDays[6].getMonth()]} {weekDays[6].getFullYear()}
+              </span>
+              <button
+                onClick={goToThisWeek}
+                style={{ padding: '3px 10px', fontSize: 12, fontWeight: 500, borderRadius: 6, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.06)', color: '#6366f1', cursor: 'pointer' }}
+              >
+                Hoje
+              </button>
+            </div>
+            <button
+              onClick={nextWeek}
+              style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+
+          {/* Day column headers */}
+          <div style={{ display: 'grid', gridTemplateColumns: '48px repeat(7, 1fr)', borderBottom: '1px solid var(--border-color)' }}>
+            <div />
+            {weekDays.map((day, i) => {
+              const isToday = day.toDateString() === today.toDateString()
+              return (
+                <div key={i} style={{ padding: '8px 4px', textAlign: 'center', borderLeft: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {WEEK_DAYS_PT[day.getDay()]}
+                  </div>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%', margin: '2px auto 0',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 13, fontWeight: isToday ? 700 : 400,
+                    background: isToday ? '#6366f1' : 'transparent',
+                    color: isToday ? '#fff' : 'var(--text-secondary)',
+                  }}>
+                    {day.getDate()}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Scrollable time grid */}
+          <div style={{ overflowY: 'auto', maxHeight: 560 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '48px repeat(7, 1fr)', position: 'relative' }}>
+
+              {/* Hour labels column */}
+              <div>
+                {HOURS.map(h => (
+                  <div key={h} style={{ height: HOUR_HEIGHT, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', paddingRight: 8, paddingTop: 2 }}>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      {String(h).padStart(2, '0')}:00
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Day columns */}
+              {weekDays.map((day, di) => {
+                const isToday = day.toDateString() === today.toDateString()
+                const dayAppts = visibleAppointments.filter(a => new Date(a.startAt).toDateString() === day.toDateString())
+                return (
+                  <div
+                    key={di}
+                    style={{
+                      borderLeft: '1px solid var(--border-color)',
+                      position: 'relative',
+                      background: isToday ? 'rgba(99,102,241,0.02)' : 'transparent',
+                      height: HOURS.length * HOUR_HEIGHT,
+                    }}
+                  >
+                    {/* Hour grid lines */}
+                    {HOURS.map((h, hi) => (
+                      <div key={h} style={{
+                        position: 'absolute', top: hi * HOUR_HEIGHT, left: 0, right: 0,
+                        borderTop: '1px solid var(--border-subtle)',
+                        height: HOUR_HEIGHT,
+                      }} />
+                    ))}
+
+                    {/* Appointment blocks */}
+                    {dayAppts.map(a => {
+                      const { top, height } = getApptStyle(a)
+                      const sc = STATUS_COLORS[a.status] || '#6366f1'
+                      return (
+                        <div
+                          key={a.id}
+                          onClick={() => openEdit(a)}
+                          title={`${a.title} — ${formatTime(a.startAt)} até ${formatTime(a.endAt)}`}
+                          style={{
+                            position: 'absolute',
+                            top: top + 1,
+                            left: 2,
+                            right: 2,
+                            height: height,
+                            borderRadius: 6,
+                            background: sc + '22',
+                            borderLeft: `3px solid ${sc}`,
+                            padding: '2px 5px',
+                            cursor: 'pointer',
+                            overflow: 'hidden',
+                            zIndex: 1,
+                            transition: 'filter 120ms',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(0.92)')}
+                          onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
+                        >
+                          <div style={{ fontSize: 11, fontWeight: 700, color: sc, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {formatTime(a.startAt)} {a.title}
+                          </div>
+                          {height > 36 && a.contact && (
+                            <div style={{ fontSize: 10, color: sc, opacity: 0.8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {a.contact.name}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── CALENDAR VIEW ── (ref: calendar + calendar ddwn patterns) */}
