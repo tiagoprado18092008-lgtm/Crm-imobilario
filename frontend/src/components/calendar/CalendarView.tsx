@@ -65,8 +65,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick }
   }
 
   const tasksByKey: Record<string, Task[]> = {}
+  const undatedTasks: Task[] = []
   for (const t of tasks) {
-    if (!t.dueDate) continue
+    if (!t.dueDate) { undatedTasks.push(t); continue }
     const key = t.dueDate.slice(0, 10)
     if (!tasksByKey[key]) tasksByKey[key] = []
     tasksByKey[key].push(t)
@@ -148,6 +149,34 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick }
           todayKey={todayKey}
           onTaskClick={onTaskClick}
         />
+      )}
+
+      {/* Undated tasks */}
+      {undatedTasks.length > 0 && (
+        <div style={{ marginTop: 16, border: '1px solid var(--border-color)', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ padding: '10px 16px', background: 'var(--hover-bg)', borderBottom: '1px solid var(--border-color)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+            Sem data ({undatedTasks.length})
+          </div>
+          <div style={{ padding: 12, background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {undatedTasks.map(t => (
+              <div key={t.id}
+                onClick={() => onTaskClick?.(t)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+                  borderRadius: 7, background: 'var(--hover-bg)',
+                  borderLeft: `3px solid ${taskBg(t)}`,
+                  cursor: onTaskClick ? 'pointer' : 'default',
+                }}
+              >
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: taskBg(t), flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: taskBg(t) + '22', color: taskBg(t), flexShrink: 0 }}>
+                  {TASK_STATUS_LABELS[t.status]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )

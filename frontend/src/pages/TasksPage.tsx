@@ -440,7 +440,6 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
             } else {
               setTasks(prev => [saved, ...prev])
             }
-            fetchTasks()
           }}
           onCancel={() => { setShowModal(false); setEditTask(undefined) }}
         />
