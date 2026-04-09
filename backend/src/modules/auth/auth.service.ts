@@ -11,7 +11,8 @@ export const register = async (
   password: string,
   phone?: string,
   agency?: string,
-  invitationToken?: string
+  invitationToken?: string,
+  role?: string
 ): Promise<{ token: string; user: object }> => {
   // If a token was provided, validate it
   let invitation: any = null;
@@ -46,15 +47,32 @@ export const register = async (
     throw err;
   }
 
+  // Map legacy/invalid roles to valid enum values
+  const VALID_ROLES = ['AGENCY_OWNER', 'AGENCY_ADMIN', 'TEAM_LEADER', 'CONSULTANT'];
+  const rawRole = invitation?.role || role || 'CONSULTANT';
+  const validRole = VALID_ROLES.includes(rawRole) ? rawRole : 'CONSULTANT';
+
   const passwordHash = await bcrypt.hash(password, 10);
+
+  // If registering as AGENCY_OWNER, create an Agency automatically
+  let agencyId: string | undefined;
+  if (validRole === 'AGENCY_OWNER' && agency) {
+    const slug = agency.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const uniqueSlug = `${slug}-${Date.now()}`;
+    const newAgency = await prisma.agency.create({
+      data: { name: agency, slug: uniqueSlug },
+    });
+    agencyId = newAgency.id;
+  }
+
   const user = await prisma.user.create({
     data: {
       name,
       email,
       passwordHash,
       phone,
-      agency,
-      role: invitation?.role || 'CONSULTANT',
+      role: validRole as any,
+      ...(agencyId ? { agencyId } : {}),
     },
   });
 

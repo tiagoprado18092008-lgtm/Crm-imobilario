@@ -4,7 +4,15 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 A iniciar seed...');
+  console.log('A iniciar seed...');
+
+  // PROTEÇÃO: não apagar dados se já existirem utilizadores reais (não demo)
+  const existingUsers = await prisma.user.count();
+  if (existingUsers > 0 && process.env.FORCE_SEED !== 'true') {
+    console.log(`Seed cancelado: já existem ${existingUsers} utilizador(es) na base de dados.`);
+    console.log('Para forçar o seed e apagar tudo, usa: FORCE_SEED=true npm run db:seed');
+    return;
+  }
 
   // Limpar dados existentes
   await prisma.automationLog.deleteMany();
@@ -25,7 +33,7 @@ async function main() {
   await prisma.automationRule.deleteMany();
   await prisma.user.deleteMany();
 
-  console.log('🗑️  Dados anteriores removidos');
+  console.log('Dados anteriores removidos');
 
   // ─── UTILIZADORES ─────────────────────────────────────────────────────────────
   const adminHash = await bcrypt.hash('Admin123!', 12);
@@ -36,9 +44,8 @@ async function main() {
       name: 'Carlos Administrador',
       email: 'admin@crm.pt',
       passwordHash: adminHash,
-      role: 'ADMIN',
+      role: 'AGENCY_OWNER',
       phone: '+351910000001',
-      agency: 'ImoCRM Demo Lisboa',
       isActive: true,
       onboardingCompleted: true,
     },
@@ -49,9 +56,8 @@ async function main() {
       name: 'João Silva',
       email: 'joao@crm.pt',
       passwordHash: userHash,
-      role: 'PRINCIPAL_CONSULTANT',
+      role: 'TEAM_LEADER',
       phone: '+351910000002',
-      agency: 'ImoCRM Demo Lisboa',
       isActive: true,
       onboardingCompleted: true,
     },
@@ -62,10 +68,9 @@ async function main() {
       name: 'Ana Costa',
       email: 'ana@crm.pt',
       passwordHash: userHash,
-      role: 'SUB_AGENT',
+      role: 'CONSULTANT',
       phone: '+351910000003',
       supervisorId: joao.id,
-      agency: 'ImoCRM Demo Lisboa',
       isActive: true,
       onboardingCompleted: true,
     },
@@ -76,16 +81,15 @@ async function main() {
       name: 'Pedro Santos',
       email: 'pedro@crm.pt',
       passwordHash: userHash,
-      role: 'SUB_AGENT',
+      role: 'CONSULTANT',
       phone: '+351910000004',
       supervisorId: joao.id,
-      agency: 'ImoCRM Demo Lisboa',
       isActive: true,
       onboardingCompleted: true,
     },
   });
 
-  console.log(`✅ Criados 4 utilizadores`);
+  console.log(`Criados 4 utilizadores`);
 
   // ─── IMÓVEIS (20) ─────────────────────────────────────────────────────────────
   const properties = await Promise.all([
@@ -351,7 +355,7 @@ async function main() {
     }}),
   ]);
 
-  console.log(`✅ Criados ${properties.length} imóveis`);
+  console.log(`Criados ${properties.length} imóveis`);
 
   // ─── CONTACTOS (50) ────────────────────────────────────────────────────────────
   const contactData = [
@@ -414,7 +418,7 @@ async function main() {
     contactData.map((c) => prisma.contact.create({ data: c }))
   );
 
-  console.log(`✅ Criados ${contacts.length} contactos`);
+  console.log(`Criados ${contacts.length} contactos`);
 
   // ─── OPORTUNIDADES (12 estágios PT) ───────────────────────────────────────────
   const now = new Date();
@@ -430,24 +434,24 @@ async function main() {
     prisma.opportunity.create({ data: { title: 'Susana Morais — T3 Oeiras Praia', stage: 'CPCV_SIGNED', value: 520000, commission: 13000, probability: 85, expectedCloseDate: addDays(now, 30), notes: 'CPCV assinado a 28/03/2026. Sinal de 20k pago.', position: 0, contactId: contacts[20].id, propertyId: properties[17].id, assignedToId: joao.id } }),
     prisma.opportunity.create({ data: { title: 'Nuno Ferreira — T3 Amadora Novo', stage: 'FINANCING', value: 265000, commission: 6625, probability: 80, expectedCloseDate: addDays(now, 45), notes: 'Banco CGD em análise. Previsão aprovação: 2 semanas.', position: 0, contactId: contacts[7].id, propertyId: properties[10].id, assignedToId: pedro.id } }),
     prisma.opportunity.create({ data: { title: 'Isabel Gonçalves — T3 Cascais Vista Mar', stage: 'ESCRITURA_SCHEDULED', value: 485000, commission: 12125, probability: 95, expectedCloseDate: addDays(now, 7), notes: 'Escritura marcada para 07/04/2026 no Cartório Notarial de Cascais.', position: 0, contactId: contacts[6].id, propertyId: properties[0].id, assignedToId: pedro.id } }),
-    prisma.opportunity.create({ data: { title: 'Cláudia Nogueira — Moradia Estoril Luxo', stage: 'CLOSED_WON', value: 2800000, commission: 56000, probability: 100, expectedCloseDate: addDays(now, -10), notes: '🎉 Escritura realizada a 21/03/2026. Comissão total recebida.', position: 0, contactId: contacts[36].id, propertyId: properties[19].id, assignedToId: joao.id } }),
+    prisma.opportunity.create({ data: { title: 'Cláudia Nogueira — Moradia Estoril Luxo', stage: 'CLOSED_WON', value: 2800000, commission: 56000, probability: 100, expectedCloseDate: addDays(now, -10), notes: 'Escritura realizada a 21/03/2026. Comissão total recebida.', position: 0, contactId: contacts[36].id, propertyId: properties[19].id, assignedToId: joao.id } }),
     prisma.opportunity.create({ data: { title: 'Rui Pereira — T2 Lisboa Centro', stage: 'CLOSED_LOST', value: 345000, lostReason: 'Cliente optou por imóvel de outra agência a preço inferior.', probability: 0, expectedCloseDate: addDays(now, -15), notes: 'Manter contacto para futuras oportunidades.', position: 0, contactId: contacts[5].id, propertyId: properties[2].id, assignedToId: pedro.id } }),
     prisma.opportunity.create({ data: { title: 'Paula Ribeiro — T3 Oeiras Taguspark', stage: 'QUALIFYING', value: 520000, commission: 13000, probability: 35, expectedCloseDate: addDays(now, 70), notes: 'Segunda reunião agendada. Crédito habitação em análise.', position: 1, contactId: contacts[18].id, propertyId: properties[17].id, assignedToId: pedro.id } }),
   ]);
 
-  console.log(`✅ Criadas ${opportunities.length} oportunidades`);
+  console.log(`Criadas ${opportunities.length} oportunidades`);
 
   // ─── INTERAÇÕES ───────────────────────────────────────────────────────────────
   const interactions = [
     { type: 'EMAIL', subject: 'Apresentação — T3 Cascais Vista Mar', body: 'Boa tarde Maria, conforme combinado envio em anexo a brochura do apartamento T3 em Cascais com vista mar. Estou disponível para qualquer questão.', direction: 'OUTBOUND', contactId: contacts[0].id, opportunityId: opportunities[0].id, createdById: ana.id },
     { type: 'CALL', subject: 'Primeiro contacto telefónico', body: 'Contactei a Maria pelo telefone. Mostrou grande interesse no T3 de Cascais. Combinámos visita para próxima semana. Budget confirmado 350-500k.', direction: 'OUTBOUND', contactId: contacts[0].id, opportunityId: opportunities[0].id, createdById: ana.id },
     { type: 'MEETING', subject: 'Reunião de qualificação — António Rodrigues', body: 'Reunião no escritório. O António confirmou crédito pré-aprovado de 750k. Muito motivado para a compra de moradia em Sintra. Visita agendada para semana seguinte.', direction: 'INBOUND', contactId: contacts[1].id, opportunityId: opportunities[1].id, createdById: ana.id },
-    { type: 'WHATSAPP', subject: 'Confirmação de visita — Moradia Sintra', body: 'Olá Catarina! ✅ A confirmar a visita à moradia V4 em Sintra para sábado às 10h. Qualquer questão estou disponível. Até sábado! 🏡', direction: 'OUTBOUND', contactId: contacts[4].id, opportunityId: opportunities[2].id, createdById: pedro.id },
+    { type: 'WHATSAPP', subject: 'Confirmação de visita — Moradia Sintra', body: 'Olá Catarina! A confirmar a visita à moradia V4 em Sintra para sábado às 10h. Qualquer questão estou disponível. Até sábado!', direction: 'OUTBOUND', contactId: contacts[4].id, opportunityId: opportunities[2].id, createdById: pedro.id },
     { type: 'EMAIL', subject: 'Proposta Comercial — Loja Cascais', body: 'Exmo. Sr. Manuel Teixeira, em anexo a proposta comercial para a Loja em Cascais com condições especiais de pagamento. Prazo de resposta: 5 dias úteis.', direction: 'OUTBOUND', contactId: contacts[3].id, opportunityId: opportunities[4].id, createdById: ana.id },
     { type: 'CALL', subject: 'Negociação — Leonor Vieira', body: 'A Leonor ligou com contraproposta de 680k (pediu redução de 20k). Vou contactar o proprietário para avaliar margem. Ela está muito interessada.', direction: 'INBOUND', contactId: contacts[32].id, opportunityId: opportunities[5].id, createdById: joao.id },
-    { type: 'WHATSAPP', subject: 'CPCV assinado — Susana Morais', body: '🎉 Susana, muito obrigado pela confiança! O CPCV foi assinado com sucesso. Aguardamos agora a aprovação do crédito para marcar a escritura. Estamos sempre disponíveis!', direction: 'OUTBOUND', contactId: contacts[20].id, opportunityId: opportunities[6].id, createdById: joao.id },
+    { type: 'WHATSAPP', subject: 'CPCV assinado — Susana Morais', body: 'Susana, muito obrigado pela confiança! O CPCV foi assinado com sucesso. Aguardamos agora a aprovação do crédito para marcar a escritura. Estamos sempre disponíveis!', direction: 'OUTBOUND', contactId: contacts[20].id, opportunityId: opportunities[6].id, createdById: joao.id },
     { type: 'EMAIL', subject: 'Escritura Marcada — Isabel Gonçalves', body: 'Cara Isabel, confirmo que a escritura está marcada para dia 7 de Abril, pelas 14h, no Cartório Notarial de Cascais. Documentação completa. Parabéns!', direction: 'OUTBOUND', contactId: contacts[6].id, opportunityId: opportunities[8].id, createdById: pedro.id },
-    { type: 'WHATSAPP', subject: 'Parabéns — Negócio Fechado Cláudia!', body: 'Cláudia! 🎉🥂 Foi um prazer enorme trabalhar consigo nesta aquisição. A Villa no Estoril vai ser espetacular para a sua família! Obrigado pela confiança.', direction: 'OUTBOUND', contactId: contacts[36].id, opportunityId: opportunities[9].id, createdById: joao.id },
+    { type: 'WHATSAPP', subject: 'Parabéns — Negócio Fechado Cláudia!', body: 'Cláudia! Foi um prazer enorme trabalhar consigo nesta aquisição. A Villa no Estoril vai ser espetacular para a sua família! Obrigado pela confiança.', direction: 'OUTBOUND', contactId: contacts[36].id, opportunityId: opportunities[9].id, createdById: joao.id },
     { type: 'NOTE', subject: 'Nota — Negócio perdido Rui Pereira', body: 'O Rui confirmou que fechou com outra agência. Mantive relação amigável — disse que me recomenda a amigos. Ficou o sinal de um futuro negócio de investimento.', direction: 'OUTBOUND', contactId: contacts[5].id, opportunityId: opportunities[10].id, createdById: pedro.id },
     { type: 'MEETING', subject: 'Visita realizada — T3 Oeiras', body: 'Luísa visitou o T3 perto da praia em Oeiras. Adorou a piscina do condomínio e a garagem dupla. Diz que vai falar com o marido. Muito positivo.', direction: 'INBOUND', contactId: contacts[8].id, opportunityId: opportunities[3].id, createdById: joao.id },
     { type: 'EMAIL', subject: 'Novos imóveis — Paula Ribeiro', body: 'Cara Paula, tenho um T3 junto ao Taguspark que pode ser perfeito para si. Piscina, ginásio, portaria. Posso agendar visita esta semana?', direction: 'OUTBOUND', contactId: contacts[18].id, opportunityId: opportunities[11].id, createdById: pedro.id },
@@ -459,7 +463,7 @@ async function main() {
   for (const i of interactions) {
     await prisma.interaction.create({ data: i });
   }
-  console.log(`✅ Criadas ${interactions.length} interações`);
+  console.log(`Criadas ${interactions.length} interações`);
 
   // ─── TAREFAS ──────────────────────────────────────────────────────────────────
   const tasks = [
@@ -480,37 +484,37 @@ async function main() {
   for (const t of tasks) {
     await prisma.task.create({ data: t });
   }
-  console.log(`✅ Criadas ${tasks.length} tarefas`);
+  console.log(`Criadas ${tasks.length} tarefas`);
 
   // ─── AGENDAMENTOS ─────────────────────────────────────────────────────────────
   await prisma.appointment.createMany({ data: [
     { title: 'Visita T3 Cascais — Catarina Mendes', startAt: addDays(now, 4), endAt: new Date(addDays(now, 4).getTime() + 60*60000), status: 'SCHEDULED', type: 'VISIT', contactId: contacts[4].id, opportunityId: opportunities[2].id, assignedToId: pedro.id, location: 'Rua das Flores, 45, Cascais', notes: 'Levar dossier. Cliente vem com o marido.' },
-    { title: 'Reunião qualificação — António Rodrigues', startAt: addDays(now, 2), endAt: new Date(addDays(now, 2).getTime() + 90*60000), status: 'CONFIRMED', type: 'MEETING', contactId: contacts[1].id, opportunityId: opportunities[1].id, assignedToId: ana.id, location: 'Escritório ImoCRM, Av. da Liberdade', notes: 'Trazer carta crédito. Apresentar 3 opções moradias Sintra.' },
+    { title: 'Reunião qualificação — António Rodrigues', startAt: addDays(now, 2), endAt: new Date(addDays(now, 2).getTime() + 90*60000), status: 'CONFIRMED', type: 'MEETING', contactId: contacts[1].id, opportunityId: opportunities[1].id, assignedToId: ana.id, location: 'Escritório CasaFlow, Av. da Liberdade', notes: 'Trazer carta crédito. Apresentar 3 opções moradias Sintra.' },
     { title: 'Escritura — Isabel Gonçalves T3 Cascais', startAt: addDays(now, 7), endAt: new Date(addDays(now, 7).getTime() + 120*60000), status: 'CONFIRMED', type: 'OTHER', contactId: contacts[6].id, opportunityId: opportunities[8].id, assignedToId: pedro.id, location: 'Cartório Notarial de Cascais, Rua Padre Moisés da Silva, 1', notes: 'Escritura marcada 07/04 às 14h.' },
     { title: 'Visita 2ª — Luísa Monteiro, Moradia Oeiras', startAt: addDays(now, 5), endAt: new Date(addDays(now, 5).getTime() + 75*60000), status: 'SCHEDULED', type: 'VISIT', contactId: contacts[8].id, opportunityId: opportunities[3].id, assignedToId: joao.id, location: 'Rua dos Navegadores, 33, Oeiras', notes: 'Visita com o marido desta vez.' },
     { title: 'Chamada follow-up — Leonor Vieira', startAt: addDays(now, 1), endAt: new Date(addDays(now, 1).getTime() + 30*60000), status: 'SCHEDULED', type: 'CALL', contactId: contacts[32].id, opportunityId: opportunities[5].id, assignedToId: joao.id, notes: 'Apresentar resposta do proprietário sobre redução de preço.' },
   ]});
-  console.log(`✅ Criados 5 agendamentos`);
+  console.log(`Criados 5 agendamentos`);
 
   // ─── AUTOMAÇÕES ───────────────────────────────────────────────────────────────
   const automationRules = [
-    { name: 'Speed to Lead — WhatsApp imediato (0 min)', trigger: 'NEW_LEAD', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', delay: 0, message: 'Olá {{nome}}! 👋 Sou {{consultor}} da ImoCRM. Vi o seu interesse e estou aqui para ajudar a encontrar o imóvel ideal. Que tipo de imóvel procura?' }]) },
-    { name: 'Chamada Perdida — SMS automático (2 min)', trigger: 'MISSED_CALL', isActive: true, actions: JSON.stringify([{ type: 'SEND_SMS', delay: 2, message: 'Olá {{nome}}! Sou {{consultor}}. Vi que me ligou. Estou numa visita mas respondo assim que possível! 🏠' }]) },
-    { name: 'Visita Confirmada — WhatsApp confirmação', trigger: 'VISIT_SCHEDULED', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', delay: 0, message: 'Olá {{nome}}! ✅ A sua visita está confirmada. Estarei à sua espera. Caso precise de alterar, contacte-me!' }]) },
-    { name: 'Lead Qualificado — Email apresentação imóveis', trigger: 'LEAD_QUALIFIED', isActive: true, actions: JSON.stringify([{ type: 'SEND_EMAIL', delay: 30, subject: 'Imóveis selecionados para si — ImoCRM', message: 'Olá {{nome}},\n\nSelecionei imóveis que correspondem ao seu perfil. Entrarei em contacto brevemente.\n\nCom os melhores cumprimentos,\n{{consultor}}' }]) },
-    { name: 'Proposta Enviada — Follow-up 48h', trigger: 'PROPOSAL_SENT', isActive: true, actions: JSON.stringify([{ type: 'CREATE_TASK', delay: 2880, message: 'Follow-up proposta enviada para {{nome}}' }, { type: 'SEND_WHATSAPP', delay: 2880, message: 'Olá {{nome}}! 😊 Teve oportunidade de analisar a proposta? Estou disponível para esclarecer qualquer dúvida!' }]) },
-    { name: 'Lead Frio — Reativação 7 dias', trigger: 'NO_RESPONSE_2H', isActive: false, actions: JSON.stringify([{ type: 'SEND_EMAIL', delay: 10080, subject: 'Ainda a procurar imóvel?', message: 'Olá {{nome}}, vi que ainda não respondeu. Tenho novidades que podem interessar-lhe! Podemos falar?' }, { type: 'SEND_WHATSAPP', delay: 10080, message: 'Olá {{nome}}! 🏡 Tenho 2 imóveis novos que podem ser exatamente o que procura. Posso enviar informação?' }]) },
+    { name: 'Speed to Lead — WhatsApp imediato (0 min)', trigger: 'NEW_LEAD', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', delay: 0, message: 'Olá {{nome}}! Sou {{consultor}} da CasaFlow. Vi o seu interesse e estou aqui para ajudar a encontrar o imóvel ideal. Que tipo de imóvel procura?' }]) },
+    { name: 'Chamada Perdida — SMS automático (2 min)', trigger: 'MISSED_CALL', isActive: true, actions: JSON.stringify([{ type: 'SEND_SMS', delay: 2, message: 'Olá {{nome}}! Sou {{consultor}}. Vi que me ligou. Estou numa visita mas respondo assim que possível!' }]) },
+    { name: 'Visita Confirmada — WhatsApp confirmação', trigger: 'VISIT_SCHEDULED', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', delay: 0, message: 'Olá {{nome}}! A sua visita está confirmada. Estarei à sua espera. Caso precise de alterar, contacte-me!' }]) },
+    { name: 'Lead Qualificado — Email apresentação imóveis', trigger: 'LEAD_QUALIFIED', isActive: true, actions: JSON.stringify([{ type: 'SEND_EMAIL', delay: 30, subject: 'Imóveis selecionados para si — CasaFlow', message: 'Olá {{nome}},\n\nSelecionei imóveis que correspondem ao seu perfil. Entrarei em contacto brevemente.\n\nCom os melhores cumprimentos,\n{{consultor}}' }]) },
+    { name: 'Proposta Enviada — Follow-up 48h', trigger: 'PROPOSAL_SENT', isActive: true, actions: JSON.stringify([{ type: 'CREATE_TASK', delay: 2880, message: 'Follow-up proposta enviada para {{nome}}' }, { type: 'SEND_WHATSAPP', delay: 2880, message: 'Olá {{nome}}! Teve oportunidade de analisar a proposta? Estou disponível para esclarecer qualquer dúvida!' }]) },
+    { name: 'Lead Frio — Reativação 7 dias', trigger: 'NO_RESPONSE_2H', isActive: false, actions: JSON.stringify([{ type: 'SEND_EMAIL', delay: 10080, subject: 'Ainda a procurar imóvel?', message: 'Olá {{nome}}, vi que ainda não respondeu. Tenho novidades que podem interessar-lhe! Podemos falar?' }, { type: 'SEND_WHATSAPP', delay: 10080, message: 'Olá {{nome}}! Tenho 2 imóveis novos que podem ser exatamente o que procura. Posso enviar informação?' }]) },
   ];
 
   for (const rule of automationRules) {
     await prisma.automationRule.create({ data: rule });
   }
-  console.log(`✅ Criadas ${automationRules.length} automações`);
+  console.log(`Criadas ${automationRules.length} automações`);
 
   // ─── CAMPANHAS EMAIL ──────────────────────────────────────────────────────────
   await prisma.emailCampaign.create({ data: {
     name: 'Newsletter Março 2026 — Novos Imóveis',
-    subject: '🏠 Novidades ImoCRM — Imóveis exclusivos este mês',
+    subject: 'Novidades CasaFlow — Imóveis exclusivos este mês',
     body: '<h2>Novos imóveis disponíveis!</h2><p>Caro cliente, temos novidades especiais para si este mês...</p>',
     status: 'DRAFT', type: 'BROADCAST',
     targetFilter: JSON.stringify({ type: 'CLIENT' }),
@@ -519,29 +523,29 @@ async function main() {
 
   await prisma.emailCampaign.create({ data: {
     name: 'Leads Frios — Reativação Primavera',
-    subject: '☀️ Ainda a pensar em casa nova? Temos a solução!',
+    subject: 'Ainda a pensar em casa nova? Temos a solução!',
     body: '<p>Olá! A primavera chegou e com ela novos imóveis incríveis. Veja as nossas sugestões...</p>',
     status: 'SENT', type: 'BROADCAST',
     sentAt: addDays(now, -7), sentCount: 45, openCount: 18, clickCount: 7,
     targetFilter: JSON.stringify({ status: 'NEW' }),
     createdById: admin.id,
   }});
-  console.log(`✅ Criadas 2 campanhas email`);
+  console.log(`Criadas 2 campanhas email`);
 
-  console.log('\n🎉 Seed concluído com sucesso!');
-  console.log('\n📋 Credenciais de acesso:');
+  console.log('\nSeed concluído com sucesso!');
+  console.log('\nCredenciais de acesso:');
   console.log('   admin@crm.pt    | Admin123! | ADMIN');
   console.log('   joao@crm.pt     | Pass123!  | PRINCIPAL_CONSULTANT');
   console.log('   ana@crm.pt      | Pass123!  | SUB_AGENT');
   console.log('   pedro@crm.pt    | Pass123!  | SUB_AGENT');
-  console.log('\n📊 Dados criados:');
+  console.log('\nDados criados:');
   console.log('   4 utilizadores | 20 imóveis | 50 contactos | 12 oportunidades');
   console.log('   15 interações  | 12 tarefas | 5 agendamentos | 6 automações');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed falhou:', e);
+    console.error('Seed falhou:', e);
     process.exit(1);
   })
   .finally(async () => {
