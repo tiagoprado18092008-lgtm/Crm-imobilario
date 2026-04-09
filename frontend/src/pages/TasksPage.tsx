@@ -1,17 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { Plus, Edit, Trash2, CheckCircle } from 'lucide-react'
+import { Plus, Edit, Trash2, CheckCircle, AlertCircle } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { getTasks, createTask, updateTask, deleteTask } from '../api/tasks.api'
 import { getContacts } from '../api/contacts.api'
 import { getUsers } from '../api/users.api'
+import { useAuthStore } from '../store/auth.store'
 import type { Task, Contact, User } from '../types'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
 import { CustomSelect } from '../components/ui/CustomSelect'
-import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
 import { EmptyState } from '../components/ui/EmptyState'
 import { PageSpinner } from '../components/ui/Spinner'
@@ -33,27 +33,41 @@ const taskSchema = z.object({
 
 type TaskFormData = z.infer<typeof taskSchema>
 
-const statusVariant: Record<string, any> = {
-  PENDING: 'default',
-  IN_PROGRESS: 'info',
-  COMPLETED: 'success',
-  CANCELLED: 'danger'
+const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
+  PENDING:     { bg: '#f1f5f9', color: '#64748b' },
+  IN_PROGRESS: { bg: '#eff6ff', color: '#2563eb' },
+  COMPLETED:   { bg: '#f0fdf4', color: '#16a34a' },
+  CANCELLED:   { bg: '#fef2f2', color: '#dc2626' },
 }
 
-const priorityVariant: Record<string, any> = {
-  LOW: 'default',
-  MEDIUM: 'warning',
-  HIGH: 'danger'
+const PRIORITY_STYLE: Record<string, { bg: string; color: string }> = {
+  LOW:    { bg: '#f1f5f9', color: '#64748b' },
+  MEDIUM: { bg: '#fffbeb', color: '#d97706' },
+  HIGH:   { bg: '#fef2f2', color: '#dc2626' },
+}
+
+function Pill({ bg, color, label }: { bg: string; color: string; label: string }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center',
+      padding: '2px 8px', borderRadius: 20,
+      fontSize: 11, fontWeight: 600,
+      background: bg, color, whiteSpace: 'nowrap',
+    }}>
+      {label}
+    </span>
+  )
 }
 
 interface TaskFormProps {
   task?: Task
-  onSuccess: () => void
+  onSuccess: (saved: Task) => void
   onCancel: () => void
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel }) => {
   const { showToast } = useUIStore()
+  const { user: currentUser } = useAuthStore()
   const [submitting, setSubmitting] = useState(false)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [users, setUsers] = useState<User[]>([])
@@ -63,11 +77,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel }) => {
       .then(([cRes, uRes]) => {
         const cd = cRes.data; setContacts(Array.isArray(cd) ? cd : cd.data || [])
         const ud = uRes.data; setUsers(Array.isArray(ud) ? ud : ud.data || [])
+        if (!task && currentUser?.id) setFormValue('assignedToId', currentUser.id)
       })
       .catch(() => {})
   }, [])
 
-  const { register, handleSubmit, formState: { errors } } = useForm<TaskFormData>({
+  const { register, handleSubmit, setValue: setFormValue, formState: { errors } } = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       title: task?.title || '',
@@ -75,7 +90,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel }) => {
       status: task?.status || 'PENDING',
       priority: task?.priority || 'MEDIUM',
       dueDate: task?.dueDate ? task.dueDate.slice(0, 10) : '',
-      assignedToId: task?.assignedToId || '',
+      assignedToId: task?.assignedToId || currentUser?.id || '',
       contactId: task?.contactId || ''
     }
   })
@@ -87,27 +102,33 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel }) => {
         ...data,
         dueDate: data.dueDate || undefined,
         contactId: data.contactId || undefined,
-        description: data.description || undefined
+        assignedToId: data.assignedToId || undefined,
+        description: data.description || undefined,
       }
       if (task) {
-        await updateTask(task.id, payload)
+        const res = await updateTask(task.id, payload)
         showToast('Tarefa atualizada', 'success')
+        onSuccess(res.data)
       } else {
-        await createTask(payload)
+        const res = await createTask(payload)
         showToast('Tarefa criada', 'success')
+        onSuccess(res.data)
       }
-      onSuccess()
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'Erro ao guardar tarefa', 'error')
+      const details = err?.response?.data?.details
+      const msg = details?.length
+        ? details.map((d: any) => d.message).join(', ')
+        : err?.response?.data?.error || 'Erro ao guardar tarefa'
+      showToast(msg, 'error')
     } finally {
       setSubmitting(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <Input label="Título" required error={errors.title?.message} {...register('title')} />
-      <div className="grid grid-cols-2 gap-4">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <Select
           label="Estado"
           options={Object.entries(TASK_STATUS_LABELS).map(([v, l]) => ({ value: v, label: l }))}
@@ -127,7 +148,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel }) => {
           {...register('assignedToId')}
         />
         <Input label="Prazo" type="date" {...register('dueDate')} />
-        <div className="col-span-2">
+        <div style={{ gridColumn: '1 / -1' }}>
           <Select
             label="Contacto"
             placeholder="Nenhum"
@@ -136,20 +157,22 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel }) => {
           />
         </div>
       </div>
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Descrição</label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Descrição</label>
         <textarea
           {...register('description')}
           rows={3}
-          className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           style={{
-            background: 'var(--input-bg)',
-            border: '1px solid var(--input-border)',
-            color: 'var(--text-primary)',
+            width: '100%', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
+            border: '1px solid var(--border-color)', borderRadius: 8,
+            background: 'var(--bg-page)', color: 'var(--text-primary)',
+            outline: 'none', resize: 'vertical', fontFamily: 'inherit',
           }}
+          onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.12)' }}
+          onBlur={e => { e.target.style.borderColor = 'var(--border-color)'; e.target.style.boxShadow = 'none' }}
         />
       </div>
-      <div className="flex justify-end gap-3">
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         <Button type="button" variant="secondary" onClick={onCancel}>Cancelar</Button>
         <Button type="submit" loading={submitting}>
           {task ? 'Atualizar' : 'Criar'} Tarefa
@@ -194,11 +217,13 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
   useEffect(() => { fetchTasks() }, [fetchTasks])
 
   const handleComplete = async (task: Task) => {
+    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'COMPLETED' as const } : t))
     try {
-      await updateTask(task.id, { status: 'COMPLETED' })
+      const res = await updateTask(task.id, { status: 'COMPLETED' })
+      setTasks(prev => prev.map(t => t.id === task.id ? res.data : t))
       showToast('Tarefa concluída', 'success')
-      fetchTasks()
     } catch {
+      setTasks(prev => prev.map(t => t.id === task.id ? task : t))
       showToast('Erro ao atualizar tarefa', 'error')
     }
   }
@@ -215,37 +240,51 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
     }
   }
 
+  // summary counts
+  const pending = tasks.filter(t => t.status === 'PENDING').length
+  const inProgress = tasks.filter(t => t.status === 'IN_PROGRESS').length
+  const overdueCount = tasks.filter(t => isOverdue(t.dueDate) && t.status !== 'COMPLETED' && t.status !== 'CANCELLED').length
+
   return (
-    <div className="space-y-4">
-      {/* Tab + Actions */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-color)' }}>
-          <button
-            onClick={() => setActiveTab('list')}
-            className="px-4 py-2 text-sm font-medium transition-colors"
-            style={
-              activeTab === 'list'
-                ? { background: '#2563eb', color: '#ffffff' }
-                : { background: 'var(--bg-card)', color: 'var(--text-secondary)' }
-            }
-            onMouseEnter={e => { if (activeTab !== 'list') e.currentTarget.style.background = 'var(--hover-bg)' }}
-            onMouseLeave={e => { if (activeTab !== 'list') e.currentTarget.style.background = 'var(--bg-card)' }}
-          >
-            Lista
-          </button>
-          <button
-            onClick={() => setActiveTab('calendar')}
-            className="px-4 py-2 text-sm font-medium transition-colors"
-            style={
-              activeTab === 'calendar'
-                ? { background: '#2563eb', color: '#ffffff' }
-                : { background: 'var(--bg-card)', color: 'var(--text-secondary)' }
-            }
-            onMouseEnter={e => { if (activeTab !== 'calendar') e.currentTarget.style.background = 'var(--hover-bg)' }}
-            onMouseLeave={e => { if (activeTab !== 'calendar') e.currentTarget.style.background = 'var(--bg-card)' }}
-          >
-            Calendário
-          </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* Summary chips */}
+      {activeTab === 'list' && !loading && tasks.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 20, background: '#fffbeb', color: '#d97706' }}>
+            {pending} pendente{pending !== 1 ? 's' : ''}
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 20, background: '#eff6ff', color: '#2563eb' }}>
+            {inProgress} em curso
+          </span>
+          {overdueCount > 0 && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 20, background: '#fef2f2', color: '#dc2626' }}>
+              <AlertCircle style={{ width: 12, height: 12 }} /> {overdueCount} em atraso
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Toolbar */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+        {/* View toggle */}
+        <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+          {(['list', 'calendar'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                padding: '6px 16px', fontSize: 13, fontWeight: 500,
+                background: activeTab === tab ? '#6366f1' : 'var(--bg-card)',
+                color: activeTab === tab ? '#fff' : 'var(--text-secondary)',
+                border: 'none', cursor: 'pointer', transition: 'background 150ms',
+              }}
+              onMouseEnter={e => { if (activeTab !== tab) e.currentTarget.style.background = 'var(--hover-bg)' }}
+              onMouseLeave={e => { if (activeTab !== tab) e.currentTarget.style.background = 'var(--bg-card)' }}
+            >
+              {tab === 'list' ? 'Lista' : 'Calendário'}
+            </button>
+          ))}
         </div>
 
         {activeTab === 'list' && (
@@ -277,7 +316,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
 
         <Button
           onClick={() => { setEditTask(undefined); setShowModal(true) }}
-          className="ml-auto"
+          style={{ marginLeft: 'auto' }}
           size="sm"
         >
           <Plus className="w-4 h-4" /> Nova Tarefa
@@ -287,8 +326,11 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
       {loading ? (
         <PageSpinner />
       ) : activeTab === 'calendar' ? (
-        <div className="rounded-xl p-6" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <CalendarView tasks={tasks} />
+        <div style={{ borderRadius: 12, padding: 24, background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <CalendarView
+                tasks={tasks}
+                onTaskClick={(task) => { setEditTask(task); setShowModal(true) }}
+              />
         </div>
       ) : tasks.length === 0 ? (
         <EmptyState
@@ -298,78 +340,78 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
           onAction={() => { setEditTask(undefined); setShowModal(true) }}
         />
       ) : (
-        <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+        <div style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: 'var(--hover-bg)', borderBottom: '1px solid var(--border-color)' }}>
-                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Título</th>
-                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Contacto</th>
-                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Prioridade</th>
-                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Prazo</th>
-                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Estado</th>
-                  <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Responsável</th>
-                  <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Ações</th>
+                  {['Título', 'Contacto', 'Prioridade', 'Prazo', 'Estado', 'Responsável'].map(h => (
+                    <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                  <th style={{ textAlign: 'right', padding: '10px 14px', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {tasks.map((task) => {
                   const overdue = isOverdue(task.dueDate) && task.status !== 'COMPLETED' && task.status !== 'CANCELLED'
+                  const st = STATUS_STYLE[task.status] ?? STATUS_STYLE.PENDING
+                  const pr = PRIORITY_STYLE[task.priority] ?? PRIORITY_STYLE.MEDIUM
                   return (
                     <tr
                       key={task.id}
-                      style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                      style={{ borderBottom: '1px solid var(--border-subtle)', transition: 'background 100ms' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{task.title}</td>
-                      <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{task.contact?.name || '-'}</td>
-                      <td className="px-4 py-3">
-                        <Badge variant={priorityVariant[task.priority]} small>
-                          {TASK_PRIORITY_LABELS[task.priority]}
-                        </Badge>
+                      <td style={{ padding: '10px 14px', fontWeight: 500, color: 'var(--text-primary)' }}>{task.title}</td>
+                      <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>{task.contact?.name || '-'}</td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <Pill bg={pr.bg} color={pr.color} label={TASK_PRIORITY_LABELS[task.priority]} />
                       </td>
-                      <td className="px-4 py-3">
+                      <td style={{ padding: '10px 14px' }}>
                         {task.dueDate ? (
-                          <span style={{ color: overdue ? '#dc2626' : 'var(--text-secondary)', fontWeight: overdue ? 500 : undefined }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: overdue ? '#dc2626' : 'var(--text-secondary)', fontWeight: overdue ? 600 : 400, fontSize: 12 }}>
+                            {overdue && <AlertCircle style={{ width: 12, height: 12, flexShrink: 0 }} />}
                             {formatDate(task.dueDate)}
-                            {overdue && ' ⚠'}
                           </span>
                         ) : (
                           <span style={{ color: 'var(--text-muted)' }}>-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={statusVariant[task.status]} small>
-                          {TASK_STATUS_LABELS[task.status]}
-                        </Badge>
+                      <td style={{ padding: '10px 14px' }}>
+                        <Pill bg={st.bg} color={st.color} label={TASK_STATUS_LABELS[task.status]} />
                       </td>
-                      <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{task.assignedTo?.name || '-'}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
+                      <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>{task.assignedTo?.name || '-'}</td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 2 }}>
                           {task.status !== 'COMPLETED' && task.status !== 'CANCELLED' && (
                             <button
                               onClick={() => handleComplete(task)}
-                              className="p-1.5 rounded hover:text-green-600 hover:bg-green-50"
-                              style={{ color: 'var(--text-muted)' }}
                               title="Marcar como concluída"
+                              style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
+                              onMouseEnter={e => { e.currentTarget.style.background = '#f0fdf4'; e.currentTarget.style.color = '#16a34a' }}
+                              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}
                             >
-                              <CheckCircle className="w-4 h-4" />
+                              <CheckCircle style={{ width: 15, height: 15 }} />
                             </button>
                           )}
                           <button
                             onClick={() => { setEditTask(task); setShowModal(true) }}
-                            className="p-1.5 rounded hover:text-blue-600 hover:bg-blue-50"
-                            style={{ color: 'var(--text-muted)' }}
+                            title="Editar"
+                            style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.color = '#2563eb' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit style={{ width: 14, height: 14 }} />
                           </button>
                           <button
                             onClick={() => setDeleteId(task.id)}
-                            className="p-1.5 rounded hover:text-red-600 hover:bg-red-50"
-                            style={{ color: 'var(--text-muted)' }}
+                            title="Eliminar"
+                            style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#dc2626' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 style={{ width: 14, height: 14 }} />
                           </button>
                         </div>
                       </td>
@@ -390,14 +432,23 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
       >
         <TaskForm
           task={editTask}
-          onSuccess={() => { setShowModal(false); setEditTask(undefined); fetchTasks() }}
+          onSuccess={(saved) => {
+            setShowModal(false)
+            setEditTask(undefined)
+            if (editTask) {
+              setTasks(prev => prev.map(t => t.id === saved.id ? saved : t))
+            } else {
+              setTasks(prev => [saved, ...prev])
+            }
+            fetchTasks()
+          }}
           onCancel={() => { setShowModal(false); setEditTask(undefined) }}
         />
       </Modal>
 
       <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Confirmar Eliminação" size="sm">
-        <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>Deseja eliminar esta tarefa?</p>
-        <div className="flex justify-end gap-3">
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>Deseja eliminar esta tarefa?</p>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <Button variant="secondary" onClick={() => setDeleteId(null)}>Cancelar</Button>
           <Button variant="danger" onClick={handleDelete}>Eliminar</Button>
         </div>
