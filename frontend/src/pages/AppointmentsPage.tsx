@@ -216,7 +216,7 @@ export const AppointmentsPage: React.FC = () => {
   }
 
   const getApptsForDay = (day: Date) =>
-    appointments.filter(a => new Date(a.startAt).toDateString() === day.toDateString())
+    visibleAppointments.filter(a => new Date(a.startAt).toDateString() === day.toDateString())
 
   const days = getDaysInMonth()
 
@@ -231,7 +231,7 @@ export const AppointmentsPage: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
         {/* View toggle */}
         <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border-color)' }}>
-          {(['list', 'calendar'] as const).map(v => (
+          {(['list', 'week', 'calendar'] as const).map(v => (
             <button
               key={v}
               onClick={() => setView(v)}
@@ -244,7 +244,7 @@ export const AppointmentsPage: React.FC = () => {
               onMouseEnter={e => { if (view !== v) e.currentTarget.style.background = 'var(--hover-bg)' }}
               onMouseLeave={e => { if (view !== v) e.currentTarget.style.background = 'var(--bg-card)' }}
             >
-              {v === 'list' ? 'Lista' : 'Calendário'}
+              {v === 'list' ? 'Lista' : v === 'week' ? 'Semana' : 'Mês'}
             </button>
           ))}
         </div>
@@ -274,11 +274,34 @@ export const AppointmentsPage: React.FC = () => {
         </Button>
       </div>
 
+      {/* Responsible filter chips */}
+      {responsibleUsers.length > 1 && (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Responsável:
+          </span>
+          {[{ id: 'ALL', name: 'Todos' }, ...responsibleUsers].map(u => (
+            <button
+              key={u.id}
+              onClick={() => setResponsibleFilter(u.id)}
+              style={{
+                padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                border: 'none', cursor: 'pointer', transition: 'all 150ms',
+                background: responsibleFilter === u.id ? '#6366f1' : 'var(--hover-bg)',
+                color: responsibleFilter === u.id ? '#fff' : 'var(--text-secondary)',
+              }}
+            >
+              {u.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* ── LIST VIEW ── */}
       {view === 'list' && (
         loading ? (
           <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)', fontSize: 13 }}>A carregar...</div>
-        ) : filtered.length === 0 ? (
+        ) : visibleAppointments.length === 0 ? (
           <div style={{ borderRadius: 12, border: '1px solid var(--border-color)', padding: '48px 24px', textAlign: 'center', background: 'var(--bg-card)' }}>
             <Calendar size={36} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} />
             <p style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12 }}>Sem agendamentos</p>
@@ -286,7 +309,7 @@ export const AppointmentsPage: React.FC = () => {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {filtered.map(a => {
+            {visibleAppointments.map(a => {
               const sc = STATUS_COLORS[a.status] || '#6366f1'
               return (
                 <div
