@@ -239,6 +239,27 @@ model Property {
   reference   String? @unique
   imageUrls   String  @default("[]")
 
+  // Localização extra
+  postalCode         String?
+  freguesia          String?
+  concelho           String?
+
+  // Características extra
+  tipologia          String?
+  areaUtil           Float?
+  areaTereno         Float?
+  anoConstrucao      Int?
+  piso               Int?
+  orientacao         String?
+
+  // Comodidades (array de strings)
+  comodidades        String[]
+
+  // Negócio extra
+  precoArrendamento  Float?
+  despesasCondominio Float?
+  imiAnual           Float?
+
   purpose           String  @default("SALE")
   lat               Float?
   lng               Float?
@@ -264,6 +285,11 @@ model Property {
   location     Location? @relation(fields: [locationId], references: [id])
 
   opportunities Opportunity[]
+
+  // Relações media
+  photos             PropertyPhoto[]
+  documents          PropertyDocument[]
+  visits             PropertyVisit[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -355,6 +381,10 @@ model Conversation {
   externalId  String?   // thread ID / phone / email address
   status      String    @default("OPEN") // OPEN, RESOLVED, ARCHIVED
 
+  isRead          Boolean   @default(true)
+  isStarred       Boolean   @default(false)
+  lastMessageText String?
+
   contactId   String?
   contact     Contact?  @relation(fields: [contactId], references: [id])
   assignedToId String?
@@ -368,6 +398,24 @@ model Conversation {
   lastMessageAt DateTime @default(now())
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([locationId, lastMessageAt])
+  @@index([contactId])
+}
+
+model MessageTemplate {
+  id         String   @id @default(cuid())
+  locationId String
+  agencyId   String?
+  name       String
+  channel    String   // WHATSAPP | EMAIL | SMS | ALL
+  subject    String?
+  body       String   @db.Text
+  variables  String[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([locationId])
 }
 
 model AutomationRule {
@@ -659,4 +707,38 @@ model CalendarSlot {
   endTime     String
   isAvailable Boolean @default(true)
   user        User    @relation(fields: [userId], references: [id])
+}
+
+model PropertyPhoto {
+  id         String   @id @default(cuid())
+  propertyId String
+  url        String
+  categoria  String?
+  ordem      Int      @default(0)
+  createdAt  DateTime @default(now())
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model PropertyDocument {
+  id         String   @id @default(cuid())
+  propertyId String
+  nome       String
+  tipo       String?
+  url        String
+  tamanho    Int?
+  createdAt  DateTime @default(now())
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model PropertyVisit {
+  id          String   @id @default(cuid())
+  propertyId  String
+  contactId   String?
+  userId      String
+  scheduledAt DateTime
+  status      String   @default("agendada")
+  interesse   String?
+  notas       String?
+  createdAt   DateTime @default(now())
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
