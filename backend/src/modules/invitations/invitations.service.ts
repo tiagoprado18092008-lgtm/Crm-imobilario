@@ -12,7 +12,7 @@ const getTransporter = () => {
   });
 };
 
-export const create = async (email: string, role: string, invitedById: string) => {
+export const create = async (email: string, role: string, invitedById: string, locationId?: string, permissions?: any) => {
   // Check if email already registered
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw Object.assign(new Error('Email já registado'), { status: 409 });
@@ -27,7 +27,7 @@ export const create = async (email: string, role: string, invitedById: string) =
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
   const invitation = await prisma.invitation.create({
-    data: { email, role, token, invitedById, expiresAt },
+    data: { email, role, token, invitedById, expiresAt, ...(locationId ? { locationId } : {}), ...(permissions ? { permissions } : {}) },
   });
 
   // Send invite email
@@ -35,12 +35,12 @@ export const create = async (email: string, role: string, invitedById: string) =
   const transporter = getTransporter();
   if (transporter) {
     await transporter.sendMail({
-      from: `"${process.env.FROM_NAME || 'CRM Imobiliário'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+      from: `"${process.env.FROM_NAME || 'CasaFlow'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
       to: email,
-      subject: 'Convite para o CRM Imobiliário',
+      subject: 'Convite para o CasaFlow',
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
-          <h2 style="color:#6366f1">Bem-vindo ao CRM Imobiliário</h2>
+          <h2 style="color:#6366f1">Bem-vindo ao CasaFlow</h2>
           <p>Foi convidado para se juntar à plataforma.</p>
           <a href="${inviteUrl}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#6366f1;color:white;border-radius:8px;text-decoration:none;font-weight:600">Aceitar convite</a>
           <p style="color:#94a3b8;font-size:12px">Este convite expira em 7 dias. Se não pediu este convite, ignore este email.</p>
@@ -54,8 +54,17 @@ export const create = async (email: string, role: string, invitedById: string) =
   return invitation;
 };
 
-export const list = async () => {
+export const list = async (user?: any) => {
+  const where: any = {};
+  if (user) {
+    if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') {
+      if (user.agencyId) where.agencyId = user.agencyId;
+    } else if (user.role === 'LOCATION_ADMIN') {
+      if (user.locationId) where.locationId = user.locationId;
+    }
+  }
   return prisma.invitation.findMany({
+    where,
     orderBy: { createdAt: 'desc' },
   });
 };

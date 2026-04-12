@@ -103,7 +103,7 @@ export const TopBar: React.FC = () => {
     const d = parseISO(t.dueDate)
     if (isPast(d)) return { label: 'Vencida', color: '#ef4444', bg: '#fef2f2' }
     if (isToday(d)) return { label: 'Hoje', color: '#f59e0b', bg: '#fffbeb' }
-    if (isTomorrow(d)) return { label: 'Amanhã', color: '#6366f1', bg: '#eef2ff' }
+    if (isTomorrow(d)) return { label: 'Amanhã', color: '#0f2553', bg: 'rgba(15,37,83,0.07)' }
     return { label: format(d, 'dd/MM'), color: '#64748b', bg: '#f1f5f9' }
   }
 
@@ -241,7 +241,7 @@ export const TopBar: React.FC = () => {
                   {notifications.slice(0, 5).map(n => (
                     <div key={n.id} onClick={() => { markRead(n.id); if (n.link) navigate(n.link); setNotifOpen(false) }}
                       style={{ padding: '8px 16px', cursor: 'pointer', background: n.read ? 'var(--bg-card)' : 'rgba(99,102,241,0.08)', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: n.read ? 'transparent' : '#6366f1', marginTop: 5, flexShrink: 0 }} />
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: n.read ? 'transparent' : '#b8963e', marginTop: 5, flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{n.title}</p>
                         {n.body && <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{n.body}</p>}
@@ -249,7 +249,7 @@ export const TopBar: React.FC = () => {
                     </div>
                   ))}
                   {sseUnreadCount > 0 && (
-                    <button onClick={markAllRead} style={{ width: '100%', padding: '6px', fontSize: 11, color: '#6366f1', fontWeight: 600, border: 'none', background: 'none', cursor: 'pointer' }}>
+                    <button onClick={markAllRead} style={{ width: '100%', padding: '6px', fontSize: 11, color: '#b8963e', fontWeight: 600, border: 'none', background: 'none', cursor: 'pointer' }}>
                       Marcar todas como lidas
                     </button>
                   )}
@@ -259,7 +259,7 @@ export const TopBar: React.FC = () => {
               <div style={{ padding: '10px 16px', borderTop: '1px solid var(--border-color)' }}>
                 <button
                   onClick={() => { navigate('/tasks'); setNotifOpen(false) }}
-                  style={{ width: '100%', padding: '8px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-page)', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#6366f1' }}
+                  style={{ width: '100%', padding: '8px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-page)', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#0f2553' }}
                 >
                   Ver todas as tarefas →
                 </button>
@@ -282,7 +282,7 @@ export const TopBar: React.FC = () => {
               <img src={user.avatarUrl} alt="avatar" className="rounded-full object-cover flex-shrink-0" style={{ width: 32, height: 32, boxShadow: '0 2px 8px rgba(99,102,241,0.3)' }} />
             ) : (
               <div className="flex items-center justify-center rounded-full text-white font-bold flex-shrink-0"
-                style={{ width: 32, height: 32, background: user?.avatarUrl || 'linear-gradient(135deg, #6366f1, #8b5cf6)', fontSize: 11, boxShadow: '0 2px 8px rgba(99,102,241,0.3)' }}>
+                style={{ width: 32, height: 32, background: user?.avatarUrl || '#0f2553', fontSize: 11, boxShadow: '0 2px 8px rgba(15,37,83,0.25)' }}>
                 {getInitials(user?.name || '')}
               </div>
             )}
@@ -304,7 +304,7 @@ export const TopBar: React.FC = () => {
             >
               <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#0f2553', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
                     {getInitials(user?.name || '')}
                   </div>
                   <div style={{ minWidth: 0 }}>
@@ -312,7 +312,7 @@ export const TopBar: React.FC = () => {
                     <p style={{ fontSize: 11, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>{user?.email}</p>
                   </div>
                 </div>
-                <span style={{ display: 'inline-block', marginTop: 10, padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: 'rgba(99,102,241,0.15)', color: '#818cf8' }}>
+                <span style={{ display: 'inline-block', marginTop: 10, padding: '2px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: 'rgba(184,150,62,0.12)', color: '#b8963e' }}>
                   {ROLE_LABELS[user?.role || ''] || user?.role}
                 </span>
               </div>

@@ -14,14 +14,27 @@ export const getCommunicationsConfig = (
   }
 };
 
-export const updateCommunicationsConfig = (
+export const updateCommunicationsConfig = async (
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   try {
-    const result = settingsService.updateCommunicationsConfig(req.body);
+    const result = await settingsService.updateCommunicationsConfig(req.body);
     res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const triggerTwilioAutoSetup = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await settingsService.triggerTwilioAutoSetup();
+    res.status(result.ok ? 200 : 400).json(result);
   } catch (err) {
     next(err);
   }

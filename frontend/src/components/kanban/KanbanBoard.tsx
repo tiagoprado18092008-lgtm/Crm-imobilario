@@ -4,9 +4,10 @@ import { DragDropContext } from '@hello-pangea/dnd'
 import type { DropResult } from '@hello-pangea/dnd'
 import {
   Plus, X, Edit, Trash2, Search, SlidersHorizontal,
-  ArrowUpDown, Columns, LayoutList, Kanban, ChevronDown,
-  ArrowUp, ArrowDown,
+  ArrowUpDown, Columns, LayoutList, LayoutGrid, ChevronDown,
+  ArrowUp, ArrowDown, Download, Check, Upload,
 } from 'lucide-react'
+import { ImportModal } from '../import/ImportModal'
 import { QuickActionModal } from './QuickActionModal'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -15,6 +16,8 @@ import { getOpportunities, createOpportunity, updateOpportunity, deleteOpportuni
 import { getContacts } from '../../api/contacts.api'
 import { getProperties } from '../../api/properties.api'
 import { getUsers } from '../../api/users.api'
+import { getInteractions } from '../../api/interactions.api'
+import { getTasks } from '../../api/tasks.api'
 import type { Opportunity, Contact, Property, User } from '../../types'
 import { KanbanColumn } from './KanbanColumn'
 import { Modal } from '../ui/Modal'
@@ -37,7 +40,18 @@ const oppSchema = z.object({
   contactId: z.string().min(1, 'Contacto obrigatório'),
   propertyId: z.string().optional(),
   assignedToId: z.string().min(1, 'Responsável obrigatório'),
-  lostReason: z.string().optional()
+  lostReason: z.string().optional(),
+  // Dynamic fields
+  budget_min: z.preprocess(v => (v === '' || v == null ? undefined : Number(v)), z.number().positive().optional()),
+  budget_max: z.preprocess(v => (v === '' || v == null ? undefined : Number(v)), z.number().positive().optional()),
+  interest_type: z.string().optional(),
+  timeline: z.string().optional(),
+  selling_also: z.boolean().optional(),
+  needs_financing: z.boolean().optional(),
+  property_address: z.string().optional(),
+  asking_price: z.preprocess(v => (v === '' || v == null ? undefined : Number(v)), z.number().positive().optional()),
+  sale_reason: z.string().optional(),
+  buying_also: z.boolean().optional(),
 })
 
 type OppFormData = z.infer<typeof oppSchema>
@@ -50,10 +64,22 @@ interface OppFormProps {
 }
 
 const SOURCE_OPTIONS_FORM = [
-  'Idealista', 'Imovirtual', 'Casa Sapo', 'OLX', 'BPI Expresso Imobiliário',
-  'Indicação', 'Redes Sociais', 'Instagram', 'Facebook Ads', 'Google Ads',
-  'Walk-in', 'Email', 'Chamada Direta', 'Outro'
+  'Website', 'E-mail', 'Presencial', 'Portal imobiliário', 'Indicação', 'Telefone/WhatsApp',
 ]
+
+const SALE_REASON_OPTIONS = [
+  'Mudança de residência', 'Separação / Divórcio', 'Herança',
+  'Dificuldades financeiras', 'Upgrade / Downgrade', 'Investimento', 'Outro',
+]
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box' as const,
+  border: '1px solid var(--border-color)', borderRadius: 8,
+  background: 'var(--bg-page)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit',
+}
+const labelStyle: React.CSSProperties = {
+  fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4,
+}
 
 const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, onSuccess, onCancel }) => {
   const { showToast } = useUIStore()
@@ -63,17 +89,7 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, onSuccess,
   const [properties, setProperties] = useState<Property[]>([])
   const [users, setUsers] = useState<User[]>([])
 
-  useEffect(() => {
-    Promise.all([getContacts({ limit: 200 }), getProperties({ limit: 200 }), getUsers()])
-      .then(([cRes, pRes, uRes]) => {
-        const cd = cRes.data; setContacts(Array.isArray(cd) ? cd : cd.data || [])
-        const pd = pRes.data; setProperties(Array.isArray(pd) ? pd : pd.data || [])
-        const ud = uRes.data; setUsers(Array.isArray(ud) ? ud : ud.data || [])
-      })
-      .catch(() => {})
-  }, [])
-
-  const { register, handleSubmit, formState: { errors } } = useForm<OppFormData>({
+  const { register, handleSubmit, watch, setValue: setFormValue, formState: { errors } } = useForm<OppFormData>({
     resolver: zodResolver(oppSchema),
     defaultValues: {
       title: opportunity?.title || '',
@@ -85,23 +101,67 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, onSuccess,
       contactId: opportunity?.contactId || '',
       propertyId: opportunity?.propertyId || '',
       assignedToId: opportunity?.assignedToId || currentUser?.id || '',
-      lostReason: opportunity?.lostReason || ''
+      lostReason: opportunity?.lostReason || '',
+      budget_min: (opportunity as any)?.budget_min,
+      budget_max: (opportunity as any)?.budget_max,
+      interest_type: (opportunity as any)?.interest_type || '',
+      timeline: (opportunity as any)?.timeline || '',
+      selling_also: (opportunity as any)?.selling_also ?? false,
+      needs_financing: (opportunity as any)?.needs_financing ?? false,
+      property_address: (opportunity as any)?.property_address || '',
+      asking_price: (opportunity as any)?.asking_price,
+      sale_reason: (opportunity as any)?.sale_reason || '',
+      buying_also: (opportunity as any)?.buying_also ?? false,
     }
   })
+
+  useEffect(() => {
+    if (!opportunity) {
+      setFormValue('stage', initialStage || 'LEAD_IN')
+    }
+    Promise.all([getContacts({ limit: 200 }), getProperties({ limit: 200 }), getUsers()])
+      .then(([cRes, pRes, uRes]) => {
+        const cd = cRes.data; setContacts(Array.isArray(cd) ? cd : cd.data || [])
+        const pd = pRes.data; setProperties(Array.isArray(pd) ? pd : pd.data || [])
+        const ud = uRes.data; setUsers(Array.isArray(ud) ? ud : ud.data || [])
+        // Always re-set assignedToId after options load to prevent DOM race condition
+        // where select snaps to first item before options are available
+        if (!opportunity && currentUser?.id) {
+          setTimeout(() => setFormValue('assignedToId', currentUser.id), 0)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const onSubmit = async (data: OppFormData) => {
     setSubmitting(true)
     try {
-      const payload = {
-        ...data,
+      const basePayload = {
+        title: data.title,
+        stage: data.stage,
         value: data.value ? Number(data.value) : undefined,
-        propertyId: data.propertyId || undefined,
-        expectedCloseDate: data.expectedCloseDate || undefined,
-        lostReason: data.lostReason || undefined,
-        notes: data.notes || undefined,
         source: data.source || undefined,
-        position: opportunity?.position ?? 0
+        expectedCloseDate: data.expectedCloseDate || undefined,
+        notes: data.notes || undefined,
+        contactId: data.contactId,
+        propertyId: data.propertyId || undefined,
+        assignedToId: data.assignedToId,
+        lostReason: data.lostReason || undefined,
       }
+      const dynamicPayload = contactType === 'BUYER' ? {
+        budget_min: data.budget_min,
+        budget_max: data.budget_max,
+        interest_type: data.interest_type || undefined,
+        timeline: data.timeline || undefined,
+        selling_also: data.selling_also ?? false,
+        needs_financing: data.needs_financing ?? false,
+      } : contactType === 'OWNER' ? {
+        property_address: data.property_address || undefined,
+        asking_price: data.asking_price,
+        sale_reason: data.sale_reason || undefined,
+        buying_also: data.buying_also ?? false,
+      } : {}
+      const payload = { ...basePayload, ...dynamicPayload }
       if (opportunity) {
         await updateOpportunity(opportunity.id, payload)
         showToast('Oportunidade atualizada', 'success')
@@ -111,16 +171,30 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, onSuccess,
       }
       onSuccess()
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'Erro ao guardar oportunidade', 'error')
+      const details = err?.response?.data?.details
+      const msg = details?.length
+        ? details.map((d: any) => d.message).join(', ')
+        : err?.response?.data?.error || 'Erro ao guardar oportunidade'
+      showToast(msg, 'error')
     } finally {
       setSubmitting(false)
     }
   }
 
+  const watchedStage = watch('stage')
+  const watchedContactId = watch('contactId')
+  const watchedAskingPrice = watch('asking_price')
+  const sellingAlso = watch('selling_also') ?? false
+  const needsFinancing = watch('needs_financing') ?? false
+  const buyingAlso = watch('buying_also') ?? false
+  const selectedContact = contacts.find(c => c.id === watchedContactId)
+  const contactType = selectedContact?.type
+  const oppCommission = watchedAskingPrice ? Number(watchedAskingPrice) * 0.05 : null
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <Input label="Título" required error={errors.title?.message} {...register('title')} />
-      <div className="grid grid-cols-2 gap-4">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <Select label="Fase" options={STAGE_ORDER.map(s => ({ value: s, label: STAGE_LABELS[s] }))} {...register('stage')} />
         <Input label="Valor (€)" type="number" {...register('value')} />
         <Select label="Contacto" required error={errors.contactId?.message} placeholder="Selecionar contacto" options={contacts.map(c => ({ value: c.id, label: c.name }))} {...register('contactId')} />
@@ -129,11 +203,124 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, onSuccess,
         <Select label="Propriedade" placeholder="Nenhuma" options={properties.map(p => ({ value: p.id, label: p.title }))} {...register('propertyId')} />
         <Input label="Data de Fecho Prevista" type="date" {...register('expectedCloseDate')} />
       </div>
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-gray-700">Notas</label>
-        <textarea {...register('notes')} rows={3} className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Notas</label>
+        <textarea
+          {...register('notes')}
+          rows={3}
+          style={{
+            width: '100%', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
+            border: '1px solid var(--border-color)', borderRadius: 8,
+            background: 'var(--bg-page)', color: 'var(--text-primary)',
+            outline: 'none', resize: 'vertical', fontFamily: 'inherit',
+          }}
+          onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.12)' }}
+          onBlur={e => { e.target.style.borderColor = 'var(--border-color)'; e.target.style.boxShadow = 'none' }}
+        />
       </div>
-      <div className="flex justify-end gap-3">
+      {watchedStage === 'CLOSED_LOST' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Motivo da Perda</label>
+          <textarea
+            {...register('lostReason')}
+            rows={2}
+            style={{
+              width: '100%', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
+              border: '1px solid #fca5a5', borderRadius: 8,
+              background: '#fff5f5', color: 'var(--text-primary)',
+              outline: 'none', resize: 'vertical', fontFamily: 'inherit',
+            }}
+          />
+        </div>
+      )}
+
+      {/* Dynamic fields — BUYER */}
+      {contactType === 'BUYER' && (
+        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Perfil de Compra</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={labelStyle}>Budget Mínimo (€)</label>
+              <input {...register('budget_min', { valueAsNumber: true })} type="number" placeholder="ex: 150 000" style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>Budget Máximo (€)</label>
+              <input {...register('budget_max', { valueAsNumber: true })} type="number" placeholder="ex: 500 000" style={inputStyle} />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+            <div>
+              <label style={labelStyle}>Tipo de Imóvel</label>
+              <select {...register('interest_type')} style={inputStyle}>
+                <option value="">Selecionar...</option>
+                <option value="APARTMENT">Apartamento</option>
+                <option value="HOUSE">Moradia</option>
+                <option value="COMMERCIAL">Comercial</option>
+                <option value="LAND">Terreno</option>
+                <option value="GARAGE">Garagem</option>
+                <option value="WAREHOUSE">Armazém</option>
+                <option value="FARM">Quinta</option>
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Urgência</label>
+              <select {...register('timeline')} style={inputStyle}>
+                <option value="">Selecionar...</option>
+                <option value="IMMEDIATE">Imediato</option>
+                <option value="1_3_MONTHS">1 a 3 meses</option>
+                <option value="3_6_MONTHS">3 a 6 meses</option>
+                <option value="6_PLUS_MONTHS">Mais de 6 meses</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" {...register('selling_also')} checked={sellingAlso} onChange={e => setFormValue('selling_also', e.target.checked)} style={{ accentColor: '#c9a84c', width: 15, height: 15 }} />
+              Pretende também vender
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" {...register('needs_financing')} checked={needsFinancing} onChange={e => setFormValue('needs_financing', e.target.checked)} style={{ accentColor: '#c9a84c', width: 15, height: 15 }} />
+              Necessita de financiamento
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* Dynamic fields — OWNER */}
+      {contactType === 'OWNER' && (
+        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Dados do Imóvel</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label style={labelStyle}>Morada do Imóvel</label>
+              <input {...register('property_address')} type="text" placeholder="ex: Rua das Flores 12, Lisboa" style={inputStyle} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Asking Price (€)</label>
+                <input {...register('asking_price', { valueAsNumber: true })} type="number" placeholder="ex: 320 000" style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Comissão estimada (5%)</label>
+                <input type="text" readOnly value={oppCommission !== null ? `${oppCommission.toLocaleString('pt-PT', { minimumFractionDigits: 2 })} €` : '—'} style={{ ...inputStyle, background: 'var(--bg-subtle, #f8f9fc)', color: 'var(--text-muted)', cursor: 'default' }} />
+              </div>
+            </div>
+            <div>
+              <label style={labelStyle}>Razão da Venda</label>
+              <select {...register('sale_reason')} style={inputStyle}>
+                <option value="">Selecionar...</option>
+                {SALE_REASON_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" {...register('buying_also')} checked={buyingAlso} onChange={e => setFormValue('buying_also', e.target.checked)} style={{ accentColor: '#c9a84c', width: 15, height: 15 }} />
+              Necessita de comprar além de vender
+            </label>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
         <Button type="button" variant="secondary" onClick={onCancel}>Cancelar</Button>
         <Button type="submit" loading={submitting}>{opportunity ? 'Atualizar' : 'Criar'} Oportunidade</Button>
       </div>
@@ -149,13 +336,17 @@ export const KanbanBoard: React.FC = () => {
   const { showToast } = useUIStore()
   const [columns, setColumns] = useState<ColumnsMap>({})
   const [loading, setLoading] = useState(true)
+  const [initialLoad, setInitialLoad] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [newStage, setNewStage] = useState<string>('LEAD_IN')
   const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null)
   const [editOpp, setEditOpp] = useState<Opportunity | undefined>()
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [quickAction, setQuickAction] = useState<{ opp: Opportunity; action: string } | null>(null)
+  const [oppInteractions, setOppInteractions] = useState<any[]>([])
+  const [oppTasks, setOppTasks] = useState<any[]>([])
 
   // View & filter state
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban')
@@ -168,9 +359,11 @@ export const KanbanBoard: React.FC = () => {
   const [allUsers, setAllUsers] = useState<User[]>([])
   const [showColumns, setShowColumns] = useState({ value: true, source: true, assignee: true, date: true })
   const [showColumnPanel, setShowColumnPanel] = useState(false)
+  const [pageTab, setPageTab] = useState<'opportunities' | 'pipelines' | 'bulk'>('opportunities')
+  const [showPipelineDropdown, setShowPipelineDropdown] = useState(false)
 
-  const fetchOpportunities = useCallback(async () => {
-    setLoading(true)
+  const fetchOpportunities = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const [res, uRes] = await Promise.all([
         getOpportunities({ limit: 500 }),
@@ -188,10 +381,30 @@ export const KanbanBoard: React.FC = () => {
       showToast('Erro ao carregar oportunidades', 'error')
     } finally {
       setLoading(false)
+      setInitialLoad(false)
     }
   }, [])
 
   useEffect(() => { fetchOpportunities() }, [fetchOpportunities])
+
+  const fetchOppDetails = useCallback(async (oppId: string) => {
+    try {
+      const [iRes, tRes] = await Promise.all([
+        getInteractions({ opportunityId: oppId, limit: 20 }),
+        getTasks({ opportunityId: oppId, limit: 20 }),
+      ])
+      const iData = iRes.data; setOppInteractions(Array.isArray(iData) ? iData : iData.data || [])
+      const tData = tRes.data; setOppTasks(Array.isArray(tData) ? tData : tData.data || [])
+    } catch { /* silently ignore */ }
+  }, [])
+
+  useEffect(() => {
+    if (selectedOpp) {
+      setOppInteractions([])
+      setOppTasks([])
+      fetchOppDetails(selectedOpp.id)
+    }
+  }, [selectedOpp?.id])
 
   const onDragEnd = async (result: DropResult) => {
     const { source, destination, draggableId } = result
@@ -212,10 +425,23 @@ export const KanbanBoard: React.FC = () => {
     }
     if (selectedOpp?.id === draggableId) setSelectedOpp(updatedMoved)
     try {
-      await moveOpportunityStage(draggableId, dstStage, destination.index)
+      const res = await moveOpportunityStage(draggableId, dstStage, destination.index)
+      const saved = res.data as Opportunity
+      // Merge server response (stage/position) with existing item (preserves loaded relations)
+      setColumns(prev => {
+        const next = { ...prev }
+        if (srcStage === dstStage) {
+          next[dstStage] = prev[dstStage].map(o => o.id === saved.id ? { ...o, ...saved } : o)
+        } else {
+          next[srcStage] = prev[srcStage].filter(o => o.id !== saved.id)
+          next[dstStage] = prev[dstStage].map(o => o.id === saved.id ? { ...o, ...saved } : o)
+        }
+        return next
+      })
+      if (selectedOpp?.id === draggableId) setSelectedOpp(prev => prev ? { ...prev, ...saved } : saved)
     } catch {
       showToast('Erro ao mover oportunidade. A reverter...', 'error')
-      fetchOpportunities()
+      fetchOpportunities(true)
     }
   }
 
@@ -226,7 +452,7 @@ export const KanbanBoard: React.FC = () => {
       showToast('Oportunidade eliminada', 'success')
       setDeleteId(null)
       setSelectedOpp(null)
-      fetchOpportunities()
+      fetchOpportunities(true)
     } catch {
       showToast('Erro ao eliminar', 'error')
     }
@@ -265,241 +491,384 @@ export const KanbanBoard: React.FC = () => {
   const totalOpps = allOpps.length
   const activeFilters = [filterSource, filterAssignee].filter(Boolean).length
 
-  if (loading) return <PageSpinner />
+  if (initialLoad) return <PageSpinner />
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 0, position: 'relative' }}>
-      {/* Top Bar */}
-      <div style={{
-        background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 12,
-        padding: '10px 14px', marginBottom: 14,
-        display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-      }}>
-        {/* View toggle */}
-        <div style={{ display: 'flex', gap: 2, background: '#f0f2f8', borderRadius: 8, padding: 2 }}>
-          <button
-            onClick={() => setViewMode('kanban')}
-            title="Vista Kanban"
-            style={{
-              padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-              background: viewMode === 'kanban' ? 'var(--bg-card)' : 'transparent',
-              color: viewMode === 'kanban' ? '#6366f1' : '#94a3b8',
-              border: 'none', cursor: 'pointer',
-              boxShadow: viewMode === 'kanban' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-              display: 'flex', alignItems: 'center', gap: 4,
-            }}
-          >
-            <Kanban size={13} /> Kanban
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            title="Vista Lista"
-            style={{
-              padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600,
-              background: viewMode === 'list' ? 'var(--bg-card)' : 'transparent',
-              color: viewMode === 'list' ? '#6366f1' : '#94a3b8',
-              border: 'none', cursor: 'pointer',
-              boxShadow: viewMode === 'list' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-              display: 'flex', alignItems: 'center', gap: 4,
-            }}
-          >
-            <LayoutList size={13} /> Lista
-          </button>
-        </div>
 
-        {/* Filters button */}
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => { setShowFilterPanel(!showFilterPanel); setShowSortPanel(false); setShowColumnPanel(false) }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-              background: activeFilters > 0 ? '#eef2ff' : '#f8fafc',
-              color: activeFilters > 0 ? '#6366f1' : '#475569',
-              border: `1px solid ${activeFilters > 0 ? '#c7d2fe' : '#e2e8f0'}`,
-              cursor: 'pointer',
-            }}
-          >
-            <SlidersHorizontal size={13} />
-            Filtros
-            {activeFilters > 0 && (
-              <span style={{ background: '#6366f1', color: '#fff', borderRadius: 10, fontSize: 10, padding: '0 5px', fontWeight: 700 }}>
-                {activeFilters}
-              </span>
-            )}
-            <ChevronDown size={11} />
-          </button>
-          {showFilterPanel && (
-            <div style={{
-              position: 'absolute', top: 36, left: 0, zIndex: 50,
-              background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 16, minWidth: 240,
-            }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Filtros avançados</p>
-              <div style={{ marginBottom: 10 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Fonte</label>
-                <select
-                  value={filterSource}
-                  onChange={e => setFilterSource(e.target.value)}
-                  style={{ width: '100%', padding: '7px 10px', fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', outline: 'none', background: '#fafbfd' }}
-                >
-                  <option value="">Todas as fontes</option>
-                  {SOURCE_OPTIONS_FORM.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Responsável</label>
-                <select
-                  value={filterAssignee}
-                  onChange={e => setFilterAssignee(e.target.value)}
-                  style={{ width: '100%', padding: '7px 10px', fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0', outline: 'none', background: '#fafbfd' }}
-                >
-                  <option value="">Todos</option>
-                  {allUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                </select>
-              </div>
-              {activeFilters > 0 && (
-                <button
-                  onClick={() => { setFilterSource(''); setFilterAssignee('') }}
-                  style={{ fontSize: 12, color: '#f43f5e', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                >
-                  Limpar filtros
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+      {/* ── GHL-style Page Header ── */}
+      <div style={{ marginBottom: 0 }}>
 
-        {/* Sort button */}
-        <div style={{ position: 'relative' }}>
-          <button
-            onClick={() => { setShowSortPanel(!showSortPanel); setShowFilterPanel(false); setShowColumnPanel(false) }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-              background: 'var(--bg-page)', color: 'var(--text-muted)',
-              border: '1px solid #e2e8f0', cursor: 'pointer',
-            }}
-          >
-            <ArrowUpDown size={13} /> Ordenar <ChevronDown size={11} />
-          </button>
-          {showSortPanel && (
-            <div style={{
-              position: 'absolute', top: 36, left: 0, zIndex: 50,
-              background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)',
-              boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 12, minWidth: 200,
-            }}>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Ordenar por</p>
-              {([
-                { field: 'createdAt', label: 'Data de criação' },
-                { field: 'value', label: 'Valor' },
-                { field: 'expectedCloseDate', label: 'Data de fecho' },
-                { field: 'title', label: 'Título' },
-              ] as { field: SortField; label: string }[]).map(opt => (
-                <button
-                  key={opt.field}
-                  onClick={() => { if (sortField === opt.field) { setSortDir(d => d === 'asc' ? 'desc' : 'asc') } else { setSortField(opt.field); setSortDir('desc') } }}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 12,
-                    background: sortField === opt.field ? '#eef2ff' : 'transparent',
-                    color: sortField === opt.field ? '#6366f1' : '#374151',
-                    border: 'none', cursor: 'pointer', fontWeight: sortField === opt.field ? 600 : 400,
-                  }}
-                >
-                  {opt.label}
-                  {sortField === opt.field && (sortDir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* Search */}
-        <div style={{ position: 'relative' }}>
-          <Search size={13} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input
-            type="text"
-            placeholder="Pesquisar..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            style={{
-              paddingLeft: 28, paddingRight: 12, paddingTop: 6, paddingBottom: 6,
-              borderRadius: 7, border: '1px solid #e2e8f0', fontSize: 12,
-              background: 'var(--bg-page)', color: 'var(--text-primary)', width: 200, outline: 'none',
-            }}
-            onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.12)' }}
-            onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none' }}
-          />
-        </div>
-
-        {/* Gerir campos (only in list view) */}
-        {viewMode === 'list' && (
-          <div style={{ position: 'relative' }}>
+        {/* Title + Tabs row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderBottom: '1px solid var(--border-color)', marginBottom: 0 }}>
+          {[
+            { key: 'opportunities', label: 'Oportunidades Potenciais' },
+            { key: 'pipelines',     label: 'Pipelines' },
+            { key: 'bulk',          label: 'Ações em massa' },
+          ].map(t => (
             <button
-              onClick={() => { setShowColumnPanel(!showColumnPanel); setShowFilterPanel(false); setShowSortPanel(false) }}
+              key={t.key}
+              onClick={() => setPageTab(t.key as any)}
               style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '5px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-                background: 'var(--bg-page)', color: 'var(--text-muted)',
-                border: '1px solid #e2e8f0', cursor: 'pointer',
+                padding: '10px 18px',
+                fontSize: 13,
+                fontWeight: pageTab === t.key ? 600 : 400,
+                color: pageTab === t.key ? '#3b82f6' : 'var(--text-secondary)',
+                background: 'none',
+                border: 'none',
+                borderBottom: pageTab === t.key ? '2px solid #3b82f6' : '2px solid transparent',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                marginBottom: -1,
               }}
             >
-              <Columns size={13} /> Colunas <ChevronDown size={11} />
+              {t.label}
             </button>
-            {showColumnPanel && (
+          ))}
+        </div>
+
+        {/* Sub-toolbar: pipeline selector + count + actions */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 0', flexWrap: 'wrap',
+        }}>
+          {/* Pipeline selector */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowPipelineDropdown(d => !d)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
+                background: 'var(--bg-card)', color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)', cursor: 'pointer',
+                minWidth: 200,
+              }}
+            >
+              <span style={{ flex: 1, textAlign: 'left' }}>1 - Pipeline Principal</span>
+              <ChevronDown size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+            </button>
+            {showPipelineDropdown && (
               <div style={{
-                position: 'absolute', top: 36, right: 0, zIndex: 50,
-                background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 12, minWidth: 180,
+                position: 'absolute', top: 36, left: 0, zIndex: 50, minWidth: 220,
+                background: 'var(--bg-card)', borderRadius: 10, border: '1px solid var(--border-color)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden',
               }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mostrar colunas</p>
-                {([
-                  { key: 'value', label: 'Valor' },
-                  { key: 'source', label: 'Fonte' },
-                  { key: 'assignee', label: 'Responsável' },
-                  { key: 'date', label: 'Data de fecho' },
-                ] as { key: keyof typeof showColumns; label: string }[]).map(col => (
-                  <label key={col.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#374151' }}>
-                    <input
-                      type="checkbox"
-                      checked={showColumns[col.key]}
-                      onChange={() => setShowColumns(c => ({ ...c, [col.key]: !c[col.key] }))}
-                      style={{ accentColor: '#6366f1' }}
-                    />
-                    {col.label}
-                  </label>
-                ))}
+                <div style={{ padding: '4px 0' }}>
+                  <button
+                    onClick={() => setShowPipelineDropdown(false)}
+                    style={{
+                      width: '100%', textAlign: 'left', padding: '8px 14px',
+                      fontSize: 13, background: 'var(--hover-bg)',
+                      color: 'var(--text-primary)', border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    }}
+                  >
+                    1 - Pipeline Principal
+                    <Check size={13} style={{ color: '#3b82f6' }} />
+                  </button>
+                </div>
+                <div style={{ borderTop: '1px solid var(--border-color)', padding: '4px 0' }}>
+                  <button
+                    onClick={() => { setShowPipelineDropdown(false); setPageTab('pipelines') }}
+                    style={{
+                      width: '100%', textAlign: 'left', padding: '8px 14px',
+                      fontSize: 13, color: '#3b82f6', background: 'none',
+                      border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 6,
+                    }}
+                  >
+                    <Plus size={13} /> Novo pipeline
+                  </button>
+                </div>
               </div>
             )}
           </div>
+
+          {/* Count */}
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
+            {totalOpps} oportunidades potenciais
+          </span>
+
+          <div style={{ flex: 1 }} />
+
+          {/* View toggle (grid / list icons) */}
+          <div style={{ display: 'flex', gap: 2, border: '1px solid var(--border-color)', borderRadius: 6, overflow: 'hidden' }}>
+            <button
+              onClick={() => setViewMode('kanban')}
+              title="Vista Kanban"
+              style={{
+                padding: '5px 8px', border: 'none', cursor: 'pointer',
+                background: viewMode === 'kanban' ? '#3b82f6' : 'var(--bg-card)',
+                color: viewMode === 'kanban' ? '#fff' : 'var(--text-muted)',
+                display: 'flex', alignItems: 'center',
+              }}
+            >
+              <LayoutGrid size={15} />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              title="Vista Lista"
+              style={{
+                padding: '5px 8px', border: 'none', cursor: 'pointer',
+                background: viewMode === 'list' ? '#3b82f6' : 'var(--bg-card)',
+                color: viewMode === 'list' ? '#fff' : 'var(--text-muted)',
+                display: 'flex', alignItems: 'center',
+              }}
+            >
+              <LayoutList size={15} />
+            </button>
+          </div>
+
+          {/* Importação */}
+          <button
+            onClick={() => setShowImport(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '6px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500,
+              background: 'var(--bg-card)', color: 'var(--text-secondary)',
+              border: '1px solid var(--border-color)', cursor: 'pointer',
+            }}
+          >
+            <Upload size={14} /> Importar
+          </button>
+
+          {/* Add opportunity */}
+          <button
+            onClick={() => { setNewStage('LEAD_IN'); setShowModal(true) }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '6px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600,
+              background: '#3b82f6', color: '#fff',
+              border: 'none', cursor: 'pointer',
+            }}
+          >
+            <Plus size={14} /> Adicionar oportunidade
+          </button>
+        </div>
+
+        {/* Kanban search + Gerir campos row */}
+        {pageTab === 'opportunities' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 10 }}>
+            {/* Filters */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => { setShowFilterPanel(!showFilterPanel); setShowSortPanel(false); setShowColumnPanel(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500,
+                  background: activeFilters > 0 ? '#eef2ff' : 'var(--bg-card)',
+                  color: activeFilters > 0 ? '#6366f1' : 'var(--text-secondary)',
+                  border: `1px solid ${activeFilters > 0 ? '#c7d2fe' : 'var(--border-color)'}`,
+                  cursor: 'pointer',
+                }}
+              >
+                <SlidersHorizontal size={12} />
+                Filtros
+                {activeFilters > 0 && (
+                  <span style={{ background: '#6366f1', color: '#fff', borderRadius: 10, fontSize: 10, padding: '0 5px', fontWeight: 700 }}>
+                    {activeFilters}
+                  </span>
+                )}
+              </button>
+              {showFilterPanel && (
+                <div style={{
+                  position: 'absolute', top: 34, left: 0, zIndex: 50,
+                  background: 'var(--bg-card)', borderRadius: 10, border: '1px solid var(--border-color)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 16, minWidth: 240,
+                }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Filtros</p>
+                  <div style={{ marginBottom: 10 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Fonte</label>
+                    <select
+                      value={filterSource}
+                      onChange={e => setFilterSource(e.target.value)}
+                      style={{ width: '100%', padding: '7px 10px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border-color)', outline: 'none', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
+                    >
+                      <option value="">Todas as fontes</option>
+                      {SOURCE_OPTIONS_FORM.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Responsável</label>
+                    <select
+                      value={filterAssignee}
+                      onChange={e => setFilterAssignee(e.target.value)}
+                      style={{ width: '100%', padding: '7px 10px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border-color)', outline: 'none', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
+                    >
+                      <option value="">Todos</option>
+                      {allUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                    </select>
+                  </div>
+                  {activeFilters > 0 && (
+                    <button onClick={() => { setFilterSource(''); setFilterAssignee('') }}
+                      style={{ fontSize: 12, color: '#f43f5e', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                      Limpar filtros
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Sort */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => { setShowSortPanel(!showSortPanel); setShowFilterPanel(false); setShowColumnPanel(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500,
+                  background: 'var(--bg-card)', color: 'var(--text-secondary)',
+                  border: '1px solid var(--border-color)', cursor: 'pointer',
+                }}
+              >
+                <ArrowUpDown size={12} /> Ordenar
+              </button>
+              {showSortPanel && (
+                <div style={{
+                  position: 'absolute', top: 34, left: 0, zIndex: 50,
+                  background: 'var(--bg-card)', borderRadius: 10, border: '1px solid var(--border-color)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 12, minWidth: 200,
+                }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Ordenar por</p>
+                  {([
+                    { field: 'createdAt', label: 'Data de criação' },
+                    { field: 'value', label: 'Valor' },
+                    { field: 'expectedCloseDate', label: 'Data de fecho' },
+                    { field: 'title', label: 'Título' },
+                  ] as { field: SortField; label: string }[]).map(opt => (
+                    <button
+                      key={opt.field}
+                      onClick={() => { if (sortField === opt.field) { setSortDir(d => d === 'asc' ? 'desc' : 'asc') } else { setSortField(opt.field); setSortDir('desc') } }}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 12,
+                        background: sortField === opt.field ? '#eef2ff' : 'transparent',
+                        color: sortField === opt.field ? '#6366f1' : 'var(--text-secondary)',
+                        border: 'none', cursor: 'pointer', fontWeight: sortField === opt.field ? 600 : 400,
+                      }}
+                    >
+                      {opt.label}
+                      {sortField === opt.field && (sortDir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ flex: 1 }} />
+
+            {/* Search */}
+            <div style={{ position: 'relative' }}>
+              <Search size={13} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <input
+                type="text"
+                placeholder="Pesquisar Oportunidades..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{
+                  paddingLeft: 30, paddingRight: 12, paddingTop: 6, paddingBottom: 6,
+                  borderRadius: 6, border: '1px solid var(--border-color)', fontSize: 12,
+                  background: 'var(--bg-card)', color: 'var(--text-primary)', width: 220, outline: 'none',
+                }}
+                onFocus={e => { e.target.style.borderColor = '#3b82f6' }}
+                onBlur={e => { e.target.style.borderColor = 'var(--border-color)' }}
+              />
+            </div>
+
+            {/* Gerir campos */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => { setShowColumnPanel(!showColumnPanel); setShowFilterPanel(false); setShowSortPanel(false) }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500,
+                  background: 'var(--bg-card)', color: 'var(--text-secondary)',
+                  border: '1px solid var(--border-color)', cursor: 'pointer',
+                }}
+              >
+                <Columns size={12} /> Gerir campos
+              </button>
+              {showColumnPanel && (
+                <div style={{
+                  position: 'absolute', top: 34, right: 0, zIndex: 50,
+                  background: 'var(--bg-card)', borderRadius: 10, border: '1px solid var(--border-color)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 12, minWidth: 180,
+                }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mostrar colunas</p>
+                  {([
+                    { key: 'value', label: 'Valor' },
+                    { key: 'source', label: 'Fonte' },
+                    { key: 'assignee', label: 'Responsável' },
+                    { key: 'date', label: 'Data de fecho' },
+                  ] as { key: keyof typeof showColumns; label: string }[]).map(col => (
+                    <label key={col.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
+                      <input
+                        type="checkbox"
+                        checked={showColumns[col.key]}
+                        onChange={() => setShowColumns(c => ({ ...c, [col.key]: !c[col.key] }))}
+                        style={{ accentColor: '#3b82f6' }}
+                      />
+                      {col.label}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         )}
-
-        {/* Count */}
-        <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 2 }}>
-          {totalOpps} oportunidades
-        </span>
-
-        {/* Add button */}
-        <Button onClick={() => { setNewStage('LEAD_IN'); setShowModal(true) }} size="sm">
-          <Plus className="w-4 h-4" /> Nova
-        </Button>
       </div>
 
       {/* Click outside to close dropdowns */}
-      {(showFilterPanel || showSortPanel || showColumnPanel) && (
+      {(showFilterPanel || showSortPanel || showColumnPanel || showPipelineDropdown) && (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 40 }}
-          onClick={() => { setShowFilterPanel(false); setShowSortPanel(false); setShowColumnPanel(false) }}
+          onClick={() => { setShowFilterPanel(false); setShowSortPanel(false); setShowColumnPanel(false); setShowPipelineDropdown(false) }}
         />
       )}
 
+      {/* ── Pipelines Management Tab ── */}
+      {pageTab === 'pipelines' && (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center', maxWidth: 400 }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <LayoutGrid size={24} style={{ color: '#6366f1' }} />
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Gestão de Pipelines</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 20 }}>
+              Cria e gere múltiplos pipelines para diferentes processos de vendas (Angariação, Compradores, Créditos, etc.)
+            </p>
+            <button
+              onClick={() => setPageTab('opportunities')}
+              style={{ padding: '8px 20px', borderRadius: 8, background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+            >
+              Voltar às Oportunidades
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Bulk Actions Tab ── */}
+      {pageTab === 'bulk' && (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center', maxWidth: 400 }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <Check size={24} style={{ color: '#f59e0b' }} />
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Ações em Massa</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 20 }}>
+              Seleciona múltiplas oportunidades para mover de fase, atribuir a um responsável ou eliminar em lote.
+            </p>
+            <button
+              onClick={() => setPageTab('opportunities')}
+              style={{ padding: '8px 20px', borderRadius: 8, background: '#f59e0b', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+            >
+              Voltar às Oportunidades
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── KANBAN VIEW ── */}
-      {viewMode === 'kanban' && (
+      {pageTab === 'opportunities' && viewMode === 'kanban' && (
         <DragDropContext onDragEnd={onDragEnd}>
           <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 16, flex: 1 }}>
             {STAGE_ORDER.map(stage => (
@@ -510,7 +879,7 @@ export const KanbanBoard: React.FC = () => {
                 opportunities={filteredColumns[stage] || []}
                 onCardClick={(opp) => setSelectedOpp(opp)}
                 onAddClick={(s) => { setNewStage(s); setShowModal(true) }}
-                onAction={(opp, action) => setQuickAction({ opp, action })}
+                onAction={(opp, action) => { setSelectedOpp(opp); setQuickAction({ opp, action }) }}
               />
             ))}
           </div>
@@ -518,12 +887,12 @@ export const KanbanBoard: React.FC = () => {
       )}
 
       {/* ── LIST VIEW ── */}
-      {viewMode === 'list' && (
+      {pageTab === 'opportunities' && viewMode === 'list' && (
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ background: 'var(--bg-card)', borderRadius: 14, border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #f1f3f9', background: '#fafbfd' }}>
+                <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--hover-bg)' }}>
                   <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Título</th>
                   <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Fase</th>
                   <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Contacto</th>
@@ -548,8 +917,8 @@ export const KanbanBoard: React.FC = () => {
                       <tr
                         key={opp.id}
                         onClick={() => setSelectedOpp(opp)}
-                        style={{ borderBottom: '1px solid #f8f9fc', cursor: 'pointer', transition: 'background 100ms' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = '#fafbfd')}
+                        style={{ borderBottom: '1px solid var(--border-subtle)', cursor: 'pointer', transition: 'background 100ms' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                       >
                         <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-primary)' }}>{opp.title}</td>
@@ -606,14 +975,22 @@ export const KanbanBoard: React.FC = () => {
         </div>
       )}
 
+      {showImport && (
+        <ImportModal
+          type="opportunities"
+          onClose={() => setShowImport(false)}
+          onSuccess={() => { setShowImport(false); fetchOpportunities(true) }}
+        />
+      )}
+
       {/* Create Modal */}
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nova Oportunidade" size="xl">
-        <OppForm initialStage={newStage} onSuccess={() => { setShowModal(false); fetchOpportunities() }} onCancel={() => setShowModal(false)} />
+        <OppForm initialStage={newStage} onSuccess={() => { setShowModal(false); fetchOpportunities(true) }} onCancel={() => setShowModal(false)} />
       </Modal>
 
       {/* Edit Modal */}
       <Modal isOpen={!!editOpp} onClose={() => setEditOpp(undefined)} title="Editar Oportunidade" size="xl">
-        {editOpp && <OppForm opportunity={editOpp} onSuccess={() => { setEditOpp(undefined); setSelectedOpp(null); fetchOpportunities() }} onCancel={() => setEditOpp(undefined)} />}
+        {editOpp && <OppForm opportunity={editOpp} onSuccess={() => { setEditOpp(undefined); setSelectedOpp(null); fetchOpportunities(true) }} onCancel={() => setEditOpp(undefined)} />}
       </Modal>
 
       {/* Detail Panel */}
@@ -624,7 +1001,7 @@ export const KanbanBoard: React.FC = () => {
           boxShadow: '-4px 0 32px rgba(0,0,0,0.08)', zIndex: 40,
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #f1f3f9' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border-color)' }}>
             <h3 style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Oportunidade</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <button onClick={() => setEditOpp(selectedOpp)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)' }} title="Editar"><Edit size={15} /></button>
@@ -657,23 +1034,81 @@ export const KanbanBoard: React.FC = () => {
               <InfoRow label="Criado em" value={formatDate(selectedOpp.createdAt)} />
             </div>
             {selectedOpp.notes && (
-              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Notas</p>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>{selectedOpp.notes}</p>
               </div>
             )}
             {selectedOpp.lostReason && (
-              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #fef2f2' }}>
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: '#ef4444', textTransform: 'uppercase', marginBottom: 6 }}>Motivo da Perda</p>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>{selectedOpp.lostReason}</p>
               </div>
             )}
+
+            {/* Interactions */}
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                Interações {oppInteractions.length > 0 && `(${oppInteractions.length})`}
+              </p>
+              {oppInteractions.length === 0 ? (
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>Sem interações</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {oppInteractions.map((i: any) => (
+                    <div key={i.id} style={{ background: 'var(--bg-page)', borderRadius: 8, padding: '8px 10px', border: '1px solid var(--border-subtle)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase' }}>{i.type}</span>
+                        <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatDate(i.createdAt)}</span>
+                      </div>
+                      <p style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, margin: 0 }}>{i.body}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Tasks */}
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                Tarefas {oppTasks.length > 0 && `(${oppTasks.length})`}
+              </p>
+              {oppTasks.length === 0 ? (
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>Sem tarefas</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {oppTasks.map((t: any) => (
+                    <div key={t.id} style={{ background: 'var(--bg-page)', borderRadius: 8, padding: '8px 10px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <div style={{
+                        width: 8, height: 8, borderRadius: '50%', flexShrink: 0, marginTop: 4,
+                        background: t.status === 'COMPLETED' ? '#22c55e' : t.priority === 'HIGH' ? '#ef4444' : t.priority === 'MEDIUM' ? '#f59e0b' : '#94a3b8',
+                      }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', margin: 0, textDecoration: t.status === 'COMPLETED' ? 'line-through' : 'none' }}>{t.title}</p>
+                        {t.dueDate && <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: '2px 0 0' }}>{formatDate(t.dueDate)}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       {quickAction && (
-        <QuickActionModal opportunity={quickAction.opp} action={quickAction.action} onClose={() => setQuickAction(null)} />
+        <QuickActionModal
+          opportunity={quickAction.opp}
+          action={quickAction.action}
+          onClose={() => {
+            const oppId = quickAction.opp.id
+            const act = quickAction.action
+            setQuickAction(null)
+            if (act === 'note' || act === 'task' || act === 'sms') {
+              fetchOppDetails(oppId)
+            }
+          }}
+        />
       )}
 
       <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Confirmar Eliminação" size="sm">

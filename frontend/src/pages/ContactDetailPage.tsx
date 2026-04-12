@@ -2,13 +2,12 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Mail, MessageCircle, Phone, FileText, Edit, ArrowLeft,
-  User, Calendar, Tag
+  Calendar, Tag, User
 } from 'lucide-react'
 import { getContact } from '../api/contacts.api'
-import type { Contact, Interaction, Task, Opportunity } from '../types'
+import type { Contact, Interaction, Task, Opportunity, Appointment } from '../types'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
-import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
 import { PageSpinner } from '../components/ui/Spinner'
 import { InteractionLog } from '../components/interactions/InteractionLog'
@@ -18,19 +17,63 @@ import { LeadScoreBadge, calcLeadScore } from '../components/contacts/LeadScoreB
 import { useUIStore } from '../store/ui.store'
 import { formatDate, formatPhone } from '../utils/formatters'
 import {
-  CONTACT_STATUS_LABELS,
-  CONTACT_TYPE_LABELS,
   STAGE_LABELS,
   TASK_STATUS_LABELS,
-  TASK_PRIORITY_LABELS
+  TASK_PRIORITY_LABELS,
+  APPOINTMENT_TYPE_LABELS,
 } from '../utils/constants'
+import { Badge } from '../components/ui/Badge'
 
-const statusVariant: Record<string, any> = {
-  NEW: 'info', QUALIFIED: 'success', CONTACTED: 'warning', INACTIVE: 'default'
+const AVATAR_COLORS = [
+  '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b',
+  '#10b981', '#3b82f6', '#ef4444', '#14b8a6',
+]
+function avatarColor(name: string) {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h)
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length]
 }
-const typeVariant: Record<string, any> = { LEAD: 'info', CLIENT: 'success' }
+function getInitials(name: string) {
+  const parts = name.trim().split(' ')
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? '?'
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
 
-type TabType = 'interactions' | 'opportunities' | 'tasks'
+const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
+  NEW:       { bg: '#eff6ff', color: '#2563eb', label: 'Novo' },
+  QUALIFIED: { bg: '#f0fdf4', color: '#16a34a', label: 'Qualificado' },
+  CONTACTED: { bg: '#fffbeb', color: '#d97706', label: 'Contactado' },
+  INACTIVE:  { bg: '#f9fafb', color: '#6b7280', label: 'Inativo' },
+}
+const TYPE_STYLE: Record<string, { bg: string; color: string; label: string }> = {
+  BUYER:   { bg: '#eff6ff', color: '#2563eb', label: 'Comprador' },
+  OWNER:   { bg: '#fdf4ff', color: '#9333ea', label: 'Proprietário' },
+  PARTNER: { bg: '#fff7ed', color: '#ea580c', label: 'Parceiro' },
+}
+
+function Pill({ bg, color, label }: { bg: string; color: string; label: string }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center',
+      padding: '2px 8px', borderRadius: 20,
+      fontSize: 11, fontWeight: 600,
+      background: bg, color,
+      whiteSpace: 'nowrap',
+    }}>
+      {label}
+    </span>
+  )
+}
+
+type TabType = 'appointments' | 'opportunities' | 'tasks'
+
+const APPT_STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
+  SCHEDULED:  { bg: '#eff6ff', color: '#2563eb', label: 'Agendado' },
+  CONFIRMED:  { bg: '#f0fdf4', color: '#16a34a', label: 'Confirmado' },
+  COMPLETED:  { bg: '#f9fafb', color: '#6b7280', label: 'Concluído' },
+  CANCELLED:  { bg: '#fff1f2', color: '#e11d48', label: 'Cancelado' },
+  NO_SHOW:    { bg: '#fffbeb', color: '#d97706', label: 'Não compareceu' },
+}
 
 export const ContactDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -38,7 +81,7 @@ export const ContactDetailPage: React.FC = () => {
   const { showToast } = useUIStore()
   const [contact, setContact] = useState<Contact | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<TabType>('interactions')
+  const [activeTab, setActiveTab] = useState<TabType>('appointments')
   const [commModal, setCommModal] = useState<string | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
@@ -64,12 +107,13 @@ export const ContactDetailPage: React.FC = () => {
   const interactions: Interaction[] = contact.interactions || []
   const opportunities: Opportunity[] = contact.opportunities || []
   const tasks: Task[] = contact.tasks || []
+  const appointments: Appointment[] = (contact as any).appointments || []
   const leadScore = calcLeadScore({ interactions, opportunities, tasks, status: contact.status })
 
   const tabs: Array<{ key: TabType; label: string; count: number }> = [
-    { key: 'interactions', label: 'Interações', count: interactions.length },
+    { key: 'appointments', label: 'Agendamentos', count: appointments.length },
     { key: 'opportunities', label: 'Oportunidades', count: opportunities.length },
-    { key: 'tasks', label: 'Tarefas', count: tasks.length }
+    { key: 'tasks', label: 'Tarefas', count: tasks.length },
   ]
 
   return (
@@ -79,6 +123,8 @@ export const ContactDetailPage: React.FC = () => {
         onClick={() => navigate('/contacts')}
         className="flex items-center gap-2 text-sm transition-colors"
         style={{ color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
+        onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
       >
         <ArrowLeft className="w-4 h-4" />
         Voltar aos Contactos
@@ -90,20 +136,24 @@ export const ContactDetailPage: React.FC = () => {
           <Card>
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center"
-                  style={{ background: 'rgba(99,102,241,0.12)' }}>
-                  <User className="w-6 h-6" style={{ color: '#6366f1' }} />
+                <div style={{
+                  width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                  background: avatarColor(contact.name), color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14, fontWeight: 700, letterSpacing: '0.03em',
+                }}>
+                  {getInitials(contact.name)}
                 </div>
                 <div>
                   <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{contact.name}</h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant={typeVariant[contact.type]} small>
-                      {CONTACT_TYPE_LABELS[contact.type]}
-                    </Badge>
+                  <div className="flex items-center gap-2 mt-1" style={{ flexWrap: 'wrap' }}>
+                    {TYPE_STYLE[contact.type] && (
+                      <Pill bg={TYPE_STYLE[contact.type].bg} color={TYPE_STYLE[contact.type].color} label={TYPE_STYLE[contact.type].label} />
+                    )}
                     <LeadScoreBadge score={leadScore} size="sm" />
-                    <Badge variant={statusVariant[contact.status]} small>
-                      {CONTACT_STATUS_LABELS[contact.status]}
-                    </Badge>
+                    {STATUS_STYLE[contact.status] && (
+                      <Pill bg={STATUS_STYLE[contact.status].bg} color={STATUS_STYLE[contact.status].color} label={STATUS_STYLE[contact.status].label} />
+                    )}
                   </div>
                 </div>
               </div>
@@ -178,6 +228,77 @@ export const ContactDetailPage: React.FC = () => {
                 <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{contact.preferences}</p>
               </div>
             )}
+
+            {/* BUYER details */}
+            {contact.type === 'BUYER' && (contact.budget_min || contact.budget_max || contact.interest_type || contact.timeline) && (
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                <p className="text-xs font-semibold uppercase mb-2" style={{ color: 'var(--text-secondary)' }}>Perfil de Compra</p>
+                <div className="space-y-1 text-sm">
+                  {(contact.budget_min || contact.budget_max) && (
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--text-secondary)' }}>Budget</span>
+                      <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                        {contact.budget_min ? `${contact.budget_min.toLocaleString('pt-PT')} €` : '—'}
+                        {' – '}
+                        {contact.budget_max ? `${contact.budget_max.toLocaleString('pt-PT')} €` : '—'}
+                      </span>
+                    </div>
+                  )}
+                  {contact.interest_type && (
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--text-secondary)' }}>Tipo de imóvel</span>
+                      <span style={{ color: 'var(--text-primary)' }}>{contact.interest_type}</span>
+                    </div>
+                  )}
+                  {(contact as any).selling_also && (
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Pretende também vender</p>
+                  )}
+                  {(contact as any).needs_financing && (
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Necessita financiamento</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* OWNER details */}
+            {contact.type === 'OWNER' && ((contact as any).property_address || (contact as any).asking_price) && (
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                <p className="text-xs font-semibold uppercase mb-2" style={{ color: 'var(--text-secondary)' }}>Dados do Imóvel</p>
+                <div className="space-y-1 text-sm">
+                  {(contact as any).property_address && (
+                    <div>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: 11 }}>Morada</span>
+                      <p style={{ color: 'var(--text-primary)' }}>{(contact as any).property_address}</p>
+                    </div>
+                  )}
+                  {(contact as any).asking_price && (
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--text-secondary)' }}>Asking price</span>
+                      <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                        {(contact as any).asking_price.toLocaleString('pt-PT')} €
+                      </span>
+                    </div>
+                  )}
+                  {(contact as any).commission && (
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--text-secondary)' }}>Comissão (5%)</span>
+                      <span style={{ color: '#c9a84c', fontWeight: 600 }}>
+                        {(contact as any).commission.toLocaleString('pt-PT')} €
+                      </span>
+                    </div>
+                  )}
+                  {(contact as any).sale_reason && (
+                    <div className="flex justify-between">
+                      <span style={{ color: 'var(--text-secondary)' }}>Razão da venda</span>
+                      <span style={{ color: 'var(--text-primary)' }}>{(contact as any).sale_reason}</span>
+                    </div>
+                  )}
+                  {(contact as any).buying_also && (
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Pretende também comprar</p>
+                  )}
+                </div>
+              </div>
+            )}
           </Card>
 
           {/* Action Buttons */}
@@ -205,20 +326,19 @@ export const ContactDetailPage: React.FC = () => {
               >
                 <Phone className="w-4 h-4" /> Chamada
               </Button>
-              {contact.phone && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    window.dispatchEvent(
-                      new CustomEvent('softphone:dial', { detail: { number: contact.phone } })
-                    )
-                  }}
-                  style={{ background: '#f0fdf4', color: '#15803d', borderColor: '#bbf7d0' }}
-                >
-                  <Phone className="w-4 h-4" /> Ligar
-                </Button>
-              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!contact.phone}
+                onClick={() => {
+                  if (!contact.phone) return
+                  window.dispatchEvent(
+                    new CustomEvent('softphone:dial', { detail: { number: contact.phone } })
+                  )
+                }}
+              >
+                <Phone className="w-4 h-4" /> Ligar
+              </Button>
               <Button
                 variant="secondary"
                 size="sm"
@@ -262,8 +382,56 @@ export const ContactDetailPage: React.FC = () => {
             </div>
 
             <div className="p-5">
-              {activeTab === 'interactions' && (
-                <InteractionLog interactions={interactions} />
+              {activeTab === 'appointments' && (
+                <div className="space-y-3">
+                  {appointments.length === 0 ? (
+                    <p className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Sem agendamentos</p>
+                  ) : (
+                    appointments.map((appt) => {
+                      const s = APPT_STATUS_STYLE[appt.status] ?? { bg: '#f9fafb', color: '#6b7280', label: appt.status }
+                      const typeLabel = APPOINTMENT_TYPE_LABELS[appt.type] ?? appt.type
+                      const start = new Date(appt.startAt)
+                      return (
+                        <div
+                          key={appt.id}
+                          className="flex items-start gap-3 p-3 rounded-lg"
+                          style={{ background: 'var(--hover-bg)' }}
+                        >
+                          <div style={{
+                            width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+                            background: '#f0f4ff', display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', justifyContent: 'center',
+                          }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#4f46e5', lineHeight: 1 }}>
+                              {start.getDate()}
+                            </span>
+                            <span style={{ fontSize: 10, color: '#6366f1' }}>
+                              {start.toLocaleString('pt-PT', { month: 'short' })}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{appt.title}</p>
+                              <span style={{
+                                fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 20,
+                                background: s.bg, color: s.color,
+                              }}>{s.label}</span>
+                            </div>
+                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                              {typeLabel}
+                              {' · '}
+                              {start.toLocaleString('pt-PT', { hour: '2-digit', minute: '2-digit' })}
+                              {appt.location && ` · ${appt.location}`}
+                            </p>
+                            {appt.notes && (
+                              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{appt.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
               )}
 
               {activeTab === 'opportunities' && (

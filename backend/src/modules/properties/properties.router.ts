@@ -8,9 +8,9 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', propertiesController.list);
-router.post('/', requireRole('ADMIN', 'PRINCIPAL_CONSULTANT'), propertiesController.create);
+router.post('/', propertiesController.create);
 router.get('/:id', propertiesController.getById);
-router.put('/:id', requireRole('ADMIN', 'PRINCIPAL_CONSULTANT'), propertiesController.update);
-router.delete('/:id', requireRole('ADMIN'), propertiesController.remove);
+router.put('/:id', propertiesController.update);
+router.delete('/:id', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN'), propertiesController.remove);
 
 export default router;

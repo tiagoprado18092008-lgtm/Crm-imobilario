@@ -1,103 +1,139 @@
 import React from 'react'
 import { Mail, MessageCircle, Phone, Users, FileText, ArrowDownLeft, ArrowUpRight } from 'lucide-react'
 import type { Interaction } from '../../types'
-import { Badge } from '../ui/Badge'
 import { formatDateTime, formatDate } from '../../utils/formatters'
 import { INTERACTION_TYPE_LABELS } from '../../utils/constants'
 
-const typeIcons: Record<string, React.ReactNode> = {
-  EMAIL: <Mail className="w-4 h-4 text-blue-500" />,
-  WHATSAPP: <MessageCircle className="w-4 h-4 text-green-500" />,
-  CALL: <Phone className="w-4 h-4 text-orange-500" />,
-  MEETING: <Users className="w-4 h-4 text-purple-500" />,
-  NOTE: <FileText className="w-4 h-4 text-gray-500" />
-}
-
-const typeBadgeVariant: Record<string, 'info' | 'success' | 'warning' | 'purple' | 'default'> = {
-  EMAIL: 'info',
-  WHATSAPP: 'success',
-  CALL: 'warning',
-  MEETING: 'purple',
-  NOTE: 'default'
+const TYPE_CONFIG: Record<string, { icon: React.ReactNode; bg: string; color: string }> = {
+  EMAIL:    { icon: <Mail    style={{ width: 13, height: 13 }} />, bg: '#eff6ff', color: '#2563eb' },
+  WHATSAPP: { icon: <MessageCircle style={{ width: 13, height: 13 }} />, bg: '#f0fdf4', color: '#16a34a' },
+  CALL:     { icon: <Phone   style={{ width: 13, height: 13 }} />, bg: '#fff7ed', color: '#ea580c' },
+  MEETING:  { icon: <Users   style={{ width: 13, height: 13 }} />, bg: '#fdf4ff', color: '#9333ea' },
+  NOTE:     { icon: <FileText style={{ width: 13, height: 13 }} />, bg: 'var(--hover-bg)', color: 'var(--text-muted)' },
 }
 
 interface InteractionLogProps {
   interactions: Interaction[]
 }
 
-function groupByDate(interactions: Interaction[]): Record<string, Interaction[]> {
-  const groups: Record<string, Interaction[]> = {}
+function groupByDate(interactions: Interaction[]): [string, Interaction[]][] {
+  const map = new Map<string, Interaction[]>()
   for (const i of interactions) {
     const date = formatDate(i.createdAt)
-    if (!groups[date]) groups[date] = []
-    groups[date].push(i)
+    if (!map.has(date)) map.set(date, [])
+    map.get(date)!.push(i)
   }
-  return groups
+  return Array.from(map.entries())
 }
 
 export const InteractionLog: React.FC<InteractionLogProps> = ({ interactions }) => {
   if (interactions.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-400 text-sm">
+      <div style={{ textAlign: 'center', padding: '32px 0', fontSize: 13, color: 'var(--text-muted)' }}>
         Sem interações registadas
       </div>
     )
   }
 
-  const groups = groupByDate([...interactions].sort(
+  const sorted = [...interactions].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  ))
+  )
+  const groups = groupByDate(sorted)
 
   return (
-    <div className="space-y-4">
-      {Object.entries(groups).map(([date, items]) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {groups.map(([date, items]) => (
         <div key={date}>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-px flex-1 bg-gray-200" />
-            <span className="text-xs font-medium text-gray-500 px-2">{date}</span>
-            <div className="h-px flex-1 bg-gray-200" />
+          {/* Date separator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <div style={{ height: 1, flex: 1, background: 'var(--border-subtle)' }} />
+            <span style={{
+              fontSize: 11, fontWeight: 600, color: 'var(--text-muted)',
+              padding: '2px 10px', borderRadius: 20,
+              background: 'var(--hover-bg)', border: '1px solid var(--border-subtle)',
+            }}>
+              {date}
+            </span>
+            <div style={{ height: 1, flex: 1, background: 'var(--border-subtle)' }} />
           </div>
-          <div className="space-y-2">
-            {items.map((interaction) => (
-              <div
-                key={interaction.id}
-                className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex-shrink-0 mt-0.5">
-                  {typeIcons[interaction.type]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <Badge variant={typeBadgeVariant[interaction.type]} small>
-                      {INTERACTION_TYPE_LABELS[interaction.type]}
-                    </Badge>
-                    {interaction.subject && (
-                      <span className="text-sm font-medium text-gray-800 truncate">
-                        {interaction.subject}
-                      </span>
+
+          {/* Timeline items */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: 8 }}>
+            {items.map((interaction, idx) => {
+              const cfg = TYPE_CONFIG[interaction.type] ?? TYPE_CONFIG.NOTE
+              const isLast = idx === items.length - 1
+              return (
+                <div key={interaction.id} style={{ display: 'flex', gap: 12 }}>
+                  {/* Left: dot + line */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: cfg.bg, color: cfg.color,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: '1.5px solid var(--border-subtle)',
+                      flexShrink: 0,
+                    }}>
+                      {cfg.icon}
+                    </div>
+                    {!isLast && (
+                      <div style={{
+                        width: 1, flex: 1, minHeight: 8,
+                        background: 'var(--border-subtle)',
+                        margin: '2px 0',
+                      }} />
                     )}
-                    <span className="text-xs text-gray-400 ml-auto flex-shrink-0">
-                      {formatDateTime(interaction.createdAt)}
-                    </span>
                   </div>
-                  <p className="text-sm text-gray-700 whitespace-pre-line">{interaction.body}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    {interaction.createdBy && (
-                      <span className="text-xs text-gray-400">
-                        por {interaction.createdBy.name}
+
+                  {/* Right: content */}
+                  <div style={{
+                    flex: 1, minWidth: 0,
+                    padding: '6px 10px 10px',
+                    borderRadius: 8,
+                    background: 'var(--hover-bg)',
+                    border: '1px solid var(--border-subtle)',
+                    marginBottom: isLast ? 0 : 4,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, color: cfg.color,
+                        background: cfg.bg, padding: '1px 7px', borderRadius: 10,
+                      }}>
+                        {INTERACTION_TYPE_LABELS[interaction.type]}
                       </span>
-                    )}
-                    <span className="flex items-center gap-1 text-xs text-gray-400">
-                      {interaction.direction === 'IN' ? (
-                        <><ArrowDownLeft className="w-3 h-3 text-green-500" /> Recebido</>
-                      ) : (
-                        <><ArrowUpRight className="w-3 h-3 text-blue-500" /> Enviado</>
+                      {interaction.subject && (
+                        <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {interaction.subject}
+                        </span>
                       )}
-                    </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 'auto', flexShrink: 0 }}>
+                        {formatDateTime(interaction.createdAt)}
+                      </span>
+                    </div>
+
+                    {interaction.body && (
+                      <p style={{ fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'pre-line', margin: 0, lineHeight: 1.5 }}>
+                        {interaction.body}
+                      </p>
+                    )}
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
+                      {interaction.createdBy && (
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                          por {interaction.createdBy.name}
+                        </span>
+                      )}
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'var(--text-muted)' }}>
+                        {interaction.direction === 'IN' ? (
+                          <><ArrowDownLeft style={{ width: 11, height: 11, color: '#16a34a' }} /> Recebido</>
+                        ) : (
+                          <><ArrowUpRight style={{ width: 11, height: 11, color: '#2563eb' }} /> Enviado</>
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       ))}

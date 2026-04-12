@@ -1,0 +1,289 @@
+import React, { useEffect, useState } from 'react'
+import { X, Calendar, MapPin, AlignLeft, Users, Clock } from 'lucide-react'
+import { createCalendarEvent, updateCalendarEvent } from '../../api/calendar.api'
+import { useUIStore } from '../../store/ui.store'
+import api from '../../api/client'
+
+interface EventModalProps {
+  event?: any
+  defaultStart?: Date
+  defaultEnd?: Date
+  onClose: () => void
+  onSaved: () => void
+}
+
+const EVENT_TYPES = [
+  { value: 'visit', label: 'Visita' },
+  { value: 'meeting', label: 'Reunião de angariação' },
+  { value: 'cpcv', label: 'CPCV' },
+  { value: 'escritura', label: 'Escritura' },
+  { value: 'call', label: 'Chamada' },
+  { value: 'other', label: 'Outro' },
+]
+
+const COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#ec4899','#14b8a6']
+
+const RECURRENCE = [
+  { value: '', label: 'Não repete' },
+  { value: 'FREQ=DAILY', label: 'Diário' },
+  { value: 'FREQ=WEEKLY', label: 'Semanal' },
+  { value: 'FREQ=MONTHLY', label: 'Mensal' },
+]
+
+function toLocalInput(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+export const EventModal: React.FC<EventModalProps> = ({
+  event, defaultStart, defaultEnd, onClose, onSaved,
+}) => {
+  const { showToast } = useUIStore()
+  const [saving, setSaving] = useState(false)
+  const [contacts, setContacts] = useState<any[]>([])
+  const [contactSearch, setContactSearch] = useState('')
+
+  const now = new Date()
+  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000)
+
+  const [form, setForm] = useState({
+    title: event?.title || '',
+    eventType: event?.eventType || 'other',
+    startAt: toLocalInput(event?.startAt ? new Date(event.startAt) : (defaultStart || now)),
+    endAt: toLocalInput(event?.endAt ? new Date(event.endAt) : (defaultEnd || oneHourLater)),
+    isAllDay: event?.isAllDay || false,
+    recurringRule: event?.recurringRule || '',
+    location: event?.location || '',
+    description: event?.description || '',
+    color: event?.color || '#6366f1',
+    contactId: event?.contactId || '',
+    attendees: (event?.attendees || []) as string[],
+  })
+
+  const [newAttendee, setNewAttendee] = useState('')
+
+  useEffect(() => {
+    api.get('/contacts', { params: { limit: 50, search: contactSearch } })
+      .then(r => setContacts(r.data.data || []))
+      .catch(() => {})
+  }, [contactSearch])
+
+  const set = (key: string, value: any) => setForm(f => ({ ...f, [key]: value }))
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.title.trim()) { showToast('Título obrigatório', 'error'); return }
+    setSaving(true)
+    try {
+      const payload = {
+        ...form,
+        startAt: new Date(form.startAt).toISOString(),
+        endAt: new Date(form.endAt).toISOString(),
+        recurringRule: form.recurringRule || undefined,
+        contactId: form.contactId || undefined,
+        isRecurring: !!form.recurringRule,
+        attendees: form.attendees.length > 0 ? form.attendees : undefined,
+      }
+      if (event?.id) {
+        await updateCalendarEvent(event.id, payload)
+        showToast('Evento actualizado', 'success')
+      } else {
+        await createCalendarEvent(payload)
+        showToast('Evento criado', 'success')
+      }
+      onSaved()
+    } catch {
+      showToast('Erro ao guardar evento', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const addAttendee = () => {
+    const email = newAttendee.trim()
+    if (email && !form.attendees.includes(email)) {
+      set('attendees', [...form.attendees, email])
+      setNewAttendee('')
+    }
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '8px 10px', borderRadius: 8, fontSize: 13,
+    border: '1px solid var(--border-color)', background: 'var(--bg-input)',
+    color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
+  }
+  const labelStyle: React.CSSProperties = {
+    display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)',
+    marginBottom: 4, textTransform: 'uppercase' as const,
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+    }}>
+      <div style={{
+        background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+        borderRadius: 16, width: '100%', maxWidth: 580, maxHeight: '90vh',
+        overflow: 'auto', padding: '24px 28px',
+        boxShadow: '0 24px 48px rgba(0,0,0,0.3)',
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Calendar size={18} color="var(--accent)" />
+            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
+              {event?.id ? 'Editar evento' : 'Novo evento'}
+            </h2>
+          </div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          {/* Title */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={labelStyle}>Título *</label>
+            <input style={inputStyle} value={form.title}
+              onChange={e => set('title', e.target.value)} placeholder="Nome do evento" />
+          </div>
+
+          {/* Type + Color */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, marginBottom: 14 }}>
+            <div>
+              <label style={labelStyle}>Tipo</label>
+              <select style={inputStyle} value={form.eventType} onChange={e => set('eventType', e.target.value)}>
+                {EVENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={labelStyle}>Cor</label>
+              <div style={{ display: 'flex', gap: 5, marginTop: 2 }}>
+                {COLORS.map(c => (
+                  <div key={c} onClick={() => set('color', c)} style={{
+                    width: 22, height: 22, borderRadius: '50%', background: c, cursor: 'pointer',
+                    border: form.color === c ? '2px solid var(--text-primary)' : '2px solid transparent',
+                  }} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* All Day Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <input type="checkbox" id="allDay" checked={form.isAllDay} onChange={e => set('isAllDay', e.target.checked)} />
+            <label htmlFor="allDay" style={{ fontSize: 13, color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              Dia inteiro
+            </label>
+          </div>
+
+          {/* Start + End */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+            <div>
+              <label style={labelStyle}><Clock size={9} style={{ marginRight: 3 }} />Início</label>
+              <input style={inputStyle} type={form.isAllDay ? 'date' : 'datetime-local'}
+                value={form.isAllDay ? form.startAt.split('T')[0] : form.startAt}
+                onChange={e => set('startAt', e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>Fim</label>
+              <input style={inputStyle} type={form.isAllDay ? 'date' : 'datetime-local'}
+                value={form.isAllDay ? form.endAt.split('T')[0] : form.endAt}
+                onChange={e => set('endAt', e.target.value)} />
+            </div>
+          </div>
+
+          {/* Recurrence */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={labelStyle}>Recorrência</label>
+            <select style={inputStyle} value={form.recurringRule} onChange={e => set('recurringRule', e.target.value)}>
+              {RECURRENCE.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+          </div>
+
+          {/* Location */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={labelStyle}><MapPin size={9} style={{ marginRight: 3 }} />Local</label>
+            <input style={inputStyle} value={form.location}
+              onChange={e => set('location', e.target.value)} placeholder="Endereço ou link" />
+          </div>
+
+          {/* Description */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={labelStyle}><AlignLeft size={9} style={{ marginRight: 3 }} />Descrição</label>
+            <textarea style={{ ...inputStyle, height: 72, resize: 'vertical' }} value={form.description}
+              onChange={e => set('description', e.target.value)} placeholder="Notas adicionais" />
+          </div>
+
+          {/* Contact */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={labelStyle}>Contacto associado</label>
+            <input style={inputStyle} placeholder="Pesquisar contacto..."
+              value={contactSearch} onChange={e => setContactSearch(e.target.value)} />
+            {contacts.length > 0 && contactSearch && (
+              <div style={{
+                border: '1px solid var(--border-color)', borderRadius: 8, marginTop: 4,
+                maxHeight: 150, overflow: 'auto', background: 'var(--bg-card)',
+              }}>
+                {contacts.map(c => (
+                  <div key={c.id} onClick={() => { set('contactId', c.id); setContactSearch(c.name) }}
+                    style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13,
+                      color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)',
+                      background: form.contactId === c.id ? 'var(--hover-bg)' : 'transparent' }}>
+                    {c.name}
+                    {c.email && <span style={{ color: 'var(--text-muted)', marginLeft: 6, fontSize: 11 }}>{c.email}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Attendees */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={labelStyle}><Users size={9} style={{ marginRight: 3 }} />Convidados</label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input style={{ ...inputStyle, flex: 1 }} value={newAttendee} type="email"
+                onChange={e => setNewAttendee(e.target.value)} placeholder="email@exemplo.com"
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addAttendee() } }} />
+              <button type="button" onClick={addAttendee} style={{
+                padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border-color)',
+                background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13,
+              }}>Adicionar</button>
+            </div>
+            {form.attendees.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                {form.attendees.map(a => (
+                  <span key={a} style={{
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    padding: '3px 8px', borderRadius: 20, fontSize: 11,
+                    background: 'var(--hover-bg)', color: 'var(--text-secondary)',
+                    border: '1px solid var(--border-color)',
+                  }}>
+                    {a}
+                    <X size={10} style={{ cursor: 'pointer' }}
+                      onClick={() => set('attendees', form.attendees.filter((x: string) => x !== a))} />
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={onClose} style={{
+              padding: '9px 20px', borderRadius: 8, border: '1px solid var(--border-color)',
+              background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+            }}>Cancelar</button>
+            <button type="submit" disabled={saving} style={{
+              padding: '9px 24px', borderRadius: 8, border: 'none',
+              background: 'var(--accent)', color: '#fff', cursor: saving ? 'not-allowed' : 'pointer',
+              fontSize: 13, fontWeight: 600, opacity: saving ? 0.7 : 1,
+            }}>{saving ? 'A guardar...' : 'Guardar'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}

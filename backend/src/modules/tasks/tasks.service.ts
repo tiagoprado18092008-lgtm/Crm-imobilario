@@ -1,15 +1,9 @@
 import prisma from '../../config/database';
+import { buildScope } from '../../lib/scope';
+import { logActivity } from '../../lib/activity-logger';
 
 const buildWhereClause = async (user: any): Promise<any> => {
-  if (user.role === 'ADMIN') return {};
-  if (user.role === 'PRINCIPAL_CONSULTANT') {
-    const subAgents = await prisma.user.findMany({
-      where: { supervisorId: user.id },
-      select: { id: true },
-    });
-    return { assignedToId: { in: [user.id, ...subAgents.map((a: any) => a.id)] } };
-  }
-  return { assignedToId: user.id };
+  return buildScope(user);
 };
 
 export const list = async (filters: {
@@ -66,8 +60,9 @@ export const create = async (dto: {
   contactId?: string;
   opportunityId?: string;
   assignedToId?: string;
-}, userId: string) => {
-  return prisma.task.create({
+}, userOrId: any) => {
+  const userId = typeof userOrId === 'string' ? userOrId : userOrId.id;
+  const task = await prisma.task.create({
     data: {
       title: dto.title,
       description: dto.description,
@@ -77,6 +72,7 @@ export const create = async (dto: {
       contactId: dto.contactId || undefined,
       opportunityId: dto.opportunityId || undefined,
       assignedToId: dto.assignedToId || userId,
+      locationId: typeof userOrId === 'string' ? null : (userOrId.locationId ?? null),
     },
     include: {
       assignedTo: { select: { id: true, name: true } },

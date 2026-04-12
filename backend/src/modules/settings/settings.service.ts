@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import twilio from 'twilio';
 import { isWhatsAppConfigured, isEmailConfigured, isInstagramConfigured, isTwilioConfigured } from '../../config/comms.config';
 
 // Path to the .env file (two levels up from src/modules/settings)
@@ -41,8 +42,9 @@ export const getCommunicationsConfig = () => {
     twilioTwimlAppSid: process.env.TWILIO_TWIML_APP_SID || '',
     twilioApiKey: maskValue(process.env.TWILIO_API_KEY || ''),
     twilioApiSecret: maskValue(process.env.TWILIO_API_SECRET || ''),
+    publicUrl: process.env.PUBLIC_URL || '',
     // General
-    crmName: process.env.CRM_NAME || 'CRM Imobiliário',
+    crmName: process.env.CRM_NAME || 'CasaFlow',
     timezone: process.env.TZ || 'Europe/Lisbon',
     language: process.env.APP_LANGUAGE || 'pt-PT',
   };
@@ -116,18 +118,92 @@ const ALLOWED_KEYS: Record<string, string> = {
   twilioTwimlAppSid: 'TWILIO_TWIML_APP_SID',
   twilioApiKey: 'TWILIO_API_KEY',
   twilioApiSecret: 'TWILIO_API_SECRET',
+  publicUrl: 'PUBLIC_URL',
   // General
   crmName: 'CRM_NAME',
   timezone: 'TZ',
   language: 'APP_LANGUAGE',
 };
 
-export const updateCommunicationsConfig = (body: Record<string, string>) => {
+async function runTwilioAutoSetup(sid: string, token: string): Promise<void> {
+  const client = twilio(sid, token);
+  const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+  const autoUpdates: Record<string, string> = {};
+
+  // 1. Create TwiML App if not already configured
+  if (!process.env.TWILIO_TWIML_APP_SID) {
+    try {
+      const voiceUrl = publicUrl
+        ? `${publicUrl}/webhook/twilio/voice`
+        : 'https://placeholder.example.com/webhook/twilio/voice';
+      const app = await client.applications.create({
+        friendlyName: 'CRM Browser Calls',
+        voiceUrl,
+        voiceMethod: 'POST',
+      });
+      autoUpdates['TWILIO_TWIML_APP_SID'] = app.sid;
+      console.log(`[Twilio Auto-Setup] TwiML App created: ${app.sid}`);
+    } catch (err) {
+      console.error('[Twilio Auto-Setup] Failed to create TwiML App:', err);
+    }
+  }
+
+  // 2. Create API Key if not already configured
+  if (!process.env.TWILIO_API_KEY || !process.env.TWILIO_API_SECRET) {
+    try {
+      const key = await (client as any).newKeys.create({ friendlyName: 'CRM Browser Calls Key' });
+      autoUpdates['TWILIO_API_KEY'] = key.sid;
+      autoUpdates['TWILIO_API_SECRET'] = key.secret;
+      console.log(`[Twilio Auto-Setup] API Key created: ${key.sid}`);
+    } catch (err) {
+      console.error('[Twilio Auto-Setup] Failed to create API Key:', err);
+    }
+  }
+
+  // 3. Persist auto-generated values immediately
+  if (Object.keys(autoUpdates).length > 0) {
+    updateEnvFile(autoUpdates);
+  }
+
+  // 4. Update phone number webhooks if PUBLIC_URL is set
+  if (publicUrl) {
+    try {
+      const numbers = await client.incomingPhoneNumbers.list();
+      await Promise.all(numbers.map(n =>
+        n.update({
+          voiceUrl: `${publicUrl}/webhook/twilio/inbound-call`,
+          voiceMethod: 'POST',
+          smsUrl: `${publicUrl}/webhook/twilio/sms`,
+          smsMethod: 'POST',
+        })
+      ));
+      console.log(`[Twilio Auto-Setup] Updated ${numbers.length} number(s) with webhooks`);
+    } catch (err) {
+      console.error('[Twilio Auto-Setup] Failed to update number webhooks:', err);
+    }
+  }
+}
+
+export const triggerTwilioAutoSetup = async (): Promise<{ ok: boolean; message: string }> => {
+  const sid = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  if (!sid || !token) {
+    return { ok: false, message: 'Twilio não configurado. Guarda o Account SID e Auth Token primeiro.' };
+  }
+  await runTwilioAutoSetup(sid, token);
+  return { ok: true, message: 'Auto-setup concluído.' };
+};
+
+export const updateCommunicationsConfig = async (body: Record<string, string>) => {
   const updates: Record<string, string> = {};
 
   for (const [bodyKey, envKey] of Object.entries(ALLOWED_KEYS)) {
     if (bodyKey in body && body[bodyKey] !== undefined) {
-      updates[envKey] = String(body[bodyKey]);
+      const val = String(body[bodyKey]);
+      // Skip masked values (e.g. "****f869") — don't overwrite real value with mask
+      if (val.startsWith('*')) continue;
+      if (val.trim() === '') continue;
+      updates[envKey] = val;
     }
   }
 
@@ -137,6 +213,16 @@ export const updateCommunicationsConfig = (body: Record<string, string>) => {
   }
 
   updateEnvFile(updates);
+
+  // Auto-setup Twilio (create TwiML App + API Key) when credentials are saved
+  const sidToUse = updates['TWILIO_ACCOUNT_SID'] || process.env.TWILIO_ACCOUNT_SID;
+  const tokenToUse = updates['TWILIO_AUTH_TOKEN'] || process.env.TWILIO_AUTH_TOKEN;
+  if (
+    (updates['TWILIO_ACCOUNT_SID'] || updates['TWILIO_AUTH_TOKEN']) &&
+    sidToUse && tokenToUse
+  ) {
+    await runTwilioAutoSetup(sidToUse, tokenToUse);
+  }
 
   return { updated: Object.keys(updates), config: getCommunicationsConfig() };
 };

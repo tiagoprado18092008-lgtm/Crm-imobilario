@@ -1,0 +1,804 @@
+You are given a task to integrate an existing React component in the codebase
+
+The codebase should support:
+- shadcn project structure  
+- Tailwind CSS
+- Typescript
+
+If it doesn't, provide instructions on how to setup project via shadcn CLI, install Tailwind or Typescript.
+
+Determine the default path for components and styles. 
+If default path for components is not /components/ui, provide instructions on why it's important to create this folder
+Copy-paste this component to /components/ui folder:
+```tsx
+base-menu.tsx
+'use client';
+
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { Menu as MenuPrimitive } from '@base-ui-components/react/menu';
+import { Check, ChevronRight, Circle } from 'lucide-react';
+
+// Root - Groups all parts of the menu
+function Menu({ ...props }: React.ComponentProps<typeof MenuPrimitive.Root>) {
+  return <MenuPrimitive.Root data-slot="menu" {...props} />;
+}
+
+// Trigger - A button that opens the menu
+function MenuTrigger({ ...props }: React.ComponentProps<typeof MenuPrimitive.Trigger>) {
+  return <MenuPrimitive.Trigger data-slot="menu-trigger" {...props} />;
+}
+
+// Portal - A portal element that moves the popup to a different part of the DOM
+function MenuPortal({ ...props }: React.ComponentProps<typeof MenuPrimitive.Portal>) {
+  return <MenuPrimitive.Portal data-slot="menu-portal" {...props} />;
+}
+
+// Backdrop - An overlay displayed beneath the menu popup
+function MenuBackdrop({ ...props }: React.ComponentProps<typeof MenuPrimitive.Backdrop>) {
+  return <MenuPrimitive.Backdrop data-slot="menu-backdrop" {...props} />;
+}
+
+// Positioner - Positions the menu popup against the trigger
+function MenuPositioner({ ...props }: React.ComponentProps<typeof MenuPrimitive.Positioner>) {
+  return <MenuPrimitive.Positioner data-slot="menu-positioner" {...props} />;
+}
+
+function MenuContent({
+  className,
+  children,
+  showBackdrop = false,
+  align,
+  sideOffset = 4,
+  alignOffset = 0,
+  side,
+  anchor,
+  ...props
+}: React.ComponentProps<typeof MenuPrimitive.Popup> & {
+  align?: MenuPrimitive.Positioner.Props['align'];
+  sideOffset?: MenuPrimitive.Positioner.Props['sideOffset'];
+  alignOffset?: MenuPrimitive.Positioner.Props['alignOffset'];
+  anchor?: MenuPrimitive.Positioner.Props['anchor'];
+  side?: MenuPrimitive.Positioner.Props['side'];
+  showBackdrop?: boolean;
+}) {
+  return (
+    <MenuPortal>
+      {showBackdrop && <MenuBackdrop />}
+      <MenuPositioner align={align} sideOffset={sideOffset} alignOffset={alignOffset} side={side} anchor={anchor}>
+        <MenuPopup data-slot="autocomplete-content" className={className} {...props}>
+          {children}
+        </MenuPopup>
+      </MenuPositioner>
+    </MenuPortal>
+  );
+}
+
+// Popup - A container for the menu items
+function MenuPopup({ ...props }: React.ComponentProps<typeof MenuPrimitive.Popup>) {
+  return (
+    <MenuPrimitive.Popup
+      data-slot="menu-popup"
+      {...props}
+      className={cn(
+        'space-y-0.5 z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover p-2 text-popover-foreground shadow-md shadow-black/5',
+        'origin-[var(--transform-origin)] transition-[transform,scale,opacity] data-[ending-style]:scale-90 data-[ending-style]:opacity-0 data-[starting-style]:scale-90 data-[starting-style]:opacity-0',
+        props.className,
+      )}
+    />
+  );
+}
+
+// Arrow - Displays an element positioned against the menu anchor
+function MenuArrow({ ...props }: React.ComponentProps<typeof MenuPrimitive.Arrow>) {
+  return <MenuPrimitive.Arrow data-slot="menu-arrow" {...props} />;
+}
+
+// Item - An individual interactive item in the menu
+function MenuItem({
+  className,
+  inset,
+  variant,
+  ...props
+}: React.ComponentProps<typeof MenuPrimitive.Item> & {
+  inset?: boolean;
+  variant?: 'destructive';
+}) {
+  return (
+    <MenuPrimitive.Item
+      data-slot="menu-item"
+      {...props}
+      className={cn(
+        'text-foreground relative flex cursor-default select-none items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-hidden transition-colors data-disabled:pointer-events-none data-disabled:opacity-50',
+        '[&_svg]:pointer-events-none [&_svg:not([role=img]):not([class*=text-])]:opacity-60 [&_svg:not([class*=size-])]:size-4 [&_svg]:shrink-0',
+        'focus:bg-accent focus:text-foreground',
+        'data-[highlighted=true]:bg-accent data-[highlighted=true]:text-accent-foreground',
+        inset && 'ps-7',
+        variant === 'destructive' &&
+          'text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/5 focus:bg-destructive/5 data-[active=true]:bg-destructive/5',
+        className,
+      )}
+    />
+  );
+}
+
+// Separator - A separator element accessible to screen readers
+function MenuSeparator({ className, ...props }: React.ComponentProps<typeof MenuPrimitive.Separator>) {
+  return (
+    <MenuPrimitive.Separator
+      data-slot="menu-separator"
+      {...props}
+      className={cn('-mx-2 my-1.5 h-px bg-muted', className)}
+    />
+  );
+}
+
+// Group - Groups related menu items with the corresponding label
+function MenuGroup({ ...props }: React.ComponentProps<typeof MenuPrimitive.Group>) {
+  return <MenuPrimitive.Group data-slot="menu-group" {...props} />;
+}
+
+// GroupLabel - An accessible label that is automatically associated with its parent group
+function MenuGroupLabel({
+  className,
+  inset,
+  ...props
+}: React.ComponentProps<typeof MenuPrimitive.GroupLabel> & {
+  inset?: boolean;
+}) {
+  return (
+    <MenuPrimitive.GroupLabel
+      data-slot="menu-group-label"
+      {...props}
+      className={cn('px-2 py-1.5 text-xs text-muted-foreground font-medium', inset && 'ps-7', className)}
+    />
+  );
+}
+
+// RadioGroup - Groups related radio items
+function MenuRadioGroup({ ...props }: React.ComponentProps<typeof MenuPrimitive.RadioGroup>) {
+  return <MenuPrimitive.RadioGroup data-slot="menu-radio-group" {...props} />;
+}
+
+// RadioItem - A menu item that works like a radio button in a given group
+function MenuRadioItem({ className, children, ...props }: React.ComponentProps<typeof MenuPrimitive.RadioItem>) {
+  return (
+    <MenuPrimitive.RadioItem
+      data-slot="menu-radio-item"
+      {...props}
+      className={cn(
+        'relative flex cursor-default select-none items-center rounded-md py-1.5 ps-6 pe-2 text-sm outline-hidden transition-colors focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50',
+        className,
+      )}
+    >
+      <span className="absolute start-1.5 flex h-3.5 w-3.5 items-center justify-center">
+        <MenuPrimitive.RadioItemIndicator>
+          <Circle className="h-1.5 w-1.5 fill-primary stroke-primary" />
+        </MenuPrimitive.RadioItemIndicator>
+      </span>
+      {children}
+    </MenuPrimitive.RadioItem>
+  );
+}
+
+// RadioItemIndicator - Indicates whether the radio item is selected
+function MenuRadioItemIndicator({ ...props }: React.ComponentProps<typeof MenuPrimitive.RadioItemIndicator>) {
+  return <MenuPrimitive.RadioItemIndicator data-slot="menu-radio-item-indicator" {...props} />;
+}
+
+// CheckboxItem - A menu item that toggles a setting on or off
+function MenuCheckboxItem({
+  className,
+  children,
+  checked,
+  ...props
+}: React.ComponentProps<typeof MenuPrimitive.CheckboxItem>) {
+  return (
+    <MenuPrimitive.CheckboxItem
+      data-slot="menu-checkbox-item"
+      checked={checked}
+      {...props}
+      className={cn(
+        'relative flex gap-2 cursor-default select-none items-center rounded-md py-1.5 ps-7 pe-2 text-sm outline-hidden transition-colors focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50',
+        className,
+      )}
+    >
+      <span className="absolute start-2 flex h-3.5 w-3.5 items-center text-muted-foreground justify-center">
+        <MenuPrimitive.CheckboxItemIndicator>
+          <Check className="h-4 w-4 text-primary" />
+        </MenuPrimitive.CheckboxItemIndicator>
+      </span>
+      {children}
+    </MenuPrimitive.CheckboxItem>
+  );
+}
+
+// CheckboxItemIndicator - Indicates whether the checkbox item is ticked
+function MenuCheckboxItemIndicator({ ...props }: React.ComponentProps<typeof MenuPrimitive.CheckboxItemIndicator>) {
+  return <MenuPrimitive.CheckboxItemIndicator data-slot="menu-checkbox-item-indicator" {...props} />;
+}
+
+// SubmenuRoot - Groups all parts of a submenu
+function MenuSubmenuRoot({ ...props }: React.ComponentProps<typeof MenuPrimitive.SubmenuRoot>) {
+  return <MenuPrimitive.SubmenuRoot data-slot="menu-submenu-root" {...props} />;
+}
+
+// SubmenuTrigger - A menu item that opens a submenu
+function MenuSubmenuTrigger({
+  className,
+  inset,
+  children,
+  ...props
+}: React.ComponentProps<typeof MenuPrimitive.SubmenuTrigger> & {
+  inset?: boolean;
+}) {
+  return (
+    <MenuPrimitive.SubmenuTrigger
+      data-slot="menu-submenu-trigger"
+      {...props}
+      className={cn(
+        'flex cursor-default gap-2 select-none items-center rounded-md px-2 py-1.5 text-sm outline-hidden',
+        'focus:bg-accent focus:text-foreground',
+        '[&[data-popup-open]]:bg-accent [&[data-popup-open]]:text-foreground',
+        '[&>svg]:pointer-events-none [&_svg:not([role=img]):not([class*=text-])]:opacity-60 [&>svg:not([class*=size-])]:size-4 [&>svg]:shrink-0',
+        inset && 'ps-7',
+        className,
+      )}
+    >
+      {children}
+      <ChevronRight data-slot="menu-submenu-trigger-indicator" className="ms-auto size-3.5! rtl:rotate-180" />
+    </MenuPrimitive.SubmenuTrigger>
+  );
+}
+
+// Shortcut - A shortcut display component
+function MenuShortcut({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
+  return (
+    <span
+      data-slot="menu-shortcut"
+      {...props}
+      className={cn('ms-auto text-xs tracking-widest opacity-60', className)}
+    />
+  );
+}
+
+export {
+  Menu,
+  MenuContent,
+  MenuTrigger,
+  MenuPortal,
+  MenuBackdrop,
+  MenuPositioner,
+  MenuPopup,
+  MenuArrow,
+  MenuItem,
+  MenuSeparator,
+  MenuGroup,
+  MenuGroupLabel,
+  MenuRadioGroup,
+  MenuRadioItem,
+  MenuRadioItemIndicator,
+  MenuCheckboxItem,
+  MenuCheckboxItemIndicator,
+  MenuSubmenuRoot,
+  MenuSubmenuTrigger,
+  MenuShortcut,
+};
+
+
+
+demo.tsx
+import { Button } from '@/components/ui/base-button';
+import {
+  Menu,
+  MenuContent,
+  MenuGroup,
+  MenuGroupLabel,
+  MenuItem,
+  MenuSeparator,
+  MenuShortcut,
+  MenuTrigger,
+} from '@/components/ui/base-menu';
+import { LogOut, Mail, Settings, User } from 'lucide-react';
+
+export default function MenuDemo() {
+  return (
+    <Menu>
+      <MenuTrigger render={<Button variant="outline">Show Menu</Button>} />
+      <MenuContent sideOffset={4} className="w-64">
+        {/* Account Section */}
+        <MenuGroup>
+          <MenuGroupLabel>My Account</MenuGroupLabel>
+          <MenuSeparator />
+          <MenuItem>
+            <User />
+            <span>Profile</span>
+            <MenuShortcut>⇧⌘P</MenuShortcut>
+          </MenuItem>
+          <MenuItem>
+            <Mail />
+            <span>Inbox</span>
+            <MenuShortcut>⌘I</MenuShortcut>
+          </MenuItem>
+          <MenuItem>
+            <Settings />
+            <span>Settings</span>
+            <MenuShortcut>⌘S</MenuShortcut>
+          </MenuItem>
+        </MenuGroup>
+
+        {/* Logout */}
+        <MenuSeparator />
+        <MenuGroup>
+          <MenuItem>
+            <LogOut />
+            <span>Log Out</span>
+            <MenuShortcut>⇧⌘Q</MenuShortcut>
+          </MenuItem>
+        </MenuGroup>
+      </MenuContent>
+    </Menu>
+  );
+}
+
+
+```
+
+Copy-paste these files for dependencies:
+```tsx
+sean0205/base-button
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { mergeProps } from '@base-ui-components/react/merge-props';
+import { useRender } from '@base-ui-components/react/use-render';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { ChevronDown, LucideIcon } from 'lucide-react';
+
+const buttonVariants = cva(
+  'cursor-pointer group whitespace-nowrap focus-visible:outline-hidden inline-flex items-center justify-center has-data-[arrow=true]:justify-between whitespace-nowrap text-sm font-medium ring-offset-background transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-60 [&_svg]:shrink-0',
+  {
+    variants: {
+      variant: {
+        primary: 'bg-primary text-primary-foreground hover:bg-primary/90 data-[state=open]:bg-primary/90',
+        mono: 'bg-zinc-950 text-white dark:bg-zinc-300 dark:text-black hover:bg-zinc-950/90 dark:hover:bg-zinc-300/90 data-[state=open]:bg-zinc-950/90 dark:data-[state=open]:bg-zinc-300/90',
+        destructive:
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90 data-[state=open]:bg-destructive/90',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/90 data-[state=open]:bg-secondary/90',
+        outline: 'bg-background text-accent-foreground border border-input hover:bg-accent data-[state=open]:bg-accent',
+        dashed:
+          'text-accent-foreground border border-input border-dashed bg-background hover:bg-accent hover:text-accent-foreground data-[state=open]:text-accent-foreground',
+        ghost:
+          'text-accent-foreground hover:bg-accent hover:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
+        dim: 'text-muted-foreground hover:text-foreground data-[state=open]:text-foreground',
+        foreground: '',
+        inverse: '',
+      },
+      appearance: {
+        default: '',
+        ghost: '',
+      },
+      underline: {
+        solid: '',
+        dashed: '',
+      },
+      underlined: {
+        solid: '',
+        dashed: '',
+      },
+      size: {
+        lg: 'h-10 rounded-md px-4 text-sm gap-1.5 [&_svg:not([class*=size-])]:size-4',
+        md: 'h-8.5 rounded-md px-3 gap-1.5 text-[0.8125rem] leading-(--text-sm--line-height) [&_svg:not([class*=size-])]:size-4',
+        sm: 'h-7 rounded-md px-2.5 gap-1.25 text-xs [&_svg:not([class*=size-])]:size-3.5',
+        icon: 'size-8.5 rounded-md [&_svg:not([class*=size-])]:size-4 shrink-0',
+      },
+      autoHeight: {
+        true: '',
+        false: '',
+      },
+      shape: {
+        default: '',
+        circle: 'rounded-full',
+      },
+      mode: {
+        default: 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        icon: 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        link: 'text-primary h-auto p-0 bg-transparent rounded-none hover:bg-transparent data-[state=open]:bg-transparent',
+        input: `
+            justify-start font-normal hover:bg-background [&_svg]:transition-colors [&_svg]:hover:text-foreground data-[state=open]:bg-background 
+            focus-visible:border-ring focus-visible:outline-hidden focus-visible:ring-[3px] focus-visible:ring-ring/30 
+            [[data-state=open]>&]:border-ring [[data-state=open]>&]:outline-hidden [[data-state=open]>&]:ring-[3px] 
+            [[data-state=open]>&]:ring-ring/30 
+            aria-invalid:border-destructive/60 aria-invalid:ring-destructive/10 dark:aria-invalid:border-destructive dark:aria-invalid:ring-destructive/20
+            in-data-[invalid=true]:border-destructive/60 in-data-[invalid=true]:ring-destructive/10  dark:in-data-[invalid=true]:border-destructive dark:in-data-[invalid=true]:ring-destructive/20
+          `,
+      },
+      placeholder: {
+        true: 'text-muted-foreground',
+        false: '',
+      },
+    },
+    compoundVariants: [
+      // Icons opacity for default mode
+      {
+        variant: 'ghost',
+        mode: 'default',
+        className: '[&_svg:not([role=img]):not([class*=text-]):not([class*=opacity-])]:opacity-60',
+      },
+      {
+        variant: 'outline',
+        mode: 'default',
+        className: '[&_svg:not([role=img]):not([class*=text-]):not([class*=opacity-])]:opacity-60',
+      },
+      {
+        variant: 'dashed',
+        mode: 'default',
+        className: '[&_svg:not([role=img]):not([class*=text-]):not([class*=opacity-])]:opacity-60',
+      },
+      {
+        variant: 'secondary',
+        mode: 'default',
+        className: '[&_svg:not([role=img]):not([class*=text-]):not([class*=opacity-])]:opacity-60',
+      },
+
+      // Icons opacity for default mode
+      {
+        variant: 'outline',
+        mode: 'input',
+        className: '[&_svg:not([role=img]):not([class*=text-]):not([class*=opacity-])]:opacity-60',
+      },
+      {
+        variant: 'outline',
+        mode: 'icon',
+        className: '[&_svg:not([role=img]):not([class*=text-]):not([class*=opacity-])]:opacity-60',
+      },
+
+      // Auto height
+      {
+        size: 'md',
+        autoHeight: true,
+        className: 'h-auto min-h-8.5',
+      },
+      {
+        size: 'sm',
+        autoHeight: true,
+        className: 'h-auto min-h-7',
+      },
+      {
+        size: 'lg',
+        autoHeight: true,
+        className: 'h-auto min-h-10',
+      },
+
+      // Shadow support
+      {
+        variant: 'primary',
+        mode: 'default',
+        appearance: 'default',
+        className: 'shadow-xs shadow-black/5',
+      },
+      {
+        variant: 'mono',
+        mode: 'default',
+        appearance: 'default',
+        className: 'shadow-xs shadow-black/5',
+      },
+      {
+        variant: 'secondary',
+        mode: 'default',
+        appearance: 'default',
+        className: 'shadow-xs shadow-black/5',
+      },
+      {
+        variant: 'outline',
+        mode: 'default',
+        appearance: 'default',
+        className: 'shadow-xs shadow-black/5',
+      },
+      {
+        variant: 'dashed',
+        mode: 'default',
+        appearance: 'default',
+        className: 'shadow-xs shadow-black/5',
+      },
+      {
+        variant: 'destructive',
+        mode: 'default',
+        appearance: 'default',
+        className: 'shadow-xs shadow-black/5',
+      },
+
+      // Shadow support
+      {
+        variant: 'primary',
+        mode: 'icon',
+        appearance: 'default',
+        className: 'shadow-xs shadow-black/5',
+      },
+      {
+        variant: 'mono',
+        mode: 'icon',
+        appearance: 'default',
+        className: 'shadow-xs shadow-black/5',
+      },
+      {
+        variant: 'secondary',
+        mode: 'icon',
+        appearance: 'default',
+        className: 'shadow-xs shadow-black/5',
+      },
+      {
+        variant: 'outline',
+        mode: 'icon',
+        appearance: 'default',
+        className: 'shadow-xs shadow-black/5',
+      },
+      {
+        variant: 'dashed',
+        mode: 'icon',
+        appearance: 'default',
+        className: 'shadow-xs shadow-black/5',
+      },
+      {
+        variant: 'destructive',
+        mode: 'icon',
+        appearance: 'default',
+        className: 'shadow-xs shadow-black/5',
+      },
+
+      // Link
+      {
+        variant: 'primary',
+        mode: 'link',
+        underline: 'solid',
+        className:
+          'font-medium text-primary hover:text-primary/90 [&_svg:not([role=img]):not([class*=text-])]:opacity-60 hover:underline hover:underline-offset-4 hover:decoration-solid',
+      },
+      {
+        variant: 'primary',
+        mode: 'link',
+        underline: 'dashed',
+        className:
+          'font-medium text-primary hover:text-primary/90 [&_svg]:opacity-60 hover:underline hover:underline-offset-4 hover:decoration-dashed decoration-1',
+      },
+      {
+        variant: 'primary',
+        mode: 'link',
+        underlined: 'solid',
+        className:
+          'font-medium text-primary hover:text-primary/90 [&_svg:not([role=img]):not([class*=text-])]:opacity-60 underline underline-offset-4 decoration-solid',
+      },
+      {
+        variant: 'primary',
+        mode: 'link',
+        underlined: 'dashed',
+        className:
+          'font-medium text-primary hover:text-primary/90 [&_svg]:opacity-60 underline underline-offset-4 decoration-dashed decoration-1',
+      },
+
+      {
+        variant: 'inverse',
+        mode: 'link',
+        underline: 'solid',
+        className:
+          'font-medium text-inherit [&_svg:not([role=img]):not([class*=text-])]:opacity-60 hover:underline hover:underline-offset-4 hover:decoration-solid',
+      },
+      {
+        variant: 'inverse',
+        mode: 'link',
+        underline: 'dashed',
+        className:
+          'font-medium text-inherit [&_svg:not([role=img]):not([class*=text-])]:opacity-60 hover:underline hover:underline-offset-4 hover:decoration-dashed decoration-1',
+      },
+      {
+        variant: 'inverse',
+        mode: 'link',
+        underlined: 'solid',
+        className:
+          'font-medium text-inherit [&_svg:not([role=img]):not([class*=text-])]:opacity-60 underline underline-offset-4 decoration-solid',
+      },
+      {
+        variant: 'inverse',
+        mode: 'link',
+        underlined: 'dashed',
+        className:
+          'font-medium text-inherit [&_svg:not([role=img]):not([class*=text-])]:opacity-60 underline underline-offset-4 decoration-dashed decoration-1',
+      },
+
+      {
+        variant: 'foreground',
+        mode: 'link',
+        underline: 'solid',
+        className:
+          'font-medium text-foreground [&_svg:not([role=img]):not([class*=text-])]:opacity-60 hover:underline hover:underline-offset-4 hover:decoration-solid',
+      },
+      {
+        variant: 'foreground',
+        mode: 'link',
+        underline: 'dashed',
+        className:
+          'font-medium text-foreground [&_svg:not([role=img]):not([class*=text-])]:opacity-60 hover:underline hover:underline-offset-4 hover:decoration-dashed decoration-1',
+      },
+      {
+        variant: 'foreground',
+        mode: 'link',
+        underlined: 'solid',
+        className:
+          'font-medium text-foreground [&_svg:not([role=img]):not([class*=text-])]:opacity-60 underline underline-offset-4 decoration-solid',
+      },
+      {
+        variant: 'foreground',
+        mode: 'link',
+        underlined: 'dashed',
+        className:
+          'font-medium text-foreground [&_svg:not([role=img]):not([class*=text-])]:opacity-60 underline underline-offset-4 decoration-dashed decoration-1',
+      },
+
+      // Ghost
+      {
+        variant: 'primary',
+        appearance: 'ghost',
+        className: 'bg-transparent text-primary/90 hover:bg-primary/5 data-[state=open]:bg-primary/5',
+      },
+      {
+        variant: 'destructive',
+        appearance: 'ghost',
+        className: 'bg-transparent text-destructive/90 hover:bg-destructive/5 data-[state=open]:bg-destructive/5',
+      },
+      {
+        variant: 'ghost',
+        mode: 'icon',
+        className: 'text-muted-foreground',
+      },
+
+      // Size
+      {
+        size: 'sm',
+        mode: 'icon',
+        className: 'w-7 h-7 p-0 [[&_svg:not([class*=size-])]:size-3.5',
+      },
+      {
+        size: 'md',
+        mode: 'icon',
+        className: 'w-8.5 h-8.5 p-0 [&_svg:not([class*=size-])]:size-4',
+      },
+      {
+        size: 'icon',
+        className: 'w-8.5 h-8.5 p-0 [&_svg:not([class*=size-])]:size-4',
+      },
+      {
+        size: 'lg',
+        mode: 'icon',
+        className: 'w-10 h-10 p-0 [&_svg:not([class*=size-])]:size-4',
+      },
+
+      // Input mode
+      {
+        mode: 'input',
+        placeholder: true,
+        variant: 'outline',
+        className: 'font-normal text-muted-foreground',
+      },
+      {
+        mode: 'input',
+        variant: 'outline',
+        size: 'sm',
+        className: 'gap-1.25',
+      },
+      {
+        mode: 'input',
+        variant: 'outline',
+        size: 'md',
+        className: 'gap-1.5',
+      },
+      {
+        mode: 'input',
+        variant: 'outline',
+        size: 'lg',
+        className: 'gap-1.5',
+      },
+    ],
+    defaultVariants: {
+      variant: 'primary',
+      mode: 'default',
+      size: 'md',
+      shape: 'default',
+      appearance: 'default',
+    },
+  },
+);
+
+export interface ButtonProps extends useRender.ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
+  selected?: boolean;
+  asChild?: boolean;
+}
+
+function Button({
+  render,
+  asChild = false,
+  children,
+  className,
+  selected,
+  variant,
+  shape,
+  appearance,
+  mode,
+  size,
+  autoHeight,
+  underlined,
+  underline,
+  placeholder = false,
+  ...props
+}: ButtonProps) {
+  const defaultProps = {
+    'data-slot': 'button',
+    className: cn(
+      buttonVariants({
+        variant,
+        size,
+        shape,
+        appearance,
+        mode,
+        autoHeight,
+        placeholder,
+        underlined,
+        underline,
+        className,
+      }),
+      asChild && props.disabled && 'pointer-events-none opacity-50',
+    ),
+    ...(selected && { 'data-state': 'open' as const }),
+  };
+
+  // Determine render element based on asChild prop
+  const renderElement =
+    asChild && React.isValidElement(children)
+      ? (children as React.ReactElement<Record<string, unknown>, string | React.JSXElementConstructor<unknown>>)
+      : render || <button />;
+
+  // When using asChild, children becomes the element props, otherwise use children normally
+  const finalProps =
+    asChild && React.isValidElement(children)
+      ? mergeProps(defaultProps, props)
+      : mergeProps(defaultProps, { ...props, children });
+
+  const element = useRender({
+    render: renderElement,
+    props: finalProps,
+  });
+
+  return element;
+}
+
+interface ButtonArrowProps extends React.SVGProps<SVGSVGElement> {
+  icon?: LucideIcon;
+}
+
+function ButtonArrow({ icon: Icon = ChevronDown, className, ...props }: ButtonArrowProps) {
+  return <Icon data-slot="button-arrow" className={cn('ms-auto -me-1', className)} {...props} />;
+}
+
+export { Button, ButtonArrow, buttonVariants };
+
+```
+
+Install NPM dependencies:
+```bash
+lucide-react, @base-ui-components/react, class-variance-authority
+```
+
+Implementation Guidelines
+ 1. Analyze the component structure and identify all required dependencies
+ 2. Review the component's argumens and state
+ 3. Identify any required context providers or hooks and install them
+ 4. Questions to Ask
+ - What data/props will be passed to this component?
+ - Are there any specific state management requirements?
+ - Are there any required assets (images, icons, etc.)?
+ - What is the expected responsive behavior?
+ - What is the best place to use this component in the app?
+
+Steps to integrate
+ 0. Copy paste all the code above in the correct directories
+ 1. Install external dependencies
+ 2. Fill image assets with Unsplash stock images you know exist
+ 3. Use lucide-react icons for svgs or logos if component requires them

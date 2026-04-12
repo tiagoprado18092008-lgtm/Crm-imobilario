@@ -23,14 +23,23 @@ import appointmentsRouter from './modules/appointments/appointments.router';
 import campaignsRouter from './modules/campaigns/campaigns.router';
 import formsRouter from './modules/forms/forms.router';
 import invitationsRouter from './modules/invitations/invitations.router';
+import agencyRouter from './modules/agency/agency.router';
 import notificationsRouter from './modules/notifications/notifications.router';
 import exportsRouter from './modules/exports/exports.router';
 import searchRouter from './modules/search/search.router';
+import calendarRouter from './modules/calendar/calendar.router';
+import calendarEventsRouter from './modules/calendar/calendar-events.router';
+import webhooksRouter from './modules/webhooks/webhooks.router';
+import locationsRouter from './modules/locations/locations.router';
+import activityRouter from './modules/activity/activity.router';
 import { errorMiddleware } from './middleware/error.middleware';
 import { requestLogger } from './utils/logger';
 import prisma from './config/database';
 import { eventBus } from './utils/event-bus';
 import { startImapPolling } from './utils/imap.service';
+import { registerEventListeners, registerV2EventListeners } from './utils/automation.engine';
+import { startAutomationCron } from './jobs/automation-cron';
+import { startCalendarCron } from './lib/calendar-cron';
 
 const app = express();
 
@@ -217,6 +226,12 @@ app.use('/api/invitations', invitationsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/exports', exportsRouter);
 app.use('/api/search', searchRouter);
+app.use('/api/agency', agencyRouter);
+app.use('/api/locations', locationsRouter);
+app.use('/api/activity', activityRouter);
+app.use('/api/calendar', calendarRouter);
+app.use('/api/calendar', calendarEventsRouter);
+app.use('/api/webhooks', webhooksRouter);
 
 // ─── Twilio Webhooks ─────────────────────────────────────────────────────────
 
@@ -238,13 +253,37 @@ app.post('/webhook/twilio/inbound-call', async (req, res) => {
     const { receiveInbound } = await import('./modules/conversations/conversations.service');
     await receiveInbound('CALL' as any, From, `Chamada recebida de ${From}`, JSON.stringify({ to: To }));
   } catch (err) { console.error('[Twilio Inbound Call]', err); }
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+
+  // Find the active agent to route the call to in the browser
+  let clientIdentity: string | null = null;
+  try {
+    const agent = await prisma.user.findFirst({
+      where: { role: 'AGENCY_OWNER', isActive: true },
+      select: { email: true },
+    }) || await prisma.user.findFirst({
+      where: { isActive: true },
+      select: { email: true },
+    });
+    if (agent?.email) {
+      clientIdentity = agent.email.replace(/[^a-zA-Z0-9]/g, '_');
+    }
+  } catch (err) { console.error('[Twilio Inbound Call] Could not find agent', err); }
+
+  let twiml: string;
+  if (clientIdentity) {
+    twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say language="pt-PT">Olá, obrigado por ligar. Será atendido em breve.</Say>
-  <Dial timeout="20" record="record-from-ringing">
-    <Number>${process.env.TWILIO_PHONE_NUMBER || To}</Number>
+  <Say language="pt-PT">Olá, obrigado por ligar. Aguarde um momento.</Say>
+  <Dial timeout="30">
+    <Client>${clientIdentity}</Client>
   </Dial>
 </Response>`;
+  } else {
+    twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say language="pt-PT">Serviço indisponível. Tente mais tarde.</Say>
+</Response>`;
+  }
   res.type('text/xml').send(twiml);
 });
 
@@ -291,7 +330,7 @@ app.post('/webhook/twilio/status', async (req, res) => {
 
       await sendSMS(
         callerNumber,
-        `Olá! Sou ${name}. Estou numa visita agora, mas vi a sua chamada. O que procura exatamente? Responda aqui e entrarei em contacto brevemente. 🏠`
+        `Olá! Sou ${name}. Estou numa visita agora, mas vi a sua chamada. O que procura exatamente? Responda aqui e entrarei em contacto brevemente.`
       )
       console.log(`[Missed Call Text Back] SMS enviado para ${callerNumber}`)
     } catch (err) {
@@ -312,9 +351,13 @@ const PORT = parseInt(process.env.PORT ?? '3000', 10);
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
-    console.log(`🚀 CRM Backend running on http://localhost:${PORT}`);
+    console.log(`CRM Backend running on http://localhost:${PORT}`);
     console.log(`   Environment: ${process.env.NODE_ENV ?? 'development'}`);
     startImapPolling();
+    registerEventListeners();
+    registerV2EventListeners();
+    startAutomationCron();
+    startCalendarCron();
   });
 }
 

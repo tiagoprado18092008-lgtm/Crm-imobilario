@@ -1,6 +1,6 @@
 {
-  "name": "ImoCRM — CRM Imobiliário",
-  "short_name": "ImoCRM",
+  "name": "CasaFlow",
+  "short_name": "CasaFlow",
   "description": "Plataforma CRM para Consultores Imobiliários em Portugal",
   "start_url": "/",
   "display": "standalone",

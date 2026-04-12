@@ -9,19 +9,139 @@ datasource db {
   directUrl = env("DATABASE_DIRECT_URL")
 }
 
+enum UserRole {
+  AGENCY_OWNER
+  AGENCY_ADMIN
+  LOCATION_ADMIN
+  TEAM_LEADER
+  CONSULTANT
+  USER
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum RunStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+model Agency {
+  id       String  @id @default(cuid())
+  name     String
+  slug     String  @unique
+  logoUrl  String?
+  isActive Boolean @default(true)
+
+  users       User[]
+  automations Automation[]
+  locations   Location[]
+  settings    AgencySettings?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Location {
+  id        String   @id @default(cuid())
+  agencyId  String
+  agency    Agency   @relation(fields: [agencyId], references: [id])
+  name      String
+  slug      String
+  email     String?
+  phone     String?
+  address   String?
+  logoUrl   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  contacts      Contact[]
+  opportunities Opportunity[]
+  properties    Property[]
+  tasks         Task[]
+  appointments  Appointment[] @relation("AppointmentLocation")
+  conversations Conversation[]
+  campaigns     EmailCampaign[]
+  forms         Form[]
+  automations   Automation[]
+  settings      LocationSettings?
+  activityLogs  ActivityLog[]
+  calendarEvents CalendarEvent[] @relation("CalendarEventLocation")
+
+  @@unique([agencyId, slug])
+}
+
+model LocationSettings {
+  id           String   @id @default(cuid())
+  locationId   String   @unique
+  location     Location @relation(fields: [locationId], references: [id])
+  timezone     String   @default("Europe/Lisbon")
+  locale       String   @default("pt-PT")
+  currency     String   @default("EUR")
+  workingHours Json     @default("{}")
+  bookingPage  Json     @default("{}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AgencySettings {
+  id                 String   @id @default(cuid())
+  agencyId           String   @unique
+  agency             Agency   @relation(fields: [agencyId], references: [id])
+  whitelabelEnabled  Boolean  @default(false)
+  primaryColor       String   @default("#0f2553")
+  defaultPermissions Json     @default("{}")
+  securitySettings   Json     @default("{}")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model ActivityLog {
+  id         String    @id @default(cuid())
+  agencyId   String?
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id])
+  userId     String?
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime  @default(now())
+
+  @@index([agencyId, createdAt])
+  @@index([locationId, createdAt])
+  @@index([userId, createdAt])
+}
+
 model User {
   id           String  @id @default(cuid())
   name         String
   email        String  @unique
   passwordHash String?
   googleId     String? @unique
-  role         String  @default("CONSULTANT")
+  role         UserRole @default(CONSULTANT)
   phone        String?
   avatarUrl    String?
-  isActive     Boolean @default(true)
+  isActive     Boolean  @default(true)
   onboardingCompleted Boolean @default(false)
 
-  agency       String?
+  agencyId     String?
+  agency       Agency?  @relation(fields: [agencyId], references: [id])
+
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+  permissions  Json?
 
   supervisorId String?
   supervisor   User?   @relation("SupervisorSubAgents", fields: [supervisorId], references: [id])
@@ -40,6 +160,9 @@ model User {
   assignedForms         Form[]          @relation("FormAssignedTo")
   createdProperties     Property[]      @relation("PropertyCreator")
   coAssignedProperties  Property[]      @relation("PropertyCoAssigned")
+  calendarIntegrations  CalendarIntegration[]
+  calendarEvents        CalendarEvent[]
+  calendarSlots         CalendarSlot[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -60,6 +183,9 @@ model Contact {
   assignedToId String
   assignedTo   User   @relation(fields: [assignedToId], references: [id])
 
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+
   budget_min    Float?
   budget_max    Float?
   interest_type String?
@@ -75,13 +201,24 @@ model Contact {
   birthday      DateTime?
   lastContactedAt DateTime?
 
+  // Campos dinâmicos por tipo
+  selling_also     Boolean @default(false)  // Comprador que também quer vender
+  needs_financing  Boolean @default(false)  // Comprador precisa de financiamento
+  property_address String?                  // Morada do imóvel (Proprietário)
+  asking_price     Float?                   // Preço pedido (Proprietário)
+  sale_reason      String?                  // Razão da venda (Proprietário)
+  buying_also      Boolean @default(false)  // Proprietário que também quer comprar
+  commission       Float?                   // 5% × asking_price
+
   opportunities    Opportunity[]
   interactions     Interaction[]
   tasks            Task[]
   conversations    Conversation[]
   appointments     Appointment[]
   campaignRecipients EmailCampaignRecipient[]
-  formSubmissions  FormSubmission[]
+  calendarEvents   CalendarEvent[]
+  formSubmissions       FormSubmission[]
+  automationEnrollments AutomationEnrollment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -123,6 +260,9 @@ model Property {
   coAssignedToId String?
   coAssignedTo   User?   @relation("PropertyCoAssigned", fields: [coAssignedToId], references: [id])
 
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+
   opportunities Opportunity[]
 
   createdAt DateTime @default(now())
@@ -148,6 +288,18 @@ model Opportunity {
   property     Property? @relation(fields: [propertyId], references: [id])
   assignedToId String
   assignedTo   User      @relation(fields: [assignedToId], references: [id])
+
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+
+  // Campos dinâmicos por tipo (espelho do Contact)
+  selling_also     Boolean @default(false)
+  needs_financing  Boolean @default(false)
+  property_address String?
+  asking_price     Float?
+  sale_reason      String?
+  buying_also      Boolean @default(false)
+  opp_commission   Float?  // comissão 5% calculada (renomeado para evitar conflito com commission existente)
 
   interactions Interaction[]
   tasks        Task[]
@@ -190,6 +342,9 @@ model Task {
   assignedToId  String
   assignedTo    User         @relation(fields: [assignedToId], references: [id])
 
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -204,6 +359,9 @@ model Conversation {
   contact     Contact?  @relation(fields: [contactId], references: [id])
   assignedToId String?
   assignedTo   User?    @relation("ConversationAssigned", fields: [assignedToId], references: [id])
+
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
 
   messages    Message[]
 
@@ -287,6 +445,9 @@ model Appointment {
   assignedToId  String
   assignedTo    User         @relation(fields: [assignedToId], references: [id])
 
+  locationId   String?
+  appointmentLocation Location? @relation("AppointmentLocation", fields: [locationId], references: [id])
+
   reminderSent Boolean @default(false)
   notes        String?
   location     String?
@@ -314,6 +475,9 @@ model EmailCampaign {
 
   createdById String
   createdBy   User   @relation("CampaignCreatedBy", fields: [createdById], references: [id])
+
+  locationId  String?
+  location    Location? @relation(fields: [locationId], references: [id])
 
   recipients EmailCampaignRecipient[]
 
@@ -346,6 +510,9 @@ model Form {
   assignedToId String?
   assignedTo   User?   @relation("FormAssignedTo", fields: [assignedToId], references: [id])
 
+  locationId   String?
+  location     Location? @relation(fields: [locationId], references: [id])
+
   submissions FormSubmission[]
 
   createdAt DateTime @default(now())
@@ -372,4 +539,124 @@ model Invitation {
   expiresAt   DateTime
   usedAt      DateTime?
   createdAt   DateTime  @default(now())
+  locationId  String?
+  permissions Json?
+  agencyId    String?
+}
+
+model Automation {
+  id          String   @id @default(cuid())
+  agencyId    String
+  agency      Agency   @relation(fields: [agencyId], references: [id])
+  locationId  String?
+  location    Location? @relation(fields: [locationId], references: [id])
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  trigger     Json
+  steps       Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  enrollments AutomationEnrollment[]
+  runs        AutomationRun[]
+}
+
+model AutomationEnrollment {
+  id              String           @id @default(cuid())
+  automationId    String
+  automation      Automation       @relation(fields: [automationId], references: [id])
+  contactId       String
+  contact         Contact          @relation(fields: [contactId], references: [id])
+  status          EnrollmentStatus @default(ACTIVE)
+  currentStepId   String?
+  waitingUntil    DateTime?
+  waitingForEvent String?
+  context         Json             @default("{}")
+  startedAt       DateTime         @default(now())
+  finishedAt      DateTime?
+
+  runs AutomationRun[]
+}
+
+model AutomationRun {
+  id           String                @id @default(cuid())
+  automationId String
+  automation   Automation            @relation(fields: [automationId], references: [id])
+  enrollmentId String?
+  enrollment   AutomationEnrollment? @relation(fields: [enrollmentId], references: [id])
+  stepId       String
+  status       RunStatus             @default(PENDING)
+  input        Json
+  output       Json?
+  error        String?
+  executedAt   DateTime              @default(now())
+}
+
+model CalendarIntegration {
+  id               String    @id @default(cuid())
+  userId           String
+  provider         String    // "google" | "outlook"
+  email            String
+  accessToken      String    @db.Text
+  refreshToken     String    @db.Text
+  tokenExpiresAt   DateTime
+  webhookChannelId  String?
+  webhookResourceId String?
+  webhookExpiry    DateTime?
+  syncToken        String?
+  deltaLink        String?
+  lastSyncedAt     DateTime?
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id])
+
+  @@unique([userId, provider])
+}
+
+model CalendarEvent {
+  id               String    @id @default(cuid())
+  userId           String
+  integrationId    String?
+  externalId       String?
+  externalProvider String?   // "google" | "outlook" | null
+  title            String
+  description      String?   @db.Text
+  location         String?
+  startAt          DateTime
+  endAt            DateTime
+  isAllDay         Boolean   @default(false)
+  isRecurring      Boolean   @default(false)
+  recurringRule    String?
+  status           String    @default("confirmed")
+  eventType        String    @default("other")
+  color            String?
+  attendees        Json?
+  contactId        String?
+  opportunityId    String?
+  propertyId       String?
+  meetLink         String?
+  teamsLink        String?
+  syncedAt         DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id])
+  contact          Contact?  @relation(fields: [contactId], references: [id])
+
+  locationId       String?
+  calendarLocation Location? @relation("CalendarEventLocation", fields: [locationId], references: [id])
+
+  @@unique([userId, externalId, externalProvider])
+  @@index([userId, startAt, endAt])
+}
+
+model CalendarSlot {
+  id          String  @id @default(cuid())
+  userId      String
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  isAvailable Boolean @default(true)
+  user        User    @relation(fields: [userId], references: [id])
 }

@@ -3,6 +3,35 @@ import { CustomSelect } from '../components/ui/CustomSelect'
 import DOMPurify from 'dompurify'
 import { Mail, Plus, Send, Trash2, Eye, X, Users } from 'lucide-react'
 import { listCampaigns, createCampaign, deleteCampaign, sendCampaign } from '../api/campaigns.api'
+import { useUIStore } from '../store/ui.store'
+
+/* ── Dark inline style tokens (match project conventions) ────── */
+const card: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.03)',
+  border: '1px solid rgba(255,255,255,0.07)',
+  borderRadius: 16,
+}
+const inputSt: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.05)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  color: '#fff',
+  borderRadius: 12,
+  padding: '10px 14px',
+  fontSize: 13,
+  width: '100%',
+  outline: 'none',
+}
+const thSt: React.CSSProperties = {
+  padding: '10px 14px', textAlign: 'left', fontSize: 11,
+  fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+  color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.05)',
+  whiteSpace: 'nowrap',
+}
+const tdSt: React.CSSProperties = {
+  padding: '11px 14px', fontSize: 13,
+  color: 'rgba(255,255,255,0.7)', borderBottom: '1px solid rgba(255,255,255,0.04)',
+  verticalAlign: 'middle',
+}
 
 const STATUS_COLORS: Record<string, string> = {
   DRAFT: '#94a3b8', SCHEDULED: '#f59e0b', SENDING: '#6366f1',
@@ -19,6 +48,7 @@ const EMPTY_FORM = {
 }
 
 export const CampaignsPage: React.FC = () => {
+  const { showToast } = useUIStore()
   const [campaigns, setCampaigns] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -28,8 +58,15 @@ export const CampaignsPage: React.FC = () => {
   const [sending, setSending] = useState<string | null>(null)
 
   const load = async () => {
-    try { setCampaigns((await listCampaigns()).data) }
-    catch { } finally { setLoading(false) }
+    try {
+      const res = await listCampaigns()
+      const data = res.data
+      setCampaigns(Array.isArray(data) ? data : data?.data ?? [])
+    } catch {
+      showToast('Erro ao carregar campanhas.', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
   useEffect(() => { load() }, [])
 
@@ -41,13 +78,22 @@ export const CampaignsPage: React.FC = () => {
       setCampaigns(c => [res.data, ...c])
       setShowModal(false)
       setForm(EMPTY_FORM)
-    } catch { } finally { setSaving(false) }
+      showToast('Campanha criada.', 'success')
+    } catch (err: any) {
+      showToast(err?.response?.data?.error || 'Erro ao criar campanha.', 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleDelete = async (id: string) => {
     if (!confirm('Eliminar campanha?')) return
-    await deleteCampaign(id)
-    setCampaigns(c => c.filter(x => x.id !== id))
+    try {
+      await deleteCampaign(id)
+      setCampaigns(c => c.filter(x => x.id !== id))
+    } catch {
+      showToast('Erro ao eliminar campanha.', 'error')
+    }
   }
 
   const handleSend = async (id: string) => {
@@ -56,128 +102,144 @@ export const CampaignsPage: React.FC = () => {
     try {
       const res = await sendCampaign(id)
       setCampaigns(c => c.map(x => x.id === id ? res.data : x))
-    } catch (e: any) {
-      alert(e.response?.data?.error || 'Erro ao enviar campanha')
-    } finally { setSending(null) }
+      showToast('Campanha enviada.', 'success')
+    } catch (err: any) {
+      showToast(err?.response?.data?.error || 'Erro ao enviar campanha.', 'error')
+    } finally {
+      setSending(null)
+    }
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Campanhas de Email</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Envia emails em massa para os teus contactos</p>
+    <div className="flex flex-col h-full" style={{ background: '#080d1a', minHeight: 0 }}>
+      {/* Header */}
+      <div className="flex-shrink-0 flex items-center justify-between px-6 py-4"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center rounded-xl"
+            style={{ width: 38, height: 38, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.25)' }}>
+            <Mail size={18} style={{ color: '#818cf8' }} />
+          </div>
+          <div>
+            <h1 className="text-white font-bold text-lg leading-tight" style={{ letterSpacing: '-0.01em' }}>Campanhas de Email</h1>
+            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Envia emails em massa para os teus contactos</p>
+          </div>
         </div>
         <button onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium"
-          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-          <Plus size={16} /> Nova campanha
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold"
+          style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', cursor: 'pointer' }}>
+          <Plus size={15} /> Nova campanha
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        {[
-          { label: 'Total campanhas', value: campaigns.length, color: '#6366f1' },
-          { label: 'Enviadas', value: campaigns.filter(c => c.status === 'SENT').length, color: '#10b981' },
-          { label: 'Emails enviados', value: campaigns.reduce((s, c) => s + (c.sentCount || 0), 0), color: '#f59e0b' },
-          { label: 'Rascunhos', value: campaigns.filter(c => c.status === 'DRAFT').length, color: '#94a3b8' },
-        ].map(s => (
-          <div key={s.label} className="rounded-2xl p-4 border shadow-sm" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-            <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{s.label}</p>
-          </div>
-        ))}
-      </div>
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-3 mb-5">
+          {[
+            { label: 'Total campanhas', value: campaigns.length, color: '#6366f1' },
+            { label: 'Enviadas', value: campaigns.filter(c => c.status === 'SENT').length, color: '#10b981' },
+            { label: 'Emails enviados', value: campaigns.reduce((s, c) => s + (c.sentCount || 0), 0), color: '#f59e0b' },
+            { label: 'Rascunhos', value: campaigns.filter(c => c.status === 'DRAFT').length, color: '#94a3b8' },
+          ].map(s => (
+            <div key={s.label} style={{ ...card, padding: '16px 18px' }}>
+              <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
+              <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>{s.label}</p>
+            </div>
+          ))}
+        </div>
 
-      {loading ? (
-        <div className="text-center py-12" style={{ color: 'var(--text-muted)' }}>A carregar...</div>
-      ) : campaigns.length === 0 ? (
-        <div className="rounded-2xl border p-12 text-center" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-          <Mail size={40} className="mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
-          <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>Sem campanhas</p>
-          <button onClick={() => setShowModal(true)}
-            className="mt-4 px-4 py-2 rounded-xl text-white text-sm font-medium"
-            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
-            Criar primeira campanha
-          </button>
-        </div>
-      ) : (
-        <div className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-          <table className="w-full">
-            <thead>
-              <tr className="border-b" style={{ borderColor: 'var(--border-color)' }}>
-                {['Nome', 'Assunto', 'Estado', 'Enviados', 'Data', 'Ações'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {campaigns.map(c => (
-                <tr key={c.id} className="border-b" style={{ borderColor: 'var(--border-subtle)' }}
-                  onMouseOver={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
-                  onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
-                  <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{c.name}</td>
-                  <td className="px-4 py-3 text-sm max-w-[200px] truncate" style={{ color: 'var(--text-secondary)' }}>{c.subject}</td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs px-2 py-1 rounded-full font-medium"
-                      style={{ background: STATUS_COLORS[c.status] + '15', color: STATUS_COLORS[c.status] }}>
-                      {STATUS_LABELS[c.status]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      <Users size={12} style={{ color: 'var(--text-muted)' }} />
-                      {c.sentCount || 0}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-                    {c.sentAt ? new Date(c.sentAt).toLocaleDateString('pt-PT') : '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => setShowPreview(c)}
-                        className="p-1.5 rounded-lg" style={{ color: 'var(--text-muted)' }}
-                        onMouseOver={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
-                        onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
-                        title="Pré-visualizar">
-                        <Eye size={14} />
-                      </button>
-                      {c.status === 'DRAFT' && (
-                        <button onClick={() => handleSend(c.id)} disabled={sending === c.id}
-                          className="p-1.5 rounded-lg hover:bg-indigo-50 text-indigo-500 disabled:opacity-40" title="Enviar agora">
-                          <Send size={14} />
-                        </button>
-                      )}
-                      <button onClick={() => handleDelete(c.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-red-400">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
+        {loading ? (
+          <div className="text-center py-12 text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>A carregar...</div>
+        ) : campaigns.length === 0 ? (
+          <div style={{ ...card, padding: '48px 24px', textAlign: 'center' }}>
+            <Mail size={36} className="mx-auto mb-3" style={{ color: 'rgba(255,255,255,0.2)' }} />
+            <p className="font-medium text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>Sem campanhas</p>
+            <button onClick={() => setShowModal(true)}
+              className="mt-4 px-4 py-2 rounded-xl text-white text-sm font-medium"
+              style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', cursor: 'pointer' }}>
+              Criar primeira campanha
+            </button>
+          </div>
+        ) : (
+          <div style={card}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {['Nome', 'Assunto', 'Estado', 'Enviados', 'Data', 'Ações'].map(h => (
+                    <th key={h} style={thSt}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {campaigns.map(c => (
+                  <tr key={c.id} className="hover:bg-white/[0.02] transition-colors">
+                    <td style={{ ...tdSt, color: '#fff', fontWeight: 500 }}>{c.name}</td>
+                    <td style={{ ...tdSt, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.subject}</td>
+                    <td style={tdSt}>
+                      <span className="text-xs px-2 py-1 rounded-full font-medium"
+                        style={{ background: STATUS_COLORS[c.status] + '20', color: STATUS_COLORS[c.status] }}>
+                        {STATUS_LABELS[c.status]}
+                      </span>
+                    </td>
+                    <td style={tdSt}>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Users size={12} style={{ color: 'rgba(255,255,255,0.25)' }} />
+                        {c.sentCount || 0}
+                      </div>
+                    </td>
+                    <td style={{ ...tdSt, color: 'rgba(255,255,255,0.35)' }}>
+                      {c.sentAt ? new Date(c.sentAt).toLocaleDateString('pt-PT') : '—'}
+                    </td>
+                    <td style={tdSt}>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => setShowPreview(c)}
+                          className="p-1.5 rounded-lg transition-colors hover:bg-white/5"
+                          style={{ color: 'rgba(255,255,255,0.4)', border: 'none', background: 'none', cursor: 'pointer' }}
+                          title="Pré-visualizar">
+                          <Eye size={14} />
+                        </button>
+                        {c.status === 'DRAFT' && (
+                          <button onClick={() => handleSend(c.id)} disabled={sending === c.id}
+                            className="p-1.5 rounded-lg transition-colors hover:bg-indigo-500/10"
+                            style={{ color: '#818cf8', border: 'none', background: 'none', cursor: 'pointer', opacity: sending === c.id ? 0.4 : 1 }}
+                            title="Enviar agora">
+                            <Send size={14} />
+                          </button>
+                        )}
+                        <button onClick={() => handleDelete(c.id)}
+                          className="p-1.5 rounded-lg transition-colors hover:bg-red-500/10"
+                          style={{ color: '#f87171', border: 'none', background: 'none', cursor: 'pointer' }}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Create Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
-          <div className="rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg-card)' }}>
-            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
-              <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Nova campanha de email</h2>
-              <button onClick={() => setShowModal(false)} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
+          <div className="rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
+            style={{ background: '#131c2e', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="p-6 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <h2 className="text-white font-bold text-base">Nova campanha de email</h2>
+              <button onClick={() => setShowModal(false)} style={{ color: 'rgba(255,255,255,0.4)', border: 'none', background: 'none', cursor: 'pointer' }}>
+                <X size={18} />
+              </button>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Nome da campanha *</label>
+                  <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    Nome da campanha *
+                  </label>
                   <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
-                    style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
-                    placeholder="ex: Novos imóveis Março" />
+                    style={inputSt} placeholder="ex: Novos imóveis Março" />
                 </div>
                 <div>
                   <CustomSelect
@@ -185,36 +247,38 @@ export const CampaignsPage: React.FC = () => {
                     value={form.targetFilter.type}
                     onChange={val => setForm(f => ({ ...f, targetFilter: { ...f.targetFilter, type: val } }))}
                     options={[
-                      { value: 'LEAD', label: '👤 Todos os Leads' },
-                      { value: 'CLIENT', label: '🏠 Todos os Clientes' },
-                      { value: 'OWNER', label: '🔑 Todos os Proprietários' },
+                      { value: 'LEAD', label: 'Todos os Leads' },
+                      { value: 'CLIENT', label: 'Todos os Clientes' },
+                      { value: 'OWNER', label: 'Todos os Proprietários' },
                     ]}
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Assunto *</label>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  Assunto *
+                </label>
                 <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                  className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
-                  style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
-                  placeholder="ex: Novos imóveis disponíveis para si" />
+                  style={inputSt} placeholder="ex: Novos imóveis disponíveis para si" />
               </div>
               <div>
-                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Corpo do email (HTML) *</label>
+                <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  Corpo do email (HTML) *
+                </label>
                 <textarea value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
-                  rows={8} className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none resize-none font-mono"
-                  style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
+                  rows={7}
+                  style={{ ...inputSt, resize: 'none', fontFamily: 'monospace', fontSize: 12 }}
                   placeholder="<h1>Olá!</h1><p>Temos novidades para si...</p>" />
               </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowModal(false)}
+              <div className="flex gap-3 pt-1">
+                <button onClick={() => { setShowModal(false); setForm(EMPTY_FORM) }}
                   className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                  style={{ border: '1px solid var(--input-border)', color: 'var(--text-secondary)', background: 'var(--bg-card)' }}>
+                  style={{ border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)', background: 'transparent', cursor: 'pointer' }}>
                   Cancelar
                 </button>
                 <button onClick={handleCreate} disabled={saving || !form.name || !form.subject || !form.body}
-                  className="flex-1 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-60"
-                  style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                  className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', cursor: 'pointer' }}>
                   {saving ? 'A guardar...' : 'Criar campanha'}
                 </button>
               </div>
@@ -225,13 +289,16 @@ export const CampaignsPage: React.FC = () => {
 
       {/* Preview Modal */}
       {showPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
-          <div className="rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--bg-card)' }}>
-            <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
-              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{showPreview.subject}</h3>
-              <button onClick={() => setShowPreview(null)} style={{ color: 'var(--text-muted)' }}><X size={20} /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
+          <div className="rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
+            style={{ background: '#fff' }}>
+            <div className="p-4 flex items-center justify-between" style={{ borderBottom: '1px solid #e5e7eb' }}>
+              <h3 className="font-semibold text-gray-800">{showPreview.subject}</h3>
+              <button onClick={() => setShowPreview(null)} style={{ color: '#6b7280', border: 'none', background: 'none', cursor: 'pointer' }}>
+                <X size={18} />
+              </button>
             </div>
-            <div className="p-6" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(showPreview.body) }} />
+            <div className="p-6 text-gray-800" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(showPreview.body) }} />
           </div>
         </div>
       )}

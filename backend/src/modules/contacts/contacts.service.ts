@@ -1,5 +1,7 @@
 import prisma from '../../config/database';
 import { fireTrigger } from '../../utils/automation.engine';
+import { buildScope } from '../../lib/scope';
+import { logActivity } from '../../lib/activity-logger';
 
 const calculateLeadScore = (contact: any, interactionCount: number): number => {
   let score = 0;
@@ -15,21 +17,7 @@ const calculateLeadScore = (contact: any, interactionCount: number): number => {
 };
 
 const buildWhereClause = async (user: any): Promise<any> => {
-  if (user.role === 'ADMIN') {
-    return {};
-  }
-  if (user.role === 'PRINCIPAL_CONSULTANT') {
-    const subAgents = await prisma.user.findMany({
-      where: { supervisorId: user.id },
-      select: { id: true },
-    });
-    const subAgentIds = subAgents.map((a) => a.id);
-    return {
-      assignedToId: { in: [user.id, ...subAgentIds] },
-    };
-  }
-  // SUB_AGENT
-  return { assignedToId: user.id };
+  return buildScope(user);
 };
 
 export const list = async (
@@ -103,21 +91,32 @@ export const create = async (
     timeline?: string;
     gdprConsent?: boolean;
     gdprConsentOrigin?: string;
+    // Dynamic fields
+    selling_also?: boolean;
+    needs_financing?: boolean;
+    property_address?: string;
+    asking_price?: number;
+    sale_reason?: string;
+    buying_also?: boolean;
   },
-  userId: string
+  user: any
 ) => {
+  const userId = typeof user === 'string' ? user : user.id;
+  const commission = dto.asking_price ? dto.asking_price * 0.05 : undefined;
+
   const contact = await prisma.contact.create({
     data: {
       name: dto.name,
       email: dto.email,
       phone: dto.phone,
       whatsapp: dto.whatsapp,
-      type: (dto.type as any) ?? 'LEAD',
+      type: (dto.type as any) ?? 'BUYER',
       status: (dto.status as any) ?? 'NEW',
       source: dto.source,
       notes: dto.notes,
       preferences: dto.preferences,
       assignedToId: dto.assignedToId || userId,
+      locationId: typeof user === 'string' ? null : (user.locationId ?? null),
       city: dto.city,
       postalCode: dto.postalCode,
       budget_min: dto.budget_min,
@@ -127,6 +126,13 @@ export const create = async (
       gdprConsent: dto.gdprConsent ?? false,
       gdprConsentOrigin: dto.gdprConsentOrigin,
       gdprConsentDate: dto.gdprConsent ? new Date() : undefined,
+      selling_also: dto.selling_also ?? false,
+      needs_financing: dto.needs_financing ?? false,
+      property_address: dto.property_address,
+      asking_price: dto.asking_price,
+      sale_reason: dto.sale_reason,
+      buying_also: dto.buying_also ?? false,
+      commission,
     },
     include: {
       assignedTo: { select: { id: true, name: true, email: true } },
@@ -138,7 +144,66 @@ export const create = async (
     console.error('[Automation] NEW_LEAD trigger error:', err)
   );
 
+  logActivity({
+    userId,
+    agencyId: typeof user === 'string' ? undefined : (user.agencyId ?? undefined),
+    locationId: typeof user === 'string' ? undefined : (user.locationId ?? undefined),
+    action: 'contact.create',
+    entityType: 'Contact',
+    entityId: contact.id,
+  });
+
   return contact;
+};
+
+export const bulkImport = async (
+  rows: Array<{
+    name: string;
+    email?: string;
+    phone?: string;
+    whatsapp?: string;
+    type?: string;
+    status?: string;
+    source?: string;
+    notes?: string;
+    city?: string;
+  }>,
+  userId: string
+) => {
+  const results = { created: 0, skipped: 0, errors: [] as string[] };
+
+  for (const row of rows) {
+    if (!row.name || row.name.trim().length < 2) {
+      results.skipped++;
+      continue;
+    }
+    try {
+      // Skip if email already exists
+      if (row.email) {
+        const existing = await prisma.contact.findFirst({ where: { email: row.email } });
+        if (existing) { results.skipped++; continue; }
+      }
+      await prisma.contact.create({
+        data: {
+          name: row.name.trim(),
+          email: row.email || undefined,
+          phone: row.phone || undefined,
+          whatsapp: row.whatsapp || undefined,
+          type: (['BUYER','OWNER','PARTNER'].includes(row.type?.toUpperCase() ?? '') ? row.type!.toUpperCase() : 'BUYER') as any,
+          status: (['NEW','QUALIFIED','CONTACTED','INACTIVE'].includes(row.status?.toUpperCase() ?? '') ? row.status!.toUpperCase() : 'NEW') as any,
+          source: row.source || undefined,
+          notes: row.notes || undefined,
+          city: row.city || undefined,
+          assignedToId: userId,
+        },
+      });
+      results.created++;
+    } catch (e: any) {
+      results.errors.push(`${row.name}: ${e.message}`);
+    }
+  }
+
+  return results;
 };
 
 export const getById = async (id: string, user: any) => {
@@ -162,6 +227,10 @@ export const getById = async (id: string, user: any) => {
           property: { select: { id: true, title: true, price: true } },
           assignedTo: { select: { id: true, name: true } },
         },
+      },
+      appointments: {
+        orderBy: { startAt: 'desc' },
+        include: { assignedTo: { select: { id: true, name: true } } },
       },
     },
   });
@@ -198,6 +267,13 @@ export const update = async (
     timeline?: string;
     gdprConsent?: boolean;
     gdprConsentOrigin?: string;
+    // Dynamic fields
+    selling_also?: boolean;
+    needs_financing?: boolean;
+    property_address?: string;
+    asking_price?: number;
+    sale_reason?: string;
+    buying_also?: boolean;
   },
   user: any
 ) => {
@@ -210,6 +286,8 @@ export const update = async (
     err.status = 404;
     throw err;
   }
+
+  const commission = dto.asking_price !== undefined ? dto.asking_price * 0.05 : undefined;
 
   const updated = await prisma.contact.update({
     where: { id },
@@ -233,11 +311,28 @@ export const update = async (
       gdprConsent: dto.gdprConsent,
       gdprConsentOrigin: dto.gdprConsentOrigin,
       gdprConsentDate: dto.gdprConsent === true ? new Date() : undefined,
+      selling_also: dto.selling_also,
+      needs_financing: dto.needs_financing,
+      property_address: dto.property_address,
+      asking_price: dto.asking_price,
+      sale_reason: dto.sale_reason,
+      buying_also: dto.buying_also,
+      commission,
     },
     include: {
       assignedTo: { select: { id: true, name: true, email: true } },
     },
   });
+
+  logActivity({
+    userId: user.id,
+    agencyId: user.agencyId ?? undefined,
+    locationId: user.locationId ?? undefined,
+    action: 'contact.update',
+    entityType: 'Contact',
+    entityId: id,
+  });
+
   return updated;
 };
 
@@ -257,5 +352,13 @@ export const remove = async (id: string, user: any) => {
     err.status = 404;
     throw err;
   }
+  logActivity({
+    userId: user.id,
+    agencyId: user.agencyId ?? undefined,
+    locationId: user.locationId ?? undefined,
+    action: 'contact.delete',
+    entityType: 'Contact',
+    entityId: id,
+  });
   return prisma.contact.delete({ where: { id } });
 };

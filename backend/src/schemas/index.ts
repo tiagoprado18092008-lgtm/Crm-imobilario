@@ -17,7 +17,7 @@ export const registerSchema = z.object({
 
 // Contacts
 export const createContactSchema = z.object({
-  name: z.string().min(1, 'Nome obrigatório'),
+  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   phone: z.string().optional(),
   whatsapp: z.string().optional(),
@@ -39,16 +39,20 @@ export const createContactSchema = z.object({
 
 export const updateContactSchema = createContactSchema.partial();
 
+const VALID_STAGES = ['LEAD_IN', 'QUALIFYING', 'VISIT_SCHEDULED', 'VISIT_DONE', 'PROPOSAL_SENT', 'NEGOTIATION', 'CPCV_SIGNED', 'FINANCING', 'ESCRITURA_SCHEDULED', 'CLOSED_WON', 'CLOSED_LOST'] as const;
+
+const optionalDate = z.string().refine(s => !s || !isNaN(Date.parse(s)), { message: 'Data inválida' }).optional();
+
 // Opportunities
 export const createOpportunitySchema = z.object({
-  title: z.string().min(1, 'Título obrigatório'),
-  stage: z.string().default('LEAD_IN'),
-  value: z.number().nonnegative().optional(),
-  source: z.string().optional(),
-  expectedCloseDate: z.string().optional(),
-  lostReason: z.string().optional(),
-  notes: z.string().optional(),
-  position: z.number().default(0),
+  title: z.string().min(1, 'Título obrigatório').max(200, 'Título demasiado longo'),
+  stage: z.enum(VALID_STAGES, { errorMap: () => ({ message: 'Fase inválida' }) }).default('LEAD_IN'),
+  value: z.number().nonnegative('Valor deve ser positivo').optional(),
+  source: z.string().max(100).optional(),
+  expectedCloseDate: optionalDate,
+  lostReason: z.string().max(500).optional(),
+  notes: z.string().max(2000).optional(),
+  position: z.number().int().nonnegative().default(0),
   contactId: z.string().min(1, 'Contacto obrigatório'),
   propertyId: z.string().optional(),
   assignedToId: z.string().optional(),
@@ -57,17 +61,17 @@ export const createOpportunitySchema = z.object({
 export const updateOpportunitySchema = createOpportunitySchema.partial();
 
 export const moveStageSchema = z.object({
-  stage: z.string().min(1, 'Stage obrigatório'),
-  position: z.number().default(0),
+  stage: z.enum(VALID_STAGES, { errorMap: () => ({ message: 'Fase inválida. Valores aceites: ' + VALID_STAGES.join(', ') }) }),
+  position: z.number().int().nonnegative().default(0),
 });
 
 // Tasks
 export const createTaskSchema = z.object({
-  title: z.string().min(1, 'Título obrigatório'),
-  description: z.string().optional(),
-  priority: z.enum(['LOW', 'MEDIUM', 'HIGH']).default('MEDIUM'),
-  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).default('PENDING'),
-  dueDate: z.string().optional(),
+  title: z.string().min(2, 'Título deve ter pelo menos 2 caracteres').max(200, 'Título demasiado longo'),
+  description: z.string().max(2000).optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH'], { errorMap: () => ({ message: 'Prioridade inválida. Valores: LOW, MEDIUM, HIGH' }) }).default('MEDIUM'),
+  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'], { errorMap: () => ({ message: 'Estado inválido. Valores: PENDING, IN_PROGRESS, COMPLETED, CANCELLED' }) }).default('PENDING'),
+  dueDate: optionalDate,
   contactId: z.string().optional(),
   opportunityId: z.string().optional(),
   assignedToId: z.string().optional(),
@@ -132,18 +136,45 @@ export const createInvitationSchema = z.object({
   role: z.string().default('CONSULTANT'),
 });
 
+const validDateTimeString = (label: string) =>
+  z.string().min(1, `${label} obrigatória`).refine(s => !isNaN(Date.parse(s)), { message: `${label} inválida` });
+
 // Appointments
 export const createAppointmentSchema = z.object({
-  title: z.string().min(1, 'Título obrigatório'),
-  type: z.string().default('VISIT'),
-  startAt: z.string().min(1, 'Data de início obrigatória'),
-  endAt: z.string().optional(),
-  notes: z.string().optional(),
+  title: z.string().min(1, 'Título obrigatório').max(200, 'Título demasiado longo'),
+  type: z.enum(['VISIT', 'CALL', 'MEETING', 'OTHER'], { errorMap: () => ({ message: 'Tipo inválido. Valores: VISIT, CALL, MEETING, OTHER' }) }).default('VISIT'),
+  startAt: validDateTimeString('Data de início'),
+  endAt: validDateTimeString('Data de fim'),
+  description: z.string().max(2000).optional(),
+  notes: z.string().max(2000).optional(),
+  location: z.string().max(500).optional(),
   contactId: z.string().optional(),
   propertyId: z.string().optional(),
   opportunityId: z.string().optional(),
-  status: z.string().default('SCHEDULED'),
-});
+  assignedToId: z.string().optional(),
+  status: z.enum(['SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'], { errorMap: () => ({ message: 'Estado inválido' }) }).default('SCHEDULED'),
+}).refine(
+  data => !data.startAt || !data.endAt || new Date(data.endAt) > new Date(data.startAt),
+  { message: 'Data de fim deve ser posterior ao início', path: ['endAt'] }
+);
+
+export const updateAppointmentSchema = z.object({
+  title: z.string().min(1, 'Título obrigatório').max(200).optional(),
+  type: z.enum(['VISIT', 'CALL', 'MEETING', 'OTHER'], { errorMap: () => ({ message: 'Tipo inválido' }) }).optional(),
+  startAt: validDateTimeString('Data de início').optional(),
+  endAt: validDateTimeString('Data de fim').optional(),
+  description: z.string().max(2000).optional(),
+  notes: z.string().max(2000).optional(),
+  location: z.string().max(500).optional(),
+  contactId: z.string().optional(),
+  propertyId: z.string().optional(),
+  opportunityId: z.string().optional(),
+  assignedToId: z.string().optional(),
+  status: z.enum(['SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'], { errorMap: () => ({ message: 'Estado inválido' }) }).optional(),
+}).refine(
+  data => !data.startAt || !data.endAt || new Date(data.endAt) > new Date(data.startAt),
+  { message: 'Data de fim deve ser posterior ao início', path: ['endAt'] }
+);
 
 // Interactions
 export const createInteractionSchema = z.object({

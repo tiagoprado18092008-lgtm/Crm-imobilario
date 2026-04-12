@@ -1,20 +1,60 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { Eye, EyeOff, Lock, Mail, ArrowRight } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react'
 import { GoogleLogin } from '@react-oauth/google'
 import { login, googleLogin } from '../api/auth.api'
 import { useAuthStore } from '../store/auth.store'
+import { CasaFlowLogo } from '../assets/casaflow-logo'
+
+/* ─── shared design tokens ───────────────────────────────────── */
+const T = {
+  navy:    '#0f2553',
+  navyMid: '#1a3a6e',
+  gold:    '#b8963e',
+  goldLt:  '#d4af5a',
+  white:   '#ffffff',
+  offWhite:'#f8f9fc',
+  border:  '#dce3ef',
+  muted:   '#6b7a99',
+  error:   '#c0392b',
+}
+
+/* ─── reusable input style helpers ──────────────────────────── */
+const inputBase: React.CSSProperties = {
+  width: '100%',
+  padding: '12px 16px',
+  borderRadius: 10,
+  border: `1.5px solid ${T.border}`,
+  background: T.offWhite,
+  fontSize: 14,
+  color: T.navy,
+  outline: 'none',
+  fontFamily: "'DM Sans', sans-serif",
+  fontWeight: 400,
+  transition: 'border-color 180ms, box-shadow 180ms, background 180ms',
+}
+const onFocusInput = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.target.style.borderColor = T.navyMid
+  e.target.style.boxShadow  = `0 0 0 3px rgba(15,37,83,0.1)`
+  e.target.style.background  = T.white
+}
+const onBlurInput = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.target.style.borderColor = T.border
+  e.target.style.boxShadow   = 'none'
+  e.target.style.background  = T.offWhite
+}
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
-  const [email, setEmail] = useState('')
+  const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [show,     setShow]     = useState(false)
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
     setLoading(true)
@@ -31,289 +71,338 @@ export const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: '#080d1a' }}>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        body { margin: 0; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
 
-      {/* Left panel */}
-      <div
-        className="hidden lg:flex flex-col justify-between p-14 w-5/12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(155deg, #0d1530 0%, #111827 100%)' }}
-      >
-        {/* Decorative orbs */}
-        <div style={{
-          position: 'absolute', bottom: -120, right: -120,
-          width: 420, height: 420, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute', top: -80, left: -80,
-          width: 300, height: 300, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{
-          position: 'absolute', top: '40%', right: '10%',
-          width: 160, height: 160, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        fontFamily: "'DM Sans', sans-serif",
+        background: T.white,
+      }}>
 
-        {/* Logo */}
-        <div className="flex items-center gap-3.5 relative z-10">
-          <div
-            className="flex items-center justify-center rounded-2xl"
-            style={{
-              width: 46, height: 46,
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              boxShadow: '0 8px 24px rgba(99,102,241,0.4)',
-            }}
+        {/* ── Left panel ─────────────────────────────────────── */}
+        <div style={{
+          width: '44%',
+          background: T.navy,
+          display: 'none',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          padding: '48px 52px',
+          position: 'relative',
+          overflow: 'hidden',
+        }} className="cf-left-panel">
+
+          {/* Subtle texture rings */}
+          <div style={{
+            position: 'absolute', top: '-80px', right: '-80px',
+            width: 380, height: 380, borderRadius: '50%',
+            border: '60px solid rgba(184,150,62,0.07)',
+            pointerEvents: 'none',
+          }} />
+          <div style={{
+            position: 'absolute', bottom: '-60px', left: '-60px',
+            width: 300, height: 300, borderRadius: '50%',
+            border: '50px solid rgba(255,255,255,0.04)',
+            pointerEvents: 'none',
+          }} />
+          <div style={{
+            position: 'absolute', top: '40%', left: '30%',
+            width: 200, height: 200, borderRadius: '50%',
+            border: '2px solid rgba(184,150,62,0.12)',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Logo */}
+          <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.05 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 14, zIndex: 1 }}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-              <polyline points="9 22 9 12 15 12 15 22"/>
-            </svg>
-          </div>
-          <div>
-            <p className="text-white font-bold text-lg leading-tight">CRM Imobiliário</p>
-            <p className="text-xs font-medium" style={{ color: '#6366f1', letterSpacing: '0.06em' }}>PLATAFORMA PREMIUM</p>
-          </div>
-        </div>
-
-        {/* Tagline */}
-        <div className="relative z-10">
-          <h2 className="text-white font-bold leading-tight mb-5" style={{ fontSize: 32, letterSpacing: '-0.02em' }}>
-            A plataforma que os melhores consultores usam
-          </h2>
-          <p style={{ color: '#6b7a9a', fontSize: 14, lineHeight: 1.7 }}>
-            Pipeline visual, automações inteligentes, inbox unificado e relatórios em tempo real — tudo para fechar mais negócios.
-          </p>
-
-          {/* Feature pills */}
-          <div className="flex flex-wrap gap-2 mt-8">
-            {['Automações IA', 'Pipeline Kanban', 'WhatsApp & Email', 'Lead Scoring', 'Multi-equipa'].map(f => (
-              <span key={f}
-                className="px-3 py-1.5 rounded-full text-xs font-medium"
-                style={{ background: 'rgba(99,102,241,0.12)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.2)' }}
-              >
-                {f}
-              </span>
-            ))}
-          </div>
-
-          {/* Stats row */}
-          <div className="flex gap-10 mt-10 pt-8" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            {[
-              { value: '360°', label: 'Visão completa' },
-              { value: 'RBAC', label: 'Controlo de acessos' },
-              { value: '100%', label: 'Personalizável' },
-            ].map(s => (
-              <div key={s.label}>
-                <p className="text-white font-bold text-2xl" style={{ letterSpacing: '-0.02em' }}>{s.value}</p>
-                <p className="text-xs mt-0.5" style={{ color: '#4a5578' }}>{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <p className="text-xs relative z-10" style={{ color: '#2d3654' }}>
-          © {new Date().getFullYear()} CRM Imobiliário — Todos os direitos reservados
-        </p>
-      </div>
-
-      {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-8" style={{ background: 'var(--bg-page)' }}>
-        <div className="w-full max-w-md">
-
-          {/* Mobile logo */}
-          <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <div
-              className="flex items-center justify-center rounded-2xl"
-              style={{
-                width: 44, height: 44,
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                boxShadow: '0 6px 20px rgba(99,102,241,0.35)',
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                <polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-            </div>
+            <CasaFlowLogo size={36} />
             <div>
-              <p className="font-bold text-lg leading-tight" style={{ color: 'var(--text-primary)' }}>CRM Imobiliário</p>
-              <p className="text-xs font-medium" style={{ color: '#6366f1' }}>PLATAFORMA PREMIUM</p>
-            </div>
-          </div>
-
-          {/* Card */}
-          <div className="rounded-2xl p-8" style={{ background: 'var(--bg-card)', boxShadow: '0 4px 24px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04)', border: '1px solid var(--border-color)' }}>
-
-            <div className="mb-7">
-              <h1 className="font-bold leading-tight" style={{ fontSize: 22, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
-                Bem-vindo de volta
-              </h1>
-              <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>Entre na sua conta para continuar</p>
-            </div>
-
-            {error && (
-              <div
-                className="flex items-center gap-3 mb-5 p-3.5 rounded-xl text-sm"
-                style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }}
-              >
-                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#fee2e2' }}>
-                  <span className="text-red-600 font-bold text-xs">!</span>
-                </div>
-                {error}
+              <div style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 20,
+                fontWeight: 700,
+                color: T.white,
+                letterSpacing: '-0.02em',
+              }}>
+                CASA<span style={{ fontWeight: 400 }}>FLOW</span>
               </div>
-            )}
+              <div style={{
+                fontSize: 10,
+                color: 'rgba(255,255,255,0.35)',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                marginTop: 1,
+              }}>CRM Imobiliário</div>
+            </div>
+          </motion.div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email */}
+          {/* Hero copy */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, delay: 0.2 }}
+            style={{ zIndex: 1 }}
+          >
+            <div style={{
+              width: 40, height: 3,
+              background: T.gold,
+              borderRadius: 2,
+              marginBottom: 28,
+            }} />
+            <h2 style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 36,
+              fontWeight: 700,
+              color: T.white,
+              lineHeight: 1.18,
+              letterSpacing: '-0.03em',
+              margin: 0,
+              marginBottom: 20,
+            }}>
+              Gerencie o seu<br />
+              negócio imobiliário<br />
+              <span style={{ color: T.goldLt }}>com confiança.</span>
+            </h2>
+            <p style={{
+              fontSize: 15,
+              color: 'rgba(255,255,255,0.5)',
+              lineHeight: 1.7,
+              margin: 0,
+              fontWeight: 300,
+              maxWidth: 300,
+            }}>
+              Contactos, oportunidades e propriedades centralizados numa única plataforma.
+            </p>
+
+            {/* Stats row */}
+            <div style={{ display: 'flex', gap: 36, marginTop: 44 }}>
+              {[
+                { value: '2.4k+', label: 'Imóveis' },
+                { value: '98%', label: 'Satisfação' },
+                { value: '150+', label: 'Agentes' },
+              ].map(s => (
+                <div key={s.label}>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: T.goldLt, letterSpacing: '-0.02em' }}>{s.value}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 3, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Footer */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', margin: 0, zIndex: 1 }}
+          >
+            © {new Date().getFullYear()} CasaFlow · Todos os direitos reservados
+          </motion.p>
+        </div>
+
+        {/* ── Right: form ────────────────────────────────────── */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px 24px',
+          background: T.white,
+        }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+            style={{ width: '100%', maxWidth: 400 }}
+          >
+
+            {/* Mobile logo */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              marginBottom: 36,
+            }} className="cf-mobile-logo">
+              <CasaFlowLogo size={34} />
               <div>
-                <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail
-                    size={15}
-                    style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}
-                  />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="seu@email.com"
-                    required
-                    autoComplete="email"
-                    autoFocus
-                    className="input-premium"
-                    style={{
-                      width: '100%',
-                      paddingLeft: 40,
-                      paddingRight: 16,
-                      paddingTop: 11,
-                      paddingBottom: 11,
-                      fontSize: 14,
-                      borderRadius: 12,
-                      outline: 'none',
-                      border: '1.5px solid var(--input-border)',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      transition: 'border-color 150ms, box-shadow 150ms',
-                    }}
-                    onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)'; }}
-                    onBlur={e => { e.target.style.borderColor = 'var(--input-border)'; e.target.style.boxShadow = 'none'; }}
-                  />
+                <div style={{ fontSize: 18, fontWeight: 700, color: T.navy, letterSpacing: '-0.02em' }}>
+                  CASA<span style={{ fontWeight: 400 }}>FLOW</span>
+                </div>
+                <div style={{ fontSize: 9, color: T.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1 }}>
+                  CRM Imobiliário
                 </div>
               </div>
+            </div>
 
-              {/* Password */}
-              <div>
-                <label className="block text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock
-                    size={15}
-                    style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }}
-                  />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    autoComplete="current-password"
-                    className="input-premium"
+            {/* Heading */}
+            <div style={{ marginBottom: 32 }}>
+              <h1 style={{
+                fontSize: 28,
+                fontWeight: 700,
+                color: T.navy,
+                letterSpacing: '-0.03em',
+                margin: 0,
+                marginBottom: 6,
+              }}>Bem-vindo de volta</h1>
+              <p style={{ fontSize: 14, color: T.muted, margin: 0, fontWeight: 300 }}>
+                Entre na sua conta para continuar
+              </p>
+            </div>
+
+            {/* Card */}
+            <div style={{
+              background: T.white,
+              borderRadius: 16,
+              border: `1px solid ${T.border}`,
+              padding: '32px 28px 28px',
+              boxShadow: '0 2px 8px rgba(15,37,83,0.04), 0 12px 40px rgba(15,37,83,0.07)',
+            }}>
+
+              {/* Error */}
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    key="err"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto', marginBottom: 20 }}
+                    exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                     style={{
-                      width: '100%',
-                      paddingLeft: 40,
-                      paddingRight: 48,
-                      paddingTop: 11,
-                      paddingBottom: 11,
-                      fontSize: 14,
-                      borderRadius: 12,
-                      outline: 'none',
-                      border: '1.5px solid var(--input-border)',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      transition: 'border-color 150ms, box-shadow 150ms',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '10px 14px', borderRadius: 8,
+                      background: 'rgba(192,57,43,0.06)',
+                      border: `1px solid rgba(192,57,43,0.2)`,
+                      color: T.error, fontSize: 13, overflow: 'hidden',
                     }}
-                    onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.1)'; }}
-                    onBlur={e => { e.target.style.borderColor = 'var(--input-border)'; e.target.style.boxShadow = 'none'; }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', border: 'none', background: 'none', cursor: 'pointer', padding: 4 }}
-                    tabIndex={-1}
                   >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    <AlertCircle size={14} style={{ flexShrink: 0 }} />
+                    {error}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <form onSubmit={handleSubmit}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+                  {/* Email */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: T.muted, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 7 }}>
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                      required
+                      autoComplete="email"
+                      autoFocus
+                      style={{ ...inputBase }}
+                      onFocus={onFocusInput}
+                      onBlur={onBlurInput}
+                    />
+                  </div>
+
+                  {/* Password */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: T.muted, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 7 }}>
+                      Password
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={show ? 'text' : 'password'}
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        autoComplete="current-password"
+                        style={{ ...inputBase, paddingRight: 44 }}
+                        onFocus={onFocusInput}
+                        onBlur={onBlurInput}
+                      />
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        onClick={() => setShow(!show)}
+                        style={{
+                          position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: T.muted, padding: 4, display: 'flex', alignItems: 'center',
+                          transition: 'color 150ms',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.color = T.navy)}
+                        onMouseLeave={e => (e.currentTarget.style.color = T.muted)}
+                      >
+                        {show ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* CTA */}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      width: '100%', padding: '13px 20px', marginTop: 4,
+                      borderRadius: 10, border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
+                      background: loading ? 'rgba(15,37,83,0.4)' : T.navy,
+                      color: T.white, fontSize: 15, fontWeight: 600,
+                      fontFamily: "'DM Sans', sans-serif",
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      boxShadow: loading ? 'none' : '0 4px 18px rgba(15,37,83,0.28)',
+                      transition: 'background 200ms, box-shadow 200ms, transform 150ms',
+                      letterSpacing: '-0.01em',
+                    }}
+                    onMouseEnter={e => { if (!loading) { (e.currentTarget as HTMLButtonElement).style.background = T.navyMid; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)' } }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = loading ? 'rgba(15,37,83,0.4)' : T.navy; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)' }}
+                  >
+                    {loading ? (
+                      <>
+                        <svg style={{ animation: 'spin 0.8s linear infinite' }} width={15} height={15} fill="none" viewBox="0 0 24 24">
+                          <circle opacity={0.25} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path opacity={0.8} fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                        A entrar...
+                      </>
+                    ) : (
+                      <>Entrar na conta <ArrowRight size={15} /></>
+                    )}
                   </button>
                 </div>
+              </form>
+
+              {/* Divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '22px 0' }}>
+                <div style={{ flex: 1, height: 1, background: T.border }} />
+                <span style={{ fontSize: 12, color: T.muted, whiteSpace: 'nowrap', letterSpacing: '0.04em' }}>ou</span>
+                <div style={{ flex: 1, height: 1, background: T.border }} />
               </div>
 
-              {/* Submit */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2.5 text-sm font-semibold text-white rounded-xl"
-                style={{
-                  paddingTop: 12,
-                  paddingBottom: 12,
-                  marginTop: 4,
-                  background: loading
-                    ? '#a5b4fc'
-                    : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                  boxShadow: loading ? 'none' : '0 4px 16px rgba(99,102,241,0.35)',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  border: 'none',
-                  transition: 'all 150ms',
-                  letterSpacing: '0.01em',
-                }}
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin" width={16} height={16} fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                    A entrar...
-                  </>
-                ) : (
-                  <>
-                    Entrar na conta
-                    <ArrowRight size={15} />
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 mt-5">
-              <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
-              <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>ou continue com</span>
-              <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
-            </div>
-
-            {/* Google Login */}
-            <div className="mt-4">
+              {/* Google */}
               {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
                 <GoogleLogin
-                  onSuccess={async (credentialResponse) => {
-                    if (!credentialResponse.credential) return
-                    setError('')
-                    setLoading(true)
+                  onSuccess={async (cr) => {
+                    if (!cr.credential) return
+                    setError(''); setLoading(true)
                     try {
-                      const res = await googleLogin(credentialResponse.credential)
+                      const res = await googleLogin(cr.credential)
                       const { token, user } = res.data
                       setAuth(user, token)
                       navigate('/dashboard', { replace: true })
                     } catch (err: any) {
                       setError(err?.response?.data?.error || 'Falha no login com Google.')
-                    } finally {
-                      setLoading(false)
-                    }
+                    } finally { setLoading(false) }
                   }}
                   onError={() => setError('Falha no login com Google.')}
                   width="100%"
@@ -322,12 +411,15 @@ export const LoginPage: React.FC = () => {
                   theme="outline"
                 />
               ) : (
-                <button
-                  disabled
-                  className="w-full flex items-center justify-center gap-3 py-3 rounded-xl text-sm font-medium"
-                  style={{ border: '1.5px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-muted)', cursor: 'not-allowed' }}
-                >
-                  <svg width="17" height="17" viewBox="0 0 24 24">
+                <button disabled style={{
+                  width: '100%', padding: '12px 16px', borderRadius: 10,
+                  border: `1.5px solid ${T.border}`, background: T.white,
+                  color: T.muted, fontSize: 14, fontWeight: 500,
+                  fontFamily: "'DM Sans', sans-serif",
+                  cursor: 'not-allowed', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', gap: 10, opacity: 0.7,
+                }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -338,15 +430,27 @@ export const LoginPage: React.FC = () => {
               )}
             </div>
 
-            <p className="text-center text-sm mt-5" style={{ color: 'var(--text-muted)' }}>
+            {/* Register link */}
+            <p style={{ textAlign: 'center', fontSize: 14, color: T.muted, marginTop: 22, fontWeight: 300 }}>
               Ainda não tem conta?{' '}
-              <Link to="/register" className="font-semibold hover:underline" style={{ color: '#6366f1', textDecoration: 'none' }}>
+              <Link to="/register" style={{
+                color: T.navy, fontWeight: 600, textDecoration: 'none',
+                borderBottom: `1.5px solid ${T.gold}`, paddingBottom: 1,
+              }}>
                 Criar conta
               </Link>
             </p>
-          </div>
+          </motion.div>
         </div>
       </div>
-    </div>
+
+      {/* Responsive: show left panel on desktop */}
+      <style>{`
+        @media (min-width: 1024px) {
+          .cf-left-panel { display: flex !important; }
+          .cf-mobile-logo { display: none !important; }
+        }
+      `}</style>
+    </>
   )
 }

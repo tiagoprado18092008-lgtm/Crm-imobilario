@@ -13,6 +13,7 @@ router.post('/', validate(createContactSchema), contactsController.create);
 router.get('/:id', contactsController.getById);
 router.put('/:id', validate(updateContactSchema), contactsController.update);
 router.delete('/:id', contactsController.remove);
+router.post('/import', contactsController.bulkImport);
 router.patch('/:id/archive', contactsController.archive);
 
 export default router;

@@ -12,9 +12,8 @@ router.get('/verify/:token', ctrl.verify);
 
 // Protected — admin only
 router.use(authenticate);
-router.use(requireRole('ADMIN'));
-router.get('/', ctrl.list);
-router.post('/', validate(createInvitationSchema), ctrl.create);
-router.delete('/:id', ctrl.revoke);
+router.get('/', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN', 'LOCATION_ADMIN'), ctrl.list);
+router.post('/', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN', 'LOCATION_ADMIN'), validate(createInvitationSchema), ctrl.create);
+router.delete('/:id', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN'), ctrl.revoke);
 
 export default router;

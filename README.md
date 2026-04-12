@@ -1,4 +1,4 @@
-# CRM Imobiliário para Consultores
+# CasaFlow — CRM para Consultores Imobiliários
 
 Sistema CRM completo para consultores imobiliários com suporte a sub-agentes.
 

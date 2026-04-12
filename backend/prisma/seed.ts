@@ -15,6 +15,7 @@ async function main() {
   }
 
   // Limpar dados existentes
+  await prisma.activityLog.deleteMany();
   await prisma.automationLog.deleteMany();
   await prisma.emailCampaignRecipient.deleteMany();
   await prisma.emailCampaign.deleteMany();
@@ -32,8 +33,73 @@ async function main() {
   await prisma.phoneNumber.deleteMany();
   await prisma.automationRule.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.locationSettings.deleteMany();
+  await prisma.agencySettings.deleteMany();
+  await prisma.location.deleteMany();
+  await prisma.agency.deleteMany();
 
   console.log('Dados anteriores removidos');
+
+  // ─── AGÊNCIA + LOCATION ───────────────────────────────────────────────────────
+  const agency = await prisma.agency.upsert({
+    where: { slug: 'imocrm-demo' },
+    update: {},
+    create: { name: 'ImoCRM Demo', slug: 'imocrm-demo', isActive: true },
+  });
+
+  const defaultLocation = await prisma.location.upsert({
+    where: { agencyId_slug: { agencyId: agency.id, slug: 'principal' } },
+    update: {},
+    create: {
+      agencyId: agency.id,
+      name: 'Escritório Principal',
+      slug: 'principal',
+      email: 'geral@imocrm.pt',
+      isActive: true,
+    },
+  });
+
+  await prisma.locationSettings.upsert({
+    where: { locationId: defaultLocation.id },
+    update: {},
+    create: {
+      locationId: defaultLocation.id,
+      timezone: 'Europe/Lisbon', locale: 'pt-PT', currency: 'EUR',
+      workingHours: {
+        mon: { active: true, start: '09:00', end: '18:00' },
+        tue: { active: true, start: '09:00', end: '18:00' },
+        wed: { active: true, start: '09:00', end: '18:00' },
+        thu: { active: true, start: '09:00', end: '18:00' },
+        fri: { active: true, start: '09:00', end: '18:00' },
+        sat: { active: false, start: '09:00', end: '13:00' },
+        sun: { active: false, start: '09:00', end: '13:00' },
+      },
+      bookingPage: { enabled: false, slug: 'principal' },
+    },
+  });
+
+  await prisma.agencySettings.upsert({
+    where: { agencyId: agency.id },
+    update: {},
+    create: {
+      agencyId: agency.id,
+      whitelabelEnabled: false,
+      primaryColor: '#0f2553',
+      defaultPermissions: {
+        contacts: ['view', 'create', 'edit'],
+        opportunities: ['view', 'create', 'edit'],
+        properties: ['view'],
+        tasks: ['view', 'create', 'edit'],
+        appointments: ['view', 'create', 'edit'],
+        conversations: ['view', 'create'],
+        campaigns: ['view'], forms: ['view'],
+        automations: [], reports: [], settings: [], users: [],
+      },
+      securitySettings: { sessionDuration: '8h', require2FA: false },
+    },
+  });
+
+  console.log('✓ Agência, Escritório Principal e definições criados');
 
   // ─── UTILIZADORES ─────────────────────────────────────────────────────────────
   const adminHash = await bcrypt.hash('Admin123!', 12);
@@ -46,6 +112,8 @@ async function main() {
       passwordHash: adminHash,
       role: 'AGENCY_OWNER',
       phone: '+351910000001',
+      agencyId: agency.id,
+      locationId: defaultLocation.id,
       isActive: true,
       onboardingCompleted: true,
     },
@@ -58,6 +126,8 @@ async function main() {
       passwordHash: userHash,
       role: 'TEAM_LEADER',
       phone: '+351910000002',
+      agencyId: agency.id,
+      locationId: defaultLocation.id,
       isActive: true,
       onboardingCompleted: true,
     },
@@ -71,6 +141,8 @@ async function main() {
       role: 'CONSULTANT',
       phone: '+351910000003',
       supervisorId: joao.id,
+      agencyId: agency.id,
+      locationId: defaultLocation.id,
       isActive: true,
       onboardingCompleted: true,
     },
@@ -84,12 +156,50 @@ async function main() {
       role: 'CONSULTANT',
       phone: '+351910000004',
       supervisorId: joao.id,
+      agencyId: agency.id,
+      locationId: defaultLocation.id,
       isActive: true,
       onboardingCompleted: true,
     },
   });
 
-  console.log(`Criados 4 utilizadores`);
+  // Utilizadores de teste com novos roles
+  await prisma.user.create({
+    data: {
+      name: 'Admin Escritório',
+      email: 'location-admin@crm.pt',
+      passwordHash: userHash,
+      role: 'LOCATION_ADMIN',
+      agencyId: agency.id,
+      locationId: defaultLocation.id,
+      isActive: true,
+      onboardingCompleted: true,
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      name: 'Consultor Limitado',
+      email: 'user@crm.pt',
+      passwordHash: userHash,
+      role: 'USER',
+      agencyId: agency.id,
+      locationId: defaultLocation.id,
+      isActive: true,
+      onboardingCompleted: true,
+      permissions: {
+        contacts: ['view', 'create'],
+        opportunities: ['view'],
+        properties: ['view'],
+        tasks: ['view', 'create'],
+        appointments: ['view'],
+        conversations: [], campaigns: [], forms: [],
+        automations: [], reports: [], settings: [], users: [],
+      },
+    },
+  });
+
+  console.log('✓ 6 utilizadores criados');
 
   // ─── IMÓVEIS (20) ─────────────────────────────────────────────────────────────
   const properties = await Promise.all([
@@ -532,14 +642,28 @@ async function main() {
   }});
   console.log(`Criadas 2 campanhas email`);
 
+  // ─── BACKFILL locationId em todos os registos ────────────────────────────────
+  const lid = defaultLocation.id;
+  await Promise.all([
+    prisma.property.updateMany({ where: { locationId: null }, data: { locationId: lid } }),
+    prisma.contact.updateMany({ where: { locationId: null }, data: { locationId: lid } }),
+    prisma.opportunity.updateMany({ where: { locationId: null }, data: { locationId: lid } }),
+    prisma.task.updateMany({ where: { locationId: null }, data: { locationId: lid } }),
+    prisma.appointment.updateMany({ where: { locationId: null }, data: { locationId: lid } }),
+    prisma.conversation.updateMany({ where: { locationId: null }, data: { locationId: lid } }),
+  ]);
+  console.log('✓ Backfill locationId concluído');
+
   console.log('\nSeed concluído com sucesso!');
   console.log('\nCredenciais de acesso:');
-  console.log('   admin@crm.pt    | Admin123! | ADMIN');
-  console.log('   joao@crm.pt     | Pass123!  | PRINCIPAL_CONSULTANT');
-  console.log('   ana@crm.pt      | Pass123!  | SUB_AGENT');
-  console.log('   pedro@crm.pt    | Pass123!  | SUB_AGENT');
+  console.log('   admin@crm.pt           | Admin123! | AGENCY_OWNER');
+  console.log('   joao@crm.pt            | Pass123!  | TEAM_LEADER');
+  console.log('   ana@crm.pt             | Pass123!  | CONSULTANT');
+  console.log('   pedro@crm.pt           | Pass123!  | CONSULTANT');
+  console.log('   location-admin@crm.pt  | Pass123!  | LOCATION_ADMIN');
+  console.log('   user@crm.pt            | Pass123!  | USER (permissões limitadas)');
   console.log('\nDados criados:');
-  console.log('   4 utilizadores | 20 imóveis | 50 contactos | 12 oportunidades');
+  console.log('   6 utilizadores | 20 imóveis | 50 contactos | 12 oportunidades');
   console.log('   15 interações  | 12 tarefas | 5 agendamentos | 6 automações');
 }
 

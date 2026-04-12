@@ -1,15 +1,9 @@
 import prisma from '../../config/database';
+import { buildPropertyScope } from '../../lib/scope';
+import { logActivity } from '../../lib/activity-logger';
 
 const buildWhereClause = async (user: any): Promise<any> => {
-  if (user.role === 'ADMIN') return {};
-  if (user.role === 'PRINCIPAL_CONSULTANT') {
-    const subAgents = await prisma.user.findMany({
-      where: { supervisorId: user.id },
-      select: { id: true },
-    });
-    return { createdById: { in: [user.id, ...subAgents.map((a: any) => a.id)] } };
-  }
-  return { createdById: user.id };
+  return buildPropertyScope(user);
 };
 
 export const list = async (
@@ -92,6 +86,7 @@ export const create = async (
       reference: dto.reference,
       imageUrls: dto.imageUrls ?? '[]',
       createdById: user.id,
+      locationId: user.locationId ?? null,
     },
   });
 };
@@ -177,5 +172,13 @@ export const remove = async (id: string, user: any) => {
     throw err;
   }
 
+  logActivity({
+    userId: user.id,
+    agencyId: user.agencyId ?? undefined,
+    locationId: user.locationId ?? undefined,
+    action: 'property.delete',
+    entityType: 'Property',
+    entityId: id,
+  });
   return prisma.property.delete({ where: { id } });
 };

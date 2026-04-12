@@ -13,14 +13,15 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
   primary: {
-    background: 'linear-gradient(135deg, #1a2e4a, #243d5e)',
+    background: '#0f2553',
     color: '#fff',
     border: 'none',
+    boxShadow: '0 4px 14px rgba(15,37,83,0.22)',
   },
   secondary: {
-    background: 'var(--bg-page)',
-    color: 'var(--text-secondary)',
-    border: '1px solid var(--border-color)',
+    background: '#ffffff',
+    color: '#0f2553',
+    border: '1.5px solid #dce3ef',
   },
   danger: {
     background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
@@ -29,7 +30,7 @@ const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
   },
   ghost: {
     background: 'transparent',
-    color: 'var(--text-secondary)',
+    color: '#6b7a99',
     border: '1px solid transparent',
   },
 }

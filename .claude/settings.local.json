@@ -19,7 +19,8 @@
       "Bash(powershell.exe -Command \"Stop-Process -Id 59524 -Force\" sleep 3 cd \"c:\\\\Users\\\\Notpr\\\\OneDrive\\\\Ambiente de Trabalho\\\\Crm Consultores Imobiliarios\\\\backend\")",
       "Bash(npx --yes localtunnel --version)",
       "Bash(powershell.exe -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force\")",
-      "Bash(npx tsx -e \":*)"
+      "Bash(npx tsx -e \":*)",
+      "Bash(VITE_API_URL=https://fresh-pens-vanish.loca.lt/api npm run build)"
     ]
   }
 }

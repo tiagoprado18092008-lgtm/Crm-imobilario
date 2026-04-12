@@ -1,11 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Task } from '../../types'
 import { TASK_STATUS_LABELS } from '../../utils/constants'
 
 interface CalendarViewProps {
   tasks: Task[]
+  calendarEvents?: any[]
   onTaskClick?: (task: Task) => void
+  onEventClick?: (event: any) => void
+  onCreateOnDate?: (date: Date) => void // called when drag-to-create finishes
+  onCreateEventOnDate?: (date: Date) => void
 }
 
 const MONTH_NAMES = [
@@ -15,22 +19,22 @@ const MONTH_NAMES = [
 const DAY_NAMES_LONG = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado']
 const DAY_NAMES_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 
+const HOURS = Array.from({ length: 17 }, (_, i) => i + 7) // 07–23
+const HOUR_H = 56
+const GRID_START = 7
+
 const STATUS_BG: Record<string, string> = {
   PENDING: '#6366f1', IN_PROGRESS: '#2563eb', COMPLETED: '#64748b', CANCELLED: '#94a3b8',
 }
 
-function taskBg(task: Task): string {
-  return STATUS_BG[task.status] ?? '#6366f1'
-}
+function taskBg(task: Task): string { return STATUS_BG[task.status] ?? '#6366f1' }
 
 function toDateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
 
 function getWeekStart(d: Date): Date {
-  const s = new Date(d)
-  s.setDate(d.getDate() - d.getDay())
-  return s
+  const s = new Date(d); s.setDate(d.getDate() - d.getDay()); s.setHours(0,0,0,0); return s
 }
 
 const iconBtnStyle: React.CSSProperties = {
@@ -41,8 +45,8 @@ const iconBtnStyle: React.CSSProperties = {
 
 type ViewMode = 'month' | 'week' | 'day'
 
-export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick }) => {
-  const [view, setView] = useState<ViewMode>('month')
+export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, calendarEvents = [], onTaskClick, onEventClick, onCreateOnDate, onCreateEventOnDate }) => {
+  const [view, setView] = useState<ViewMode>('week')
   const [currentDate, setCurrentDate] = useState(new Date())
 
   const today = new Date()
@@ -90,15 +94,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick }
     <div style={{ fontFamily: 'inherit', color: 'var(--text-primary)' }}>
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        <button
-          onClick={goToToday}
-          style={{
-            padding: '5px 14px', fontSize: 12, fontWeight: 600, borderRadius: 8, cursor: 'pointer',
-            border: '1px solid #6366f1', background: 'transparent', color: '#6366f1',
-          }}
-        >
-          Hoje
-        </button>
+        <button onClick={goToToday} style={{
+          padding: '5px 14px', fontSize: 12, fontWeight: 600, borderRadius: 8, cursor: 'pointer',
+          border: '1px solid #6366f1', background: 'transparent', color: '#6366f1',
+        }}>Hoje</button>
 
         <div style={{ display: 'flex', gap: 2 }}>
           <button onClick={goBack} style={iconBtnStyle}><ChevronLeft size={16} /></button>
@@ -130,7 +129,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick }
           tasksByKey={tasksByKey}
           todayKey={todayKey}
           onTaskClick={onTaskClick}
-          onDayClick={d => { setCurrentDate(d); setView('day') }}
+          onCreateOnDate={onCreateOnDate}
         />
       )}
       {view === 'week' && (
@@ -139,7 +138,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick }
           tasksByKey={tasksByKey}
           todayKey={todayKey}
           onTaskClick={onTaskClick}
-          onDayClick={d => { setCurrentDate(d); setView('day') }}
+          onCreateOnDate={onCreateOnDate}
         />
       )}
       {view === 'day' && (
@@ -148,7 +147,47 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick }
           tasksByKey={tasksByKey}
           todayKey={todayKey}
           onTaskClick={onTaskClick}
+          onCreateOnDate={onCreateOnDate}
         />
+      )}
+
+      {/* Calendar Events (from Google/Outlook) */}
+      {calendarEvents.length > 0 && (
+        <div style={{ marginTop: 16, border: '1px solid var(--border-color)', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ padding: '10px 16px', background: 'var(--hover-bg)', borderBottom: '1px solid var(--border-color)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+            Eventos de Calendário ({calendarEvents.length})
+          </div>
+          <div style={{ padding: 12, background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {calendarEvents.slice(0, 10).map((ev: any) => (
+              <div key={ev.id} onClick={() => onEventClick?.(ev)} style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+                borderRadius: 7, background: 'var(--hover-bg)',
+                borderLeft: `3px solid ${ev.color || '#10b981'}`,
+                cursor: onEventClick ? 'pointer' : 'default',
+              }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: ev.color || '#10b981', flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title}</span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)', flexShrink: 0 }}>
+                  {new Date(ev.startAt).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })}
+                  {!ev.isAllDay && ` · ${new Date(ev.startAt).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`}
+                </span>
+                {ev.externalProvider && (
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 10,
+                    background: ev.externalProvider === 'google' ? 'rgba(66,133,244,0.1)' : 'rgba(0,120,212,0.1)',
+                    color: ev.externalProvider === 'google' ? '#4285f4' : '#0078d4' }}>
+                    {ev.externalProvider === 'google' ? 'Google' : 'Outlook'}
+                  </span>
+                )}
+              </div>
+            ))}
+            {calendarEvents.length > 10 && (
+              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
+                +{calendarEvents.length - 10} eventos adicionais
+              </p>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Undated tasks */}
@@ -159,15 +198,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onTaskClick }
           </div>
           <div style={{ padding: 12, background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', gap: 6 }}>
             {undatedTasks.map(t => (
-              <div key={t.id}
-                onClick={() => onTaskClick?.(t)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
-                  borderRadius: 7, background: 'var(--hover-bg)',
-                  borderLeft: `3px solid ${taskBg(t)}`,
-                  cursor: onTaskClick ? 'pointer' : 'default',
-                }}
-              >
+              <div key={t.id} onClick={() => onTaskClick?.(t)} style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
+                borderRadius: 7, background: 'var(--hover-bg)',
+                borderLeft: `3px solid ${taskBg(t)}`,
+                cursor: onTaskClick ? 'pointer' : 'default',
+              }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: taskBg(t), flexShrink: 0 }} />
                 <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
                 <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: taskBg(t) + '22', color: taskBg(t), flexShrink: 0 }}>
@@ -196,8 +232,8 @@ function EventPill({ task, onClick, compact }: EventPillProps) {
         padding: compact ? '1px 5px' : '2px 7px',
         fontSize: compact ? 10 : 11, fontWeight: 500,
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        cursor: onClick ? 'pointer' : 'default',
-        marginBottom: 2,
+        cursor: onClick ? 'pointer' : 'default', marginBottom: 2,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
       }}
     >
       {task.title}
@@ -212,10 +248,10 @@ interface MonthViewProps {
   tasksByKey: Record<string, Task[]>
   todayKey: string
   onTaskClick?: (t: Task) => void
-  onDayClick: (d: Date) => void
+  onCreateOnDate?: (d: Date) => void
 }
 
-function MonthView({ currentDate, tasksByKey, todayKey, onTaskClick, onDayClick }: MonthViewProps) {
+function MonthView({ currentDate, tasksByKey, todayKey, onTaskClick, onCreateOnDate }: MonthViewProps) {
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
   const firstDay = new Date(year, month, 1)
@@ -225,44 +261,35 @@ function MonthView({ currentDate, tasksByKey, todayKey, onTaskClick, onDayClick 
 
   return (
     <div style={{ border: '1px solid var(--border-color)', borderRadius: 10, overflow: 'hidden' }}>
-      {/* Day headers */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', background: 'var(--hover-bg)', borderBottom: '1px solid var(--border-color)' }}>
         {DAY_NAMES_SHORT.map(d => (
           <div key={d} style={{ textAlign: 'center', padding: '8px 0', fontSize: 11, fontWeight: 700,
-            textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
-            {d}
-          </div>
+            textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>{d}</div>
         ))}
       </div>
-
-      {/* Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
         {Array.from({ length: startPadding }).map((_, i) => (
-          <div key={`pad-${i}`} style={{
-            minHeight: 100, padding: '4px 6px',
+          <div key={`pad-${i}`} style={{ minHeight: 100, padding: '4px 6px',
             borderRight: (i % 7) < 6 ? '1px solid var(--border-color)' : 'none',
-            borderBottom: '1px solid var(--border-color)',
-            background: 'var(--bg-page)',
-          }} />
+            borderBottom: '1px solid var(--border-color)', background: 'var(--bg-page)' }} />
         ))}
-
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const day = i + 1
-          const key = toDateKey(new Date(year, month, day))
+          const date = new Date(year, month, day)
+          const key = toDateKey(date)
           const isToday = key === todayKey
           const dayTasks = tasksByKey[key] || []
           const overflow = dayTasks.length - MAX_PILLS
           const col = (startPadding + i) % 7
-
           return (
-            <div key={day} onClick={() => onDayClick(new Date(year, month, day))}
+            <div key={day}
+              onClick={() => onCreateOnDate?.(date)}
               style={{
                 minHeight: 100, padding: '4px 6px', cursor: 'pointer',
                 borderRight: col < 6 ? '1px solid var(--border-color)' : 'none',
                 borderBottom: '1px solid var(--border-color)',
                 background: isToday ? 'rgba(99,102,241,0.06)' : 'var(--bg-card)',
-                display: 'flex', flexDirection: 'column',
-                transition: 'background 100ms',
+                display: 'flex', flexDirection: 'column', transition: 'background 100ms',
               }}
               onMouseEnter={e => { if (!isToday) e.currentTarget.style.background = 'var(--hover-bg)' }}
               onMouseLeave={e => { if (!isToday) e.currentTarget.style.background = 'var(--bg-card)' }}
@@ -273,9 +300,7 @@ function MonthView({ currentDate, tasksByKey, todayKey, onTaskClick, onDayClick 
                 background: isToday ? '#6366f1' : 'transparent',
                 color: isToday ? '#fff' : 'var(--text-primary)',
                 fontSize: 12, fontWeight: isToday ? 700 : 400, flexShrink: 0,
-              }}>
-                {day}
-              </div>
+              }}>{day}</div>
               <div style={{ flex: 1, overflow: 'hidden' }}>
                 {dayTasks.slice(0, MAX_PILLS).map(t => (
                   <EventPill key={t.id} task={t} onClick={onTaskClick} compact />
@@ -294,173 +319,374 @@ function MonthView({ currentDate, tasksByKey, todayKey, onTaskClick, onDayClick 
   )
 }
 
-// ── WeekView ──────────────────────────────────────────────────────────────────
+// ── WeekView — Google Calendar-style time grid ────────────────────────────────
 
 interface WeekViewProps {
   currentDate: Date
   tasksByKey: Record<string, Task[]>
   todayKey: string
   onTaskClick?: (t: Task) => void
-  onDayClick: (d: Date) => void
+  onCreateOnDate?: (d: Date) => void
 }
 
-function WeekView({ currentDate, tasksByKey, todayKey, onTaskClick, onDayClick }: WeekViewProps) {
+function WeekView({ currentDate, tasksByKey, todayKey, onTaskClick, onCreateOnDate }: WeekViewProps) {
+  const gridRef = useRef<HTMLDivElement>(null)
+  const colRefs = useRef<(HTMLDivElement | null)[]>([])
+  const dragRef = useRef<{ dayIndex: number; startMin: number; endMin: number } | null>(null)
+  const [drag, setDrag] = useState<{ dayIndex: number; startMin: number; endMin: number } | null>(null)
+
   const weekStart = getWeekStart(currentDate)
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart); d.setDate(weekStart.getDate() + i); return d
   })
 
+  useEffect(() => {
+    if (gridRef.current) gridRef.current.scrollTop = (8 - GRID_START) * HOUR_H
+  }, [])
+
+  const snap = (min: number) => Math.round(min / 15) * 15
+  const yToMin = (y: number) => snap(Math.max(0, Math.min(y, HOURS.length * HOUR_H)) / HOUR_H * 60)
+  const colY = (di: number, clientY: number) => {
+    const el = colRefs.current[di]; if (!el) return 0
+    return clientY - el.getBoundingClientRect().top
+  }
+
+  const onColMouseDown = (e: React.MouseEvent, di: number) => {
+    if (e.button !== 0) return
+    e.preventDefault()
+    const startMin = yToMin(colY(di, e.clientY))
+    const state = { dayIndex: di, startMin, endMin: startMin + 60 }
+    dragRef.current = state; setDrag(state)
+  }
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragRef.current) return
+      const endMin = Math.max(yToMin(colY(dragRef.current.dayIndex, e.clientY)), dragRef.current.startMin + 15)
+      const next = { ...dragRef.current, endMin }
+      dragRef.current = next; setDrag(next)
+    }
+    const onUp = () => {
+      const d = dragRef.current; if (!d) return
+      dragRef.current = null; setDrag(null)
+      onCreateOnDate?.(days[d.dayIndex])
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+  }, [days, onCreateOnDate])
+
+  // Current time
+  const now = new Date()
+  const nowMin = (now.getHours() - GRID_START) * 60 + now.getMinutes()
+  const nowTop = (nowMin / 60) * HOUR_H
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const minToLabel = (min: number) => `${pad(Math.floor(min / 60) + GRID_START)}:${pad(min % 60)}`
+
   return (
-    <div style={{ border: '1px solid var(--border-color)', borderRadius: 10, overflow: 'hidden' }}>
-      {/* Header row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)',
-        borderBottom: '2px solid var(--border-color)', background: 'var(--hover-bg)' }}>
+    <div style={{ border: '1px solid var(--border-color)', borderRadius: 10, overflow: 'hidden', background: 'var(--bg-card)' }}>
+
+      {/* Day headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: '52px repeat(7, 1fr)', borderBottom: '1px solid var(--border-color)', background: 'var(--hover-bg)' }}>
+        <div style={{ borderRight: '1px solid var(--border-color)' }} />
         {days.map((d, i) => {
-          const key = toDateKey(d)
-          const isToday = key === todayKey
+          const isToday = toDateKey(d) === todayKey
           return (
-            <div key={i} onClick={() => onDayClick(d)} style={{
-              padding: '10px 8px', textAlign: 'center', cursor: 'pointer',
-              borderRight: i < 6 ? '1px solid var(--border-color)' : 'none',
-            }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
-                letterSpacing: '0.05em', color: isToday ? '#6366f1' : 'var(--text-muted)' }}>
+            <div key={i} style={{ padding: '8px 4px', textAlign: 'center', borderLeft: i > 0 ? '1px solid var(--border-color)' : undefined }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: isToday ? '#6366f1' : 'var(--text-muted)' }}>
                 {DAY_NAMES_SHORT[d.getDay()]}
               </div>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                width: 32, height: 32, borderRadius: '50%', marginTop: 4,
+                width: 30, height: 30, borderRadius: '50%', marginTop: 2,
                 background: isToday ? '#6366f1' : 'transparent',
                 color: isToday ? '#fff' : 'var(--text-primary)',
-                fontSize: 16, fontWeight: isToday ? 700 : 400,
-              }}>
-                {d.getDate()}
-              </div>
+                fontSize: 14, fontWeight: isToday ? 700 : 400,
+              }}>{d.getDate()}</div>
             </div>
           )
         })}
       </div>
 
-      {/* Event cells */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
-        {days.map((d, i) => {
-          const key = toDateKey(d)
-          const dayTasks = tasksByKey[key] || []
-          const isToday = key === todayKey
-          return (
-            <div key={i} onClick={() => onDayClick(d)} style={{
-              minHeight: 140, padding: 6, cursor: 'pointer',
-              borderRight: i < 6 ? '1px solid var(--border-color)' : 'none',
-              background: isToday ? 'rgba(99,102,241,0.04)' : 'var(--bg-card)',
-              transition: 'background 100ms',
-            }}
-            onMouseEnter={e => { if (!isToday) e.currentTarget.style.background = 'var(--hover-bg)' }}
-            onMouseLeave={e => { if (!isToday) e.currentTarget.style.background = 'var(--bg-card)' }}
-            >
-              {dayTasks.length === 0 ? (
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center',
-                  marginTop: 20, fontStyle: 'italic' }}>—</div>
-              ) : (
-                dayTasks.map(t => <EventPill key={t.id} task={t} onClick={onTaskClick} />)
-              )}
-            </div>
-          )
-        })}
+      {/* All-day tasks row */}
+      {days.some(d => (tasksByKey[toDateKey(d)] || []).length > 0) && (
+        <div style={{ display: 'grid', gridTemplateColumns: '52px repeat(7, 1fr)', borderBottom: '1px solid var(--border-color)', background: 'var(--hover-bg)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6, borderRight: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>dia</span>
+          </div>
+          {days.map((d, i) => {
+            const dayTasks = tasksByKey[toDateKey(d)] || []
+            return (
+              <div key={i} style={{ borderLeft: '1px solid var(--border-color)', padding: '3px 2px', minHeight: 28 }}>
+                {dayTasks.map(t => (
+                  <div key={t.id} onClick={e => { e.stopPropagation(); onTaskClick?.(t) }} title={t.title} style={{
+                    background: taskBg(t), color: '#fff', borderRadius: 4,
+                    padding: '2px 6px', fontSize: 11, fontWeight: 500,
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    cursor: 'pointer', marginBottom: 2, boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+                  }}>{t.title}</div>
+                ))}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Scrollable time grid */}
+      <div ref={gridRef} style={{ overflowY: 'auto', maxHeight: 580 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '52px repeat(7, 1fr)', position: 'relative' }}>
+
+          {/* Hour labels */}
+          <div style={{ borderRight: '1px solid var(--border-color)' }}>
+            {HOURS.map(h => (
+              <div key={h} style={{ height: HOUR_H, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', paddingRight: 8, paddingTop: 2 }}>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                  {String(h).padStart(2, '0')}:00
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Day columns */}
+          {days.map((d, di) => {
+            const isToday = toDateKey(d) === todayKey
+            const isDragging = drag?.dayIndex === di
+            return (
+              <div
+                key={di}
+                ref={el => { colRefs.current[di] = el }}
+                onMouseDown={e => onColMouseDown(e, di)}
+                style={{
+                  borderLeft: '1px solid var(--border-color)',
+                  position: 'relative',
+                  background: isToday ? 'rgba(99,102,241,0.025)' : 'transparent',
+                  height: HOURS.length * HOUR_H,
+                  cursor: 'crosshair',
+                  userSelect: 'none',
+                }}
+              >
+                {/* Hour grid lines */}
+                {HOURS.map((_, hi) => (
+                  <div key={hi} style={{
+                    position: 'absolute', top: hi * HOUR_H, left: 0, right: 0,
+                    borderTop: '1px solid var(--border-subtle)', height: HOUR_H,
+                  }} />
+                ))}
+
+                {/* Half-hour subtle line */}
+                {HOURS.map((_, hi) => (
+                  <div key={`h-${hi}`} style={{
+                    position: 'absolute', top: hi * HOUR_H + HOUR_H / 2, left: 0, right: 0,
+                    borderTop: '1px dashed var(--border-subtle)', opacity: 0.5,
+                  }} />
+                ))}
+
+                {/* Current time indicator */}
+                {isToday && nowMin >= 0 && nowMin <= HOURS.length * 60 && (
+                  <>
+                    <div style={{
+                      position: 'absolute', top: nowTop, left: 0, right: 0,
+                      height: 2, background: '#ef4444', zIndex: 3,
+                    }} />
+                    <div style={{
+                      position: 'absolute', top: nowTop - 3, left: -4,
+                      width: 8, height: 8, borderRadius: '50%', background: '#ef4444', zIndex: 4,
+                    }} />
+                  </>
+                )}
+
+                {/* Drag preview block */}
+                {isDragging && drag && (() => {
+                  const minS = Math.min(drag.startMin, drag.endMin)
+                  const minE = Math.max(drag.startMin, drag.endMin)
+                  const top = (minS / 60) * HOUR_H
+                  const height = Math.max(15, minE - minS) / 60 * HOUR_H
+                  return (
+                    <div style={{
+                      position: 'absolute', top: top + 1, left: 2, right: 2,
+                      height: height - 2, borderRadius: 6,
+                      background: 'rgba(99,102,241,0.85)',
+                      border: '2px solid #6366f1',
+                      padding: '3px 6px', zIndex: 10, pointerEvents: 'none',
+                      boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
+                    }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>
+                        Nova tarefa
+                      </div>
+                      {height > 28 && (
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.9)' }}>
+                          {minToLabel(minS)} – {minToLabel(minE)}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
 }
 
-// ── DayView ───────────────────────────────────────────────────────────────────
+// ── DayView — single day time grid ────────────────────────────────────────────
 
 interface DayViewProps {
   currentDate: Date
   tasksByKey: Record<string, Task[]>
   todayKey: string
   onTaskClick?: (t: Task) => void
+  onCreateOnDate?: (d: Date) => void
 }
 
-function DayView({ currentDate, tasksByKey, todayKey, onTaskClick }: DayViewProps) {
+function DayView({ currentDate, tasksByKey, todayKey, onTaskClick, onCreateOnDate }: DayViewProps) {
+  const gridRef = useRef<HTMLDivElement>(null)
+  const colRef = useRef<HTMLDivElement>(null)
+  const dragRef = useRef<{ startMin: number; endMin: number } | null>(null)
+  const [drag, setDrag] = useState<{ startMin: number; endMin: number } | null>(null)
+
   const key = toDateKey(currentDate)
   const dayTasks = tasksByKey[key] || []
   const isToday = key === todayKey
 
+  useEffect(() => {
+    if (gridRef.current) gridRef.current.scrollTop = (8 - GRID_START) * HOUR_H
+  }, [])
+
+  const snap = (min: number) => Math.round(min / 15) * 15
+  const yToMin = (y: number) => snap(Math.max(0, Math.min(y, HOURS.length * HOUR_H)) / HOUR_H * 60)
+  const colY = (clientY: number) => {
+    const el = colRef.current; if (!el) return 0
+    return clientY - el.getBoundingClientRect().top
+  }
+
+  const onColMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; e.preventDefault()
+    const startMin = yToMin(colY(e.clientY))
+    const state = { startMin, endMin: startMin + 60 }
+    dragRef.current = state; setDrag(state)
+  }
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragRef.current) return
+      const endMin = Math.max(yToMin(colY(e.clientY)), dragRef.current.startMin + 15)
+      const next = { ...dragRef.current, endMin }
+      dragRef.current = next; setDrag(next)
+    }
+    const onUp = () => {
+      if (!dragRef.current) return
+      dragRef.current = null; setDrag(null)
+      onCreateOnDate?.(currentDate)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
+  }, [currentDate, onCreateOnDate])
+
+  const now = new Date()
+  const nowMin = (now.getHours() - GRID_START) * 60 + now.getMinutes()
+  const nowTop = (nowMin / 60) * HOUR_H
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const minToLabel = (min: number) => `${pad(Math.floor(min / 60) + GRID_START)}:${pad(min % 60)}`
+
   return (
-    <div style={{ border: '1px solid var(--border-color)', borderRadius: 10, overflow: 'hidden' }}>
+    <div style={{ border: '1px solid var(--border-color)', borderRadius: 10, overflow: 'hidden', background: 'var(--bg-card)' }}>
       {/* Header */}
       <div style={{
-        padding: '16px 20px', borderBottom: '1px solid var(--border-color)',
-        background: isToday ? 'rgba(99,102,241,0.06)' : 'var(--hover-bg)',
-        display: 'flex', alignItems: 'center', gap: 14,
+        display: 'grid', gridTemplateColumns: '52px 1fr',
+        borderBottom: '1px solid var(--border-color)', background: 'var(--hover-bg)',
       }}>
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
-          background: isToday ? '#6366f1' : 'var(--bg-card)',
-          border: isToday ? 'none' : '1px solid var(--border-color)',
-          color: isToday ? '#fff' : 'var(--text-primary)',
-        }}>
-          <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', lineHeight: 1.3 }}>
-            {DAY_NAMES_SHORT[currentDate.getDay()]}
-          </span>
-          <span style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>
-            {currentDate.getDate()}
-          </span>
-        </div>
-        <div>
-          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)' }}>
-            {MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}
+        <div style={{ borderRight: '1px solid var(--border-color)' }} />
+        <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            width: 42, height: 42, borderRadius: '50%', justifyContent: 'center',
+            background: isToday ? '#6366f1' : 'var(--bg-card)',
+            border: isToday ? 'none' : '1px solid var(--border-color)',
+            color: isToday ? '#fff' : 'var(--text-primary)',
+          }}>
+            <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {DAY_NAMES_SHORT[currentDate.getDay()]}
+            </span>
+            <span style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2 }}>{currentDate.getDate()}</span>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-            {dayTasks.length} {dayTasks.length === 1 ? 'tarefa' : 'tarefas'}
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{MONTH_NAMES[currentDate.getMonth()]} {currentDate.getFullYear()}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{dayTasks.length} tarefa{dayTasks.length !== 1 ? 's' : ''}</div>
           </div>
         </div>
       </div>
 
-      {/* Task list */}
-      <div style={{ padding: 16, background: 'var(--bg-card)', minHeight: 200 }}>
-        {dayTasks.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)', fontSize: 13, fontStyle: 'italic' }}>
-            Sem tarefas para este dia.
+      {/* All-day tasks */}
+      {dayTasks.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: '52px 1fr', borderBottom: '1px solid var(--border-color)', background: 'var(--hover-bg)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6, borderRight: '1px solid var(--border-color)', fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase' }}>dia</div>
+          <div style={{ padding: '4px 6px' }}>
+            {dayTasks.map(t => (
+              <div key={t.id} onClick={() => onTaskClick?.(t)} title={t.title} style={{
+                background: taskBg(t), color: '#fff', borderRadius: 4,
+                padding: '2px 8px', fontSize: 12, fontWeight: 500,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                cursor: 'pointer', marginBottom: 3, boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+              }}>{t.title}</div>
+            ))}
           </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {dayTasks.map(task => (
-              <div key={task.id}
-                onClick={() => onTaskClick?.(task)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '10px 14px', borderRadius: 8,
-                  background: 'var(--hover-bg)',
-                  borderLeft: `4px solid ${taskBg(task)}`,
-                  cursor: onTaskClick ? 'pointer' : 'default',
-                  transition: 'background 100ms',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-page)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'var(--hover-bg)' }}
-              >
-                <div style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, background: taskBg(task) }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)',
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {task.title}
-                  </div>
-                  {task.contact && (
-                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
-                      {task.contact.name}
-                    </div>
-                  )}
-                </div>
-                <span style={{
-                  fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
-                  background: taskBg(task) + '22', color: taskBg(task), flexShrink: 0,
-                }}>
-                  {TASK_STATUS_LABELS[task.status]}
-                </span>
+        </div>
+      )}
+
+      {/* Time grid */}
+      <div ref={gridRef} style={{ overflowY: 'auto', maxHeight: 580 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '52px 1fr', position: 'relative' }}>
+          <div style={{ borderRight: '1px solid var(--border-color)' }}>
+            {HOURS.map(h => (
+              <div key={h} style={{ height: HOUR_H, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', paddingRight: 8, paddingTop: 2 }}>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{String(h).padStart(2,'0')}:00</span>
               </div>
             ))}
           </div>
-        )}
+          <div
+            ref={colRef}
+            onMouseDown={onColMouseDown}
+            style={{ position: 'relative', height: HOURS.length * HOUR_H, cursor: 'crosshair', userSelect: 'none',
+              background: isToday ? 'rgba(99,102,241,0.02)' : 'transparent' }}
+          >
+            {HOURS.map((_, hi) => (
+              <div key={hi} style={{ position: 'absolute', top: hi * HOUR_H, left: 0, right: 0, borderTop: '1px solid var(--border-subtle)', height: HOUR_H }} />
+            ))}
+            {HOURS.map((_, hi) => (
+              <div key={`h-${hi}`} style={{ position: 'absolute', top: hi * HOUR_H + HOUR_H / 2, left: 0, right: 0, borderTop: '1px dashed var(--border-subtle)', opacity: 0.5 }} />
+            ))}
+            {isToday && nowMin >= 0 && (
+              <>
+                <div style={{ position: 'absolute', top: nowTop, left: 0, right: 0, height: 2, background: '#ef4444', zIndex: 3 }} />
+                <div style={{ position: 'absolute', top: nowTop - 3, left: -4, width: 8, height: 8, borderRadius: '50%', background: '#ef4444', zIndex: 4 }} />
+              </>
+            )}
+            {drag && (() => {
+              const minS = Math.min(drag.startMin, drag.endMin)
+              const minE = Math.max(drag.startMin, drag.endMin)
+              const top = (minS / 60) * HOUR_H
+              const height = Math.max(15, minE - minS) / 60 * HOUR_H
+              return (
+                <div style={{
+                  position: 'absolute', top: top + 1, left: 2, right: 2,
+                  height: height - 2, borderRadius: 6,
+                  background: 'rgba(99,102,241,0.85)', border: '2px solid #6366f1',
+                  padding: '3px 6px', zIndex: 10, pointerEvents: 'none',
+                  boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>Nova tarefa</div>
+                  {height > 28 && (
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.9)' }}>{minToLabel(minS)} – {minToLabel(minE)}</div>
+                  )}
+                </div>
+              )
+            })()}
+          </div>
+        </div>
       </div>
     </div>
   )

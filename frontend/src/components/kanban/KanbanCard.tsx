@@ -1,4 +1,5 @@
 import React from 'react'
+import ReactDOM from 'react-dom'
 import { Draggable } from '@hello-pangea/dnd'
 import { Phone, MessageSquare, MessageCircle, FileText, CheckSquare, Calendar } from 'lucide-react'
 import type { Opportunity } from '../../types'
@@ -19,112 +20,186 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
 
   return (
     <Draggable draggableId={opportunity.id} index={index}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          onClick={() => onClick(opportunity)}
-          style={{
-            ...provided.draggableProps.style,
-            background: snapshot.isDragging ? 'rgba(99,102,241,0.08)' : 'var(--bg-card)',
-            boxShadow: snapshot.isDragging
-              ? '0 8px 24px rgba(59,130,246,0.18)'
-              : '0 1px 4px rgba(0,0,0,0.07)',
-            border: snapshot.isDragging ? '1.5px solid #93c5fd' : '1px solid #e2e8f0',
-            borderRadius: 10,
-            padding: '10px 12px',
-            cursor: 'pointer',
-            userSelect: 'none',
-            position: 'relative',
-          }}
-        >
-          {/* Agent avatar top-right */}
-          {opportunity.assignedTo && (
+      {(provided, snapshot) => {
+        const card = (
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            {...provided.dragHandleProps}
+            onClick={() => onClick(opportunity)}
+            style={{
+              ...provided.draggableProps.style,
+              background: snapshot.isDragging ? 'rgba(99,102,241,0.04)' : 'var(--bg-card)',
+              boxShadow: snapshot.isDragging
+                ? '0 8px 24px rgba(59,130,246,0.18)'
+                : '0 1px 3px rgba(0,0,0,0.06)',
+              border: snapshot.isDragging
+                ? '1.5px solid #93c5fd'
+                : '1px solid var(--border-color)',
+              borderRadius: 8,
+              padding: '10px 12px',
+              cursor: 'pointer',
+              userSelect: 'none',
+              position: snapshot.isDragging
+                ? (provided.draggableProps.style as any)?.position
+                : 'relative',
+            }}
+          >
+            {/* Title row + avatar */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
+              <p
+                style={{
+                  flex: 1,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  lineHeight: 1.4,
+                  overflow: 'hidden',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical' as any,
+                  margin: 0,
+                }}
+              >
+                {opportunity.title}
+              </p>
+              {opportunity.assignedTo && (
+                <div
+                  title={opportunity.assignedTo.name}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: '#fff',
+                    flexShrink: 0,
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                  }}
+                >
+                  {getInitials(opportunity.assignedTo.name)}
+                </div>
+              )}
+            </div>
+
+            {/* Source row */}
             <div
               style={{
-                position: 'absolute',
-                top: 10,
-                right: 10,
-                width: 28,
-                height: 28,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 10,
-                fontWeight: 700,
-                color: '#fff',
-                flexShrink: 0,
-                boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                gap: 4,
+                marginBottom: 4,
               }}
-              title={opportunity.assignedTo.name}
             >
-              {getInitials(opportunity.assignedTo.name)}
+              <span
+                style={{
+                  fontSize: 11,
+                  color: 'var(--text-muted)',
+                  flexShrink: 0,
+                  minWidth: 100,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Fonte da oportu...
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  color: 'var(--text-secondary)',
+                  fontWeight: 500,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {opportunity.source || opportunity.contact?.source || '—'}
+              </span>
             </div>
-          )}
 
-          {/* Title */}
-          <p
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              marginBottom: 8,
-              paddingRight: opportunity.assignedTo ? 36 : 0,
-              lineHeight: 1.4,
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical' as any,
-            }}
-          >
-            {opportunity.title}
-          </p>
+            {/* Value row */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                marginBottom: 10,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 11,
+                  color: 'var(--text-muted)',
+                  flexShrink: 0,
+                  minWidth: 100,
+                }}
+              >
+                Valor da oportu...
+              </span>
+              <span
+                style={{
+                  fontSize: 11,
+                  color: opportunity.value ? '#16a34a' : 'var(--text-secondary)',
+                  fontWeight: opportunity.value ? 700 : 400,
+                }}
+              >
+                {opportunity.value ? formatCurrency(opportunity.value) : '€0.00'}
+              </span>
+            </div>
 
-          {/* Contact name */}
-          {opportunity.contact && (
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 5, fontWeight: 500 }}>
-              {opportunity.contact.name}
-            </p>
-          )}
+            {/* Contact name badge */}
+            {opportunity.contact?.name && (
+              <div style={{ marginBottom: 8 }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    fontSize: 10,
+                    fontWeight: 600,
+                    color: '#6366f1',
+                    background: 'rgba(99,102,241,0.08)',
+                    padding: '2px 7px',
+                    borderRadius: 20,
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {opportunity.contact.name}
+                </span>
+              </div>
+            )}
 
-          {/* Source row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Fonte da oportu...</span>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
-              {opportunity.source || opportunity.contact?.source || '—'}
-            </span>
+            {/* Action icons */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                paddingTop: 8,
+                borderTop: '1px solid var(--border-subtle)',
+              }}
+            >
+              <ActionBtn icon={<Phone size={12} />} label="Ligar" onClick={handleAction('call')} />
+              <ActionBtn icon={<MessageSquare size={12} />} label="SMS" onClick={handleAction('sms')} />
+              <ActionBtn icon={<MessageCircle size={12} />} label="WhatsApp" onClick={handleAction('whatsapp')} color="#25d366" />
+              <ActionBtn icon={<FileText size={12} />} label="Notas" onClick={handleAction('note')} />
+              <ActionBtn icon={<CheckSquare size={12} />} label="Tarefa" onClick={handleAction('task')} />
+              <ActionBtn icon={<Calendar size={12} />} label="Calendário" onClick={handleAction('calendar')} />
+            </div>
           </div>
+        )
 
-          {/* Value row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 10 }}>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Valor da oportu...</span>
-            <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>
-              {opportunity.value ? formatCurrency(opportunity.value) : '—'}
-            </span>
-          </div>
-
-          {/* Action icons row */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              paddingTop: 8,
-              borderTop: '1px solid #f1f5f9',
-            }}
-          >
-            <ActionBtn icon={<Phone size={12} />} label="Ligar" onClick={handleAction('call')} />
-            <ActionBtn icon={<MessageSquare size={12} />} label="SMS" onClick={handleAction('sms')} />
-            <ActionBtn icon={<MessageCircle size={12} />} label="WhatsApp" onClick={handleAction('whatsapp')} color="#25d366" />
-            <ActionBtn icon={<FileText size={12} />} label="Notas" onClick={handleAction('note')} />
-            <ActionBtn icon={<CheckSquare size={12} />} label="Tarefa" onClick={handleAction('task')} />
-            <ActionBtn icon={<Calendar size={12} />} label="Calendário" onClick={handleAction('calendar')} />
-          </div>
-        </div>
-      )}
+        return snapshot.isDragging
+          ? ReactDOM.createPortal(card, document.body)
+          : card
+      }}
     </Draggable>
   )
 }
@@ -147,7 +222,7 @@ const ActionBtn: React.FC<{
       width: 26,
       height: 26,
       borderRadius: 6,
-      border: '1px solid #e2e8f0',
+      border: '1px solid var(--border-color)',
       background: 'var(--bg-page)',
       color,
       cursor: 'pointer',
@@ -155,7 +230,7 @@ const ActionBtn: React.FC<{
       transition: 'background 150ms',
     }}
     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#eff6ff' }}
-    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#f8fafc' }}
+    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-page)' }}
   >
     {icon}
     {count != null && count > 0 && (

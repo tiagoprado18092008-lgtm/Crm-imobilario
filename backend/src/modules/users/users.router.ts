@@ -8,10 +8,10 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', usersController.list); // All authenticated users can list (needed for dropdowns)
-router.post('/', requireRole('ADMIN'), usersController.create);
+router.post('/', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN'), usersController.create);
 router.get('/:id', usersController.getById);
-router.put('/:id', requireRole('ADMIN'), usersController.update);
-router.delete('/:id', requireRole('ADMIN'), usersController.deactivate);
+router.put('/:id', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN'), usersController.update);
+router.delete('/:id', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN'), usersController.deactivate);
 router.patch('/:id', usersController.updateSelf);
 router.patch('/:id/password', usersController.changePassword);
 router.get('/:id/sub-agents', usersController.getSubAgents);

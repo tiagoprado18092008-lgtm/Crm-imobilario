@@ -79,6 +79,8 @@ const PropertyForm: React.FC<{
         bedrooms: data.bedrooms ? Number(data.bedrooms) : undefined,
         bathrooms: data.bathrooms ? Number(data.bathrooms) : undefined,
         parking: data.parking ? Number(data.parking) : undefined,
+        reference: data.reference || undefined,
+        description: data.description || undefined,
       }
       if (property) {
         await updateProperty(property.id, payload)
@@ -89,7 +91,7 @@ const PropertyForm: React.FC<{
       }
       onSuccess()
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'Erro ao guardar propriedade', 'error')
+      showToast(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao guardar propriedade', 'error')
     } finally {
       setSubmitting(false)
     }

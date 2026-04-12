@@ -1,0 +1,358 @@
+- generic [ref=e52]:
+  - complementary [ref=e55]:
+    - button "CasaFlow A minha agência" [ref=e57] [cursor=pointer]:
+      - img [ref=e59]
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - paragraph [ref=e64]: CasaFlow
+          - paragraph [ref=e65]: A minha agência
+        - img [ref=e66]
+    - button "Recolher" [ref=e69] [cursor=pointer]:
+      - img [ref=e71]
+    - navigation [ref=e73]:
+      - generic [ref=e74]:
+        - paragraph [ref=e75]: CRM
+        - list [ref=e76]:
+          - listitem [ref=e77]:
+            - link "Dashboard" [ref=e78] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e80]
+              - generic [ref=e85]: Dashboard
+          - listitem [ref=e86]:
+            - link "Conversas" [ref=e87] [cursor=pointer]:
+              - /url: /conversations
+              - img [ref=e89]
+              - generic [ref=e91]: Conversas
+          - listitem [ref=e92]:
+            - link "Contactos" [ref=e93] [cursor=pointer]:
+              - /url: /contacts
+              - img [ref=e95]
+              - generic [ref=e100]: Contactos
+          - listitem [ref=e101]:
+            - link "Oportunidades" [ref=e102] [cursor=pointer]:
+              - /url: /pipeline
+              - img [ref=e104]
+              - generic [ref=e105]: Oportunidades
+          - listitem [ref=e106]:
+            - link "Agendamentos" [ref=e107] [cursor=pointer]:
+              - /url: /appointments
+              - img [ref=e109]
+              - generic [ref=e113]: Agendamentos
+          - listitem [ref=e114]:
+            - link "Propriedades" [ref=e115] [cursor=pointer]:
+              - /url: /properties
+              - img [ref=e117]
+              - generic [ref=e121]: Propriedades
+      - generic [ref=e122]:
+        - paragraph [ref=e124]: Gestão
+        - list [ref=e125]:
+          - listitem [ref=e126]:
+            - link "Tarefas 2" [ref=e127] [cursor=pointer]:
+              - /url: /tasks
+              - img [ref=e129]
+              - generic [ref=e132]: Tarefas
+              - generic [ref=e133]: "2"
+          - listitem [ref=e134]:
+            - link "Relatórios" [ref=e135] [cursor=pointer]:
+              - /url: /reports
+              - img [ref=e137]
+              - generic [ref=e139]: Relatórios
+      - generic [ref=e140]:
+        - paragraph [ref=e142]: Marketing
+        - list [ref=e143]:
+          - listitem [ref=e144]:
+            - link "Campanhas" [ref=e145] [cursor=pointer]:
+              - /url: /campaigns
+              - img [ref=e147]
+              - generic [ref=e150]: Campanhas
+          - listitem [ref=e151]:
+            - link "Formulários" [ref=e152] [cursor=pointer]:
+              - /url: /forms
+              - img [ref=e154]
+              - generic [ref=e157]: Formulários
+      - generic [ref=e158]:
+        - paragraph [ref=e160]: Ferramentas
+        - list [ref=e161]:
+          - listitem [ref=e162]:
+            - link "Números Tel." [ref=e163] [cursor=pointer]:
+              - /url: /phone-numbers
+              - img [ref=e165]
+              - generic [ref=e167]: Números Tel.
+          - listitem [ref=e168]:
+            - link "Automações" [ref=e169] [cursor=pointer]:
+              - /url: /automations
+              - img [ref=e171]
+              - generic [ref=e173]: Automações
+          - listitem [ref=e174]:
+            - link "Snapshots" [ref=e175] [cursor=pointer]:
+              - /url: /snapshots
+              - img [ref=e177]
+              - generic [ref=e181]: Snapshots
+      - generic [ref=e182]:
+        - paragraph [ref=e184]: Agência
+        - list [ref=e185]:
+          - listitem [ref=e186]:
+            - link "Gestão de Agência" [ref=e187] [cursor=pointer]:
+              - /url: /agency
+              - img [ref=e189]
+              - generic [ref=e192]: Gestão de Agência
+      - generic [ref=e193]:
+        - paragraph [ref=e195]: Sistema
+        - list [ref=e196]:
+          - listitem [ref=e197]:
+            - link "Configurações" [ref=e198] [cursor=pointer]:
+              - /url: /settings
+              - img [ref=e200]
+              - generic [ref=e203]: Configurações
+    - button "CA Carlos Administrador Diretor de Agência" [ref=e205] [cursor=pointer]:
+      - generic [ref=e206]: CA
+      - generic [ref=e207]:
+        - generic [ref=e208]:
+          - paragraph [ref=e209]: Carlos Administrador
+          - paragraph [ref=e210]: Diretor de Agência
+        - img [ref=e211]
+  - generic [ref=e214]:
+    - banner [ref=e215]:
+      - button [ref=e216] [cursor=pointer]:
+        - img [ref=e217]
+      - generic [ref=e218]:
+        - heading "Dashboard" [level=1] [ref=e219]
+        - paragraph [ref=e220]: Visão geral do negócio
+      - generic [ref=e221]:
+        - button "Modo escuro" [ref=e222] [cursor=pointer]:
+          - img [ref=e223]
+        - button "Notificações" [ref=e226] [cursor=pointer]:
+          - img [ref=e227]
+        - button "CA Carlos Administrador Diretor de Agência" [ref=e232] [cursor=pointer]:
+          - generic [ref=e233]: CA
+          - generic [ref=e234]:
+            - paragraph [ref=e235]: Carlos Administrador
+            - paragraph [ref=e236]: Diretor de Agência
+          - img [ref=e237]
+    - main [ref=e239]:
+      - generic [ref=e240]:
+        - generic [ref=e241]:
+          - generic [ref=e242]:
+            - generic [ref=e243]:
+              - generic [ref=e244]: Contactos
+              - img [ref=e246]
+            - generic [ref=e251]:
+              - generic [ref=e252]:
+                - generic [ref=e253]: "53"
+                - generic [ref=e254]:
+                  - generic [ref=e255]:
+                    - img [ref=e256]
+                    - text: 12%
+                  - generic [ref=e258]: vs 30 dias
+              - img [ref=e259]
+          - generic [ref=e262]:
+            - generic [ref=e263]:
+              - generic [ref=e264]: Leads Ativos
+              - img [ref=e266]
+            - generic [ref=e269]:
+              - generic [ref=e270]:
+                - generic [ref=e271]: "35"
+                - generic [ref=e272]:
+                  - generic [ref=e273]:
+                    - img [ref=e274]
+                    - text: 8%
+                  - generic [ref=e276]: vs 30 dias
+              - img [ref=e277]
+          - generic [ref=e280]:
+            - generic [ref=e281]:
+              - generic [ref=e282]: Pipeline
+              - img [ref=e284]
+            - generic [ref=e286]:
+              - generic [ref=e287]:
+                - generic [ref=e288]: €30.0M
+                - generic [ref=e289]:
+                  - generic [ref=e290]:
+                    - img [ref=e291]
+                    - text: 15%
+                  - generic [ref=e293]: vs 30 dias
+              - img [ref=e294]
+          - generic [ref=e297]:
+            - generic [ref=e298]:
+              - generic [ref=e299]: Fechados (mês)
+              - img [ref=e301]
+            - generic [ref=e304]:
+              - generic [ref=e305]:
+                - generic [ref=e306]: "1"
+                - generic [ref=e307]:
+                  - generic [ref=e308]:
+                    - img [ref=e309]
+                    - text: 22%
+                  - generic [ref=e311]: vs 30 dias
+              - img [ref=e312]
+        - generic [ref=e315]:
+          - generic [ref=e316]:
+            - generic [ref=e317]:
+              - generic [ref=e318]: Oportunidades Abertas
+              - img [ref=e320]
+            - generic [ref=e324]:
+              - generic [ref=e325]: "14"
+              - generic [ref=e326]:
+                - generic [ref=e327]:
+                  - img [ref=e328]
+                  - text: 3%
+                - generic [ref=e330]: vs 30 dias
+          - generic [ref=e331]:
+            - generic [ref=e332]:
+              - generic [ref=e333]: Tarefas para Hoje
+              - img [ref=e335]
+            - generic [ref=e340]: "2"
+          - generic [ref=e341]:
+            - generic [ref=e342]:
+              - generic [ref=e343]: Total Clientes
+              - img [ref=e345]
+            - generic [ref=e352]: "11"
+        - generic [ref=e353]:
+          - generic [ref=e354]:
+            - generic [ref=e355]:
+              - generic [ref=e356]: Tarefas Pendentes
+              - link "Ver todas" [ref=e357] [cursor=pointer]:
+                - /url: /tasks
+            - list [ref=e358]:
+              - listitem [ref=e359]:
+                - generic [ref=e361]:
+                  - paragraph [ref=e362]: Follow-up proposta Loja Cascais — Manuel Teixeira
+                  - generic [ref=e363]:
+                    - generic [ref=e364]: Manuel Teixeira
+                    - generic [ref=e365]: Vencido — 07/04/2026
+                - button [ref=e366] [cursor=pointer]:
+                  - img [ref=e367]
+              - listitem [ref=e371]:
+                - generic [ref=e373]:
+                  - paragraph [ref=e374]: "232"
+                  - generic [ref=e375]:
+                    - generic [ref=e376]: Tiago Prado
+                    - generic [ref=e377]: Vencido — 09/04/2026
+                - button [ref=e378] [cursor=pointer]:
+                  - img [ref=e379]
+              - listitem [ref=e383]:
+                - generic [ref=e385]:
+                  - paragraph [ref=e386]: Ligar para Maria Oliveira — agendar visita T3 Cascais
+                  - generic [ref=e387]:
+                    - generic [ref=e388]: Maria Fernanda Oliveira
+                    - generic [ref=e389]: Pendente — 10/04/2026
+                - button [ref=e390] [cursor=pointer]:
+                  - img [ref=e391]
+              - listitem [ref=e395]:
+                - generic [ref=e397]:
+                  - paragraph [ref=e398]: Visita Moradia Sintra — Catarina Mendes
+                  - generic [ref=e399]:
+                    - generic [ref=e400]: Catarina Mendes
+                    - generic [ref=e401]: Pendente — 11/04/2026
+                - button [ref=e402] [cursor=pointer]:
+                  - img [ref=e403]
+              - listitem [ref=e407]:
+                - generic [ref=e409]:
+                  - paragraph [ref=e410]: Acompanhar aprovação crédito — Nuno Ferreira
+                  - generic [ref=e411]:
+                    - generic [ref=e412]: Nuno Ferreira
+                    - generic [ref=e413]: Pendente — 13/04/2026
+                - button [ref=e414] [cursor=pointer]:
+                  - img [ref=e415]
+          - generic [ref=e419]:
+            - generic [ref=e421]: Funil de Vendas
+            - generic [ref=e422]:
+              - generic [ref=e423]:
+                - generic [ref=e424]: Lead Novo
+                - generic [ref=e427]: "1"
+                - generic [ref=e428]: 100%
+              - generic [ref=e429]:
+                - generic [ref=e430]: Primeiro Contacto
+                - generic [ref=e433]: "3"
+                - generic [ref=e434]: 300%
+              - generic [ref=e435]:
+                - generic [ref=e436]: Visita Agendada
+                - generic [ref=e439]: "4"
+                - generic [ref=e440]: 400%
+              - generic [ref=e441]:
+                - generic [ref=e442]: Proposta Enviada
+                - generic [ref=e445]: "1"
+                - generic [ref=e446]: 100%
+              - generic [ref=e447]:
+                - generic [ref=e448]: Negociação
+                - generic [ref=e451]: "1"
+                - generic [ref=e452]: 100%
+              - generic [ref=e453]:
+                - generic [ref=e454]: Negócio Fechado
+                - generic [ref=e457]: "1"
+                - generic [ref=e458]: 100%
+        - generic [ref=e459]:
+          - generic [ref=e460]:
+            - generic [ref=e461]:
+              - generic [ref=e462]: Proximos Agendamentos
+              - link "Ver todos" [ref=e463] [cursor=pointer]:
+                - /url: /appointments
+            - list [ref=e464]:
+              - listitem [ref=e465]:
+                - img [ref=e467]
+                - generic [ref=e469]:
+                  - paragraph [ref=e470]: Reunião qualificação — António Rodrigues
+                  - generic [ref=e471]:
+                    - img [ref=e472]
+                    - generic [ref=e475]: —
+                - generic [ref=e476]: António Rodrigues
+              - listitem [ref=e477]:
+                - img [ref=e479]
+                - generic [ref=e481]:
+                  - paragraph [ref=e482]: Visita T3 Cascais — Catarina Mendes
+                  - generic [ref=e483]:
+                    - img [ref=e484]
+                    - generic [ref=e487]: —
+                - generic [ref=e488]: Catarina Mendes
+              - listitem [ref=e489]:
+                - img [ref=e491]
+                - generic [ref=e493]:
+                  - paragraph [ref=e494]: Visita 2ª — Luísa Monteiro, Moradia Oeiras
+                  - generic [ref=e495]:
+                    - img [ref=e496]
+                    - generic [ref=e499]: —
+                - generic [ref=e500]: Luísa Monteiro
+              - listitem [ref=e501]:
+                - img [ref=e503]
+                - generic [ref=e505]:
+                  - paragraph [ref=e506]: Escritura — Isabel Gonçalves T3 Cascais
+                  - generic [ref=e507]:
+                    - img [ref=e508]
+                    - generic [ref=e511]: —
+                - generic [ref=e512]: Isabel Gonçalves
+          - generic [ref=e513]:
+            - generic [ref=e515]: Conversao por Fonte
+            - table [ref=e516]:
+              - rowgroup [ref=e517]:
+                - row "Fonte Leads Ganhos Taxa" [ref=e518]:
+                  - columnheader "Fonte" [ref=e519]
+                  - columnheader "Leads" [ref=e520]
+                  - columnheader "Ganhos" [ref=e521]
+                  - columnheader "Taxa" [ref=e522]
+              - rowgroup [ref=e523]:
+                - row "Indicação 11 0 0%" [ref=e524]:
+                  - cell "Indicação" [ref=e525]
+                  - cell "11" [ref=e526]
+                  - cell "0" [ref=e527]
+                  - cell "0%" [ref=e528]
+                - row "Portal Imobiliário 6 0 0%" [ref=e529]:
+                  - cell "Portal Imobiliário" [ref=e530]
+                  - cell "6" [ref=e531]
+                  - cell "0" [ref=e532]
+                  - cell "0%" [ref=e533]
+                - row "Google 4 0 0%" [ref=e534]:
+                  - cell "Google" [ref=e535]
+                  - cell "4" [ref=e536]
+                  - cell "0" [ref=e537]
+                  - cell "0%" [ref=e538]
+                - row "Walk-in 4 0 0%" [ref=e539]:
+                  - cell "Walk-in" [ref=e540]
+                  - cell "4" [ref=e541]
+                  - cell "0" [ref=e542]
+                  - cell "0%" [ref=e543]
+                - row "Idealista 3 0 0%" [ref=e544]:
+                  - cell "Idealista" [ref=e545]
+                  - cell "3" [ref=e546]
+                  - cell "0" [ref=e547]
+                  - cell "0%" [ref=e548]
+  - button "Softphone" [ref=e550] [cursor=pointer]:
+    - img [ref=e551]

@@ -58,7 +58,7 @@ export const SnapshotsPage: React.FC = () => {
       { name: 'Boas-vindas ao novo lead', trigger: 'NEW_LEAD', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', message: 'Olá {{nome}}! Obrigado pelo interesse. Sou consultor imobiliário e estou aqui para ajudar. Que tipo de imóvel procura?' }]) },
       { name: 'Lembrete de visita', trigger: 'VISIT_SCHEDULED', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', message: 'Olá {{nome}}! Lembro-lhe que tem uma visita agendada amanhã. Confirma?' }]) },
       { name: 'Follow-up pós-proposta', trigger: 'PROPOSAL_SENT', isActive: true, actions: JSON.stringify([{ type: 'SEND_WHATSAPP', message: 'Olá {{nome}}! Já teve oportunidade de analisar a proposta? Estou disponível para esclarecer dúvidas.' }]) },
-      { name: 'Chamada perdida - SMS automático', trigger: 'MISSED_CALL', isActive: true, actions: JSON.stringify([{ type: 'SEND_SMS', message: 'Olá! Vi a sua chamada. Estou numa visita mas entrarei em contacto brevemente. 🏠' }]) },
+      { name: 'Chamada perdida - SMS automático', trigger: 'MISSED_CALL', isActive: true, actions: JSON.stringify([{ type: 'SEND_SMS', message: 'Olá! Vi a sua chamada. Estou numa visita mas entrarei em contacto brevemente.' }]) },
       { name: 'Lead qualificado - criar tarefa', trigger: 'LEAD_QUALIFIED', isActive: true, actions: JSON.stringify([{ type: 'CREATE_TASK', title: 'Enviar proposta ao lead qualificado', priority: 'HIGH' }]) },
     ],
     '2': [
@@ -122,9 +122,9 @@ export const SnapshotsPage: React.FC = () => {
                     <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{snap.description}</p>
 
                     <div className="flex items-center gap-4 mt-3">
-                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>⚡ {snap.automations} automações</span>
-                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>📝 {snap.templates} templates</span>
-                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>📊 {snap.stages.length} etapas</span>
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{snap.automations} automações</span>
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{snap.templates} templates</span>
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{snap.stages.length} etapas</span>
                     </div>
 
                     {/* Pipeline stages */}
@@ -176,13 +176,12 @@ export const SnapshotsPage: React.FC = () => {
         </div>
         <div className="grid grid-cols-2 gap-3">
           {[
-            { icon: '⚡', title: 'Automações prontas', desc: 'Speed to Lead, Missed Call, lembretes de visita' },
-            { icon: '📝', title: 'Templates de mensagem', desc: 'WhatsApp, Email e SMS pré-escritos em português' },
-            { icon: '📊', title: 'Pipeline configurado', desc: 'Etapas do funil ajustadas ao tipo de negócio' },
-            { icon: '✅', title: 'Tarefas automáticas', desc: 'Checklist de follow-up criado automaticamente' },
+            { icon: '', title: 'Automações prontas', desc: 'Speed to Lead, Missed Call, lembretes de visita' },
+            { icon: '', title: 'Templates de mensagem', desc: 'WhatsApp, Email e SMS pré-escritos em português' },
+            { icon: '', title: 'Pipeline configurado', desc: 'Etapas do funil ajustadas ao tipo de negócio' },
+            { icon: '', title: 'Tarefas automáticas', desc: 'Checklist de follow-up criado automaticamente' },
           ].map(item => (
             <div key={item.title} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'var(--hover-bg)' }}>
-              <span className="text-xl">{item.icon}</span>
               <div>
                 <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.title}</p>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>

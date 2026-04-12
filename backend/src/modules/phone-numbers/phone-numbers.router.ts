@@ -7,6 +7,7 @@ router.use(authenticate);
 
 router.get('/search', ctrl.search);
 router.get('/', ctrl.list);
+router.post('/payment-intent', ctrl.createPaymentIntent);
 router.post('/', ctrl.purchase);
 router.patch('/:id', ctrl.update);
 router.delete('/:id', ctrl.release);

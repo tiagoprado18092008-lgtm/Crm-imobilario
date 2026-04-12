@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
-import { MessageSquare, MessageCircle, FileText, CheckSquare, X, Loader2 } from 'lucide-react'
+import { MessageSquare, MessageCircle, FileText, CheckSquare, X, Loader2, CalendarDays } from 'lucide-react'
 import type { Opportunity } from '../../types'
 import { createInteraction } from '../../api/interactions.api'
 import { createTask } from '../../api/tasks.api'
 import { createConversation } from '../../api/conversations.api'
+import { createAppointment } from '../../api/appointments.api'
 import { useUIStore } from '../../store/ui.store'
 import { useAuthStore } from '../../store/auth.store'
 import { useNavigate } from 'react-router-dom'
@@ -40,11 +41,88 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
     return null
   }
 
-  // ── Calendar ─────────────────────────────────────────────────────────────
+  // ── Calendar / Agendamento ────────────────────────────────────────────────
   if (action === 'calendar') {
-    navigate('/calendar')
-    onClose()
-    return null
+    const [title, setTitle] = useState('')
+    const [type, setType] = useState('VISIT')
+    const [startAt, setStartAt] = useState(() => {
+      const d = new Date(); d.setMinutes(0, 0, 0)
+      const pad = (n: number) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours()+1)}:00`
+    })
+    const [endAt, setEndAt] = useState(() => {
+      const d = new Date(); d.setMinutes(0, 0, 0)
+      const pad = (n: number) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours()+2)}:00`
+    })
+    const [location, setLocation] = useState('')
+
+    const saveAppt = async () => {
+      if (!title.trim()) return
+      setLoading(true)
+      try {
+        await createAppointment({
+          title: title.trim(),
+          type,
+          startAt: new Date(startAt).toISOString(),
+          endAt: new Date(endAt).toISOString(),
+          location: location || undefined,
+          contactId: opportunity.contactId,
+          opportunityId: opportunity.id,
+          assignedToId: user?.id,
+          status: 'SCHEDULED',
+        })
+        showToast('Agendamento criado e sincronizado com Google Calendar', 'success')
+        onClose()
+      } catch {
+        showToast('Erro ao criar agendamento', 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    const inputStyle: React.CSSProperties = {
+      width: '100%', padding: '9px 12px', borderRadius: 8,
+      border: '1px solid #e2e8f0', fontSize: 13, outline: 'none',
+      fontFamily: 'inherit', color: 'var(--text-primary)',
+      background: 'var(--bg-card)', boxSizing: 'border-box',
+    }
+
+    return (
+      <Overlay onClose={onClose} title="Novo Agendamento" icon={<CalendarDays size={16} />} color="#6366f1">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input autoFocus style={inputStyle} value={title}
+            onChange={e => setTitle(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && saveAppt()}
+            placeholder="Título do agendamento..." />
+
+          <select style={inputStyle} value={type} onChange={e => setType(e.target.value)}>
+            <option value="VISIT">Visita</option>
+            <option value="ANGARIACAO_MEETING">Reunião de angariação</option>
+            <option value="CPCV">CPCV</option>
+            <option value="ESCRITURA">Escritura</option>
+            <option value="GENERAL_MEETING">Reunião geral</option>
+          </select>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 3 }}>Início</label>
+              <input type="datetime-local" style={inputStyle} value={startAt} onChange={e => setStartAt(e.target.value)} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 3 }}>Fim</label>
+              <input type="datetime-local" style={inputStyle} value={endAt} onChange={e => setEndAt(e.target.value)} />
+            </div>
+          </div>
+
+          <input style={inputStyle} value={location}
+            onChange={e => setLocation(e.target.value)}
+            placeholder="Local (opcional)" />
+        </div>
+        <ContextRow opportunity={opportunity} />
+        <ActionButtons onCancel={onClose} onConfirm={saveAppt} loading={loading} confirmLabel="Criar Agendamento" confirmColor="#6366f1" />
+      </Overlay>
+    )
   }
 
   // ── Note modal ───────────────────────────────────────────────────────────

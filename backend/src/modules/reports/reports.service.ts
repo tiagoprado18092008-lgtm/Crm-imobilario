@@ -1,28 +1,9 @@
 import prisma from '../../config/database';
+import { buildScope } from '../../lib/scope';
 
-const buildContactWhere = async (user: any): Promise<any> => {
-  if (user.role === 'ADMIN') return {};
-  if (user.role === 'PRINCIPAL_CONSULTANT') {
-    const subAgents = await prisma.user.findMany({
-      where: { supervisorId: user.id },
-      select: { id: true },
-    });
-    return { assignedToId: { in: [user.id, ...subAgents.map((a: any) => a.id)] } };
-  }
-  return { assignedToId: user.id };
-};
+const buildContactWhere = async (user: any): Promise<any> => buildScope(user);
 
-const buildOpportunityWhere = async (user: any): Promise<any> => {
-  if (user.role === 'ADMIN') return {};
-  if (user.role === 'PRINCIPAL_CONSULTANT') {
-    const subAgents = await prisma.user.findMany({
-      where: { supervisorId: user.id },
-      select: { id: true },
-    });
-    return { assignedToId: { in: [user.id, ...subAgents.map((a: any) => a.id)] } };
-  }
-  return { assignedToId: user.id };
-};
+const buildOpportunityWhere = async (user: any): Promise<any> => buildScope(user);
 
 export const getSummary = async (user: any) => {
   const contactWhere = await buildContactWhere(user);
@@ -121,7 +102,7 @@ export const getPipeline = async (user: any) => {
 
 export const getAgentPerformance = async () => {
   const agents = await prisma.user.findMany({
-    where: { isActive: true, role: { in: ['PRINCIPAL_CONSULTANT', 'SUB_AGENT'] } },
+    where: { isActive: true, role: { in: ['TEAM_LEADER', 'CONSULTANT'] as any[] } },
     select: { id: true, name: true, email: true, role: true },
   });
 
@@ -158,8 +139,8 @@ export const getAgentPerformance = async () => {
 export const getConversationStats = async (user: any) => {
   let baseWhere: any = {};
 
-  if (user.role !== 'ADMIN') {
-    if (user.role === 'PRINCIPAL_CONSULTANT') {
+  if (user.role !== 'AGENCY_OWNER' && user.role !== 'AGENCY_ADMIN') {
+    if (user.role === 'TEAM_LEADER') {
       const subAgents = await prisma.user.findMany({
         where: { supervisorId: user.id },
         select: { id: true },

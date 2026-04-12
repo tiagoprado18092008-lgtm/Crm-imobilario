@@ -17,7 +17,11 @@ const STATUS_LABELS: Record<string, string> = {
   COMPLETED: 'Concluído', NO_SHOW: 'Não compareceu',
 }
 const TYPE_LABELS: Record<string, string> = {
-  VISIT: 'Visita', CALL: 'Chamada', MEETING: 'Reunião', OTHER: 'Outro',
+  VISIT:              'Visita',
+  ANGARIACAO_MEETING: 'Reunião de angariação',
+  CPCV:               'CPCV',
+  ESCRITURA:          'Escritura',
+  GENERAL_MEETING:    'Reunião geral',
 }
 
 const WEEK_DAYS_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
@@ -26,9 +30,9 @@ const MONTHS_PT = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ]
 
-const HOURS = Array.from({ length: 16 }, (_, i) => i + 7) // 7 to 22
+const HOURS = Array.from({ length: 18 }, (_, i) => i + 6) // 6 to 23
 const HOUR_HEIGHT = 60 // px per hour
-const GRID_START_HOUR = 7
+const GRID_START_HOUR = 6
 
 const EMPTY_FORM = {
   title: '', description: '', startAt: '', endAt: '', status: 'SCHEDULED',
@@ -59,7 +63,7 @@ export const AppointmentsPage: React.FC = () => {
   const [appointments, setAppointments] = useState<any[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
-  const [view, setView] = useState<'list' | 'calendar' | 'week'>('list')
+  const [view, setView] = useState<'list' | 'calendar' | 'week'>('week')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -67,6 +71,56 @@ export const AppointmentsPage: React.FC = () => {
   const [filter, setFilter] = useState('ALL')
   const [responsibleFilter, setResponsibleFilter] = useState<string>('ALL')
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const weekGridRef = React.useRef<HTMLDivElement>(null)
+  const dayColRefs = React.useRef<(HTMLDivElement | null)[]>([])
+
+  // Drag-to-create state
+  const [dragCreate, setDragCreate] = useState<{
+    dayIndex: number
+    startMin: number // minutes from GRID_START_HOUR
+    endMin: number
+  } | null>(null)
+  const dragCreateRef = React.useRef(dragCreate)
+  dragCreateRef.current = dragCreate
+
+  // Drag-to-move state
+  const [dragMove, setDragMove] = useState<{
+    apptId: string
+    origDayIndex: number
+    origStartMin: number
+    origEndMin: number
+    curDayIndex: number
+    curStartMin: number
+    curEndMin: number
+    offsetMin: number // click offset within the block
+  } | null>(null)
+  const dragMoveRef = React.useRef(dragMove)
+  dragMoveRef.current = dragMove
+  const didDragMoveRef = React.useRef(false)
+
+  const snapToGrid = (rawMin: number) => Math.round(rawMin / 15) * 15
+
+  const yToMinutes = (y: number): number => {
+    const clamped = Math.max(0, Math.min(y, HOURS.length * HOUR_HEIGHT))
+    return snapToGrid((clamped / HOUR_HEIGHT) * 60)
+  }
+
+  const getColYSimple = (dayIndex: number, clientY: number): number => {
+    const col = dayColRefs.current[dayIndex]
+    if (!col) return 0
+    const rect = col.getBoundingClientRect()
+    return clientY - rect.top
+  }
+
+  // Auto-scroll the week grid to current hour (or 8am) when week view is shown
+  useEffect(() => {
+    if (view === 'week' && weekGridRef.current) {
+      const now = new Date()
+      const hour = Math.max(now.getHours(), 8)
+      const scrollTarget = Math.max(0, (hour - GRID_START_HOUR - 1) * HOUR_HEIGHT)
+      weekGridRef.current.scrollTop = scrollTarget
+    }
+  }, [view])
 
   // Calendar navigation — month/year (ref: calendar ddwn)
   const today = new Date()
@@ -95,6 +149,127 @@ export const AppointmentsPage: React.FC = () => {
     })
 
   const weekDays = getWeekDays(weekStart)
+
+  // Drag-to-create: uses native DOM listeners so stopPropagation on cards works correctly.
+  // React 17+ uses event delegation at the root, so React stopPropagation doesn't block
+  // native window listeners — we must use native addEventListener throughout.
+  const dragDayIndexRef = React.useRef<number | null>(null)
+
+  // Register native mousedown on each day column via refs
+  useEffect(() => {
+    const cleanups: (() => void)[] = []
+
+    dayColRefs.current.forEach((col, di) => {
+      if (!col) return
+      const onDown = (e: MouseEvent) => {
+        if (e.button !== 0) return
+        // Don't start drag if click originated on an appointment card
+        const target = e.target as HTMLElement
+        if (target.closest('[data-appt-card]')) return
+        e.preventDefault()
+        dragDayIndexRef.current = di
+        const startMin = yToMinutes(Math.max(0, e.clientY - col.getBoundingClientRect().top))
+        setDragCreate({ dayIndex: di, startMin, endMin: startMin })
+      }
+      col.addEventListener('mousedown', onDown)
+      cleanups.push(() => col.removeEventListener('mousedown', onDown))
+    })
+
+    const onMouseMove = (e: MouseEvent) => {
+      // Handle drag-move
+      const mv = dragMoveRef.current
+      if (mv) {
+        // Find which day column the cursor is over
+        let targetDayIndex = mv.curDayIndex
+        for (let i = 0; i < dayColRefs.current.length; i++) {
+          const col = dayColRefs.current[i]
+          if (!col) continue
+          const rect = col.getBoundingClientRect()
+          if (e.clientX >= rect.left && e.clientX <= rect.right) {
+            targetDayIndex = i
+            break
+          }
+        }
+        const col = dayColRefs.current[targetDayIndex]
+        if (col) {
+          const rawY = Math.max(0, e.clientY - col.getBoundingClientRect().top)
+          const cursorMin = yToMinutes(rawY)
+          const duration = mv.origEndMin - mv.origStartMin
+          const newStart = Math.max(0, cursorMin - mv.offsetMin)
+          const snapped = Math.round(newStart / 15) * 15
+          setDragMove(d => d ? { ...d, curDayIndex: targetDayIndex, curStartMin: snapped, curEndMin: snapped + duration } : null)
+        }
+        return
+      }
+
+      const di = dragDayIndexRef.current
+      if (di === null) return
+      const drag = dragCreateRef.current
+      if (!drag) return
+      const col = dayColRefs.current[di]
+      if (!col) return
+      const rawY = Math.max(0, e.clientY - col.getBoundingClientRect().top)
+      const endMin = Math.max(yToMinutes(rawY), drag.startMin + 15)
+      setDragCreate(d => d ? { ...d, endMin } : null)
+    }
+
+    const onMouseUp = async () => {
+      // Handle drag-move completion
+      const mv = dragMoveRef.current
+      if (mv) {
+        const moved = mv.curDayIndex !== mv.origDayIndex || mv.curStartMin !== mv.origStartMin
+        if (moved) { didDragMoveRef.current = true
+          const day = weekDays[mv.curDayIndex]
+          const pad = (n: number) => String(n).padStart(2, '0')
+          const toISO = (min: number) => {
+            const h = Math.floor(min / 60) + GRID_START_HOUR
+            const m = min % 60
+            return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}T${pad(h)}:${pad(m)}`
+          }
+          const newStart = toISO(mv.curStartMin)
+          const newEnd = toISO(mv.curEndMin)
+          setDragMove(null)
+          try {
+            const res = await updateAppointment(mv.apptId, {
+              startAt: new Date(newStart).toISOString(),
+              endAt: new Date(newEnd).toISOString(),
+            })
+            setAppointments(a => a.map(x => x.id === mv.apptId ? res.data : x))
+          } catch {
+            // revert on error — just reload
+          }
+        } else {
+          setDragMove(null)
+        }
+        return
+      }
+
+      if (dragDayIndexRef.current === null) return
+      const di = dragDayIndexRef.current
+      dragDayIndexRef.current = null
+      const drag = dragCreateRef.current
+      if (!drag || drag.endMin <= drag.startMin) { setDragCreate(null); return }
+      const day = weekDays[di]
+      const pad = (n: number) => String(n).padStart(2, '0')
+      const toISO = (min: number) => {
+        const h = Math.floor(min / 60) + GRID_START_HOUR
+        const m = min % 60
+        return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}T${pad(h)}:${pad(m)}`
+      }
+      setDragCreate(null)
+      setEditing(null)
+      setForm({ ...EMPTY_FORM, startAt: toISO(drag.startMin), endAt: toISO(drag.endMin) })
+      setShowModal(true)
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+    cleanups.push(
+      () => window.removeEventListener('mousemove', onMouseMove),
+      () => window.removeEventListener('mouseup', onMouseUp),
+    )
+    return () => cleanups.forEach(fn => fn())
+  }, [weekDays])
 
   const load = async () => {
     try {
@@ -133,6 +308,11 @@ export const AppointmentsPage: React.FC = () => {
     if (new Date(form.endAt) <= new Date(form.startAt)) {
       showToast('Data de fim deve ser posterior ao início', 'error'); return
     }
+    const startDay = new Date(form.startAt); startDay.setHours(0, 0, 0, 0)
+    const endDay = new Date(form.endAt); endDay.setHours(0, 0, 0, 0)
+    if (endDay.getTime() !== startDay.getTime()) {
+      showToast('O agendamento deve começar e terminar no mesmo dia', 'error'); return
+    }
     setSaving(true)
     try {
       const payload = {
@@ -149,6 +329,12 @@ export const AppointmentsPage: React.FC = () => {
       } else {
         const res = await createAppointment(payload)
         setAppointments(a => [res.data, ...a])
+        // Scroll week view to the new appointment's hour
+        if (view === 'week' && weekGridRef.current && res.data?.startAt) {
+          const apptHour = new Date(res.data.startAt).getHours()
+          const scrollTarget = Math.max(0, (apptHour - GRID_START_HOUR - 1) * HOUR_HEIGHT)
+          setTimeout(() => { if (weekGridRef.current) weekGridRef.current.scrollTop = scrollTarget }, 50)
+        }
       }
       setShowModal(false)
       showToast(editing ? 'Agendamento atualizado' : 'Agendamento criado', 'success')
@@ -225,8 +411,10 @@ export const AppointmentsPage: React.FC = () => {
   const getApptStyle = (appt: any): { top: number; height: number } => {
     const start = new Date(appt.startAt)
     const end = new Date(appt.endAt)
-    const startMinutes = (start.getHours() - GRID_START_HOUR) * 60 + start.getMinutes()
-    const durationMinutes = Math.max(15, (end.getTime() - start.getTime()) / 60000)
+    const GRID_END_HOUR = GRID_START_HOUR + HOURS.length
+    const startMinutes = Math.max(0, (start.getHours() - GRID_START_HOUR) * 60 + start.getMinutes())
+    const endMinutes = Math.min(GRID_END_HOUR * 60 - GRID_START_HOUR * 60, (end.getHours() - GRID_START_HOUR) * 60 + end.getMinutes())
+    const durationMinutes = Math.max(15, Math.max(endMinutes, startMinutes + 15) - startMinutes, (end.getTime() - start.getTime()) / 60000)
     const top = (startMinutes / 60) * HOUR_HEIGHT
     const height = Math.max(22, (durationMinutes / 60) * HOUR_HEIGHT - 2)
     return { top, height }
@@ -482,7 +670,7 @@ export const AppointmentsPage: React.FC = () => {
           </div>
 
           {/* Scrollable time grid */}
-          <div style={{ overflowY: 'auto', maxHeight: 560 }}>
+          <div ref={weekGridRef} style={{ overflowY: 'auto', maxHeight: 680 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '48px repeat(7, 1fr)', position: 'relative' }}>
 
               {/* Hour labels column */}
@@ -500,14 +688,19 @@ export const AppointmentsPage: React.FC = () => {
               {weekDays.map((day, di) => {
                 const isToday = day.toDateString() === today.toDateString()
                 const dayAppts = visibleAppointments.filter(a => new Date(a.startAt).toDateString() === day.toDateString())
+                const isDraggingHere = dragCreate?.dayIndex === di
                 return (
                   <div
                     key={di}
+                    ref={el => { dayColRefs.current[di] = el }}
                     style={{
                       borderLeft: '1px solid var(--border-color)',
                       position: 'relative',
                       background: isToday ? 'rgba(99,102,241,0.02)' : 'transparent',
                       height: HOURS.length * HOUR_HEIGHT,
+                      cursor: dragMove ? 'grabbing' : 'crosshair',
+                      userSelect: 'none',
+                      overflow: 'hidden',
                     }}
                   >
                     {/* Hour grid lines */}
@@ -519,15 +712,82 @@ export const AppointmentsPage: React.FC = () => {
                       }} />
                     ))}
 
+                    {/* Drag-to-create preview */}
+                    {isDraggingHere && dragCreate && (() => {
+                      const minStart = Math.min(dragCreate.startMin, dragCreate.endMin)
+                      const minEnd = Math.max(dragCreate.startMin, dragCreate.endMin)
+                      const previewTop = (minStart / 60) * HOUR_HEIGHT
+                      const previewH = Math.max(15, minEnd - minStart) / 60 * HOUR_HEIGHT
+                      const pad = (n: number) => String(n).padStart(2, '0')
+                      const toLabel = (min: number) => {
+                        const h = Math.floor(min / 60) + GRID_START_HOUR
+                        return `${pad(h)}:${pad(min % 60)}`
+                      }
+                      return (
+                        <div style={{
+                          position: 'absolute', top: previewTop + 1, left: 2, right: 2,
+                          height: previewH - 2, borderRadius: 6,
+                          background: 'rgba(99,102,241,0.85)',
+                          border: '2px solid #6366f1',
+                          padding: '3px 6px', zIndex: 10, pointerEvents: 'none',
+                          boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
+                        }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>
+                            Novo agendamento
+                          </div>
+                          {previewH > 28 && (
+                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.9)', lineHeight: 1.3 }}>
+                              {toLabel(minStart)} – {toLabel(minEnd)}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
+
+                    {/* Drag-move ghost preview */}
+                    {dragMove && dragMove.curDayIndex === di && (() => {
+                      const ghostTop = (dragMove.curStartMin / 60) * HOUR_HEIGHT
+                      const ghostH = Math.max(15, dragMove.curEndMin - dragMove.curStartMin) / 60 * HOUR_HEIGHT
+                      const pad = (n: number) => String(n).padStart(2, '0')
+                      const toLabel = (min: number) => `${pad(Math.floor(min / 60) + GRID_START_HOUR)}:${pad(min % 60)}`
+                      return (
+                        <div style={{
+                          position: 'absolute', top: ghostTop + 1, left: 2, right: 2,
+                          height: ghostH - 2, borderRadius: 6,
+                          background: 'rgba(99,102,241,0.55)',
+                          border: '2px dashed #6366f1',
+                          padding: '3px 6px', zIndex: 20, pointerEvents: 'none',
+                        }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>
+                            {toLabel(dragMove.curStartMin)} – {toLabel(dragMove.curEndMin)}
+                          </div>
+                        </div>
+                      )
+                    })()}
+
                     {/* Appointment blocks */}
                     {dayAppts.map(a => {
                       const { top, height } = getApptStyle(a)
                       const sc = STATUS_COLORS[a.status] || '#6366f1'
+                      const isDragging = dragMove?.apptId === a.id
                       return (
                         <div
                           key={a.id}
-                          onClick={() => openEdit(a)}
+                          data-appt-card
+                          onClick={() => { if (didDragMoveRef.current) { didDragMoveRef.current = false; return } openEdit(a) }}
                           title={`${a.title} — ${formatTime(a.startAt)} até ${formatTime(a.endAt)}`}
+                          onMouseDown={(e) => {
+                            if (e.button !== 0) return
+                            e.stopPropagation()
+                            const col = dayColRefs.current[di]
+                            if (!col) return
+                            const colRect = col.getBoundingClientRect()
+                            const startMin = (new Date(a.startAt).getHours() - GRID_START_HOUR) * 60 + new Date(a.startAt).getMinutes()
+                            const endMin = (new Date(a.endAt).getHours() - GRID_START_HOUR) * 60 + new Date(a.endAt).getMinutes()
+                            const clickY = e.clientY - colRect.top - top
+                            const offsetMin = Math.max(0, Math.floor((clickY / HOUR_HEIGHT) * 60))
+                            setDragMove({ apptId: a.id, origDayIndex: di, origStartMin: startMin, origEndMin: endMin, curDayIndex: di, curStartMin: startMin, curEndMin: endMin, offsetMin })
+                          }}
                           style={{
                             position: 'absolute',
                             top: top + 1,
@@ -535,23 +795,25 @@ export const AppointmentsPage: React.FC = () => {
                             right: 2,
                             height: height,
                             borderRadius: 6,
-                            background: sc + '22',
-                            borderLeft: `3px solid ${sc}`,
-                            padding: '2px 5px',
-                            cursor: 'pointer',
+                            background: sc,
+                            padding: '3px 6px',
+                            cursor: isDragging ? 'grabbing' : 'grab',
                             overflow: 'hidden',
-                            zIndex: 1,
-                            transition: 'filter 120ms',
+                            zIndex: isDragging ? 0 : 1,
+                            opacity: isDragging ? 0.35 : 1,
+                            transition: isDragging ? 'none' : 'filter 120ms, opacity 120ms',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.18)',
                           }}
-                          onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(0.92)')}
+                          onMouseEnter={e => { if (!isDragging) e.currentTarget.style.filter = 'brightness(0.88)' }}
                           onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
                         >
-                          <div style={{ fontSize: 11, fontWeight: 700, color: sc, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {formatTime(a.startAt)} {a.title}
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {a.title}
                           </div>
-                          {height > 36 && a.contact && (
-                            <div style={{ fontSize: 10, color: sc, opacity: 0.8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {a.contact.name}
+                          {height > 28 && (
+                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {formatTime(a.startAt)} – {formatTime(a.endAt)}
+                              {a.location ? `, ${a.location}` : ''}
                             </div>
                           )}
                         </div>
@@ -712,11 +974,44 @@ export const AppointmentsPage: React.FC = () => {
             </div>
             <div>
               <label style={labelStyle}>Início *</label>
-              <input type="datetime-local" value={form.startAt} onChange={e => setForm(f => ({ ...f, startAt: e.target.value }))} style={inputStyle} />
+              <input
+                type="datetime-local"
+                value={form.startAt}
+                onChange={e => {
+                  const newStart = e.target.value
+                  setForm(f => {
+                    // Keep end time but force same date as new start
+                    let newEnd = f.endAt
+                    if (newStart && f.endAt) {
+                      const endTime = f.endAt.slice(11) // HH:MM
+                      newEnd = newStart.slice(0, 10) + 'T' + endTime
+                      // If end would be before or equal to start, add 1 hour
+                      if (newEnd <= newStart) {
+                        const d = new Date(newStart)
+                        d.setHours(d.getHours() + 1)
+                        const pad = (n: number) => String(n).padStart(2, '0')
+                        newEnd = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+                      }
+                    }
+                    return { ...f, startAt: newStart, endAt: newEnd }
+                  })
+                }}
+                style={inputStyle}
+              />
             </div>
             <div>
               <label style={labelStyle}>Fim *</label>
-              <input type="datetime-local" value={form.endAt} onChange={e => setForm(f => ({ ...f, endAt: e.target.value }))} style={inputStyle} />
+              <input
+                type="time"
+                value={form.endAt ? form.endAt.slice(11) : ''}
+                onChange={e => {
+                  const time = e.target.value
+                  if (!form.startAt || !time) return
+                  const sameDay = form.startAt.slice(0, 10) + 'T' + time
+                  setForm(f => ({ ...f, endAt: sameDay }))
+                }}
+                style={inputStyle}
+              />
             </div>
           </div>
           <div>

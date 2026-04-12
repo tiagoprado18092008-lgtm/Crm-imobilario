@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useAuthStore } from '../store/auth.store'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api',
@@ -11,6 +12,10 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem('crm_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
+  }
+  const { impersonating, user } = useAuthStore.getState()
+  if (impersonating && user) {
+    config.headers['X-Impersonate-User'] = user.id
   }
   return config
 })

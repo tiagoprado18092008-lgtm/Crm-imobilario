@@ -26,7 +26,7 @@ const initialDark = saved !== null ? saved === 'true' : prefersDark
 if (initialDark) document.documentElement.classList.add('dark')
 
 export const useUIStore = create<UIState>((set) => ({
-  crmName: localStorage.getItem('imocrm-name') || 'ImoCRM',
+  crmName: localStorage.getItem('imocrm-name') || 'CasaFlow',
   setCrmName: (name: string) => {
     localStorage.setItem('imocrm-name', name)
     set({ crmName: name })

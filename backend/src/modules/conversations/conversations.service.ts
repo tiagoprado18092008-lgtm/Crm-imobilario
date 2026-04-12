@@ -2,32 +2,24 @@ import prisma from '../../config/database';
 import { sendWhatsAppMessage } from '../../utils/whatsapp.service';
 import { sendEmail } from '../../utils/email.service';
 import { sendInstagramDM } from '../../utils/instagram.service';
+import { sendSMS } from '../../utils/twilio.service';
 import { qualifyLeadFromMessage } from '../../utils/ai.service';
 import { eventBus } from '../../utils/event-bus';
+import { buildScope } from '../../lib/scope';
 
 // ─── RBAC helpers ────────────────────────────────────────────────────────────
 
 const buildConversationWhere = async (user: any): Promise<any> => {
-  if (user.role === 'ADMIN') return {};
-  if (user.role === 'PRINCIPAL_CONSULTANT') {
-    const subAgents = await prisma.user.findMany({
-      where: { supervisorId: user.id },
-      select: { id: true },
-    });
-    const ids = [user.id, ...subAgents.map((a: any) => a.id)];
-    return {
-      OR: [
-        { assignedToId: { in: ids } },
-        { assignedToId: null },
-      ],
-    };
+  const scope = await buildScope(user);
+  // For conversations: also include unassigned ones for non-admin roles
+  if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN' || user.role === 'LOCATION_ADMIN') {
+    return scope;
   }
-  return {
-    OR: [
-      { assignedToId: user.id },
-      { assignedToId: null },
-    ],
-  };
+  // TEAM_LEADER / CONSULTANT / USER: include nulls
+  if (scope.assignedToId) {
+    return { OR: [scope, { assignedToId: null }] };
+  }
+  return scope;
 };
 
 // ─── list ─────────────────────────────────────────────────────────────────────
@@ -176,6 +168,13 @@ export const sendMessage = async (
     });
   } else if (channel === 'INSTAGRAM') {
     sendResult = await sendInstagramDM(destination, content);
+  } else if (channel === 'SMS') {
+    try {
+      const r = await sendSMS(destination, content);
+      sendResult = { success: true, messageId: r.sid };
+    } catch (e: any) {
+      sendResult = { success: false, error: e.message };
+    }
   } else if (channel === 'INTERNAL') {
     // Internal notes always succeed
     sendResult = { success: true, messageId: `internal_${Date.now()}` };

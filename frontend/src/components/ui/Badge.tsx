@@ -14,8 +14,8 @@ const variantStyles: Record<BadgeVariant, React.CSSProperties> = {
   warning: { background: 'rgba(245,158,11,0.15)', color: '#fbbf24' },
   danger:  { background: 'rgba(239,68,68,0.15)',  color: '#f87171' },
   info:    { background: 'rgba(59,130,246,0.15)', color: '#60a5fa' },
-  default: { background: 'var(--bg-page)',        color: 'var(--text-muted)', outline: '1px solid var(--border-color)' },
-  purple:  { background: 'rgba(139,92,246,0.15)', color: '#a78bfa' },
+  default: { background: 'rgba(15,37,83,0.07)', color: '#0f2553', outline: '1px solid #dce3ef' },
+  purple:  { background: 'rgba(184,150,62,0.12)', color: '#b8963e' },
 }
 
 export const Badge: React.FC<BadgeProps> = ({

@@ -61,11 +61,12 @@ function Pill({ bg, color, label }: { bg: string; color: string; label: string }
 
 interface TaskFormProps {
   task?: Task
+  defaultDate?: string // YYYY-MM-DD pre-fill from calendar drag
   onSuccess: (saved: Task) => void
   onCancel: () => void
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ task, defaultDate, onSuccess, onCancel }) => {
   const { showToast } = useUIStore()
   const { user: currentUser } = useAuthStore()
   const [submitting, setSubmitting] = useState(false)
@@ -89,7 +90,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onSuccess, onCancel }) => {
       description: task?.description || '',
       status: task?.status || 'PENDING',
       priority: task?.priority || 'MEDIUM',
-      dueDate: task?.dueDate ? task.dueDate.slice(0, 10) : '',
+      dueDate: task?.dueDate ? task.dueDate.slice(0, 10) : (defaultDate || ''),
       assignedToId: task?.assignedToId || currentUser?.id || '',
       contactId: task?.contactId || ''
     }
@@ -195,35 +196,45 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
   const [priorityFilter, setPriorityFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editTask, setEditTask] = useState<Task | undefined>()
+  const [calendarDefaultDate, setCalendarDefaultDate] = useState<string | undefined>()
   const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  // Fetch ALL tasks (used by calendar + as base for list filters)
+  const [allTasks, setAllTasks] = useState<Task[]>([])
 
   const fetchTasks = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await getTasks({
-        status: statusFilter || undefined,
-        priority: priorityFilter || undefined,
-        limit: 200
-      })
+      const res = await getTasks({ limit: 500 })
       const d = res.data
-      setTasks(Array.isArray(d) ? d : d.data || [])
+      const fetched: Task[] = Array.isArray(d) ? d : d.data || []
+      setAllTasks(fetched)
+      setTasks(fetched)
     } catch {
       showToast('Erro ao carregar tarefas', 'error')
     } finally {
       setLoading(false)
     }
-  }, [statusFilter, priorityFilter])
+  }, [])
 
   useEffect(() => { fetchTasks() }, [fetchTasks])
 
+  // Apply list filters client-side on top of allTasks
+  useEffect(() => {
+    let filtered = allTasks
+    if (statusFilter) filtered = filtered.filter(t => t.status === statusFilter)
+    if (priorityFilter) filtered = filtered.filter(t => t.priority === priorityFilter)
+    setTasks(filtered)
+  }, [allTasks, statusFilter, priorityFilter])
+
   const handleComplete = async (task: Task) => {
-    setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'COMPLETED' as const } : t))
+    setAllTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'COMPLETED' as const } : t))
     try {
       const res = await updateTask(task.id, { status: 'COMPLETED' })
-      setTasks(prev => prev.map(t => t.id === task.id ? res.data : t))
+      setAllTasks(prev => prev.map(t => t.id === task.id ? res.data : t))
       showToast('Tarefa concluída', 'success')
     } catch {
-      setTasks(prev => prev.map(t => t.id === task.id ? task : t))
+      setAllTasks(prev => prev.map(t => t.id === task.id ? task : t))
       showToast('Erro ao atualizar tarefa', 'error')
     }
   }
@@ -234,16 +245,16 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
       await deleteTask(deleteId)
       showToast('Tarefa eliminada', 'success')
       setDeleteId(null)
-      fetchTasks()
+      setAllTasks(prev => prev.filter(t => t.id !== deleteId))
     } catch {
       showToast('Erro ao eliminar tarefa', 'error')
     }
   }
 
-  // summary counts
-  const pending = tasks.filter(t => t.status === 'PENDING').length
-  const inProgress = tasks.filter(t => t.status === 'IN_PROGRESS').length
-  const overdueCount = tasks.filter(t => isOverdue(t.dueDate) && t.status !== 'COMPLETED' && t.status !== 'CANCELLED').length
+  // summary counts (always from allTasks, not filtered)
+  const pending = allTasks.filter(t => t.status === 'PENDING').length
+  const inProgress = allTasks.filter(t => t.status === 'IN_PROGRESS').length
+  const overdueCount = allTasks.filter(t => isOverdue(t.dueDate) && t.status !== 'COMPLETED' && t.status !== 'CANCELLED').length
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -328,8 +339,13 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
       ) : activeTab === 'calendar' ? (
         <div style={{ borderRadius: 12, padding: 24, background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <CalendarView
-                tasks={tasks}
-                onTaskClick={(task) => { setEditTask(task); setShowModal(true) }}
+                tasks={allTasks}
+                onTaskClick={(task) => { setEditTask(task); setCalendarDefaultDate(undefined); setShowModal(true) }}
+                onCreateOnDate={(date) => {
+                  const pad = (n: number) => String(n).padStart(2, '0')
+                  const dateStr = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+                  setEditTask(undefined); setCalendarDefaultDate(dateStr); setShowModal(true)
+                }}
               />
         </div>
       ) : tasks.length === 0 ? (
@@ -426,22 +442,24 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
 
       <Modal
         isOpen={showModal}
-        onClose={() => { setShowModal(false); setEditTask(undefined) }}
+        onClose={() => { setShowModal(false); setEditTask(undefined); setCalendarDefaultDate(undefined) }}
         title={editTask ? 'Editar Tarefa' : 'Nova Tarefa'}
         size="lg"
       >
         <TaskForm
           task={editTask}
+          defaultDate={calendarDefaultDate}
           onSuccess={(saved) => {
             setShowModal(false)
             setEditTask(undefined)
+            setCalendarDefaultDate(undefined)
             if (editTask) {
-              setTasks(prev => prev.map(t => t.id === saved.id ? saved : t))
+              setAllTasks(prev => prev.map(t => t.id === saved.id ? saved : t))
             } else {
-              setTasks(prev => [saved, ...prev])
+              setAllTasks(prev => [saved, ...prev])
             }
           }}
-          onCancel={() => { setShowModal(false); setEditTask(undefined) }}
+          onCancel={() => { setShowModal(false); setEditTask(undefined); setCalendarDefaultDate(undefined) }}
         />
       </Modal>
 

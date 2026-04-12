@@ -55,21 +55,25 @@ export const STAGE_HEADER_COLORS: Record<string, string> = {
 }
 
 export const PIPELINE_STAGES: { value: string; label: string; color: string }[] = [
-  { value: 'LEAD_IN',             label: '🎯 Lead Novo',          color: '#6366f1' },
-  { value: 'QUALIFYING',          label: '📞 Primeiro Contacto',  color: '#8b5cf6' },
-  { value: 'VISIT_SCHEDULED',     label: '🏠 Visita Agendada',    color: '#f59e0b' },
-  { value: 'VISIT_DONE',          label: '✅ Visita Realizada',   color: '#10b981' },
-  { value: 'PROPOSAL_SENT',       label: '💰 Proposta Enviada',   color: '#3b82f6' },
-  { value: 'NEGOTIATION',         label: '🤝 Negociação',         color: '#f97316' },
-  { value: 'CPCV_SIGNED',         label: '📋 CPCV Assinado',      color: '#c9a84c' },
-  { value: 'FINANCING',           label: '🏦 Financiamento',      color: '#06b6d4' },
-  { value: 'ESCRITURA_SCHEDULED', label: '📅 Escritura Marcada',  color: '#1a2e4a' },
-  { value: 'CLOSED_WON',          label: '✅ Negócio Fechado',    color: '#22c55e' },
-  { value: 'CLOSED_LOST',         label: '❌ Perdido',            color: '#ef4444' },
+  { value: 'LEAD_IN',             label: 'Lead Novo',          color: '#6366f1' },
+  { value: 'QUALIFYING',          label: 'Primeiro Contacto',  color: '#8b5cf6' },
+  { value: 'VISIT_SCHEDULED',     label: 'Visita Agendada',    color: '#f59e0b' },
+  { value: 'VISIT_DONE',          label: 'Visita Realizada',   color: '#10b981' },
+  { value: 'PROPOSAL_SENT',       label: 'Proposta Enviada',   color: '#3b82f6' },
+  { value: 'NEGOTIATION',         label: 'Negociação',         color: '#f97316' },
+  { value: 'CPCV_SIGNED',         label: 'CPCV Assinado',      color: '#c9a84c' },
+  { value: 'FINANCING',           label: 'Financiamento',      color: '#06b6d4' },
+  { value: 'ESCRITURA_SCHEDULED', label: 'Escritura Marcada',  color: '#1a2e4a' },
+  { value: 'CLOSED_WON',          label: 'Negócio Fechado',    color: '#22c55e' },
+  { value: 'CLOSED_LOST',         label: 'Perdido',            color: '#ef4444' },
 ]
 
 export const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrador',
+  AGENCY_OWNER: 'Diretor de Agência',
+  AGENCY_DIRECTOR: 'Diretor de Agência',
+  AGENCY_ADMIN: 'Admin de Agência',
+  TEAM_LEADER: 'Líder de Equipa',
   PRINCIPAL_CONSULTANT: 'Consultor Principal',
   CONSULTANT: 'Consultor',
   SUB_AGENT: 'Sub-Agente',
@@ -77,28 +81,15 @@ export const ROLE_LABELS: Record<string, string> = {
   VIEWER: 'Visualizador',
 }
 
+export const AGENCY_DIRECTOR_ROLES = ['AGENCY_OWNER', 'AGENCY_DIRECTOR', 'AGENCY_ADMIN'] as const
+
 export const SOURCE_OPTIONS = [
-  'Portal Imobiliário',
-  'Idealista',
-  'Imovirtual',
-  'Casa Sapo',
-  'OLX',
-  'Habitarportugal',
+  'Website',
+  'E-mail',
+  'Presencial',
+  'Portal imobiliário',
   'Indicação',
-  'Redes Sociais',
-  'Instagram',
-  'Facebook',
-  'Facebook Ads',
-  'Google',
-  'Google Ads',
-  'Walk-in',
-  'Email',
-  'Telefone',
-  'WhatsApp',
-  'Site da Agência',
-  'Feirão Imobiliário',
-  'Chamada Direta',
-  'Outro',
+  'Telefone/WhatsApp',
 ]
 
 export const PROPERTY_TYPE_LABELS: Record<string, string> = {
@@ -143,11 +134,28 @@ export const CONTACT_STATUS_LABELS: Record<string, string> = {
 }
 
 export const CONTACT_TYPE_LABELS: Record<string, string> = {
-  LEAD: 'Lead',
-  CLIENT: 'Cliente',
+  BUYER: 'Comprador',
   OWNER: 'Proprietário',
   PARTNER: 'Parceiro',
 }
+
+export const APPOINTMENT_TYPE_LABELS: Record<string, string> = {
+  VISIT:              'Visita',
+  ANGARIACAO_MEETING: 'Reunião de angariação',
+  CPCV:               'CPCV',
+  ESCRITURA:          'Escritura',
+  GENERAL_MEETING:    'Reunião geral',
+}
+
+export const SALE_REASON_OPTIONS = [
+  'Mudança de residência',
+  'Separação / Divórcio',
+  'Herança',
+  'Dificuldades financeiras',
+  'Upgrade / Downgrade',
+  'Investimento',
+  'Outro',
+]
 
 export const TIMELINE_OPTIONS: Record<string, string> = {
   IMMEDIATE: 'Imediato',

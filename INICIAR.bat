@@ -1,6 +1,6 @@
 @echo off
 echo ============================================
-echo   CRM Imobiliario - Iniciar Aplicacao
+echo   CasaFlow - Iniciar Aplicacao
 echo ============================================
 echo.
 

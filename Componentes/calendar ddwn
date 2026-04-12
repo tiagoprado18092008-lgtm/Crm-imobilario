@@ -1,0 +1,572 @@
+You are given a task to integrate an existing React component in the codebase
+
+The codebase should support:
+- shadcn project structure  
+- Tailwind CSS
+- Typescript
+
+If it doesn't, provide instructions on how to setup project via shadcn CLI, install Tailwind or Typescript.
+
+Determine the default path for components and styles. 
+If default path for components is not /components/ui, provide instructions on why it's important to create this folder
+Copy-paste this component to /components/ui folder:
+```tsx
+dropdown-multi-calendar.tsx
+"use client";
+
+import * as React from "react";
+import { format, setMonth, setYear } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+function DropdownMultiCalendar() {
+  const today = new Date();
+  const [month, setMonthState] = React.useState(today.getMonth());
+  const [year, setYearState] = React.useState(today.getFullYear());
+  const [selectedDates, setSelectedDates] = React.useState<Date[]>([]);
+
+  const handleRemove = (date: Date) => {
+    setSelectedDates((prev) =>
+      prev.filter((d) => format(d, "yyyy-MM-dd") !== format(date, "yyyy-MM-dd"))
+    );
+  };
+
+  const handleMonthChange = (newMonth: number) => {
+    setMonthState(newMonth);
+  };
+
+  const handleYearChange = (newYear: number) => {
+    setYearState(newYear);
+  };
+
+  const displayMonth = setMonth(setYear(today, year), month);
+
+  return (
+    <Card className="w-[400px] shadow-none border-none bg-background">
+      <CardContent className="flex flex-col gap-4">
+        {/* Dropdowns */}
+        <div className="flex gap-2">
+          {/* Year Select */}
+          <Select
+            value={year.toString()}
+            onValueChange={(val) => handleYearChange(Number(val))}
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Year" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 50 }, (_, i) => year - 25 + i).map((y) => (
+                <SelectItem key={y} value={y.toString()}>
+                  {y}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Month Select */}
+          <Select
+            value={month.toString()}
+            onValueChange={(val) => handleMonthChange(Number(val))}
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Month" />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 12 }, (_, i) => (
+                <SelectItem key={i} value={i.toString()}>
+                  {format(new Date(2000, i, 1), "MMMM")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Calendar */}
+        <Calendar
+          mode="multiple"
+          selected={selectedDates}
+          onSelect={(dates) => setSelectedDates(dates ?? [])}
+          month={displayMonth}
+          onMonthChange={(date) => {
+            setMonthState(date.getMonth());
+            setYearState(date.getFullYear());
+          }}
+          className="rounded-md border"
+        />
+
+        {/* Selected dates list */}
+        <div className="flex flex-wrap gap-2">
+          {selectedDates.length === 0 && (
+            <p className="text-xs text-muted-foreground">No dates selected</p>
+          )}
+          {selectedDates
+            .sort((a, b) => a.getTime() - b.getTime())
+            .map((d) => (
+              <Badge
+                key={d.toISOString()}
+                variant="secondary"
+                className="flex items-center gap-2"
+              >
+                {format(d, "PPP")}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-4 w-4 p-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => handleRemove(d)}
+                >
+                  ✕
+                </Button>
+              </Badge>
+            ))}
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-end">
+        <Button
+          size="sm"
+          onClick={() => console.log("Selected dates:", selectedDates)}
+          disabled={selectedDates.length === 0}
+        >
+          Confirm
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
+export { DropdownMultiCalendar };
+
+
+demo.tsx
+"use client";
+
+import { DropdownMultiCalendar } from "@/components/ui/dropdown-multi-calendar";
+
+export default function DropdownMultiCalendarDemoPage() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center">
+      <DropdownMultiCalendar />
+    </div>
+  );
+}
+
+```
+
+Copy-paste these files for dependencies:
+```tsx
+originui/calendar
+"use client";
+
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import * as React from "react";
+import { DayPicker } from "react-day-picker";
+
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+
+export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+
+function Calendar({
+  className,
+  classNames,
+  showOutsideDays = true,
+  components: userComponents,
+  ...props
+}: CalendarProps) {
+  const defaultClassNames = {
+    months: "relative flex flex-col sm:flex-row gap-4",
+    month: "w-full",
+    month_caption: "relative mx-10 mb-1 flex h-9 items-center justify-center z-20",
+    caption_label: "text-sm font-medium",
+    nav: "absolute top-0 flex w-full justify-between z-10",
+    button_previous: cn(
+      buttonVariants({ variant: "ghost" }),
+      "size-9 text-muted-foreground/80 hover:text-foreground p-0",
+    ),
+    button_next: cn(
+      buttonVariants({ variant: "ghost" }),
+      "size-9 text-muted-foreground/80 hover:text-foreground p-0",
+    ),
+    weekday: "size-9 p-0 text-xs font-medium text-muted-foreground/80",
+    day_button:
+      "relative flex size-9 items-center justify-center whitespace-nowrap rounded-lg p-0 text-foreground outline-offset-2 group-[[data-selected]:not(.range-middle)]:[transition-property:color,background-color,border-radius,box-shadow] group-[[data-selected]:not(.range-middle)]:duration-150 focus:outline-none group-data-[disabled]:pointer-events-none focus-visible:z-10 hover:bg-accent group-data-[selected]:bg-primary hover:text-foreground group-data-[selected]:text-primary-foreground group-data-[disabled]:text-foreground/30 group-data-[disabled]:line-through group-data-[outside]:text-foreground/30 group-data-[outside]:group-data-[selected]:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70 group-[.range-start:not(.range-end)]:rounded-e-none group-[.range-end:not(.range-start)]:rounded-s-none group-[.range-middle]:rounded-none group-data-[selected]:group-[.range-middle]:bg-accent group-data-[selected]:group-[.range-middle]:text-foreground",
+    day: "group size-9 px-0 text-sm",
+    range_start: "range-start",
+    range_end: "range-end",
+    range_middle: "range-middle",
+    today:
+      "*:after:pointer-events-none *:after:absolute *:after:bottom-1 *:after:start-1/2 *:after:z-10 *:after:size-[3px] *:after:-translate-x-1/2 *:after:rounded-full *:after:bg-primary [&[data-selected]:not(.range-middle)>*]:after:bg-background [&[data-disabled]>*]:after:bg-foreground/30 *:after:transition-colors",
+    outside: "text-muted-foreground data-selected:bg-accent/50 data-selected:text-muted-foreground",
+    hidden: "invisible",
+    week_number: "size-9 p-0 text-xs font-medium text-muted-foreground/80",
+  };
+
+  const mergedClassNames: typeof defaultClassNames = Object.keys(defaultClassNames).reduce(
+    (acc, key) => ({
+      ...acc,
+      [key]: classNames?.[key as keyof typeof classNames]
+        ? cn(
+            defaultClassNames[key as keyof typeof defaultClassNames],
+            classNames[key as keyof typeof classNames],
+          )
+        : defaultClassNames[key as keyof typeof defaultClassNames],
+    }),
+    {} as typeof defaultClassNames,
+  );
+
+  const defaultComponents = {
+    Chevron: (props: any) => {
+      if (props.orientation === "left") {
+        return <ChevronLeft size={16} strokeWidth={2} {...props} aria-hidden="true" />;
+      }
+      return <ChevronRight size={16} strokeWidth={2} {...props} aria-hidden="true" />;
+    },
+  };
+
+  const mergedComponents = {
+    ...defaultComponents,
+    ...userComponents,
+  };
+
+  return (
+    <DayPicker
+      showOutsideDays={showOutsideDays}
+      className={cn("w-fit", className)}
+      classNames={mergedClassNames}
+      components={mergedComponents}
+      {...props}
+    />
+  );
+}
+Calendar.displayName = "Calendar";
+
+export { Calendar };
+```
+```tsx
+originui/button
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-colors outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground shadow-sm shadow-black/5 hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground shadow-sm shadow-black/5 hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background shadow-sm shadow-black/5 hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-sm shadow-black/5 hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-lg px-3 text-xs",
+        lg: "h-10 rounded-lg px-8",
+        icon: "h-9 w-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  },
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+    );
+  },
+);
+Button.displayName = "Button";
+
+export { Button, buttonVariants };
+
+```
+```tsx
+shadcn/card
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-lg border bg-card text-card-foreground shadow-sm",
+      className,
+    )}
+    {...props}
+  />
+))
+Card.displayName = "Card"
+
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    {...props}
+  />
+))
+CardHeader.displayName = "CardHeader"
+
+const CardTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={cn(
+      "text-2xl font-semibold leading-none tracking-tight",
+      className,
+    )}
+    {...props}
+  />
+))
+CardTitle.displayName = "CardTitle"
+
+const CardDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <p
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+CardDescription.displayName = "CardDescription"
+
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+))
+CardContent.displayName = "CardContent"
+
+const CardFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex items-center p-6 pt-0", className)}
+    {...props}
+  />
+))
+CardFooter.displayName = "CardFooter"
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+
+```
+```tsx
+originui/select
+"use client";
+
+import * as SelectPrimitive from "@radix-ui/react-select";
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons";
+
+const Select = SelectPrimitive.Root;
+
+const SelectGroup = SelectPrimitive.Group;
+
+const SelectValue = SelectPrimitive.Value;
+
+const SelectTrigger = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      "flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 py-2 text-start text-sm text-foreground shadow-sm shadow-black/5 focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-muted-foreground/70 [&>span]:min-w-0",
+      className,
+    )}
+    {...props}
+  >
+    {children}
+    <SelectPrimitive.Icon asChild>
+      <ChevronDownIcon size={16} strokeWidth={2} className="shrink-0 text-muted-foreground/80" />
+    </SelectPrimitive.Icon>
+  </SelectPrimitive.Trigger>
+));
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
+
+const SelectScrollUpButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollUpButton
+    ref={ref}
+    className={cn("flex cursor-default items-center justify-center py-1", className)}
+    {...props}
+  >
+    <ChevronUpIcon size={16} strokeWidth={2} />
+  </SelectPrimitive.ScrollUpButton>
+));
+SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
+
+const SelectScrollDownButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollDownButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollDownButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollDownButton
+    ref={ref}
+    className={cn("flex cursor-default items-center justify-center py-1", className)}
+    {...props}
+  >
+    <ChevronDownIcon size={16} strokeWidth={2} />
+  </SelectPrimitive.ScrollDownButton>
+));
+SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayName;
+
+const SelectContent = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
+>(({ className, children, position = "popper", ...props }, ref) => (
+  <SelectPrimitive.Portal>
+    <SelectPrimitive.Content
+      ref={ref}
+      className={cn(
+        "relative z-50 max-h-[min(24rem,var(--radix-select-content-available-height))] min-w-[8rem] overflow-hidden rounded-lg border border-input bg-popover text-popover-foreground shadow-lg shadow-black/5 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 [&_[role=group]]:py-1",
+        position === "popper" &&
+          "w-full min-w-[var(--radix-select-trigger-width)] data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+        className,
+      )}
+      position={position}
+      {...props}
+    >
+      <SelectScrollUpButton />
+      <SelectPrimitive.Viewport
+        className={cn("p-1", position === "popper" && "h-[var(--radix-select-trigger-height)]")}
+      >
+        {children}
+      </SelectPrimitive.Viewport>
+      <SelectScrollDownButton />
+    </SelectPrimitive.Content>
+  </SelectPrimitive.Portal>
+));
+SelectContent.displayName = SelectPrimitive.Content.displayName;
+
+const SelectLabel = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Label>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Label
+    ref={ref}
+    className={cn("py-1.5 pe-2 ps-8 text-xs font-medium text-muted-foreground", className)}
+    {...props}
+  />
+));
+SelectLabel.displayName = SelectPrimitive.Label.displayName;
+
+const SelectItem = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Item
+    ref={ref}
+    className={cn(
+      "relative flex w-full cursor-default select-none items-center rounded-md py-1.5 pe-2 ps-8 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className,
+    )}
+    {...props}
+  >
+    <span className="absolute start-2 flex size-3.5 items-center justify-center">
+      <SelectPrimitive.ItemIndicator>
+        <CheckIcon size={16} strokeWidth={2} />
+      </SelectPrimitive.ItemIndicator>
+    </span>
+
+    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+  </SelectPrimitive.Item>
+));
+SelectItem.displayName = SelectPrimitive.Item.displayName;
+
+const SelectSeparator = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Separator
+    ref={ref}
+    className={cn("-mx-1 my-1 h-px bg-border", className)}
+    {...props}
+  />
+));
+SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
+
+export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectScrollDownButton,
+  SelectScrollUpButton,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+};
+
+```
+
+Install NPM dependencies:
+```bash
+date-fns, lucide-react, react-day-picker, @radix-ui/react-slot, class-variance-authority, @radix-ui/react-icons, @radix-ui/react-select
+```
+
+Implementation Guidelines
+ 1. Analyze the component structure and identify all required dependencies
+ 2. Review the component's argumens and state
+ 3. Identify any required context providers or hooks and install them
+ 4. Questions to Ask
+ - What data/props will be passed to this component?
+ - Are there any specific state management requirements?
+ - Are there any required assets (images, icons, etc.)?
+ - What is the expected responsive behavior?
+ - What is the best place to use this component in the app?
+
+Steps to integrate
+ 0. Copy paste all the code above in the correct directories
+ 1. Install external dependencies
+ 2. Fill image assets with Unsplash stock images you know exist
+ 3. Use lucide-react icons for svgs or logos if component requires them

@@ -1,4 +1,6 @@
 import prisma from '../../config/database';
+import { pushAppointmentToGoogle, deleteAppointmentFromGoogle } from '../calendar/appointment-sync';
+import { buildScope } from '../../lib/scope';
 
 const select = {
   id: true, title: true, description: true, startAt: true, endAt: true,
@@ -9,17 +11,7 @@ const select = {
   createdAt: true, updatedAt: true,
 };
 
-const buildWhereClause = async (user: any): Promise<any> => {
-  if (user.role === 'ADMIN') return {};
-  if (user.role === 'PRINCIPAL_CONSULTANT') {
-    const subAgents = await prisma.user.findMany({
-      where: { supervisorId: user.id },
-      select: { id: true },
-    });
-    return { assignedToId: { in: [user.id, ...subAgents.map((a: any) => a.id)] } };
-  }
-  return { assignedToId: user.id };
-};
+const buildWhereClause = async (user: any): Promise<any> => buildScope(user);
 
 export const list = async (user: any, filters: any = {}) => {
   const where: any = await buildWhereClause(user);
@@ -43,7 +35,7 @@ export const getById = async (id: string, user: any) => {
 };
 
 export const create = async (userId: string, dto: any) => {
-  return prisma.appointment.create({
+  const appointment = await prisma.appointment.create({
     data: {
       title: dto.title,
       description: dto.description,
@@ -59,6 +51,9 @@ export const create = async (userId: string, dto: any) => {
     },
     select,
   });
+  // Push to Google Calendar (non-blocking)
+  pushAppointmentToGoogle(dto.assignedToId || userId, appointment).catch(() => {});
+  return appointment;
 };
 
 export const update = async (id: string, dto: any, user: any) => {
@@ -78,7 +73,9 @@ export const update = async (id: string, dto: any, user: any) => {
   if (dto.location !== undefined) data.location = dto.location;
   if (dto.contactId !== undefined) data.contactId = dto.contactId || null;
   if (dto.assignedToId) data.assignedToId = dto.assignedToId;
-  return prisma.appointment.update({ where: { id }, data, select });
+  const updated = await prisma.appointment.update({ where: { id }, data, select });
+  pushAppointmentToGoogle(updated.assignedToId, updated).catch(() => {});
+  return updated;
 };
 
 export const remove = async (id: string, user: any) => {
@@ -86,6 +83,7 @@ export const remove = async (id: string, user: any) => {
   where.id = id;
   const existing = await prisma.appointment.findFirst({ where });
   if (!existing) throw Object.assign(new Error('Agendamento não encontrado ou acesso negado'), { status: 404 });
+  deleteAppointmentFromGoogle(existing.assignedToId, id).catch(() => {});
   await prisma.appointment.delete({ where: { id } });
 };
 

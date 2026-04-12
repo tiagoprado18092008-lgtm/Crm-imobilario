@@ -1,8 +1,9 @@
 import prisma from '../../config/database';
+import { eventBus } from '../../utils/event-bus';
 
 const buildWhereClause = async (user: any): Promise<any> => {
-  if (user.role === 'ADMIN') return {};
-  if (user.role === 'PRINCIPAL_CONSULTANT') {
+  if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') return {};
+  if (user.role === 'TEAM_LEADER') {
     const subAgents = await prisma.user.findMany({
       where: { supervisorId: user.id },
       select: { id: true },
@@ -97,6 +98,8 @@ export const submit = async (id: string, data: Record<string, any>, ipAddress?: 
         },
       });
       contactId = contact.id;
+      // Fire automation trigger asynchronously — do not block form submission
+      setImmediate(() => eventBus.emit('trigger:NEW_LEAD', contact.id));
     }
   }
 

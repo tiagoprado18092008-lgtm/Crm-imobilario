@@ -311,10 +311,10 @@ export const ProfilePage: React.FC = () => {
                 localStorage.setItem('imocrm-lang', val)
               }}
               options={[
-                { value: 'pt-PT', label: '🇵🇹 Português (Portugal)' },
-                { value: 'pt-BR', label: '🇧🇷 Português (Brasil)' },
-                { value: 'en', label: '🇬🇧 English' },
-                { value: 'es', label: '🇪🇸 Español' },
+                { value: 'pt-PT', label: 'Português (Portugal)' },
+                { value: 'pt-BR', label: 'Português (Brasil)' },
+                { value: 'en', label: 'English' },
+                { value: 'es', label: 'Español' },
               ]}
             />
           </div>

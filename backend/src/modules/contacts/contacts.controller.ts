@@ -21,7 +21,7 @@ export const list = async (req: Request, res: Response, next: NextFunction): Pro
 
 export const create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const contact = await contactsService.create(req.body, req.user.id);
+    const contact = await contactsService.create(req.body, req.user);
     res.status(201).json(contact);
   } catch (err) {
     next(err);
@@ -41,6 +41,20 @@ export const update = async (req: Request, res: Response, next: NextFunction): P
   try {
     const contact = await contactsService.update(req.params.id, req.body, req.user);
     res.status(200).json(contact);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const bulkImport = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { rows } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      res.status(400).json({ error: 'rows array required' });
+      return;
+    }
+    const result = await contactsService.bulkImport(rows, req.user.id);
+    res.status(200).json(result);
   } catch (err) {
     next(err);
   }

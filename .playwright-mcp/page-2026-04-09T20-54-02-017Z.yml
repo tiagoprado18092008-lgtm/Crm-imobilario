@@ -1,0 +1,155 @@
+- generic [ref=e3]:
+  - complementary [ref=e6]:
+    - button "CasaFlow A minha agência" [ref=e8] [cursor=pointer]:
+      - img [ref=e10]
+      - generic [ref=e13]:
+        - generic [ref=e14]:
+          - paragraph [ref=e15]: CasaFlow
+          - paragraph [ref=e16]: A minha agência
+        - img [ref=e17]
+    - button "Recolher" [ref=e20] [cursor=pointer]:
+      - img [ref=e22]
+    - navigation [ref=e24]:
+      - generic [ref=e25]:
+        - paragraph [ref=e26]: CRM
+        - list [ref=e27]:
+          - listitem [ref=e28]:
+            - link "Dashboard" [ref=e29] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e31]
+              - generic [ref=e36]: Dashboard
+          - listitem [ref=e37]:
+            - link "Conversas" [ref=e38] [cursor=pointer]:
+              - /url: /conversations
+              - img [ref=e40]
+              - generic [ref=e42]: Conversas
+          - listitem [ref=e43]:
+            - link "Contactos" [ref=e44] [cursor=pointer]:
+              - /url: /contacts
+              - img [ref=e46]
+              - generic [ref=e51]: Contactos
+          - listitem [ref=e52]:
+            - link "Oportunidades" [ref=e53] [cursor=pointer]:
+              - /url: /pipeline
+              - img [ref=e55]
+              - generic [ref=e56]: Oportunidades
+          - listitem [ref=e57]:
+            - link "Agendamentos" [ref=e58] [cursor=pointer]:
+              - /url: /appointments
+              - img [ref=e60]
+              - generic [ref=e64]: Agendamentos
+          - listitem [ref=e65]:
+            - link "Propriedades" [ref=e66] [cursor=pointer]:
+              - /url: /properties
+              - img [ref=e68]
+              - generic [ref=e72]: Propriedades
+      - generic [ref=e73]:
+        - paragraph [ref=e75]: Gestão
+        - list [ref=e76]:
+          - listitem [ref=e77]:
+            - link "Tarefas" [ref=e78] [cursor=pointer]:
+              - /url: /tasks
+              - img [ref=e80]
+              - generic [ref=e83]: Tarefas
+          - listitem [ref=e84]:
+            - link "Relatórios" [ref=e85] [cursor=pointer]:
+              - /url: /reports
+              - img [ref=e87]
+              - generic [ref=e89]: Relatórios
+      - generic [ref=e90]:
+        - paragraph [ref=e92]: Marketing
+        - list [ref=e93]:
+          - listitem [ref=e94]:
+            - link "Campanhas" [ref=e95] [cursor=pointer]:
+              - /url: /campaigns
+              - img [ref=e97]
+              - generic [ref=e100]: Campanhas
+          - listitem [ref=e101]:
+            - link "Formulários" [ref=e102] [cursor=pointer]:
+              - /url: /forms
+              - img [ref=e104]
+              - generic [ref=e107]: Formulários
+      - generic [ref=e108]:
+        - paragraph [ref=e110]: Ferramentas
+        - list [ref=e111]:
+          - listitem [ref=e112]:
+            - link "Números Tel." [ref=e113] [cursor=pointer]:
+              - /url: /phone-numbers
+              - img [ref=e115]
+              - generic [ref=e117]: Números Tel.
+          - listitem [ref=e118]:
+            - link "Automações" [ref=e119] [cursor=pointer]:
+              - /url: /automations
+              - img [ref=e121]
+              - generic [ref=e123]: Automações
+          - listitem [ref=e124]:
+            - link "Snapshots" [ref=e125] [cursor=pointer]:
+              - /url: /snapshots
+              - img [ref=e127]
+              - generic [ref=e131]: Snapshots
+      - generic [ref=e132]:
+        - paragraph [ref=e134]: Agência
+        - list [ref=e135]:
+          - listitem [ref=e136]:
+            - link "Gestão de Agência" [ref=e137] [cursor=pointer]:
+              - /url: /agency
+              - img [ref=e139]
+              - generic [ref=e142]: Gestão de Agência
+      - generic [ref=e143]:
+        - paragraph [ref=e145]: Sistema
+        - list [ref=e146]:
+          - listitem [ref=e147]:
+            - link "Configurações" [ref=e148] [cursor=pointer]:
+              - /url: /settings
+              - img [ref=e150]
+              - generic [ref=e153]: Configurações
+    - button "CA Carlos Administrador Diretor de Agência" [ref=e155] [cursor=pointer]:
+      - generic [ref=e156]: CA
+      - generic [ref=e157]:
+        - generic [ref=e158]:
+          - paragraph [ref=e159]: Carlos Administrador
+          - paragraph [ref=e160]: Diretor de Agência
+        - img [ref=e161]
+  - generic [ref=e164]:
+    - banner [ref=e165]:
+      - button [ref=e166] [cursor=pointer]:
+        - img [ref=e167]
+      - generic [ref=e168]:
+        - heading "Contactos" [level=1] [ref=e169]
+        - paragraph [ref=e170]: Gestão de leads e clientes
+      - generic [ref=e171]:
+        - button "Modo escuro" [ref=e172] [cursor=pointer]:
+          - img [ref=e173]
+        - button "Notificações" [ref=e176] [cursor=pointer]:
+          - img [ref=e177]
+        - button "CA Carlos Administrador Diretor de Agência" [ref=e182] [cursor=pointer]:
+          - generic [ref=e183]: CA
+          - generic [ref=e184]:
+            - paragraph [ref=e185]: Carlos Administrador
+            - paragraph [ref=e186]: Diretor de Agência
+          - img [ref=e187]
+    - main [ref=e189]:
+      - generic [ref=e190]:
+        - generic [ref=e191]:
+          - generic [ref=e192]:
+            - img
+            - textbox "Pesquisar contactos..." [ref=e193]
+          - button "Todos os tipos" [ref=e196] [cursor=pointer]:
+            - generic [ref=e197]: Todos os tipos
+            - img [ref=e198]
+          - button "Todos os estados" [ref=e202] [cursor=pointer]:
+            - generic [ref=e203]: Todos os estados
+            - img [ref=e204]
+          - button "Todas as origens" [ref=e208] [cursor=pointer]:
+            - generic [ref=e209]: Todas as origens
+            - img [ref=e210]
+          - generic [ref=e212]:
+            - button "Exportar" [ref=e213] [cursor=pointer]:
+              - img [ref=e214]
+              - text: Exportar
+            - button "Novo Contacto" [ref=e217] [cursor=pointer]:
+              - img [ref=e218]
+              - text: Novo Contacto
+        - status "A carregar..." [ref=e220]
+  - button "Softphone" [ref=e222] [cursor=pointer]:
+    - img [ref=e223]

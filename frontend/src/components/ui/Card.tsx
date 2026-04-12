@@ -21,10 +21,10 @@ export const Card: React.FC<CardProps> = ({
     <div
       className={className}
       style={{
-        background: 'var(--bg-card)',
+        background: '#ffffff',
         borderRadius: 16,
-        border: '1px solid var(--border-color)',
-        boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
+        border: '1px solid #dce3ef',
+        boxShadow: '0 2px 8px rgba(15,37,83,0.04), 0 12px 32px rgba(15,37,83,0.06)',
         ...style,
       }}
     >

@@ -1,5 +1,6 @@
-export type Role = 'ADMIN' | 'PRINCIPAL_CONSULTANT' | 'CONSULTANT' | 'SUB_AGENT' | 'VIEWER'
-export type ContactType = 'LEAD' | 'CLIENT' | 'OWNER' | 'PARTNER'
+export type Role = 'AGENCY_OWNER' | 'AGENCY_ADMIN' | 'TEAM_LEADER' | 'CONSULTANT' | 'LOCATION_ADMIN' | 'USER'
+export type PermissionMap = Record<string, string[]>
+export type ContactType = 'BUYER' | 'OWNER' | 'PARTNER'
 export type ContactStatus = 'NEW' | 'QUALIFIED' | 'CONTACTED' | 'INACTIVE'
 export type PropertyType = 'APARTMENT' | 'HOUSE' | 'COMMERCIAL' | 'LAND' | 'GARAGE' | 'WAREHOUSE' | 'FARM' | 'OTHER'
 export type PropertyPurpose = 'SALE' | 'RENT' | 'TRESPASSE'
@@ -20,6 +21,53 @@ export type InteractionType = 'EMAIL' | 'WHATSAPP' | 'CALL' | 'MEETING' | 'NOTE'
 export type TaskStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH'
 
+export interface Location {
+  id: string
+  agencyId: string
+  name: string
+  slug: string
+  email?: string
+  phone?: string
+  address?: string
+  logoUrl?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LocationSettings {
+  id: string
+  locationId: string
+  timezone: string
+  locale: string
+  currency: string
+  workingHours: Record<string, any>
+  bookingPage: Record<string, any>
+}
+
+export interface AgencySettings {
+  id: string
+  agencyId: string
+  whitelabelEnabled: boolean
+  primaryColor: string
+  defaultPermissions: PermissionMap
+  securitySettings: Record<string, any>
+}
+
+export interface ActivityLog {
+  id: string
+  agencyId?: string
+  locationId?: string
+  userId?: string
+  action: string
+  entityType?: string
+  entityId?: string
+  metadata?: Record<string, any>
+  ip?: string
+  createdAt: string
+  user?: { id: string; name: string; email: string }
+}
+
 export interface User {
   id: string
   name: string
@@ -27,6 +75,7 @@ export interface User {
   role: Role
   phone?: string
   agency?: string
+  agencyId?: string
   isActive: boolean
   supervisorId?: string
   supervisor?: User
@@ -34,6 +83,9 @@ export interface User {
   avatarUrl?: string
   onboardingCompleted?: boolean
   createdAt: string
+  locationId?: string
+  location?: Location
+  permissions?: PermissionMap
 }
 
 export interface Contact {
@@ -66,6 +118,15 @@ export interface Contact {
   opportunities?: Opportunity[]
   interactions?: Interaction[]
   tasks?: Task[]
+  appointments?: Appointment[]
+  // Dynamic fields
+  selling_also?: boolean
+  needs_financing?: boolean
+  property_address?: string
+  asking_price?: number
+  sale_reason?: string
+  buying_also?: boolean
+  commission?: number
   createdAt: string
 }
 
@@ -134,6 +195,7 @@ export interface Opportunity {
   title: string
   stage: OpportunityStage
   value?: number
+  commission?: number
   source?: string
   expectedCloseDate?: string
   lostReason?: string
@@ -147,6 +209,32 @@ export interface Opportunity {
   assignedTo?: User
   interactions?: Interaction[]
   tasks?: Task[]
+  // Dynamic fields
+  selling_also?: boolean
+  needs_financing?: boolean
+  property_address?: string
+  asking_price?: number
+  sale_reason?: string
+  buying_also?: boolean
+  opp_commission?: number
+  createdAt: string
+}
+
+export interface Appointment {
+  id: string
+  title: string
+  description?: string
+  startAt: string
+  endAt: string
+  status: string
+  type: string
+  contactId?: string
+  contact?: Contact
+  opportunityId?: string
+  assignedToId: string
+  assignedTo?: User
+  notes?: string
+  location?: string
   createdAt: string
 }
 

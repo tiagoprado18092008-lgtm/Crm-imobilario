@@ -1,16 +1,10 @@
 import prisma from '../../config/database';
 import { fireTrigger } from '../../utils/automation.engine';
+import { buildScope } from '../../lib/scope';
+import { logActivity } from '../../lib/activity-logger';
 
 const buildWhereClause = async (user: any): Promise<any> => {
-  if (user.role === 'ADMIN') return {};
-  if (user.role === 'PRINCIPAL_CONSULTANT') {
-    const subAgents = await prisma.user.findMany({
-      where: { supervisorId: user.id },
-      select: { id: true },
-    });
-    return { assignedToId: { in: [user.id, ...subAgents.map((a) => a.id)] } };
-  }
-  return { assignedToId: user.id };
+  return buildScope(user);
 };
 
 export const list = async (
@@ -64,22 +58,47 @@ export const create = async (
     contactId: string;
     propertyId?: string;
     assignedToId?: string;
+    // Dynamic fields
+    selling_also?: boolean;
+    needs_financing?: boolean;
+    property_address?: string;
+    asking_price?: number;
+    sale_reason?: string;
+    buying_also?: boolean;
   },
   user: any
 ) => {
-  return prisma.opportunity.create({
+  const targetStage = (dto.stage as any) ?? 'LEAD_IN';
+  // Auto-assign position to end of the target stage
+  const lastInStage = await prisma.opportunity.findFirst({
+    where: { stage: targetStage },
+    orderBy: { position: 'desc' },
+    select: { position: true },
+  });
+  const position = lastInStage ? lastInStage.position + 1 : 0;
+  const opp_commission = dto.asking_price ? dto.asking_price * 0.05 : undefined;
+
+  const opp = await prisma.opportunity.create({
     data: {
       title: dto.title,
-      stage: (dto.stage as any) ?? 'LEAD_IN',
+      stage: targetStage,
       value: dto.value,
       source: dto.source,
       expectedCloseDate: dto.expectedCloseDate ? new Date(dto.expectedCloseDate) : undefined,
       lostReason: dto.lostReason,
       notes: dto.notes,
-      position: dto.position ?? 0,
+      position,
       contactId: dto.contactId,
       propertyId: dto.propertyId || undefined,
-      assignedToId: dto.assignedToId || user.id,
+      assignedToId: (user.role === 'CONSULTANT' ? user.id : dto.assignedToId) || user.id,
+      locationId: user.locationId ?? null,
+      selling_also: dto.selling_also ?? false,
+      needs_financing: dto.needs_financing ?? false,
+      property_address: dto.property_address,
+      asking_price: dto.asking_price,
+      sale_reason: dto.sale_reason,
+      buying_also: dto.buying_also ?? false,
+      opp_commission,
     },
     include: {
       contact: { select: { id: true, name: true, email: true } },
@@ -87,6 +106,81 @@ export const create = async (
       assignedTo: { select: { id: true, name: true } },
     },
   });
+
+  logActivity({
+    userId: user.id,
+    agencyId: user.agencyId ?? undefined,
+    locationId: user.locationId ?? undefined,
+    action: 'opportunity.create',
+    entityType: 'Opportunity',
+    entityId: opp.id,
+  });
+
+  return opp;
+};
+
+export const bulkImport = async (
+  rows: Array<{
+    title: string;
+    contactName?: string;
+    contactEmail?: string;
+    stage?: string;
+    value?: number;
+    source?: string;
+    notes?: string;
+  }>,
+  user: any
+) => {
+  const results = { created: 0, skipped: 0, errors: [] as string[] };
+  const VALID_STAGES = ['LEAD_IN','QUALIFYING','VISIT_SCHEDULED','VISIT_DONE','PROPOSAL_SENT','NEGOTIATION','CPCV_SIGNED','FINANCING','ESCRITURA_SCHEDULED','CLOSED_WON','CLOSED_LOST'];
+
+  for (const row of rows) {
+    if (!row.title || row.title.trim().length < 2) { results.skipped++; continue; }
+    try {
+      // Find or create contact
+      let contact: any = null;
+      if (row.contactEmail) {
+        contact = await prisma.contact.findFirst({ where: { email: row.contactEmail } });
+      }
+      if (!contact && row.contactName) {
+        contact = await prisma.contact.findFirst({ where: { name: { contains: row.contactName } } });
+      }
+      if (!contact && (row.contactName || row.contactEmail)) {
+        contact = await prisma.contact.create({
+          data: {
+            name: row.contactName || row.contactEmail!,
+            email: row.contactEmail || undefined,
+            type: 'BUYER',
+            status: 'NEW',
+            assignedToId: user.id,
+          },
+        });
+      }
+      if (!contact) { results.skipped++; continue; }
+
+      const stage = VALID_STAGES.includes(row.stage?.toUpperCase() ?? '') ? row.stage!.toUpperCase() : 'LEAD_IN';
+      const lastInStage = await prisma.opportunity.findFirst({ where: { stage: stage as any }, orderBy: { position: 'desc' }, select: { position: true } });
+      const position = lastInStage ? lastInStage.position + 1 : 0;
+
+      await prisma.opportunity.create({
+        data: {
+          title: row.title.trim(),
+          stage: stage as any,
+          value: row.value || undefined,
+          source: row.source || undefined,
+          notes: row.notes || undefined,
+          position,
+          contactId: contact.id,
+          assignedToId: user.id,
+        },
+      });
+      results.created++;
+    } catch (e: any) {
+      results.errors.push(`${row.title}: ${e.message}`);
+    }
+  }
+
+  return results;
 };
 
 export const getById = async (id: string, user: any) => {
@@ -132,6 +226,13 @@ export const update = async (
     contactId?: string;
     propertyId?: string;
     assignedToId?: string;
+    // Dynamic fields
+    selling_also?: boolean;
+    needs_financing?: boolean;
+    property_address?: string;
+    asking_price?: number;
+    sale_reason?: string;
+    buying_also?: boolean;
   },
   user: any
 ) => {
@@ -145,6 +246,8 @@ export const update = async (
     throw err;
   }
 
+  const opp_commission = dto.asking_price !== undefined ? dto.asking_price * 0.05 : undefined;
+
   const updated = await prisma.opportunity.update({
     where: { id },
     data: {
@@ -155,11 +258,17 @@ export const update = async (
       expectedCloseDate: dto.expectedCloseDate ? new Date(dto.expectedCloseDate) : undefined,
       lostReason: dto.lostReason,
       notes: dto.notes,
-      position: dto.position,
+      // Never overwrite position via update — use moveStage for that
       contactId: dto.contactId || undefined,
       propertyId: dto.propertyId || undefined,
       assignedToId: dto.assignedToId || undefined,
-
+      selling_also: dto.selling_also,
+      needs_financing: dto.needs_financing,
+      property_address: dto.property_address,
+      asking_price: dto.asking_price,
+      sale_reason: dto.sale_reason,
+      buying_also: dto.buying_also,
+      opp_commission,
     },
     include: {
       contact: { select: { id: true, name: true, email: true } },
@@ -200,11 +309,30 @@ export const moveStage = async (
   }
 
   const result = await prisma.$transaction(async (tx) => {
-    // Reorder siblings in the target stage: push items at >= newPosition down by 1
+    const oldStage = existing.stage as string;
+    const oldPosition = existing.position;
+
+    // Close the gap in the source stage
+    await tx.opportunity.updateMany({
+      where: {
+        stage: oldStage as any,
+        position: { gt: oldPosition },
+        id: { not: id },
+      },
+      data: { position: { decrement: 1 } },
+    });
+
+    // Adjust newPosition if moving within the same stage and forward
+    const adjustedPosition =
+      oldStage === newStage && newPosition > oldPosition
+        ? newPosition - 1
+        : newPosition;
+
+    // Open slot in the target stage
     await tx.opportunity.updateMany({
       where: {
         stage: newStage as any,
-        position: { gte: newPosition },
+        position: { gte: adjustedPosition },
         id: { not: id },
       },
       data: { position: { increment: 1 } },
@@ -213,7 +341,7 @@ export const moveStage = async (
     // Move the opportunity
     const updated = await tx.opportunity.update({
       where: { id },
-      data: { stage: newStage as any, position: newPosition },
+      data: { stage: newStage as any, position: adjustedPosition },
       include: {
         contact: { select: { id: true, name: true, email: true } },
         property: { select: { id: true, title: true, price: true } },
@@ -238,6 +366,16 @@ export const moveStage = async (
   return result;
 };
 
-export const remove = async (id: string) => {
+export const remove = async (id: string, user?: any) => {
+  if (user) {
+    logActivity({
+      userId: user.id,
+      agencyId: user.agencyId ?? undefined,
+      locationId: user.locationId ?? undefined,
+      action: 'opportunity.delete',
+      entityType: 'Opportunity',
+      entityId: id,
+    });
+  }
   return prisma.opportunity.delete({ where: { id } });
 };

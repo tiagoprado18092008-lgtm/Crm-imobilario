@@ -9,7 +9,7 @@ router.use(authenticate);
 
 router.get('/summary', reportsController.getSummary);
 router.get('/pipeline', reportsController.getPipeline);
-router.get('/agent-performance', requireRole('ADMIN'), reportsController.getAgentPerformance);
+router.get('/agent-performance', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN'), reportsController.getAgentPerformance);
 router.get('/conversations', reportsController.getConversationStats);
 
 export default router;

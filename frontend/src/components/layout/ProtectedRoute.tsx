@@ -1,15 +1,19 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/auth.store'
+import { usePermissions } from '../../hooks/usePermissions'
 import type { Role } from '../../types'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
   allowedRoles?: Role[]
+  module?: string
+  action?: string
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles, module, action }) => {
   const { token, user, hydrated } = useAuthStore()
+  const { can } = usePermissions()
 
   if (!hydrated) {
     return (
@@ -26,6 +30,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/dashboard" replace />
+  }
+
+  // Granular permission check
+  if (module && action && !can(module, action)) {
+    return <Navigate to="/403" replace />
   }
 
   return <>{children}</>
