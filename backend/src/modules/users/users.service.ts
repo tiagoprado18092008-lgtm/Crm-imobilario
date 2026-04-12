@@ -1,8 +1,19 @@
 import bcrypt from 'bcryptjs';
 import prisma from '../../config/database';
 
-export const list = async () => {
+export const list = async (currentUser?: any) => {
+  const where: any = {};
+  if (currentUser?.agencyId) {
+    where.agencyId = currentUser.agencyId;
+  } else if (currentUser?.locationId) {
+    where.locationId = currentUser.locationId;
+  } else if (currentUser?.id) {
+    // fallback: só devolve o próprio utilizador se não tiver agência
+    where.id = currentUser.id;
+  }
+
   const users = await prisma.user.findMany({
+    where,
     select: {
       id: true,
       name: true,
@@ -13,8 +24,11 @@ export const list = async () => {
       isActive: true,
       onboardingCompleted: true,
       supervisorId: true,
+      agencyId: true,
+      locationId: true,
       createdAt: true,
       updatedAt: true,
+      supervisor: { select: { id: true, name: true } },
       _count: {
         select: { subAgents: true },
       },
@@ -32,7 +46,7 @@ export const create = async (dto: {
   phone?: string;
   avatarUrl?: string;
   supervisorId?: string;
-}) => {
+}, creator?: any) => {
   const existing = await prisma.user.findUnique({ where: { email: dto.email } });
   if (existing) {
     const err: any = new Error('Email already in use');
@@ -51,6 +65,9 @@ export const create = async (dto: {
       phone: dto.phone,
       avatarUrl: dto.avatarUrl,
       supervisorId: dto.supervisorId,
+      // herda agência e location do criador
+      ...(creator?.agencyId ? { agencyId: creator.agencyId } : {}),
+      ...(creator?.locationId ? { locationId: creator.locationId } : {}),
     },
     select: {
       id: true,

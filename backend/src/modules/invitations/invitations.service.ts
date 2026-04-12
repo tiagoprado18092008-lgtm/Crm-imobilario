@@ -12,7 +12,7 @@ const getTransporter = () => {
   });
 };
 
-export const create = async (email: string, role: string, invitedById: string, locationId?: string, permissions?: any) => {
+export const create = async (email: string, role: string, invitedById: string, locationId?: string, permissions?: any, _agencyId?: string) => {
   // Check if email already registered
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw Object.assign(new Error('Email já registado'), { status: 409 });
@@ -27,7 +27,11 @@ export const create = async (email: string, role: string, invitedById: string, l
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
   const invitation = await prisma.invitation.create({
-    data: { email, role, token, invitedById, expiresAt, ...(locationId ? { locationId } : {}), ...(permissions ? { permissions } : {}) },
+    data: {
+      email, role, token, invitedById, expiresAt,
+      ...(locationId ? { locationId } : {}),
+      ...(permissions ? { permissions } : {}),
+    },
   });
 
   // Send invite email

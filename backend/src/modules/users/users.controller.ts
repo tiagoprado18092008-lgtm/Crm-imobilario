@@ -3,7 +3,7 @@ import * as usersService from './users.service';
 
 export const list = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const users = await usersService.list();
+    const users = await usersService.list(req.user);
     res.status(200).json(users);
   } catch (err) {
     next(err);
@@ -12,7 +12,7 @@ export const list = async (req: Request, res: Response, next: NextFunction): Pro
 
 export const create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const user = await usersService.create(req.body);
+    const user = await usersService.create(req.body, req.user);
     res.status(201).json(user);
   } catch (err) {
     next(err);

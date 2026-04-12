@@ -56,6 +56,8 @@ export const register = async (
 
   // If registering as AGENCY_OWNER, create an Agency automatically
   let agencyId: string | undefined;
+  let locationId: string | undefined;
+
   if (validRole === 'AGENCY_OWNER' && agency) {
     const slug = agency.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     const uniqueSlug = `${slug}-${Date.now()}`;
@@ -63,6 +65,22 @@ export const register = async (
       data: { name: agency, slug: uniqueSlug },
     });
     agencyId = newAgency.id;
+  }
+
+  // Se veio via convite, herda agencyId e locationId de quem convidou
+  if (invitation) {
+    if (invitation.agencyId) agencyId = invitation.agencyId;
+    if (invitation.locationId) locationId = invitation.locationId;
+
+    // Se agencyId ainda não está definido, busca o do utilizador que convidou
+    if (!agencyId && invitation.invitedById) {
+      const inviter = await prisma.user.findUnique({
+        where: { id: invitation.invitedById },
+        select: { agencyId: true, locationId: true },
+      });
+      if (inviter?.agencyId) agencyId = inviter.agencyId;
+      if (inviter?.locationId && !locationId) locationId = inviter.locationId;
+    }
   }
 
   const user = await prisma.user.create({
@@ -73,6 +91,7 @@ export const register = async (
       phone,
       role: validRole as any,
       ...(agencyId ? { agencyId } : {}),
+      ...(locationId ? { locationId } : {}),
     },
   });
 

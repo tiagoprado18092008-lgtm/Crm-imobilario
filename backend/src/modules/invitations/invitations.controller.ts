@@ -5,7 +5,7 @@ export const create = async (req: Request, res: Response, next: NextFunction): P
   try {
     const { email, role, locationId, permissions } = req.body;
     if (!email) { res.status(400).json({ error: 'Email obrigatório' }); return; }
-    const inv = await invitationsService.create(email, role || 'CONSULTANT', req.user.id, locationId, permissions);
+    const inv = await invitationsService.create(email, role || 'CONSULTANT', req.user.id, locationId, permissions, req.user.agencyId);
     res.status(201).json(inv);
   } catch (err) { next(err); }
 };
