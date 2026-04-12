@@ -1,162 +1,195 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, MapPin, BedDouble, Bath, Car, Maximize } from 'lucide-react'
 import { getProperty } from '../api/properties.api'
-import { getOpportunities } from '../api/opportunities.api'
-import type { Property, Opportunity } from '../types'
-import { Card } from '../components/ui/Card'
-import { Badge } from '../components/ui/Badge'
+import type { Property, PropertyPhoto, PropertyDocument, PropertyVisit } from '../types'
 import { PageSpinner } from '../components/ui/Spinner'
 import { useUIStore } from '../store/ui.store'
-import { formatCurrency, formatDate } from '../utils/formatters'
-import {
-  PROPERTY_TYPE_LABELS,
-  PROPERTY_STATUS_LABELS,
-  STAGE_LABELS
-} from '../utils/constants'
+import { PropertyHeader } from '../components/properties/PropertyHeader'
+import { PropertySidebar } from '../components/properties/PropertySidebar'
+import { DetailsTab } from '../components/properties/tabs/DetailsTab'
+import { PhotosTab } from '../components/properties/tabs/PhotosTab'
+import { DocumentsTab } from '../components/properties/tabs/DocumentsTab'
+import { VisitsTab } from '../components/properties/tabs/VisitsTab'
+import { VisitModal } from '../components/properties/modals/VisitModal'
+import { ShareModal } from '../components/properties/modals/ShareModal'
+import { generatePropertyPDF } from '../components/properties/generatePDF'
 
-const statusVariant: Record<string, any> = {
-  AVAILABLE: 'success', RESERVED: 'warning', SOLD: 'info', RENTED: 'purple'
-}
+type Tab = 'details' | 'photos' | 'documents' | 'visits'
 
 export const PropertyDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { showToast } = useUIStore()
+
   const [property, setProperty] = useState<Property | null>(null)
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<Tab>('details')
+  const [showVisitModal, setShowVisitModal] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+
+  const apiBase = (import.meta as any).env?.VITE_API_URL?.replace('/api', '') ?? 'http://localhost:3000'
 
   useEffect(() => {
     if (!id) return
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        const [propRes, oppRes] = await Promise.all([
-          getProperty(id),
-          getOpportunities({ propertyId: id })
-        ])
-        setProperty(propRes.data)
-        const d = oppRes.data
-        setOpportunities(Array.isArray(d) ? d : d.data || [])
-      } catch {
+    setLoading(true)
+    getProperty(id)
+      .then(res => setProperty(res.data))
+      .catch(() => {
         showToast('Erro ao carregar propriedade', 'error')
         navigate('/properties')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
+      })
+      .finally(() => setLoading(false))
   }, [id])
 
   if (loading) return <PageSpinner />
   if (!property) return null
 
-  return (
-    <div className="space-y-4">
-      <button
-        onClick={() => navigate('/properties')}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}
-      >
-        <ArrowLeft size={15} /> Voltar às Propriedades
-      </button>
+  const handlePropertyChange = (updated: Partial<Property>) => {
+    setProperty(prev => prev ? { ...prev, ...updated } : prev)
+  }
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
-          <Card>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div>
-                <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{property.title}</h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
-                  <Badge variant="default">{PROPERTY_TYPE_LABELS[property.type]}</Badge>
-                  <Badge variant={statusVariant[property.status]}>
-                    {PROPERTY_STATUS_LABELS[property.status]}
-                  </Badge>
-                  {property.reference && (
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Ref: {property.reference}</span>
+  const handlePhotosChange = (photos: PropertyPhoto[]) => {
+    setProperty(prev => prev ? { ...prev, photos } : prev)
+  }
+
+  const handleDocumentsChange = (documents: PropertyDocument[]) => {
+    setProperty(prev => prev ? { ...prev, documents } : prev)
+  }
+
+  const handleVisitsChange = (visits: PropertyVisit[]) => {
+    setProperty(prev => prev ? { ...prev, visits } : prev)
+  }
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: 'details', label: 'Detalhes' },
+    { key: 'photos', label: `Fotos${property.photos?.length ? ` (${property.photos.length})` : ''}` },
+    { key: 'documents', label: `Documentos${property.documents?.length ? ` (${property.documents.length})` : ''}` },
+    { key: 'visits', label: `Visitas${property.visits?.length ? ` (${property.visits.length})` : ''}` },
+  ]
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <PropertyHeader
+        property={property}
+        onEdit={() => navigate(`/properties?edit=${property.id}`)}
+      />
+
+      {/* Galeria + sidebar */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 20 }}>
+        {/* Galeria de capa */}
+        <div style={{ background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', overflow: 'hidden', minHeight: 220 }}>
+          {property.photos && property.photos.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <img
+                src={property.photos[0].url.startsWith('http') ? property.photos[0].url : `${apiBase}${property.photos[0].url}`}
+                alt={property.title}
+                style={{ width: '100%', height: 260, objectFit: 'cover', display: 'block' }}
+              />
+              {property.photos.length > 1 && (
+                <div style={{ display: 'flex', gap: 4, padding: 8, overflowX: 'auto' }}>
+                  {property.photos.slice(1, 6).map(p => (
+                    <img
+                      key={p.id}
+                      src={p.url.startsWith('http') ? p.url : `${apiBase}${p.url}`}
+                      alt=""
+                      style={{ width: 72, height: 52, objectFit: 'cover', borderRadius: 6, flexShrink: 0, cursor: 'pointer', opacity: 0.85 }}
+                      onClick={() => setActiveTab('photos')}
+                    />
+                  ))}
+                  {property.photos.length > 6 && (
+                    <button
+                      onClick={() => setActiveTab('photos')}
+                      style={{ width: 72, height: 52, borderRadius: 6, flexShrink: 0, background: 'var(--bg-page)', border: '1px dashed var(--border-color)', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)' }}
+                    >
+                      +{property.photos.length - 6}
+                    </button>
                   )}
                 </div>
-              </div>
-              <span style={{ fontSize: 22, fontWeight: 800, color: '#4ade80' }}>
-                {formatCurrency(property.price)}
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
-              <MapPin size={14} style={{ color: 'var(--text-muted)' }} />
-              {property.address}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, padding: '12px 0', borderTop: '1px solid var(--border-color)', borderBottom: '1px solid var(--border-color)' }}>
-              {property.bedrooms !== undefined && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
-                  <BedDouble size={14} style={{ color: 'var(--text-muted)' }} />
-                  <span>{property.bedrooms} quartos</span>
-                </div>
-              )}
-              {property.bathrooms !== undefined && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
-                  <Bath size={14} style={{ color: 'var(--text-muted)' }} />
-                  <span>{property.bathrooms} WC</span>
-                </div>
-              )}
-              {property.parking !== undefined && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
-                  <Car size={14} style={{ color: 'var(--text-muted)' }} />
-                  <span>{property.parking} lugares</span>
-                </div>
-              )}
-              {property.area !== undefined && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
-                  <Maximize size={14} style={{ color: 'var(--text-muted)' }} />
-                  <span>{property.area} m²</span>
-                </div>
               )}
             </div>
-
-            {property.description && (
-              <div style={{ marginTop: 16 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Descrição</p>
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>{property.description}</p>
-              </div>
-            )}
-          </Card>
+          ) : (
+            <div
+              style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8, cursor: 'pointer', color: 'var(--text-muted)', fontSize: 13 }}
+              onClick={() => setActiveTab('photos')}
+            >
+              <span style={{ fontSize: 32, opacity: 0.3 }}>🏠</span>
+              Adicionar fotos
+            </div>
+          )}
         </div>
 
-        <div className="space-y-4">
-          <Card title="Informação">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Criado em</span>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatDate(property.createdAt)}</span>
-              </div>
-            </div>
-          </Card>
+        <PropertySidebar
+          property={property}
+          onScheduleVisit={() => setShowVisitModal(true)}
+          onShare={() => setShowShareModal(true)}
+          onGeneratePDF={() => generatePropertyPDF(property, apiBase)}
+        />
+      </div>
 
-          <Card title={`Oportunidades (${opportunities.length})`}>
-            {opportunities.length === 0 ? (
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>Sem oportunidades ligadas</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {opportunities.map((opp) => (
-                  <div key={opp.id} style={{ padding: 12, background: 'var(--bg-page)', borderRadius: 10 }}>
-                    <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)', margin: 0 }}>{opp.title}</p>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                      {STAGE_LABELS[opp.stage]}
-                      {opp.contact && ` • ${opp.contact.name}`}
-                    </p>
-                    {opp.value && (
-                      <p style={{ fontSize: 13, fontWeight: 700, color: '#4ade80', marginTop: 4 }}>
-                        {formatCurrency(opp.value)}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
+      {/* Tabs */}
+      <div style={{ background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)' }}>
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                padding: '12px 20px',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: activeTab === tab.key ? 700 : 400,
+                color: activeTab === tab.key ? 'var(--color-primary)' : 'var(--text-secondary)',
+                borderBottom: activeTab === tab.key ? '2px solid var(--color-primary)' : '2px solid transparent',
+                marginBottom: -1,
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ padding: 20 }}>
+          {activeTab === 'details' && (
+            <DetailsTab property={property} onChange={handlePropertyChange} />
+          )}
+          {activeTab === 'photos' && (
+            <PhotosTab
+              propertyId={property.id}
+              photos={property.photos ?? []}
+              onChange={handlePhotosChange}
+            />
+          )}
+          {activeTab === 'documents' && (
+            <DocumentsTab
+              propertyId={property.id}
+              documents={property.documents ?? []}
+              onChange={handleDocumentsChange}
+            />
+          )}
+          {activeTab === 'visits' && (
+            <VisitsTab
+              propertyId={property.id}
+              visits={property.visits ?? []}
+              onChange={handleVisitsChange}
+            />
+          )}
         </div>
       </div>
+
+      <VisitModal
+        propertyId={property.id}
+        isOpen={showVisitModal}
+        onClose={() => setShowVisitModal(false)}
+        onCreated={v => handleVisitsChange([v, ...(property.visits ?? [])])}
+      />
+
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        url={window.location.href}
+      />
     </div>
   )
 }

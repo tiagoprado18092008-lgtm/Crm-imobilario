@@ -173,6 +173,16 @@ export const PropertiesPage: React.FC = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const limit = 20
 
+  // Abrir modal de edição via URL ?edit=id (chamado da página de detalhe)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const editId = params.get('edit')
+    if (editId && properties.length > 0) {
+      const prop = properties.find(p => p.id === editId)
+      if (prop) { setEditProp(prop); setShowModal(true) }
+    }
+  }, [properties])
+
   const fetchProperties = useCallback(async () => {
     setLoading(true)
     try {
