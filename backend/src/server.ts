@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import path from 'path';
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ import interactionsRouter from './modules/interactions/interactions.router';
 import tasksRouter from './modules/tasks/tasks.router';
 import reportsRouter from './modules/reports/reports.router';
 import conversationsRouter from './modules/conversations/conversations.router';
+import templatesRouter from './modules/message-templates/templates.router';
 import settingsRouter from './modules/settings/settings.router';
 import callsRouter from './modules/calls/calls.router';
 import automationsRouter from './modules/automations/automations.router';
@@ -55,6 +57,9 @@ app.use(
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(requestLogger);
+
+// Servir uploads estáticos
+app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
 
 // ─── SSE (Server-Sent Events) for real-time updates ────────────────────────────
 
@@ -189,10 +194,11 @@ app.post('/webhook/instagram', async (req, res) => {
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
-  max: 20,
+  max: 200,
   message: { error: 'Demasiadas tentativas. Aguarde 15 minutos.', status: 429 },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV !== 'production',
 });
 
 const apiLimiter = rateLimit({
@@ -215,6 +221,7 @@ app.use('/api/interactions', interactionsRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/conversations', conversationsRouter);
+app.use('/api/message-templates', templatesRouter);
 app.use('/api/settings', settingsRouter);
 app.use('/api/calls', callsRouter);
 app.use('/api/automations', automationsRouter);
