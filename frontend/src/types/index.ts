@@ -185,9 +185,62 @@ export interface Property {
   contractEnd?: string
   viewCount?: number
   imageUrls: string
+  // novos campos de localização
+  postalCode?: string
+  freguesia?: string
+  concelho?: string
+  // novos campos de características
+  tipologia?: string
+  areaUtil?: number
+  areaTereno?: number
+  anoConstrucao?: number
+  piso?: number
+  orientacao?: string
+  comodidades?: string[]
+  // novos campos de negócio
+  precoArrendamento?: number
+  despesasCondominio?: number
+  imiAnual?: number
+  // relações
+  photos?: PropertyPhoto[]
+  documents?: PropertyDocument[]
+  visits?: PropertyVisit[]
   createdById?: string
   createdAt: string
   updatedAt?: string
+}
+
+export interface PropertyPhoto {
+  id: string
+  propertyId: string
+  url: string
+  categoria?: string
+  ordem: number
+  createdAt: string
+}
+
+export interface PropertyDocument {
+  id: string
+  propertyId: string
+  nome: string
+  tipo?: string
+  url: string
+  tamanho?: number
+  createdAt: string
+}
+
+export interface PropertyVisit {
+  id: string
+  propertyId: string
+  contactId?: string
+  userId: string
+  scheduledAt: string
+  status: 'agendada' | 'realizada' | 'cancelada'
+  interesse?: 'sim' | 'nao' | 'talvez'
+  notas?: string
+  createdAt: string
+  contactName?: string
+  userName?: string
 }
 
 export interface Opportunity {
@@ -303,15 +356,31 @@ export interface PaginatedResponse<T> {
 
 export interface Conversation {
   id: string
-  channel: 'WHATSAPP' | 'EMAIL' | 'INSTAGRAM' | 'INTERNAL'
+  channel: 'WHATSAPP' | 'EMAIL' | 'SMS' | 'INSTAGRAM' | 'INTERNAL'
   externalId?: string
   status: 'OPEN' | 'RESOLVED' | 'ARCHIVED'
+  isRead: boolean
+  isStarred: boolean
+  lastMessageText?: string
   contactId?: string
   contact?: Contact
   assignedToId?: string
   assignedTo?: User
+  locationId?: string
   messages?: Message[]
   lastMessageAt: string
+  createdAt: string
+}
+
+export interface MessageTemplate {
+  id: string
+  locationId: string
+  agencyId?: string
+  name: string
+  channel: 'WHATSAPP' | 'EMAIL' | 'SMS' | 'ALL'
+  subject?: string
+  body: string
+  variables: string[]
   createdAt: string
 }
 
