@@ -51,6 +51,7 @@ export const register = async (
   const VALID_ROLES = ['AGENCY_OWNER', 'AGENCY_ADMIN', 'TEAM_LEADER', 'CONSULTANT'];
   const rawRole = invitation?.role || role || 'CONSULTANT';
   const validRole = VALID_ROLES.includes(rawRole) ? rawRole : 'CONSULTANT';
+  console.log('[REGISTER] role recebido:', role, '| rawRole:', rawRole, '| validRole:', validRole);
 
   const passwordHash = await bcrypt.hash(password, 10);
 
@@ -103,6 +104,7 @@ export const register = async (
     });
   }
 
+  console.log('[REGISTER] user criado:', { id: user.id, role: user.role, agencyId: user.agencyId });
   const token = signToken({ userId: user.id, role: user.role });
   const { passwordHash: _, ...userWithoutHash } = user;
   return { token, user: userWithoutHash };

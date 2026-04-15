@@ -4,6 +4,7 @@ import * as authService from './auth.service';
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { name, email, password, phone, agency, invitationToken, role } = req.body;
+    console.log('[REGISTER] body recebido:', { name, email, role, agency, phone, invitationToken });
     if (!name || !email || !password) {
       res.status(400).json({ error: 'Nome, email e password são obrigatórios', status: 400 });
       return;
