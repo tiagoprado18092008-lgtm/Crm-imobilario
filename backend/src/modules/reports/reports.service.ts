@@ -12,9 +12,9 @@ export const getSummary = async (user: any) => {
   const today = new Date();
   const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   const [
     totalContacts,
@@ -24,6 +24,8 @@ export const getSummary = async (user: any) => {
     pipelineAgg,
     tasksDueToday,
     closedWonThisMonth,
+    newContactsThisMonth,
+    closedWonWithDates,
   ] = await Promise.all([
     prisma.contact.count({ where: contactWhere }),
     prisma.contact.count({ where: { ...contactWhere, type: 'LEAD' } }),
@@ -54,7 +56,27 @@ export const getSummary = async (user: any) => {
         updatedAt: { gte: startOfMonth, lt: endOfMonth },
       },
     }),
+    prisma.contact.count({
+      where: { ...contactWhere, createdAt: { gte: thirtyDaysAgo } },
+    }),
+    prisma.opportunity.findMany({
+      where: { ...oppWhere, stage: 'CLOSED_WON' },
+      select: { createdAt: true, updatedAt: true },
+      take: 100,
+    }),
   ]);
+
+  const avgDaysToClose =
+    closedWonWithDates.length > 0
+      ? Math.round(
+          closedWonWithDates.reduce((sum: number, opp: any) => {
+            const days =
+              (new Date(opp.updatedAt).getTime() - new Date(opp.createdAt).getTime()) /
+              (1000 * 60 * 60 * 24);
+            return sum + days;
+          }, 0) / closedWonWithDates.length
+        )
+      : 0;
 
   return {
     totalContacts,
@@ -64,6 +86,8 @@ export const getSummary = async (user: any) => {
     pipelineValue: pipelineAgg._sum.value ?? 0,
     tasksDueToday,
     closedWonThisMonth,
+    newContactsThisMonth,
+    avgDaysToClose,
   };
 };
 
