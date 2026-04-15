@@ -35,11 +35,23 @@ enum RunStatus {
 }
 
 model Agency {
-  id       String  @id @default(cuid())
-  name     String
-  slug     String  @unique
-  logoUrl  String?
-  isActive Boolean @default(true)
+  id          String  @id @default(cuid())
+  name        String
+  legalName   String?
+  slug        String  @unique
+  logoUrl     String?
+  coverUrl    String?
+  description String?
+  phone       String?
+  email       String?
+  website     String?
+  address     String?
+  city        String?
+  country     String?
+  niche       String?
+  currency    String  @default("EUR")
+  apiKey      String? @unique
+  isActive    Boolean @default(true)
 
   users       User[]
   automations Automation[]
@@ -741,4 +753,12 @@ model PropertyVisit {
   notas       String?
   createdAt   DateTime @default(now())
   property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+// Key-value store for system settings that must persist across deployments
+// Values for sensitive keys are stored encrypted
+model SystemSettings {
+  key       String   @id
+  value     String   // plain text or AES-encrypted (prefix "enc:")
+  updatedAt DateTime @updatedAt
 }

@@ -138,3 +138,42 @@ export const assignConversation = async (
     next(err);
   }
 };
+
+export const markAsRead = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const conversation = await conversationsService.markAsRead(req.params.id, req.user);
+    res.status(200).json(conversation);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const toggleStar = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const conversation = await conversationsService.toggleStar(req.params.id, req.user);
+    res.status(200).json(conversation);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getUnreadCount = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await conversationsService.getUnreadCount(req.user);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};

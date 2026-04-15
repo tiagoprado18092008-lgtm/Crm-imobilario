@@ -107,7 +107,8 @@ export const createOrFind = async (
   channel: string,
   externalId: string,
   contactId?: string,
-  userId?: string
+  userId?: string,
+  locationId?: string
 ) => {
   // Look for an open conversation with the same channel + externalId
   const existing = await prisma.conversation.findFirst({
@@ -116,13 +117,22 @@ export const createOrFind = async (
 
   if (existing) return existing;
 
+  // Resolve locationId: use provided or fall back to first active location
+  let resolvedLocationId = locationId || null;
+  if (!resolvedLocationId) {
+    const firstLocation = await prisma.location.findFirst({ select: { id: true } });
+    resolvedLocationId = firstLocation?.id || null;
+  }
+
   return prisma.conversation.create({
     data: {
       channel,
       externalId,
       status: 'OPEN',
+      isRead: false,
       contactId: contactId || null,
       assignedToId: userId || null,
+      locationId: resolvedLocationId,
       lastMessageAt: new Date(),
     },
   });
@@ -202,10 +212,10 @@ export const sendMessage = async (
     },
   });
 
-  // Update conversation's lastMessageAt
+  // Update conversation's lastMessageAt + lastMessageText
   await prisma.conversation.update({
     where: { id: conversationId },
-    data: { lastMessageAt: new Date() },
+    data: { lastMessageAt: new Date(), lastMessageText: content.substring(0, 100) },
   });
 
   // Broadcast real-time event
@@ -220,9 +230,60 @@ export const receiveInbound = async (
   channel: string,
   externalId: string,
   content: string,
-  metadata?: string
+  metadata?: string,
+  locationId?: string
 ) => {
-  const conversation = await createOrFind(channel, externalId);
+  // Auto-create or find a contact matching the sender, using profileName if available
+  let resolvedContactId: string | undefined;
+  try {
+    const meta = metadata ? JSON.parse(metadata) : {};
+    const profileName: string | undefined = meta.profileName;
+
+    if (channel === 'WHATSAPP' || channel === 'SMS') {
+      // externalId is the phone number
+      const phone = externalId.startsWith('+') ? externalId : `+${externalId}`;
+      let contact = await prisma.contact.findFirst({
+        where: { OR: [{ phone }, { whatsapp: phone }, { phone: externalId }, { whatsapp: externalId }] },
+      });
+      if (!contact && profileName) {
+        // Create a new contact automatically from the WhatsApp profile
+        const resolvedLoc = locationId || (await prisma.location.findFirst({ select: { id: true } }))?.id || null;
+        // Find a default agent to assign to (oldest user of the location, or global oldest)
+        const defaultUser = await prisma.user.findFirst({
+          where: resolvedLoc
+            ? { locationId: resolvedLoc }
+            : { role: { in: ['AGENCY_OWNER', 'AGENCY_ADMIN'] } },
+          orderBy: { createdAt: 'asc' },
+          select: { id: true },
+        });
+        if (defaultUser) {
+          contact = await prisma.contact.create({
+            data: {
+              name: profileName,
+              phone,
+              whatsapp: phone,
+              source: 'WHATSAPP_INBOUND',
+              locationId: resolvedLoc,
+              assignedToId: defaultUser.id,
+            },
+          });
+          console.log(`[Inbound] Auto-created contact: ${profileName} (${phone})`);
+        }
+      }
+      if (contact) resolvedContactId = contact.id;
+    }
+  } catch { /* non-critical */ }
+
+  const conversation = await createOrFind(channel, externalId, resolvedContactId, undefined, locationId);
+
+  // If we found/created a contact and the conversation didn't have one, link it
+  if (resolvedContactId && !conversation.contactId) {
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { contactId: resolvedContactId },
+    });
+    conversation.contactId = resolvedContactId;
+  }
 
   const message = await prisma.message.create({
     data: {
@@ -237,7 +298,7 @@ export const receiveInbound = async (
 
   await prisma.conversation.update({
     where: { id: conversation.id },
-    data: { lastMessageAt: new Date() },
+    data: { lastMessageAt: new Date(), lastMessageText: content.substring(0, 100), isRead: false },
   });
 
   // Broadcast real-time event
@@ -320,4 +381,32 @@ export const getStats = async (user: any) => {
   }));
 
   return { total, open, resolved, resolvedToday: resolved, byChannel };
+};
+
+// ─── markAsRead ───────────────────────────────────────────────────────────────
+
+export const markAsRead = async (id: string, user: any) => {
+  const baseWhere: any = await buildConversationWhere(user);
+  const conv = await prisma.conversation.findFirst({ where: { id, ...baseWhere } });
+  if (!conv) throw Object.assign(new Error('Conversation not found'), { status: 404 });
+  return prisma.conversation.update({ where: { id }, data: { isRead: true } });
+};
+
+// ─── toggleStar ───────────────────────────────────────────────────────────────
+
+export const toggleStar = async (id: string, user: any) => {
+  const baseWhere: any = await buildConversationWhere(user);
+  const conv = await prisma.conversation.findFirst({ where: { id, ...baseWhere } });
+  if (!conv) throw Object.assign(new Error('Conversation not found'), { status: 404 });
+  return prisma.conversation.update({ where: { id }, data: { isStarred: !conv.isStarred } });
+};
+
+// ─── getUnreadCount ───────────────────────────────────────────────────────────
+
+export const getUnreadCount = async (user: any) => {
+  const baseWhere: any = await buildConversationWhere(user);
+  const count = await prisma.conversation.count({
+    where: { ...baseWhere, isRead: false, status: 'OPEN' },
+  });
+  return { count };
 };

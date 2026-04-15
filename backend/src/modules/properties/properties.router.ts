@@ -12,7 +12,12 @@ router.use(authenticate);
 // Upload storage — guarda em uploads/properties/:id/
 const storage = multer.diskStorage({
   destination: (req, _file, cb) => {
-    const dir = path.join(__dirname, '../../../../uploads/properties', req.params.id);
+    // ts-node (dev): __dirname = backend/src/modules/properties → ../../../../ = repo root
+    // tsc (prod):    __dirname = backend/dist/src/modules/properties → ../../../../../ = repo root
+    const repoRoot = fs.existsSync(path.resolve(__dirname, '../../../../uploads'))
+      ? path.resolve(__dirname, '../../../../uploads')
+      : path.resolve(__dirname, '../../../../../uploads');
+    const dir = path.join(repoRoot, 'properties', req.params.id);
     fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },

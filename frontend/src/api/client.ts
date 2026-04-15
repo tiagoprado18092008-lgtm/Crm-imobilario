@@ -26,7 +26,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('crm_token')
       localStorage.removeItem('crm_user')
-      window.location.href = '/login'
+      localStorage.removeItem('crm_impersonating')
+      localStorage.removeItem('crm_location')
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

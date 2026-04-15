@@ -30,9 +30,19 @@ export const create = async (dto: { name: string; slug: string; logoUrl?: string
 
 export const update = async (
   id: string,
-  dto: { name?: string; slug?: string; logoUrl?: string; isActive?: boolean }
+  dto: {
+    name?: string; legalName?: string; slug?: string; logoUrl?: string; coverUrl?: string;
+    description?: string; phone?: string; email?: string; website?: string;
+    address?: string; city?: string; country?: string; niche?: string; currency?: string; isActive?: boolean
+  }
 ) => {
   return prisma.agency.update({ where: { id }, data: dto });
+};
+
+export const regenerateApiKey = async (id: string) => {
+  const { randomBytes } = await import('crypto');
+  const apiKey = `ck_${randomBytes(24).toString('hex')}`;
+  return prisma.agency.update({ where: { id }, data: { apiKey } });
 };
 
 export const listMembers = async (agencyId: string) => {

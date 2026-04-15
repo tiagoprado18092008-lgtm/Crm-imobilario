@@ -52,3 +52,15 @@ export const getChannelStatus = (
     next(err);
   }
 };
+
+export const testWhatsApp = async (req: Request, res: Response): Promise<void> => {
+  try { res.json(await settingsService.testWhatsAppConnection()); } catch (e: any) { res.json({ success: false, message: e.message }); }
+};
+
+export const testEmail = async (req: Request, res: Response): Promise<void> => {
+  try { res.json(await settingsService.testEmailConnection()); } catch (e: any) { res.json({ success: false, message: e.message }); }
+};
+
+export const testTwilio = async (req: Request, res: Response): Promise<void> => {
+  try { res.json(await settingsService.testTwilioConnection()); } catch (e: any) { res.json({ success: false, message: e.message }); }
+};

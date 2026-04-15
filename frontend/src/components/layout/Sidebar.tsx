@@ -1,19 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Users, Kanban, Building2, CheckSquare,
-  BarChart3, UserCog, LogOut, Settings, Zap,
+  LayoutDashboard, Users, Kanban, Building2,
+  BarChart3, UserCog, LogOut, Settings,
   CalendarClock, ChevronRight,
   UserCircle, ChevronsUpDown, UserPlus, Briefcase,
-  MessageSquare, Megaphone, FileText, Activity,
+  MessageSquare, Activity,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../store/auth.store'
 import { getInitials } from '../../utils/formatters'
 import { ROLE_LABELS } from '../../utils/constants'
 import { usePermissions } from '../../hooks/usePermissions'
-import { getTasks } from '../../api/tasks.api'
+import { getUnreadCount } from '../../api/conversations.api'
 import { CasaFlowLogo, CasaFlowWordmark } from '../../assets/casaflow-logo'
+import { useUIStore } from '../../store/ui.store'
 
 /* ── Design tokens ────────────────────────────────────────────── */
 const T = {
@@ -35,6 +36,7 @@ const EXPANDED_W  = 244
 
 export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) => {
   const { user, logout } = useAuthStore()
+  const { crmName } = useUIStore()
   const navigate = useNavigate()
   const { can, isAgencyAdmin, isLocationAdmin } = usePermissions()
   const isAgencyManager = isAgencyAdmin
@@ -42,23 +44,19 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   const [collapsed, setCollapsed]   = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [orgMenuOpen,  setOrgMenuOpen]  = useState(false)
-  const [taskBadge, setTaskBadge] = useState(0)
+  const [convBadge, setConvBadge] = useState(0)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const orgMenuRef  = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const load = async () => {
       try {
-        const tasksRes = await getTasks({ status: 'PENDING', limit: 50 }).catch(() => null)
-        if (tasksRes) {
-          const raw = tasksRes.data
-          const tasks = Array.isArray(raw) ? raw : raw?.data ?? []
-          setTaskBadge(tasks.filter((t: any) => t.dueDate && new Date(t.dueDate) <= new Date()).length)
-        }
+        const convRes = await getUnreadCount().catch(() => null)
+        if (convRes) setConvBadge(convRes.data?.count ?? 0)
       } catch {}
     }
     load()
-    const iv = setInterval(load, 60000)
+    const iv = setInterval(load, 30000)
     return () => clearInterval(iv)
   }, [])
 
@@ -79,24 +77,17 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
     ...(can('opportunities', 'view') ? [{ to: '/pipeline',     icon: Kanban,       label: 'Oportunidades' }]  : []),
     ...(can('appointments', 'view')  ? [{ to: '/appointments', icon: CalendarClock,label: 'Agendamentos' }]   : []),
     ...(can('properties', 'view')    ? [{ to: '/properties',   icon: Building2,    label: 'Propriedades' }]   : []),
+    ...(can('conversations', 'view') ? [{ to: '/conversations', icon: MessageSquare, label: 'Conversas', badge: convBadge }] : []),
   ]
 
   const gestaoItems: NavItem[] = [
-    ...(can('tasks', 'view')    ? [{ to: '/tasks',   icon: CheckSquare, label: 'Tarefas', badge: taskBadge }] : []),
     ...(can('reports', 'view')  ? [{ to: '/reports', icon: BarChart3,   label: 'Relatórios' }]                : []),
-  ]
-
-  const ferramentasItems: NavItem[] = [
-    ...(can('automations', 'view') ? [{ to: '/automations', icon: Zap, label: 'Automações' }] : []),
-    ...(can('conversations', 'view') ? [{ to: '/conversations', icon: MessageSquare, label: 'Conversas' }] : []),
-    ...(can('campaigns', 'view') ? [{ to: '/campaigns', icon: Megaphone, label: 'Campanhas' }] : []),
-    ...(can('forms', 'view') ? [{ to: '/forms', icon: FileText, label: 'Formulários' }] : []),
   ]
 
   const navGroups: NavGroup[] = [
     { label: 'CRM', items: crmItems },
-    ...(gestaoItems.length    ? [{ label: 'Gestão',      items: gestaoItems }]     : []),
-    ...(ferramentasItems.length ? [{ label: 'Ferramentas', items: ferramentasItems }] : []),
+    ...(gestaoItems.length ? [{ label: 'Gestão', items: gestaoItems }] : []),
+    { label: 'Equipa', items: [{ to: '/settings/team', icon: Users, label: 'Equipa' }] },
   ]
 
   if (isAgencyManager) {
@@ -174,12 +165,8 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
               >
                 <div className="min-w-0">
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 0 }}>
-                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 700, color: T.navy, letterSpacing: '-0.03em', lineHeight: 1 }}>CASA</span>
-                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 400, color: T.navy, letterSpacing: '-0.03em', lineHeight: 1 }}>FLOW</span>
+                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 700, color: T.navy, letterSpacing: '-0.03em', lineHeight: 1 }}>{crmName}</span>
                   </div>
-                  <p style={{ color: T.gold, fontSize: 9, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>
-                    {isDirector && user?.agency ? user.agency : 'CRM Imobiliário'}
-                  </p>
                 </div>
                 <ChevronsUpDown size={13} style={{ color: T.muted, flexShrink: 0 }} />
               </motion.div>

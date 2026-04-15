@@ -3,9 +3,10 @@ import {
   MessageCircle, Mail, Instagram, Settings,
   AlertCircle, Loader2, Eye, EyeOff, Info, Phone, Moon, Sun,
   Plus, Search, Trash2, Edit2, Check, X, Globe, Mic, MessageSquare, Calendar,
+  BookOpen, Copy, ExternalLink, Zap, ChevronDown, ChevronRight,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { getCommSettings, updateCommSettings, getCommStatus, triggerTwilioSetup } from '../api/settings.api'
+import { getCommSettings, updateCommSettings, getCommStatus, triggerTwilioSetup, testWhatsApp, testEmail, testTwilio } from '../api/settings.api'
 import { listNumbers, searchNumbers, purchaseNumber, releaseNumber, updateNumber } from '../api/phone-numbers.api'
 import { useUIStore } from '../store/ui.store'
 
@@ -21,7 +22,7 @@ const COUNTRIES = [
   { code: 'AU', name: 'Austrália' },
 ]
 
-type Tab = 'whatsapp' | 'email' | 'instagram' | 'general' | 'phone'
+type Tab = 'whatsapp' | 'email' | 'instagram' | 'general' | 'phone' | 'guide'
 
 interface WhatsAppSettings {
   whatsappToken: string
@@ -41,6 +42,7 @@ interface EmailSettings {
 interface InstagramSettings {
   accessToken: string
   pageId: string
+  igVerifyToken: string
 }
 
 interface StatusState {
@@ -68,6 +70,249 @@ const StatusLabel: React.FC<{ status: string }> = ({ status }) => {
   return <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Não configurado</span>
 }
 
+// ─── GuidePanel ───────────────────────────────────────────────────────────────
+
+const CopyButton: React.FC<{ text: string }> = ({ text }) => {
+  const [copied, setCopied] = React.useState(false)
+  const copy = () => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <button
+      onClick={copy}
+      title="Copiar"
+      style={{
+        background: 'none', border: 'none', cursor: 'pointer',
+        color: copied ? '#22c55e' : 'var(--text-muted)',
+        padding: '2px 4px', borderRadius: 4, flexShrink: 0,
+        display: 'flex', alignItems: 'center',
+      }}
+    >
+      {copied ? <Check size={13} /> : <Copy size={13} />}
+    </button>
+  )
+}
+
+const WebhookRow: React.FC<{ label: string; path: string }> = ({ label, path }) => {
+  const [open, setOpen] = React.useState(false)
+  const base = typeof window !== 'undefined'
+    ? (window.location.origin.includes('localhost') ? 'https://SEU-DOMINIO.com' : window.location.origin.replace(':5173', ':3000'))
+    : 'https://SEU-DOMINIO.com'
+  const url = `${base}${path}`
+  return (
+    <div style={{ border: '1px solid var(--border-color)', borderRadius: 8, overflow: 'hidden', marginBottom: 6 }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '8px 12px', background: 'var(--hover-bg)', border: 'none', cursor: 'pointer',
+          color: 'var(--text-primary)', fontWeight: 600, fontSize: 13,
+        }}
+      >
+        <span>{label}</span>
+        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+      </button>
+      {open && (
+        <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)' }}>
+          <code style={{ flex: 1, fontSize: 12, fontFamily: 'monospace', color: '#6366f1', wordBreak: 'break-all' }}>{url}</code>
+          <CopyButton text={url} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+const GuidePanel: React.FC<{ status: any; onNavigate: (tab: any) => void }> = ({ status, onNavigate }) => {
+  const channels = [
+    {
+      key: 'whatsapp',
+      label: 'WhatsApp Business',
+      color: '#25d366',
+      bg: '#dcfce7',
+      icon: '💬',
+      steps: [
+        { text: 'Acede a', link: { label: 'developers.facebook.com', href: 'https://developers.facebook.com' }, after: ' e cria uma App Business.' },
+        { text: 'Adiciona o produto "WhatsApp" à App.' },
+        { text: 'Em WhatsApp > Configuração, copia o Token de Acesso Temporário e o Phone Number ID.' },
+        { text: 'Define o Verify Token (qualquer texto secreto teu).' },
+        { text: 'No Meta, configura o Webhook URL:', webhook: '/webhook/whatsapp' },
+        { text: 'Subscrive ao evento: messages.' },
+        { text: 'Guarda as credenciais na aba "WhatsApp" ao lado.' },
+        { text: 'Usa "Testar conexão" para confirmar.' },
+      ],
+    },
+    {
+      key: 'email',
+      label: 'Email (SMTP + IMAP)',
+      color: '#3b82f6',
+      bg: '#dbeafe',
+      icon: '✉️',
+      steps: [
+        { text: 'Para Gmail: ativa a autenticação em 2 passos e cria uma', link: { label: 'App Password', href: 'https://myaccount.google.com/apppasswords' }, after: '.' },
+        { text: 'Para Outlook: usa smtp.office365.com na porta 587 com as tuas credenciais normais.' },
+        { text: 'Preenche SMTP Host, Port, User, Password e o nome do remetente.' },
+        { text: 'Para receber emails (IMAP): preenche o .env com IMAP_HOST, IMAP_USER e IMAP_PASS — o CRM vai verificar novos emails a cada 60 segundos.' },
+        { text: 'Gmail IMAP: imap.gmail.com porta 993 | Outlook: outlook.office365.com porta 993.' },
+        { text: 'Guarda e clica em "Testar conexão".' },
+      ],
+    },
+    {
+      key: 'instagram',
+      label: 'Instagram Messaging',
+      color: '#e1306c',
+      bg: '#fce7f3',
+      icon: '📸',
+      steps: [
+        { text: 'Precisas de uma conta Instagram Business ligada a uma Página de Facebook.' },
+        { text: 'Acede a', link: { label: 'developers.facebook.com', href: 'https://developers.facebook.com' }, after: ' e cria uma App.' },
+        { text: 'Adiciona "Instagram Graph API" e "Messenger".' },
+        { text: 'Solicita as permissões: instagram_basic, instagram_manage_messages.' },
+        { text: 'Após aprovação da Meta, gera um token de acesso de longa duração e copia o Page ID.' },
+        { text: 'Define o Verify Token do Instagram (diferente do WhatsApp).' },
+        { text: 'No Meta, configura o Webhook URL:', webhook: '/webhook/instagram' },
+        { text: 'Subscrive ao evento: messages.' },
+        { text: 'Guarda as credenciais na aba "Instagram" ao lado.' },
+      ],
+    },
+    {
+      key: 'phone',
+      label: 'SMS e Chamadas (Twilio)',
+      color: '#6366f1',
+      bg: '#ede9fe',
+      icon: '📞',
+      steps: [
+        { text: 'Cria uma conta em', link: { label: 'twilio.com', href: 'https://www.twilio.com' }, after: '.' },
+        { text: 'No painel Twilio, copia o Account SID e Auth Token.' },
+        { text: 'Preenche a URL Pública do Servidor (ex: https://meucrm.com).' },
+        { text: 'Guarda as credenciais na aba "Telefone" — o CRM vai criar automaticamente a TwiML App e API Key.' },
+        { text: 'Compra um número de telefone na secção "Números Comprados".' },
+        { text: 'Para SMS inbound, o Twilio vai usar o webhook:', webhook: '/webhook/twilio/sms' },
+        { text: 'Para chamadas inbound:', webhook: '/webhook/twilio/inbound-call' },
+        { text: 'Usa "Testar conexão" para confirmar.' },
+      ],
+    },
+  ]
+
+  const allConfigured = Object.values(status).every((s: any) => s === 'configured')
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#fef9ee' }}>
+            <Zap size={20} style={{ color: '#f59e0b' }} />
+          </div>
+          <div>
+            <h3 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>Guia de Configuração de Canais</h3>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Segue estas instruções para ligar cada canal de comunicação</p>
+          </div>
+        </div>
+
+        {/* Status overview */}
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { key: 'whatsapp', label: 'WhatsApp', color: '#25d366' },
+            { key: 'email', label: 'Email', color: '#3b82f6' },
+            { key: 'instagram', label: 'Instagram', color: '#e1306c' },
+            { key: 'phone', label: 'Telefone', color: '#6366f1' },
+          ].map(c => (
+            <button
+              key={c.key}
+              onClick={() => onNavigate(c.key as any)}
+              className="flex items-center justify-between p-3 rounded-xl transition-all"
+              style={{
+                border: `1px solid ${status[c.key] === 'configured' ? c.color + '40' : 'var(--border-color)'}`,
+                background: status[c.key] === 'configured' ? c.color + '10' : 'var(--hover-bg)',
+                cursor: 'pointer',
+              }}
+            >
+              <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{c.label}</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full" style={{ background: status[c.key] === 'configured' ? '#22c55e' : '#cbd5e1' }} />
+                <span className="text-xs font-semibold" style={{ color: status[c.key] === 'configured' ? '#22c55e' : 'var(--text-muted)' }}>
+                  {status[c.key] === 'configured' ? 'Configurado' : 'Por configurar'}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {allConfigured && (
+          <div className="mt-4 p-3 rounded-xl flex items-center gap-2" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)' }}>
+            <Check size={15} style={{ color: '#22c55e', flexShrink: 0 }} />
+            <p className="text-sm font-semibold" style={{ color: '#16a34a' }}>Todos os canais configurados! O CRM está 100% operacional.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Step-by-step per channel */}
+      {channels.map(ch => (
+        <div key={ch.key} className="rounded-xl border shadow-sm overflow-hidden" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+          <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-color)', background: ch.bg + '30' }}>
+            <div className="flex items-center gap-3">
+              <span style={{ fontSize: 20 }}>{ch.icon}</span>
+              <h4 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{ch.label}</h4>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full" style={{ background: status[ch.key] === 'configured' ? '#22c55e' : '#cbd5e1' }} />
+              <span className="text-xs font-semibold" style={{ color: status[ch.key] === 'configured' ? '#22c55e' : 'var(--text-muted)' }}>
+                {status[ch.key] === 'configured' ? 'Configurado' : 'Por configurar'}
+              </span>
+              <button
+                onClick={() => onNavigate(ch.key as any)}
+                className="flex items-center gap-1 ml-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
+                style={{ background: ch.color, border: 'none', cursor: 'pointer' }}
+              >
+                Configurar <ExternalLink size={10} />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-5">
+            <ol className="space-y-3">
+              {ch.steps.map((step, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span
+                    className="w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5"
+                    style={{ background: ch.bg, color: ch.color }}
+                  >{i + 1}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      {step.text}{' '}
+                      {step.link && (
+                        <a href={step.link.href} target="_blank" rel="noopener noreferrer" className="font-medium" style={{ color: ch.color }}>
+                          {step.link.label}
+                        </a>
+                      )}
+                      {step.after}
+                    </span>
+                    {step.webhook && <WebhookRow label="URL do Webhook" path={step.webhook} />}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      ))}
+
+      {/* IMAP note */}
+      <div className="rounded-xl border p-4" style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)' }}>
+        <div className="flex items-start gap-2">
+          <Info size={14} style={{ color: '#3b82f6', flexShrink: 0, marginTop: 2 }} />
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <strong>Nota sobre IMAP (receção de emails):</strong> As credenciais IMAP (IMAP_HOST, IMAP_USER, IMAP_PASS, IMAP_PORT) são configuradas diretamente no ficheiro <code>.env</code> do servidor. O CRM verifica automaticamente novos emails a cada 60 segundos e cria conversas para cada mensagem recebida.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── SettingsPage ─────────────────────────────────────────────────────────────
+
 export const SettingsPage: React.FC = () => {
   const { darkMode, setDarkMode, setCrmName: setGlobalCrmName } = useUIStore()
   const [tab, setTab] = useState<Tab>(() => {
@@ -77,9 +322,9 @@ export const SettingsPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [twilioSetupRunning, setTwilioSetupRunning] = useState(false)
-  const [testing, setTesting] = useState(false)
+  const [testing, setTesting] = useState<{ [key: string]: boolean }>({})
+  const [testResult, setTestResult] = useState<{ [key: string]: { success: boolean; message: string } | null }>({})
   const [saveMsg, setSaveMsg] = useState('')
-  const [testMsg, setTestMsg] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [showToken, setShowToken] = useState(false)
 
@@ -94,7 +339,7 @@ export const SettingsPage: React.FC = () => {
   const [email, setEmail] = useState<EmailSettings>({
     smtpHost: '', smtpPort: '587', smtpUser: '', smtpPass: '', fromName: '', fromEmail: '',
   })
-  const [ig, setIg] = useState<InstagramSettings>({ accessToken: '', pageId: '' })
+  const [ig, setIg] = useState<InstagramSettings>({ accessToken: '', pageId: '', igVerifyToken: '' })
   const [twilioAccountSid, setTwilioAccountSid] = useState('')
   const [twilioAuthToken, setTwilioAuthToken] = useState('')
   const [twilioSidSaved, setTwilioSidSaved] = useState(false)
@@ -134,7 +379,7 @@ export const SettingsPage: React.FC = () => {
           smtpHost: s.smtpHost, smtpPort: s.smtpPort || '587', smtpUser: s.smtpUser || '',
           smtpPass: s.smtpPass || '', fromName: s.fromName || '', fromEmail: s.fromEmail || '',
         })
-        if (s.igAccessToken) setIg({ accessToken: s.igAccessToken, pageId: s.igPageId || '' })
+        if (s.igAccessToken) setIg({ accessToken: s.igAccessToken, pageId: s.igPageId || '', igVerifyToken: s.igVerifyToken || '' })
         if (s.crmName) { setCrmNameLocal(s.crmName); setGlobalCrmName(s.crmName) }
         // Don't pre-fill masked values — show empty input with placeholder instead
         if (s.twilioAccountSid) { if (s.twilioAccountSid.startsWith('*')) setTwilioSidSaved(true); else setTwilioAccountSid(s.twilioAccountSid) }
@@ -255,21 +500,23 @@ export const SettingsPage: React.FC = () => {
     setTwilioSetupRunning(false)
   }
 
-  const handleTest = async () => {
-    setTesting(true)
-    setTestMsg('')
+  const handleTest = async (section: 'whatsapp' | 'email' | 'twilio', fn: () => Promise<any>) => {
+    setTesting(t => ({ ...t, [section]: true }))
+    setTestResult(r => ({ ...r, [section]: null }))
     try {
-      const { getCommStatus } = await import('../api/settings.api')
-      await getCommStatus()
-      setTestMsg('Conexão testada com sucesso!')
-      setTimeout(() => setTestMsg(''), 3000)
-    } catch {
-      setTestMsg('Falha na conexão.')
+      const res = await fn()
+      const message = res?.data?.message || 'Conexão testada com sucesso!'
+      setTestResult(r => ({ ...r, [section]: { success: true, message } }))
+      setTimeout(() => setTestResult(r => ({ ...r, [section]: null })), 5000)
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Falha na conexão.'
+      setTestResult(r => ({ ...r, [section]: { success: false, message } }))
     }
-    setTesting(false)
+    setTesting(t => ({ ...t, [section]: false }))
   }
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; status: string }[] = [
+    { key: 'guide', label: 'Guia de Início', icon: <BookOpen size={15} style={{ color: '#f59e0b' }} />, status: 'configured' },
     { key: 'whatsapp', label: 'WhatsApp', icon: <MessageCircle size={15} style={{ color: '#25d366' }} />, status: status.whatsapp },
     { key: 'email', label: 'Email (SMTP)', icon: <Mail size={15} style={{ color: '#3b82f6' }} />, status: status.email },
     { key: 'instagram', label: 'Instagram', icon: <Instagram size={15} style={{ color: '#e1306c' }} />, status: status.instagram },
@@ -313,7 +560,7 @@ export const SettingsPage: React.FC = () => {
               >
                 {t.icon}
                 <span className="flex-1 text-sm">{t.label}</span>
-                {t.key !== 'general' && <StatusDot status={t.status} />}
+                {t.key !== 'general' && t.key !== 'guide' && <StatusDot status={t.status} />}
               </button>
             ))}
             <Link
@@ -335,6 +582,9 @@ export const SettingsPage: React.FC = () => {
 
         {/* Content */}
         <div className="flex-1">
+          {/* Guia de Início */}
+          {tab === 'guide' && <GuidePanel status={status} onNavigate={setTab} />}
+
           {/* WhatsApp */}
           {tab === 'whatsapp' && (
             <div className="space-y-5">
@@ -410,16 +660,21 @@ export const SettingsPage: React.FC = () => {
                       Guardar
                     </button>
                     <button
-                      onClick={handleTest}
-                      disabled={testing}
+                      onClick={() => handleTest('whatsapp', testWhatsApp)}
+                      disabled={!!testing['whatsapp']}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
                       style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)', background: 'var(--bg-card)' }}
                     >
-                      {testing && <Loader2 size={14} className="animate-spin" />}
+                      {testing['whatsapp'] && <Loader2 size={14} className="animate-spin" />}
                       Testar conexão
                     </button>
                     {saveMsg && <span className={`text-sm font-medium ${saveMsg.includes('Erro') ? 'text-red-500' : 'text-emerald-600'}`}>{saveMsg}</span>}
-                    {testMsg && <span className={`text-sm font-medium ${testMsg.includes('Falha') ? 'text-red-500' : 'text-emerald-600'}`}>{testMsg}</span>}
+                    {testResult['whatsapp'] && (
+                      <span className={`text-sm font-medium flex items-center gap-1 ${testResult['whatsapp'].success ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {testResult['whatsapp'].success ? <Check size={13} /> : <X size={13} />}
+                        {testResult['whatsapp'].message}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -571,16 +826,21 @@ export const SettingsPage: React.FC = () => {
                     Guardar
                   </button>
                   <button
-                    onClick={handleTest}
-                    disabled={testing}
+                    onClick={() => handleTest('email', testEmail)}
+                    disabled={!!testing['email']}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold"
                     style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)', background: 'var(--bg-card)' }}
                   >
-                    {testing && <Loader2 size={14} className="animate-spin" />}
+                    {testing['email'] && <Loader2 size={14} className="animate-spin" />}
                     Testar conexão
                   </button>
                   {saveMsg && <span className={`text-sm font-medium ${saveMsg.includes('Erro') ? 'text-red-500' : 'text-emerald-600'}`}>{saveMsg}</span>}
-                  {testMsg && <span className={`text-sm font-medium ${testMsg.includes('Falha') ? 'text-red-500' : 'text-emerald-600'}`}>{testMsg}</span>}
+                  {testResult['email'] && (
+                    <span className={`text-sm font-medium flex items-center gap-1 ${testResult['email'].success ? 'text-emerald-600' : 'text-red-500'}`}>
+                      {testResult['email'].success ? <Check size={13} /> : <X size={13} />}
+                      {testResult['email'].message}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -633,10 +893,24 @@ export const SettingsPage: React.FC = () => {
                       style={inputStyle}
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                      Verify Token
+                      <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>usado para verificar o webhook no Meta</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={ig.igVerifyToken}
+                      onChange={(e) => setIg({ ...ig, igVerifyToken: e.target.value })}
+                      placeholder="meu_ig_verify_token_secreto"
+                      className={inputClass}
+                      style={inputStyle}
+                    />
+                  </div>
 
                   <div className="flex items-center gap-3 pt-2">
                     <button
-                      onClick={() => handleSave({ igAccessToken: ig.accessToken, igPageId: ig.pageId })}
+                      onClick={() => handleSave({ igAccessToken: ig.accessToken, igPageId: ig.pageId, igVerifyToken: ig.igVerifyToken })}
                       disabled={saving}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-semibold"
                       style={{ background: '#0066ff', opacity: saving ? 0.7 : 1 }}
@@ -788,16 +1062,33 @@ export const SettingsPage: React.FC = () => {
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                       Após guardar, compra um número na secção abaixo para SMS e chamadas.
                     </p>
-                    <button
-                      onClick={() => handleSave({ twilioAccountSid, twilioAuthToken, twilioPhoneNumber, twilioTwimlAppSid, twilioApiKey, twilioApiSecret, publicUrl })}
-                      disabled={saving}
-                      className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold disabled:opacity-60"
-                      style={{ background: '#6366f1', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
-                    >
-                      {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                      Guardar
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleTest('twilio', testTwilio)}
+                        disabled={!!testing['twilio']}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-60"
+                        style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)', background: 'var(--bg-card)', cursor: testing['twilio'] ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        {testing['twilio'] && <Loader2 size={14} className="animate-spin" />}
+                        Testar conexão
+                      </button>
+                      <button
+                        onClick={() => handleSave({ twilioAccountSid, twilioAuthToken, twilioPhoneNumber, twilioTwimlAppSid, twilioApiKey, twilioApiSecret, publicUrl })}
+                        disabled={saving}
+                        className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold disabled:opacity-60"
+                        style={{ background: '#6366f1', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                        Guardar
+                      </button>
+                    </div>
                   </div>
+                  {testResult['twilio'] && (
+                    <p className={`text-xs font-medium flex items-center gap-1 ${testResult['twilio'].success ? 'text-emerald-600' : 'text-red-500'}`}>
+                      {testResult['twilio'].success ? <Check size={12} /> : <X size={12} />}
+                      {testResult['twilio'].message}
+                    </p>
+                  )}
                   {saveMsg && (
                     <p className="text-xs font-medium" style={{ color: saveMsg.includes('✓') ? '#10b981' : '#f87171' }}>{saveMsg}</p>
                   )}

@@ -65,3 +65,24 @@ export const assignUser = async (req: Request, res: Response, next: NextFunction
     next(err);
   }
 };
+
+export const regenerateApiKey = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const agency = await agencyService.regenerateApiKey(req.params.id);
+    res.json({ apiKey: agency.apiKey });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const uploadLogo = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const file = (req as any).file;
+    if (!file) { res.status(400).json({ error: 'Ficheiro obrigatório' }); return; }
+    const url = `/uploads/agency/${req.params.id}/${file.filename}`;
+    const agency = await agencyService.update(req.params.id, { logoUrl: url });
+    res.json({ logoUrl: agency.logoUrl });
+  } catch (err) {
+    next(err);
+  }
+};

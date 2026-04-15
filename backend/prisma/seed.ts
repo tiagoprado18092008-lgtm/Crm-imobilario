@@ -102,8 +102,8 @@ async function main() {
   console.log('✓ Agência, Escritório Principal e definições criados');
 
   // ─── UTILIZADORES ─────────────────────────────────────────────────────────────
-  const adminHash = await bcrypt.hash('Admin123!', 12);
-  const userHash = await bcrypt.hash('Pass123!', 12);
+  const adminHash = await bcrypt.hash('admin123', 12);
+  const userHash = await bcrypt.hash('admin123', 12);
 
   const admin = await prisma.user.create({
     data: {
@@ -654,14 +654,44 @@ async function main() {
   ]);
   console.log('✓ Backfill locationId concluído');
 
+  // ─── TEMPLATES DE MENSAGEM ────────────────────────────────────────────────────
+  await prisma.messageTemplate.deleteMany({ where: { locationId: lid } });
+  await prisma.messageTemplate.createMany({
+    data: [
+      {
+        locationId: lid,
+        name: 'Confirmação de visita',
+        channel: 'ALL',
+        body: 'Olá {{nome}}! A sua visita ao imóvel {{imovel}} está confirmada para {{data}} às {{hora}}. Qualquer dúvida estamos disponíveis. Até breve, {{consultor}}',
+        variables: ['nome', 'imovel', 'data', 'hora', 'consultor'],
+      },
+      {
+        locationId: lid,
+        name: 'Follow-up pós-visita',
+        channel: 'ALL',
+        body: 'Olá {{nome}}, obrigado pela visita de hoje! Ficou com alguma questão sobre o imóvel? Estamos ao dispor. Com os melhores cumprimentos, {{consultor}}',
+        variables: ['nome', 'consultor'],
+      },
+      {
+        locationId: lid,
+        name: 'Proposta enviada',
+        channel: 'EMAIL',
+        subject: 'A sua proposta — {{imovel}}',
+        body: 'Olá {{nome}},\n\nAcabámos de enviar a proposta para o imóvel {{imovel}} para o seu email. Por favor confirme a recepção e não hesite em contactar-nos.\n\nCom os melhores cumprimentos,\n{{consultor}}',
+        variables: ['nome', 'imovel', 'consultor'],
+      },
+    ],
+  });
+  console.log('✓ Templates de mensagem criados');
+
   console.log('\nSeed concluído com sucesso!');
   console.log('\nCredenciais de acesso:');
-  console.log('   admin@crm.pt           | Admin123! | AGENCY_OWNER');
-  console.log('   joao@crm.pt            | Pass123!  | TEAM_LEADER');
-  console.log('   ana@crm.pt             | Pass123!  | CONSULTANT');
-  console.log('   pedro@crm.pt           | Pass123!  | CONSULTANT');
-  console.log('   location-admin@crm.pt  | Pass123!  | LOCATION_ADMIN');
-  console.log('   user@crm.pt            | Pass123!  | USER (permissões limitadas)');
+  console.log('   admin@crm.pt           | admin123 | AGENCY_OWNER');
+  console.log('   joao@crm.pt            | admin123 | TEAM_LEADER');
+  console.log('   ana@crm.pt             | admin123 | CONSULTANT');
+  console.log('   pedro@crm.pt           | admin123 | CONSULTANT');
+  console.log('   location-admin@crm.pt  | admin123 | LOCATION_ADMIN');
+  console.log('   user@crm.pt            | admin123 | USER (permissões limitadas)');
   console.log('\nDados criados:');
   console.log('   6 utilizadores | 20 imóveis | 50 contactos | 12 oportunidades');
   console.log('   15 interações  | 12 tarefas | 5 agendamentos | 6 automações');

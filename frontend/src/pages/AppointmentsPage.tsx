@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react'
 import { Calendar, Plus, Clock, MapPin, User, X, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { listAppointments, createAppointment, updateAppointment, deleteAppointment } from '../api/appointments.api'
 import { getContacts } from '../api/contacts.api'
+import { getUsers } from '../api/users.api'
 import { useAuthStore } from '../store/auth.store'
 import { useUIStore } from '../store/ui.store'
+import { usePermissions } from '../hooks/usePermissions'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
 import type { Contact } from '../types'
@@ -60,16 +62,19 @@ const labelStyle: React.CSSProperties = {
 export const AppointmentsPage: React.FC = () => {
   useAuthStore()
   const { showToast } = useUIStore()
+  const { isAgencyAdmin } = usePermissions()
   const [appointments, setAppointments] = useState<any[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
+  const [allUsers, setAllUsers] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading] = useState(true)
+  const [mainTab, setMainTab] = useState<'calendar' | 'list'>('calendar')
   const [view, setView] = useState<'list' | 'calendar' | 'week'>('week')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [filter, setFilter] = useState('ALL')
-  const [responsibleFilter, setResponsibleFilter] = useState<string>('ALL')
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set(['ALL']))
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const weekGridRef = React.useRef<HTMLDivElement>(null)
   const dayColRefs = React.useRef<(HTMLDivElement | null)[]>([])
@@ -273,14 +278,18 @@ export const AppointmentsPage: React.FC = () => {
 
   const load = async () => {
     try {
-      const [apRes, ctRes] = await Promise.all([
+      const [apRes, ctRes, usRes] = await Promise.all([
         listAppointments(),
         getContacts({ limit: 200 }),
+        getUsers(),
       ])
       const d = apRes.data
       setAppointments(Array.isArray(d) ? d : d.data || [])
       const cd = ctRes.data
       setContacts(Array.isArray(cd) ? cd : cd.data || [])
+      const ud = usRes.data
+      const uList = Array.isArray(ud) ? ud : ud.data || []
+      setAllUsers(uList.map((u: any) => ({ id: u.id, name: u.name })))
     } catch {
       showToast('Erro ao carregar agendamentos', 'error')
     } finally { setLoading(false) }
@@ -371,20 +380,36 @@ export const AppointmentsPage: React.FC = () => {
 
   const filtered = filter === 'ALL' ? appointments : appointments.filter(a => a.status === filter)
 
-  // Unique responsible users across all appointments
-  const responsibleUsers: { id: string; name: string }[] = []
-  const seenIds = new Set<string>()
-  for (const a of appointments) {
-    if (a.assignedTo && !seenIds.has(a.assignedTo.id)) {
-      seenIds.add(a.assignedTo.id)
-      responsibleUsers.push({ id: a.assignedTo.id, name: a.assignedTo.name })
-    }
+  // Team filter: admins use allUsers list; others derive from appointments
+  const teamFilterUsers: { id: string; name: string }[] = isAgencyAdmin
+    ? allUsers
+    : (() => {
+        const seen = new Set<string>()
+        const res: { id: string; name: string }[] = []
+        for (const a of appointments) {
+          if (a.assignedTo && !seen.has(a.assignedTo.id)) {
+            seen.add(a.assignedTo.id)
+            res.push({ id: a.assignedTo.id, name: a.assignedTo.name })
+          }
+        }
+        return res
+      })()
+
+  const toggleUserFilter = (id: string) => {
+    setSelectedUserIds(prev => {
+      const next = new Set(prev)
+      if (id === 'ALL') return new Set(['ALL'])
+      next.delete('ALL')
+      if (next.has(id)) { next.delete(id); if (next.size === 0) next.add('ALL') }
+      else next.add(id)
+      return next
+    })
   }
 
   // Apply responsible filter on top of status filter
-  const visibleAppointments = responsibleFilter === 'ALL'
+  const visibleAppointments = selectedUserIds.has('ALL')
     ? filtered
-    : filtered.filter(a => a.assignedTo?.id === responsibleFilter)
+    : filtered.filter(a => a.assignedTo?.id && selectedUserIds.has(a.assignedTo.id))
 
   // Calendar helpers — month grid (ref: calendar pattern)
   const prevMonth = () => {
@@ -431,78 +456,341 @@ export const AppointmentsPage: React.FC = () => {
   const currentYear = new Date().getFullYear()
   const yearOptions = Array.from({ length: 10 }, (_, i) => currentYear - 2 + i)
 
+  // Mini calendar state (sidebar)
+  const [miniMonth, setMiniMonth] = React.useState(today.getMonth())
+  const [miniYear, setMiniYear] = React.useState(today.getFullYear())
+  const miniFirstDay = new Date(miniYear, miniMonth, 1).getDay()
+  const miniDaysInMonth = new Date(miniYear, miniMonth + 1, 0).getDate()
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
+  const selectedKey = `${weekStart.getFullYear()}-${String(weekStart.getMonth()+1).padStart(2,'0')}-${String(weekStart.getDate()).padStart(2,'0')}`
+
+  // Compromissos tab state
+  const [listTab, setListTab] = useState<'upcoming' | 'cancelled' | 'all'>('upcoming')
+  const [listSearch, setListSearch] = useState('')
+  const [listSort, setListSort] = useState<'date_asc' | 'date_desc'>('date_asc')
+
+  const listFiltered = appointments.filter(a => {
+    const matchTab = listTab === 'upcoming'
+      ? (a.status === 'SCHEDULED' || a.status === 'CONFIRMED') && new Date(a.startAt) >= new Date(new Date().setHours(0,0,0,0))
+      : listTab === 'cancelled'
+      ? a.status === 'CANCELLED'
+      : true
+    const matchSearch = !listSearch || a.title?.toLowerCase().includes(listSearch.toLowerCase()) ||
+      a.contact?.name?.toLowerCase().includes(listSearch.toLowerCase())
+    return matchTab && matchSearch
+  }).sort((a, b) => {
+    const diff = new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
+    return listSort === 'date_asc' ? diff : -diff
+  })
+
+  const TAB_STYLE = (active: boolean): React.CSSProperties => ({
+    padding: '10px 20px', border: 'none', background: 'none', cursor: 'pointer',
+    fontSize: 14, fontWeight: active ? 600 : 400,
+    color: active ? '#1a73e8' : '#5f6368',
+    borderBottom: active ? '2px solid #1a73e8' : '2px solid transparent',
+    transition: 'all 0.15s',
+  })
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      {/* ── Main tabs ── */}
+      <div style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid #e0e0e0', background: '#fff', paddingLeft: 4 }}>
+        <button style={TAB_STYLE(mainTab === 'calendar')} onClick={() => setMainTab('calendar')}>
+          Ver de calendário
+        </button>
+        <button style={TAB_STYLE(mainTab === 'list')} onClick={() => setMainTab('list')}>
+          Vista de lista de Compromisso
+        </button>
+        <div style={{ flex: 1 }} />
+        <button onClick={openCreate} style={{
+          margin: '6px 12px', display: 'flex', alignItems: 'center', gap: 6,
+          padding: '8px 16px', borderRadius: 6, border: 'none',
+          background: '#1a73e8', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+        }}>
+          <Plus size={15} /> Novo agendamento
+        </button>
+      </div>
 
-      {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-        {/* View toggle */}
-        <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border-color)' }}>
-          {(['list', 'week', 'calendar'] as const).map(v => (
-            <button
-              key={v}
-              onClick={() => setView(v)}
-              style={{
-                padding: '6px 16px', fontSize: 13, fontWeight: 500,
-                background: view === v ? '#6366f1' : 'var(--bg-card)',
-                color: view === v ? '#fff' : 'var(--text-secondary)',
-                border: 'none', cursor: 'pointer', transition: 'background 150ms',
-              }}
-              onMouseEnter={e => { if (view !== v) e.currentTarget.style.background = 'var(--hover-bg)' }}
-              onMouseLeave={e => { if (view !== v) e.currentTarget.style.background = 'var(--bg-card)' }}
-            >
-              {v === 'list' ? 'Lista' : v === 'week' ? 'Semana' : 'Mês'}
-            </button>
-          ))}
-        </div>
-
-        {/* Status filter chips */}
-        {view === 'list' && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {['ALL', 'SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED'].map(s => (
-              <button
-                key={s}
-                onClick={() => setFilter(s)}
-                style={{
-                  padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                  border: 'none', cursor: 'pointer', transition: 'all 150ms',
-                  background: filter === s ? (STATUS_COLORS[s] || '#6366f1') : 'var(--hover-bg)',
-                  color: filter === s ? '#fff' : 'var(--text-secondary)',
-                }}
-              >
-                {s === 'ALL' ? 'Todos' : STATUS_LABELS[s]}
+      {/* ── List tab (Compromissos) ── */}
+      {mainTab === 'list' && (
+        <div style={{ background: '#fff', minHeight: 500 }}>
+          {/* Sub-tabs */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderBottom: '1px solid #e0e0e0', paddingLeft: 16 }}>
+            {(['upcoming', 'cancelled', 'all'] as const).map(t => (
+              <button key={t} onClick={() => setListTab(t)} style={{
+                padding: '10px 16px', border: 'none', background: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: listTab === t ? 600 : 400,
+                color: listTab === t ? '#1a73e8' : '#5f6368',
+                borderBottom: listTab === t ? '2px solid #1a73e8' : '2px solid transparent',
+              }}>
+                {t === 'upcoming' ? 'Em breve' : t === 'cancelled' ? 'Cancelado(a)' : 'Todos'}
               </button>
             ))}
           </div>
-        )}
 
-        <Button size="sm" onClick={openCreate} style={{ marginLeft: 'auto' }}>
-          <Plus style={{ width: 14, height: 14 }} /> Novo agendamento
-        </Button>
-      </div>
-
-      {/* Responsible filter chips */}
-      {responsibleUsers.length > 1 && (
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Responsável:
-          </span>
-          {[{ id: 'ALL', name: 'Todos' }, ...responsibleUsers].map(u => (
-            <button
-              key={u.id}
-              onClick={() => setResponsibleFilter(u.id)}
-              style={{
-                padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                border: 'none', cursor: 'pointer', transition: 'all 150ms',
-                background: responsibleFilter === u.id ? '#6366f1' : 'var(--hover-bg)',
-                color: responsibleFilter === u.id ? '#fff' : 'var(--text-secondary)',
-              }}
-            >
-              {u.name}
+          {/* Toolbar */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px', borderBottom: '1px solid #f1f3f4' }}>
+            <div style={{ position: 'relative', flex: 1, maxWidth: 280 }}>
+              <input
+                value={listSearch}
+                onChange={e => setListSearch(e.target.value)}
+                placeholder="Pesquisa por Nome"
+                style={{
+                  width: '100%', padding: '8px 12px 8px 36px', borderRadius: 8,
+                  border: '1px solid #dadce0', fontSize: 13, outline: 'none', boxSizing: 'border-box',
+                  background: '#f8f9fa',
+                }}
+              />
+              <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9aa0a6', pointerEvents: 'none' }}>🔍</span>
+            </div>
+            <button onClick={() => setListSort(s => s === 'date_asc' ? 'date_desc' : 'date_asc')} style={{
+              display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px',
+              borderRadius: 8, border: '1px solid #dadce0', background: '#fff',
+              cursor: 'pointer', fontSize: 12, fontWeight: 500, color: '#3c4043',
+            }}>
+              ↕ Ordenar por data {listSort === 'date_asc' ? '↑' : '↓'}
             </button>
-          ))}
+          </div>
+
+          {/* Table */}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#f8f9fa', borderBottom: '1px solid #e0e0e0' }}>
+                  {['#', 'Título', 'Contacto', 'Estado', 'Hora do compromisso', 'Tipo', 'Responsável'].map(h => (
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: '#5f6368', fontSize: 12, whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}
+                  <th style={{ padding: '10px 16px', width: 60 }} />
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={8} style={{ padding: '48px 0', textAlign: 'center', color: '#9aa0a6' }}>A carregar...</td></tr>
+                ) : listFiltered.length === 0 ? (
+                  <tr><td colSpan={8} style={{ padding: '64px 0', textAlign: 'center', color: '#9aa0a6', fontSize: 14 }}>
+                    Nenhum compromisso encontrado
+                  </td></tr>
+                ) : listFiltered.map((a, idx) => {
+                  const sc = STATUS_COLORS[a.status] || '#6366f1'
+                  const start = new Date(a.startAt)
+                  return (
+                    <tr key={a.id} style={{ borderBottom: '1px solid #f1f3f4', transition: 'background 0.1s' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#f8f9fa')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <td style={{ padding: '12px 16px', color: '#9aa0a6', fontSize: 12 }}>{idx + 1}</td>
+                      <td style={{ padding: '12px 16px', fontWeight: 500, color: '#202124' }}>{a.title}</td>
+                      <td style={{ padding: '12px 16px', color: '#5f6368' }}>{a.contact?.name || '—'}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{
+                          display: 'inline-block', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
+                          background: sc + '18', color: sc,
+                        }}>{STATUS_LABELS[a.status]}</span>
+                      </td>
+                      <td style={{ padding: '12px 16px', color: '#5f6368', whiteSpace: 'nowrap' }}>
+                        {start.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {' '}
+                        <span style={{ color: '#9aa0a6' }}>{start.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </td>
+                      <td style={{ padding: '12px 16px', color: '#5f6368' }}>{TYPE_LABELS[a.type] || a.type}</td>
+                      <td style={{ padding: '12px 16px', color: '#5f6368' }}>{a.assignedTo?.name || '—'}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button onClick={() => openEdit(a)} style={{
+                            padding: '4px 10px', borderRadius: 6, border: '1px solid #dadce0',
+                            background: '#fff', cursor: 'pointer', fontSize: 12, color: '#3c4043',
+                          }}>Editar</button>
+                          <button onClick={() => setDeleteId(a.id)} style={{
+                            padding: '4px 8px', borderRadius: 6, border: '1px solid #fecaca',
+                            background: '#fff', cursor: 'pointer', fontSize: 12, color: '#ef4444',
+                          }}>✕</button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
+
+      {/* ── Calendar tab ── */}
+      {mainTab === 'calendar' && (
+    <div style={{ display: 'flex', minHeight: 700, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+
+      {/* ── Sidebar ── */}
+      <div style={{ width: 236, borderRight: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', flexShrink: 0, background: '#fff' }}>
+        {/* Create button */}
+        <div style={{ padding: '16px 12px 8px' }}>
+          <button onClick={openCreate} style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', borderRadius: 24,
+            border: 'none', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.1)',
+            cursor: 'pointer', fontSize: 14, fontWeight: 500, color: '#3c4043',
+          }}>
+            <Plus size={20} color="#1a73e8" /> Criar
+          </button>
+        </div>
+
+        {/* Mini calendar */}
+        <div style={{ padding: '8px 4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px 8px' }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#3c4043' }}>{MONTHS_PT[miniMonth]} {miniYear}</span>
+            <div style={{ display: 'flex', gap: 2 }}>
+              <button onClick={() => { if (miniMonth === 0) { setMiniMonth(11); setMiniYear(y => y-1) } else setMiniMonth(m => m-1) }}
+                style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 3, borderRadius: '50%', color: '#3c4043', display: 'flex' }}>
+                <ChevronLeft size={14} />
+              </button>
+              <button onClick={() => { if (miniMonth === 11) { setMiniMonth(0); setMiniYear(y => y+1) } else setMiniMonth(m => m+1) }}
+                style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 3, borderRadius: '50%', color: '#3c4043', display: 'flex' }}>
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', marginBottom: 2 }}>
+            {['D','S','T','Q','Q','S','S'].map((d, i) => (
+              <div key={i} style={{ textAlign: 'center', fontSize: 10, fontWeight: 600, color: '#70757a', padding: '2px 0' }}>{d}</div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
+            {Array.from({ length: miniFirstDay }).map((_, i) => <div key={`p${i}`} />)}
+            {Array.from({ length: miniDaysInMonth }).map((_, i) => {
+              const day = i + 1
+              const date = new Date(miniYear, miniMonth, day)
+              const key = `${miniYear}-${String(miniMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+              const isToday2 = key === todayKey
+              const isSel = key === selectedKey
+              return (
+                <button key={day} onClick={() => { setWeekStart(getWeekStart(date)); if (view !== 'list') setView('week') }}
+                  style={{ border: 'none', background: isSel ? '#1a73e8' : 'none', borderRadius: '50%', cursor: 'pointer',
+                    color: isSel ? '#fff' : isToday2 ? '#1a73e8' : '#3c4043',
+                    fontSize: 11, fontWeight: isSel || isToday2 ? 700 : 400,
+                    width: 26, height: 26, margin: '1px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {day}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Status legend */}
+        <div style={{ padding: '12px 16px', borderTop: '1px solid #e0e0e0', marginTop: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#70757a', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estado</div>
+          {Object.entries(STATUS_LABELS).map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: STATUS_COLORS[k], flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: '#3c4043' }}>{v}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Team filter (admin: always show; others: only if >1 person) */}
+        {(isAgencyAdmin ? teamFilterUsers.length > 0 : teamFilterUsers.length > 1) && (
+          <div style={{ padding: '12px 16px', borderTop: '1px solid #e0e0e0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#70757a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Equipa</div>
+              <button onClick={() => setSelectedUserIds(new Set(['ALL']))} style={{ fontSize: 11, color: '#1a73e8', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                Todos
+              </button>
+            </div>
+            {teamFilterUsers.map(u => {
+              const enabled = !selectedUserIds.has('ALL') && selectedUserIds.has(u.id)
+              const initials = u.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
+              return (
+                <label key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 4px', borderRadius: 6, cursor: 'pointer', userSelect: 'none' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  onClick={() => toggleUserFilter(u.id)}
+                >
+                  <span style={{
+                    width: 16, height: 16, borderRadius: 4, flexShrink: 0,
+                    background: enabled ? '#1a73e8' : 'transparent',
+                    border: '2px solid #1a73e8',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'background 0.15s',
+                  }}>
+                    {enabled && (
+                      <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                        <path d="M1 4L3.5 6.5L9 1" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </span>
+                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#e8f0fe', color: '#1a73e8', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {initials}
+                  </span>
+                  <span style={{ fontSize: 12, color: '#3c4043', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</span>
+                </label>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── Main area ── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+        {/* Top nav */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderBottom: '1px solid #e0e0e0', flexShrink: 0, background: '#fff' }}>
+          <button onClick={() => { goToThisWeek(); setCalMonth(today.getMonth()); setCalYear(today.getFullYear()) }}
+            style={{ padding: '7px 18px', borderRadius: 20, border: '1px solid #dadce0', background: '#fff', color: '#3c4043', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+            Hoje
+          </button>
+          <button onClick={prevWeek} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 6, borderRadius: '50%', color: '#3c4043', display: 'flex' }}><ChevronLeft size={20} /></button>
+          <button onClick={nextWeek} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 6, borderRadius: '50%', color: '#3c4043', display: 'flex' }}><ChevronRight size={20} /></button>
+          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 400, color: '#3c4043', flex: 1 }}>
+            {view === 'calendar'
+              ? `${MONTHS_PT[calMonth]} ${calYear}`
+              : `${weekDays[0].getDate()} – ${weekDays[6].getDate()} ${MONTHS_PT[weekDays[6].getMonth()]} ${weekDays[6].getFullYear()}`}
+          </h2>
+          {/* Status filter (list only) */}
+          {view === 'list' && (
+            <div style={{ display: 'flex', gap: 4 }}>
+              {['ALL', 'SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED'].map(s => (
+                <button key={s} onClick={() => setFilter(s)} style={{
+                  padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
+                  border: 'none', cursor: 'pointer',
+                  background: filter === s ? (STATUS_COLORS[s] || '#6366f1') : '#f1f3f4',
+                  color: filter === s ? '#fff' : '#3c4043',
+                }}>{s === 'ALL' ? 'Todos' : STATUS_LABELS[s]}</button>
+              ))}
+            </div>
+          )}
+          {/* View switcher */}
+          <div style={{ display: 'flex', border: '1px solid #dadce0', borderRadius: 4, overflow: 'hidden' }}>
+            {(['list', 'week', 'calendar'] as const).map((v, idx) => (
+              <button key={v} onClick={() => setView(v)} style={{
+                padding: '6px 14px', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+                background: view === v ? '#e8f0fe' : '#fff',
+                color: view === v ? '#1a73e8' : '#3c4043',
+                borderRight: idx < 2 ? '1px solid #dadce0' : 'none',
+              }}>{v === 'list' ? 'Lista' : v === 'week' ? 'Semana' : 'Mês'}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Day column headers (week view) */}
+        {view === 'week' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '48px repeat(7, 1fr)', borderBottom: '1px solid #e0e0e0', background: '#fff', flexShrink: 0 }}>
+            <div style={{ borderRight: '1px solid #e0e0e0' }} />
+            {weekDays.map((day, i) => {
+              const isToday2 = day.toDateString() === today.toDateString()
+              return (
+                <div key={i} style={{ padding: '8px 4px', textAlign: 'center', borderLeft: i > 0 ? '1px solid #e0e0e0' : undefined }}>
+                  <div style={{ fontSize: 11, fontWeight: 500, color: isToday2 ? '#1a73e8' : '#70757a', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {WEEK_DAYS_PT[day.getDay()]}
+                  </div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 34, height: 34, borderRadius: '50%', marginTop: 4,
+                    background: isToday2 ? '#1a73e8' : 'transparent', color: isToday2 ? '#fff' : '#3c4043', fontSize: 18, fontWeight: isToday2 ? 700 : 400 }}>
+                    {day.getDate()}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Content area */}
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
       {/* ── LIST VIEW ── */}
       {view === 'list' && (
@@ -612,65 +900,10 @@ export const AppointmentsPage: React.FC = () => {
 
       {/* ── WEEK VIEW ── */}
       {view === 'week' && (
-        <div style={{ borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-card)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
-
-          {/* Week header — navigation */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', borderBottom: '1px solid var(--border-color)' }}>
-            <button
-              onClick={prevWeek}
-              style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
-                {weekDays[0].getDate()} – {weekDays[6].getDate()} {MONTHS_PT[weekDays[6].getMonth()]} {weekDays[6].getFullYear()}
-              </span>
-              <button
-                onClick={goToThisWeek}
-                style={{ padding: '3px 10px', fontSize: 12, fontWeight: 500, borderRadius: 6, border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.06)', color: '#6366f1', cursor: 'pointer' }}
-              >
-                Hoje
-              </button>
-            </div>
-            <button
-              onClick={nextWeek}
-              style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-
-          {/* Day column headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: '48px repeat(7, 1fr)', borderBottom: '1px solid var(--border-color)' }}>
-            <div />
-            {weekDays.map((day, i) => {
-              const isToday = day.toDateString() === today.toDateString()
-              return (
-                <div key={i} style={{ padding: '8px 4px', textAlign: 'center', borderLeft: '1px solid var(--border-color)' }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    {WEEK_DAYS_PT[day.getDay()]}
-                  </div>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: '50%', margin: '2px auto 0',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 13, fontWeight: isToday ? 700 : 400,
-                    background: isToday ? '#6366f1' : 'transparent',
-                    color: isToday ? '#fff' : 'var(--text-secondary)',
-                  }}>
-                    {day.getDate()}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
           {/* Scrollable time grid */}
-          <div ref={weekGridRef} style={{ overflowY: 'auto', maxHeight: 680 }}>
+          <div ref={weekGridRef} style={{ overflowY: 'auto', flex: 1 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '48px repeat(7, 1fr)', position: 'relative' }}>
 
               {/* Hour labels column */}
@@ -939,6 +1172,11 @@ export const AppointmentsPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      </div>{/* end Content area */}
+      </div>{/* end Main area */}
+    </div>
+    )}{/* end mainTab === 'calendar' */}
 
       {/* Create / Edit Modal */}
       <Modal

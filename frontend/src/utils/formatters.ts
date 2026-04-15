@@ -50,6 +50,12 @@ export function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
+/** Devolve true se o avatarUrl é uma imagem real (data URI ou URL http/https) */
+export function isImageAvatar(avatarUrl?: string | null): boolean {
+  if (!avatarUrl) return false
+  return avatarUrl.startsWith('data:') || avatarUrl.startsWith('http')
+}
+
 export function isOverdue(dueDate: string | undefined): boolean {
   if (!dueDate) return false
   return new Date(dueDate) < new Date()

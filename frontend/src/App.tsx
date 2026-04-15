@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/auth.store'
+import { useUIStore } from './store/ui.store'
 import { AppShell } from './components/layout/AppShell'
 import { ProtectedRoute } from './components/layout/ProtectedRoute'
 import { LoginPage } from './pages/LoginPage'
@@ -37,10 +38,15 @@ import { ForbiddenPage } from './pages/ForbiddenPage'
 
 function App() {
   const { hydrate } = useAuthStore()
+  const { crmName } = useUIStore()
 
   useEffect(() => {
     hydrate()
   }, [hydrate])
+
+  useEffect(() => {
+    document.title = crmName
+  }, [crmName])
 
   return (
     <Routes>
@@ -105,11 +111,7 @@ function App() {
             <ActivityPage />
           </ProtectedRoute>
         } />
-        <Route path="settings/team" element={
-          <ProtectedRoute allowedRoles={['AGENCY_OWNER', 'AGENCY_ADMIN', 'LOCATION_ADMIN']}>
-            <TeamPage />
-          </ProtectedRoute>
-        } />
+        <Route path="settings/team" element={<TeamPage />} />
         <Route path="settings/general" element={
           <ProtectedRoute allowedRoles={['AGENCY_OWNER', 'AGENCY_ADMIN', 'LOCATION_ADMIN']}>
             <GeneralSettingsPage />

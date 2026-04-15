@@ -142,7 +142,7 @@ const validDateTimeString = (label: string) =>
 // Appointments
 export const createAppointmentSchema = z.object({
   title: z.string().min(1, 'Título obrigatório').max(200, 'Título demasiado longo'),
-  type: z.enum(['VISIT', 'CALL', 'MEETING', 'OTHER'], { errorMap: () => ({ message: 'Tipo inválido. Valores: VISIT, CALL, MEETING, OTHER' }) }).default('VISIT'),
+  type: z.enum(['VISIT', 'CALL', 'MEETING', 'OTHER', 'ANGARIACAO_MEETING', 'CPCV', 'ESCRITURA', 'GENERAL_MEETING'], { errorMap: () => ({ message: 'Tipo inválido' }) }).default('VISIT'),
   startAt: validDateTimeString('Data de início'),
   endAt: validDateTimeString('Data de fim'),
   description: z.string().max(2000).optional(),
@@ -160,7 +160,7 @@ export const createAppointmentSchema = z.object({
 
 export const updateAppointmentSchema = z.object({
   title: z.string().min(1, 'Título obrigatório').max(200).optional(),
-  type: z.enum(['VISIT', 'CALL', 'MEETING', 'OTHER'], { errorMap: () => ({ message: 'Tipo inválido' }) }).optional(),
+  type: z.enum(['VISIT', 'CALL', 'MEETING', 'OTHER', 'ANGARIACAO_MEETING', 'CPCV', 'ESCRITURA', 'GENERAL_MEETING'], { errorMap: () => ({ message: 'Tipo inválido' }) }).optional(),
   startAt: validDateTimeString('Data de início').optional(),
   endAt: validDateTimeString('Data de fim').optional(),
   description: z.string().max(2000).optional(),

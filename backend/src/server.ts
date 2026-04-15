@@ -4,6 +4,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -42,10 +43,13 @@ import { startImapPolling } from './utils/imap.service';
 import { registerEventListeners, registerV2EventListeners } from './utils/automation.engine';
 import { startAutomationCron } from './jobs/automation-cron';
 import { startCalendarCron } from './lib/calendar-cron';
+import { loadSettingsFromDB } from './modules/settings/settings.service';
 
 const app = express();
 
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(
   cors({
     origin: process.env.CLIENT_URL
@@ -59,7 +63,15 @@ app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(requestLogger);
 
 // Servir uploads estáticos
-app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+// ts-node (dev): __dirname = backend/src  → ../.. = repo root
+// tsc (prod):    __dirname = backend/dist/src → ../../.. = repo root
+const uploadsPath = (() => {
+  const fromSrc = path.resolve(__dirname, '../../uploads');       // ts-node path
+  const fromDist = path.resolve(__dirname, '../../../uploads');   // compiled path
+  if (fs.existsSync(fromSrc + '/properties') || fs.existsSync(fromSrc)) return fromSrc;
+  return fromDist;
+})();
+app.use('/uploads', express.static(uploadsPath));
 
 // ─── SSE (Server-Sent Events) for real-time updates ────────────────────────────
 
@@ -130,17 +142,74 @@ app.post('/webhook/whatsapp', async (req, res) => {
       for (const entry of body.entry || []) {
         for (const change of entry.changes || []) {
           const value = change.value;
+
+          // Handle status updates (delivered, read, failed) — no conversation needed
+          for (const status of value?.statuses || []) {
+            console.log(`[WhatsApp Status] id=${status.id} status=${status.status}`);
+          }
+
           for (const msg of value?.messages || []) {
             const from = msg.from; // phone number
-            const text = msg.text?.body || '[media message]';
             const externalId = msg.id;
+            const msgType: string = msg.type || 'text';
+
+            // Extract content based on message type
+            let text: string;
+            switch (msgType) {
+              case 'text':
+                text = msg.text?.body || '';
+                break;
+              case 'image':
+                text = msg.image?.caption ? `[Imagem] ${msg.image.caption}` : '[Imagem]';
+                break;
+              case 'video':
+                text = msg.video?.caption ? `[Vídeo] ${msg.video.caption}` : '[Vídeo]';
+                break;
+              case 'audio':
+                text = '[Áudio]';
+                break;
+              case 'voice':
+                text = '[Mensagem de voz]';
+                break;
+              case 'document':
+                text = msg.document?.filename
+                  ? `[Documento] ${msg.document.filename}`
+                  : '[Documento]';
+                break;
+              case 'location':
+                text = msg.location
+                  ? `[Localização] ${msg.location.name || ''} ${msg.location.address || ''} (${msg.location.latitude}, ${msg.location.longitude})`.trim()
+                  : '[Localização]';
+                break;
+              case 'contacts':
+                text = msg.contacts?.length
+                  ? `[Contacto] ${msg.contacts.map((c: any) => c.name?.formatted_name || '').join(', ')}`
+                  : '[Contacto]';
+                break;
+              case 'sticker':
+                text = '[Sticker]';
+                break;
+              case 'reaction':
+                // Reactions are on existing messages, skip creating a new message record
+                continue;
+              case 'interactive':
+                text = msg.interactive?.button_reply?.title
+                  || msg.interactive?.list_reply?.title
+                  || '[Resposta interativa]';
+                break;
+              default:
+                text = `[${msgType}]`;
+            }
+
+            // Extract profile name from contacts metadata if available
+            const profileName = value?.contacts?.find((c: any) => c.wa_id === from)?.profile?.name;
 
             const { receiveInbound } = await import('./modules/conversations/conversations.service');
             await receiveInbound(
               'WHATSAPP',
               from,
               text,
-              JSON.stringify({ messageId: externalId })
+              JSON.stringify({ messageId: externalId, type: msgType, profileName: profileName || null })
             );
           }
         }
@@ -158,7 +227,8 @@ app.get('/webhook/instagram', (req, res) => {
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
-  if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+  const igVerifyToken = process.env.INSTAGRAM_VERIFY_TOKEN || process.env.WHATSAPP_VERIFY_TOKEN;
+  if (mode === 'subscribe' && token === igVerifyToken) {
     res.status(200).send(challenge);
   } else {
     res.status(403).json({ error: 'Forbidden' });
@@ -357,15 +427,25 @@ app.use(errorMiddleware);
 const PORT = parseInt(process.env.PORT ?? '3000', 10);
 
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`CRM Backend running on http://localhost:${PORT}`);
     console.log(`   Environment: ${process.env.NODE_ENV ?? 'development'}`);
-    startImapPolling();
-    registerEventListeners();
-    registerV2EventListeners();
-    startAutomationCron();
-    startCalendarCron();
   });
+
+  // Load persisted settings from DB before starting background services.
+  // Done outside the listen callback so async errors are properly catchable.
+  loadSettingsFromDB()
+    .then(() => {
+      startImapPolling();
+      registerEventListeners();
+      registerV2EventListeners();
+      startAutomationCron();
+      startCalendarCron();
+    })
+    .catch((err) => {
+      console.error('[Boot] Fatal error loading settings from DB:', err);
+      server.close(() => process.exit(1));
+    });
 }
 
 export default app;

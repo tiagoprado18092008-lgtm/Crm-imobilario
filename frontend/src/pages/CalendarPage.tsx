@@ -6,6 +6,7 @@ import { getContacts } from '../api/contacts.api'
 import { getUsers } from '../api/users.api'
 import { listCalendarEvents, getCalendarStatus, syncCalendar } from '../api/calendar.api'
 import { useAuthStore } from '../store/auth.store'
+import { usePermissions } from '../hooks/usePermissions'
 import type { Task, Contact, User } from '../types'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -149,6 +150,7 @@ function TaskForm({
 
 export const CalendarPage: React.FC = () => {
   const { showToast } = useUIStore()
+  const { isAgencyAdmin } = usePermissions()
   const [allTasks, setAllTasks] = useState<Task[]>([])
   const [calendarEvents, setCalendarEvents] = useState<any[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -220,7 +222,8 @@ export const CalendarPage: React.FC = () => {
   }, [fetchTasks, fetchCalendarEvents, fetchSyncStatus])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Sync status + settings strip */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {syncStatus && (
@@ -231,31 +234,24 @@ export const CalendarPage: React.FC = () => {
             />
           )}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Link to="/calendar/settings" style={{
-            display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px',
-            borderRadius: 8, border: '1px solid var(--border-color)',
-            background: 'transparent', color: 'var(--text-secondary)',
-            textDecoration: 'none', fontSize: 12, fontWeight: 600,
-          }}>
-            <Settings size={13} /> Definições
-          </Link>
-          <Button onClick={() => { setEditEvent(undefined); setDefaultEventStart(undefined); setShowEventModal(true) }} size="sm">
-            <Plus className="w-4 h-4" /> Novo Evento
-          </Button>
-          <Button onClick={() => { setEditTask(undefined); setCalendarDefaultDate(undefined); setShowModal(true) }} size="sm" variant="ghost">
-            <Plus className="w-4 h-4" /> Nova Tarefa
-          </Button>
-        </div>
+        <Link to="/calendar/settings" style={{
+          display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px',
+          borderRadius: 8, border: '1px solid var(--border-color)',
+          background: 'transparent', color: 'var(--text-secondary)',
+          textDecoration: 'none', fontSize: 12, fontWeight: 600,
+        }}>
+          <Settings size={13} /> Definições
+        </Link>
       </div>
 
       {loading ? (
         <PageSpinner />
       ) : (
-        <div style={{ borderRadius: 12, padding: 24, background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ flex: 1, borderRadius: 12, overflow: 'hidden', border: '1px solid #e0e0e0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', minHeight: 700 }}>
           <CalendarView
             tasks={allTasks}
             calendarEvents={calendarEvents}
+            teamUsers={isAgencyAdmin ? users.map(u => ({ id: u.id, name: u.name, avatarUrl: u.avatarUrl })) : []}
             onTaskClick={(task) => { setEditTask(task); setCalendarDefaultDate(undefined); setShowModal(true) }}
             onEventClick={(event) => { setEditEvent(event); setShowEventModal(true) }}
             onCreateOnDate={(date) => {

@@ -20,4 +20,9 @@ router.get('/communications/status', settingsController.getChannelStatus);
 // POST /api/settings/twilio-setup - force Twilio auto-setup with existing credentials
 router.post('/twilio-setup', settingsController.triggerTwilioAutoSetup);
 
+// POST /api/settings/communications/test/* - test individual channel connections
+router.post('/communications/test/whatsapp', settingsController.testWhatsApp);
+router.post('/communications/test/email', settingsController.testEmail);
+router.post('/communications/test/twilio', settingsController.testTwilio);
+
 export default router;

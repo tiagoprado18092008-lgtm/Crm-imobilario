@@ -1,21 +1,95 @@
-import fs from 'fs';
-import path from 'path';
+import axios from 'axios';
 import twilio from 'twilio';
+import prisma from '../../config/database';
 import { isWhatsAppConfigured, isEmailConfigured, isInstagramConfigured, isTwilioConfigured } from '../../config/comms.config';
 
-// Path to the .env file (two levels up from src/modules/settings)
-const ENV_FILE_PATH = path.resolve(__dirname, '..', '..', '..', '.env');
+// ─── Sensitive keys — stored encrypted in DB ─────────────────────────────────
 
-// Mask a secret value — show only last 4 chars
+const SENSITIVE_KEYS = new Set([
+  'WHATSAPP_TOKEN',
+  'SMTP_PASS',
+  'IMAP_PASS',
+  'INSTAGRAM_ACCESS_TOKEN',
+  'TWILIO_AUTH_TOKEN',
+  'TWILIO_API_SECRET',
+  'JWT_SECRET',
+]);
+
+// Simple XOR-based obfuscation using ENCRYPTION_KEY env var.
+// Not military-grade but prevents plain-text secrets in DB if someone dumps the table.
+function encrypt(value: string): string {
+  const key = process.env.ENCRYPTION_KEY || 'default-key-change-me';
+  let result = '';
+  for (let i = 0; i < value.length; i++) {
+    result += String.fromCharCode(value.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  }
+  return 'enc:' + Buffer.from(result, 'binary').toString('base64');
+}
+
+function decrypt(value: string): string {
+  if (!value.startsWith('enc:')) return value;
+  const key = process.env.ENCRYPTION_KEY || 'default-key-change-me';
+  const decoded = Buffer.from(value.slice(4), 'base64').toString('binary');
+  let result = '';
+  for (let i = 0; i < decoded.length; i++) {
+    result += String.fromCharCode(decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  }
+  return result;
+}
+
+// ─── Bootstrap: load all settings from DB into process.env on server start ───
+
+export async function loadSettingsFromDB(): Promise<void> {
+  try {
+    const rows = await prisma.systemSettings.findMany();
+    let loaded = 0;
+    for (const row of rows) {
+      const plain = decrypt(row.value);
+      // Only override if the env var is not already set by the platform (platform vars take priority)
+      if (!process.env[row.key] || process.env[row.key] === '') {
+        process.env[row.key] = plain;
+        loaded++;
+      }
+    }
+    if (rows.length > 0) {
+      console.log(`[Settings] Loaded ${rows.length} settings from DB (${loaded} applied, rest overridden by platform env)`);
+    }
+  } catch (err) {
+    // Table may not exist yet on first deploy — safe to ignore
+    console.warn('[Settings] Could not load settings from DB (first deploy?):', (err as Error).message);
+  }
+}
+
+// ─── Persist settings to DB + process.env ────────────────────────────────────
+
+async function persistSettings(updates: Record<string, string>): Promise<void> {
+  for (const [key, value] of Object.entries(updates)) {
+    const stored = SENSITIVE_KEYS.has(key) ? encrypt(value) : value;
+
+    await prisma.systemSettings.upsert({
+      where: { key },
+      update: { value: stored },
+      create: { key, value: stored },
+    });
+
+    // Also update process.env immediately so the running server uses the new value
+    process.env[key] = value;
+  }
+}
+
+// ─── Mask a secret value — show only last 4 chars ────────────────────────────
+
 function maskValue(value: string): string {
   if (!value || value.length === 0) return '';
   if (value.length <= 4) return '****';
   return `${'*'.repeat(value.length - 4)}${value.slice(-4)}`;
 }
 
+// ─── getCommunicationsConfig ──────────────────────────────────────────────────
+
 export const getCommunicationsConfig = () => {
   return {
-    // WhatsApp — also return flat keys for frontend compatibility
+    // WhatsApp
     whatsappToken: maskValue(process.env.WHATSAPP_TOKEN || ''),
     phoneNumberId: maskValue(process.env.WHATSAPP_PHONE_NUMBER_ID || ''),
     verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || '',
@@ -35,6 +109,7 @@ export const getCommunicationsConfig = () => {
     // Instagram
     igAccessToken: maskValue(process.env.INSTAGRAM_ACCESS_TOKEN || ''),
     igPageId: process.env.INSTAGRAM_PAGE_ID || '',
+    igVerifyToken: process.env.INSTAGRAM_VERIFY_TOKEN || '',
     // Twilio
     twilioAccountSid: maskValue(process.env.TWILIO_ACCOUNT_SID || ''),
     twilioAuthToken: maskValue(process.env.TWILIO_AUTH_TOKEN || ''),
@@ -50,6 +125,8 @@ export const getCommunicationsConfig = () => {
   };
 };
 
+// ─── getChannelStatus ─────────────────────────────────────────────────────────
+
 export const getChannelStatus = () => {
   return {
     whatsapp: isWhatsAppConfigured() ? 'configured' : 'unconfigured',
@@ -59,33 +136,8 @@ export const getChannelStatus = () => {
   };
 };
 
-// Update a key-value pair in the .env file
-function updateEnvFile(updates: Record<string, string>): void {
-  let content = '';
-  try {
-    content = fs.readFileSync(ENV_FILE_PATH, 'utf-8');
-  } catch {
-    content = '';
-  }
+// ─── Map of allowed settable keys ────────────────────────────────────────────
 
-  for (const [key, value] of Object.entries(updates)) {
-    const escaped = value.replace(/"/g, '\\"');
-    const regex = new RegExp(`^(${key}=).*$`, 'm');
-
-    if (regex.test(content)) {
-      content = content.replace(regex, `$1"${escaped}"`);
-    } else {
-      content += `\n${key}="${escaped}"`;
-    }
-
-    // Also update process.env immediately
-    process.env[key] = value;
-  }
-
-  fs.writeFileSync(ENV_FILE_PATH, content, 'utf-8');
-}
-
-// Map of allowed settable keys (so we don't allow arbitrary env overrides)
 const ALLOWED_KEYS: Record<string, string> = {
   // WhatsApp
   whatsappToken: 'WHATSAPP_TOKEN',
@@ -109,8 +161,10 @@ const ALLOWED_KEYS: Record<string, string> = {
   // Instagram
   instagramAccessToken: 'INSTAGRAM_ACCESS_TOKEN',
   instagramPageId: 'INSTAGRAM_PAGE_ID',
+  instagramVerifyToken: 'INSTAGRAM_VERIFY_TOKEN',
   accessToken: 'INSTAGRAM_ACCESS_TOKEN',
   pageId: 'INSTAGRAM_PAGE_ID',
+  igVerifyToken: 'INSTAGRAM_VERIFY_TOKEN',
   // Twilio
   twilioAccountSid: 'TWILIO_ACCOUNT_SID',
   twilioAuthToken: 'TWILIO_AUTH_TOKEN',
@@ -124,6 +178,8 @@ const ALLOWED_KEYS: Record<string, string> = {
   timezone: 'TZ',
   language: 'APP_LANGUAGE',
 };
+
+// ─── Twilio Auto-Setup ────────────────────────────────────────────────────────
 
 async function runTwilioAutoSetup(sid: string, token: string): Promise<void> {
   const client = twilio(sid, token);
@@ -160,12 +216,11 @@ async function runTwilioAutoSetup(sid: string, token: string): Promise<void> {
     }
   }
 
-  // 3. Persist auto-generated values immediately
   if (Object.keys(autoUpdates).length > 0) {
-    updateEnvFile(autoUpdates);
+    await persistSettings(autoUpdates);
   }
 
-  // 4. Update phone number webhooks if PUBLIC_URL is set
+  // 3. Update phone number webhooks if PUBLIC_URL is set
   if (publicUrl) {
     try {
       const numbers = await client.incomingPhoneNumbers.list();
@@ -194,6 +249,8 @@ export const triggerTwilioAutoSetup = async (): Promise<{ ok: boolean; message: 
   return { ok: true, message: 'Auto-setup concluído.' };
 };
 
+// ─── updateCommunicationsConfig ───────────────────────────────────────────────
+
 export const updateCommunicationsConfig = async (body: Record<string, string>) => {
   const updates: Record<string, string> = {};
 
@@ -208,13 +265,12 @@ export const updateCommunicationsConfig = async (body: Record<string, string>) =
   }
 
   if (Object.keys(updates).length === 0) {
-    // Nothing to update is OK — just return current config
     return { updated: [], config: getCommunicationsConfig() };
   }
 
-  updateEnvFile(updates);
+  await persistSettings(updates);
 
-  // Auto-setup Twilio (create TwiML App + API Key) when credentials are saved
+  // Auto-setup Twilio when credentials are saved
   const sidToUse = updates['TWILIO_ACCOUNT_SID'] || process.env.TWILIO_ACCOUNT_SID;
   const tokenToUse = updates['TWILIO_AUTH_TOKEN'] || process.env.TWILIO_AUTH_TOKEN;
   if (
@@ -225,4 +281,45 @@ export const updateCommunicationsConfig = async (body: Record<string, string>) =
   }
 
   return { updated: Object.keys(updates), config: getCommunicationsConfig() };
+};
+
+// ─── Connection tests ─────────────────────────────────────────────────────────
+
+export const testWhatsAppConnection = async () => {
+  const token = process.env.WHATSAPP_TOKEN;
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!token || !phoneId) return { success: false, message: 'Credenciais não configuradas' };
+  try {
+    const res = await axios.get(`https://graph.facebook.com/v21.0/${phoneId}`, {
+      params: { access_token: token }
+    });
+    return { success: true, message: `Ligado: ${res.data.display_phone_number || phoneId}` };
+  } catch (err: any) {
+    return { success: false, message: err?.response?.data?.error?.message || 'Erro de ligação' };
+  }
+};
+
+export const testEmailConnection = async () => {
+  const { createTransporter } = await import('../../utils/email.service');
+  try {
+    const t = createTransporter();
+    if (!t) return { success: false, message: 'SMTP não configurado' };
+    await t.verify();
+    return { success: true, message: 'Ligação SMTP verificada com sucesso' };
+  } catch (err: any) {
+    return { success: false, message: err.message || 'Erro SMTP' };
+  }
+};
+
+export const testTwilioConnection = async () => {
+  const sid = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  if (!sid || !token) return { success: false, message: 'Credenciais Twilio não configuradas' };
+  try {
+    const client = twilio(sid, token);
+    const account = await client.api.accounts(sid).fetch();
+    return { success: true, message: `Conta: ${account.friendlyName}` };
+  } catch (err: any) {
+    return { success: false, message: err.message || 'Erro Twilio' };
+  }
 };

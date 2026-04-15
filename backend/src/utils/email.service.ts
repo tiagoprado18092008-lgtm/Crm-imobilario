@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 
-function createTransporter(): nodemailer.Transporter | null {
+export function createTransporter(): nodemailer.Transporter | null {
   const host = process.env.SMTP_HOST;
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;

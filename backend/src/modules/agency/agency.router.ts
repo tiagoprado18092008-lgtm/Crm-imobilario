@@ -1,9 +1,28 @@
 import { Router } from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import { authenticate } from '../../middleware/auth.middleware';
 import { requireRole } from '../../middleware/rbac.middleware';
 import * as agencyController from './agency.controller';
 import prisma from '../../config/database';
 import { logActivity } from '../../lib/activity-logger';
+
+const logoStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    const repoRoot = fs.existsSync(path.resolve(__dirname, '../../../../uploads'))
+      ? path.resolve(__dirname, '../../../../uploads')
+      : path.resolve(__dirname, '../../../../../uploads');
+    const dir = path.join(repoRoot, 'agency', (_req as any).params?.id ?? 'misc');
+    fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `logo-${Date.now()}${ext}`);
+  },
+});
+const logoUpload = multer({ storage: logoStorage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 const router = Router();
 
@@ -20,6 +39,12 @@ router.get('/:id', agencyController.getById);
 
 // Update agency — managers only
 router.put('/:id', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN'), agencyController.update);
+
+// Upload logo
+router.post('/:id/logo', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN'), logoUpload.single('file'), agencyController.uploadLogo);
+
+// Regenerate API key
+router.post('/:id/regenerate-api-key', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN'), agencyController.regenerateApiKey);
 
 // List members of an agency
 router.get('/:id/members', agencyController.listMembers);

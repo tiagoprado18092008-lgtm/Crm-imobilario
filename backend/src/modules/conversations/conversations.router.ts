@@ -17,6 +17,9 @@ router.post('/', conversationsController.createConversation);
 // GET  /api/conversations/stats    - stats overview (must be before /:id)
 router.get('/stats', conversationsController.getStats);
 
+// GET  /api/conversations/unread-count - total não lidas (must be before /:id)
+router.get('/unread-count', conversationsController.getUnreadCount);
+
 // GET  /api/conversations/:id      - get with messages
 router.get('/:id', conversationsController.getConversation);
 
@@ -28,5 +31,11 @@ router.patch('/:id/status', conversationsController.updateStatus);
 
 // PATCH /api/conversations/:id/assign  - assign to user
 router.patch('/:id/assign', conversationsController.assignConversation);
+
+// PATCH /api/conversations/:id/read  - marcar como lida
+router.patch('/:id/read', conversationsController.markAsRead);
+
+// PATCH /api/conversations/:id/star  - toggle estrela
+router.patch('/:id/star', conversationsController.toggleStar);
 
 export default router;
