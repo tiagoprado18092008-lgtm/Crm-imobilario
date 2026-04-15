@@ -1,7 +1,7 @@
 services:
   # ─── Backend API ─────────────────────────────────────────────────────────────
   - type: web
-    name: crm-imobiliario-backend
+    name: casaflow-backend
     env: node
     region: frankfurt
     plan: free
@@ -22,6 +22,10 @@ services:
         sync: false
       - key: CLIENT_URL
         sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: LOG_LEVEL
+        value: warn
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: WHATSAPP_TOKEN
@@ -40,6 +44,10 @@ services:
         sync: false
       - key: SMTP_FROM
         sync: false
+      - key: FROM_EMAIL
+        sync: false
+      - key: FROM_NAME
+        value: CasaFlow
       - key: TWILIO_ACCOUNT_SID
         sync: false
       - key: TWILIO_AUTH_TOKEN
@@ -54,10 +62,12 @@ services:
         sync: false
       - key: PUBLIC_URL
         sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
 
   # ─── Frontend Static Site ────────────────────────────────────────────────────
   - type: web
-    name: crm-imobiliario-frontend
+    name: casaflow-frontend
     env: static
     region: frankfurt
     plan: free
