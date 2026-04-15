@@ -384,7 +384,7 @@ export const AgencyPage: React.FC = () => {
           </div>
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f2553', margin: 0, letterSpacing: '-0.02em' }}>
-              {user?.agency || 'A minha agência'}
+              {(user?.agency as any)?.name || 'A minha agência'}
             </h1>
             <p style={{ fontSize: 13, color: '#6b7a99', margin: 0 }}>
               {ROLE_LABELS[user?.role || ''] || user?.role}
@@ -567,7 +567,7 @@ export const AgencyPage: React.FC = () => {
                     </label>
                     <input
                       type="text"
-                      value={user?.agency || ''}
+                      value={(user?.agency as any)?.name || ''}
                       readOnly
                       style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #dce3ef', fontSize: 13, outline: 'none', fontFamily: 'inherit', color: '#374151', background: '#f8f9fc', boxSizing: 'border-box', cursor: 'default' }}
                     />
