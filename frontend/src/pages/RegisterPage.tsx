@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, ArrowRight, AlertCircle, User, Mail, Lock, Building2 } from 'lucide-react'
-import { register } from '../api/auth.api'
+import { register, getMe } from '../api/auth.api'
 import { useAuthStore } from '../store/auth.store'
 import { CasaFlowLogo } from '../assets/casaflow-logo'
 
@@ -73,8 +73,12 @@ export const RegisterPage: React.FC = () => {
         undefined,
         form.role === 'AGENCY_OWNER' ? form.agencyName : undefined,
       )
-      const { token, user } = res.data
-      setAuth(user, token)
+      const { token } = res.data
+      // Guardar token antes do getMe para o interceptor o usar
+      localStorage.setItem('crm_token', token)
+      // Buscar o user fresco da BD para garantir role correto
+      const meRes = await getMe()
+      setAuth(meRes.data, token)
       navigate('/dashboard', { replace: true })
     } catch (err: any) {
       setError(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao criar conta.')
