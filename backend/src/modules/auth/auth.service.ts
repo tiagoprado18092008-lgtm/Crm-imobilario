@@ -49,9 +49,11 @@ export const register = async (
 
   // Map legacy/invalid roles to valid enum values
   const VALID_ROLES = ['AGENCY_OWNER', 'AGENCY_ADMIN', 'TEAM_LEADER', 'CONSULTANT'];
-  const rawRole = invitation?.role || role || 'CONSULTANT';
+  // Se não vem role mas vem agency, é AGENCY_OWNER
+  const inferredRole = !role && agency ? 'AGENCY_OWNER' : role;
+  const rawRole = invitation?.role || inferredRole || 'CONSULTANT';
   const validRole = VALID_ROLES.includes(rawRole) ? rawRole : 'CONSULTANT';
-  console.log('[REGISTER] role recebido:', role, '| rawRole:', rawRole, '| validRole:', validRole);
+  console.log('[REGISTER] role recebido:', role, '| inferredRole:', inferredRole, '| validRole:', validRole);
 
   const passwordHash = await bcrypt.hash(password, 10);
 
