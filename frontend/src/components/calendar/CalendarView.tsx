@@ -212,6 +212,24 @@ function EvBlock({ ev, onClick, col = 0, cols = 1 }: { ev: any; onClick?: (e: an
             {fmtTime(new Date(ev.startAt))}{ev.endAt ? ` – ${fmtTime(new Date(ev.endAt))}` : ''}
           </div>
         )}
+        {ev.externalProvider === 'google' && (
+          <div
+            title="Google Calendar"
+            style={{ position: 'absolute', top: 3, right: 4, width: 14, height: 14 }}
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 11v2h2.5c-.1.7-.8 2-2.5 2-1.5 0-2.7-1.2-2.7-2.7S10.5 9.6 12 9.6c.8 0 1.4.4 1.7.7l1.4-1.4C14.2 8 13.2 7.5 12 7.5 9.5 7.5 7.5 9.5 7.5 12s2 4.5 4.5 4.5c2.6 0 4.3-1.8 4.3-4.4 0-.3 0-.5-.1-.7H12z" fill="#4285F4"/>
+            </svg>
+          </div>
+        )}
+        {ev.externalProvider === 'outlook' && (
+          <div
+            title="Outlook"
+            style={{ position: 'absolute', top: 3, right: 4, width: 14, height: 14, fontSize: 9, fontWeight: 700, color: '#0078d4', lineHeight: '14px', textAlign: 'center' as const }}
+          >
+            O
+          </div>
+        )}
       </div>
       {tooltip && <EvTooltip ev={ev} pos={tooltip} />}
     </>
@@ -258,6 +276,11 @@ function EvChip({ ev, onClick, task }: { ev?: any; onClick?: (e: any) => void; t
         onMouseLeave={() => setTooltip(null)}
         style={{ background: color + 'cc', borderLeft: `3px solid ${color}`, color: '#fff', borderRadius: 4, padding: '1px 6px', fontSize: 11, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', marginBottom: 1, display: 'flex', alignItems: 'center', gap: 3 }}>
         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</span>
+        {ev.externalProvider === 'google' && (
+          <svg viewBox="0 0 24 24" width="11" height="11" style={{ marginLeft: 3, flexShrink: 0 }} xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 11v2h2.5c-.1.7-.8 2-2.5 2-1.5 0-2.7-1.2-2.7-2.7S10.5 9.6 12 9.6c.8 0 1.4.4 1.7.7l1.4-1.4C14.2 8 13.2 7.5 12 7.5 9.5 7.5 7.5 9.5 7.5 12s2 4.5 4.5 4.5c2.6 0 4.3-1.8 4.3-4.4 0-.3 0-.5-.1-.7H12z" fill="white"/>
+          </svg>
+        )}
         <SourceBadge provider={ev.externalProvider} />
       </div>
       {tooltip && <EvTooltip ev={ev} pos={tooltip} />}
