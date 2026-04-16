@@ -3,7 +3,11 @@ import * as eventsService from './calendar-events.service';
 
 export const list = async (req: Request, res: Response) => {
   try {
-    const data = await eventsService.list((req as any).user.id, req.query as any);
+    const { start, end, eventType, contactId, userId: queryUserId } = req.query as any;
+    const adminRoles = ['AGENCY_OWNER', 'AGENCY_ADMIN', 'TEAM_LEADER'];
+    const canViewOthers = adminRoles.includes((req as any).user.role);
+    const targetUserId = canViewOthers && queryUserId ? queryUserId : undefined;
+    const data = await eventsService.list((req as any).user.id, { start, end, eventType, contactId, targetUserId });
     res.json(data);
   } catch (err: any) {
     res.status(err.status || 500).json({ error: err.message });

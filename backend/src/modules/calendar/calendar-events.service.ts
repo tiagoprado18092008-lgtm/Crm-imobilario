@@ -14,8 +14,10 @@ export const list = async (userId: string, filters: {
   end?: string;
   eventType?: string;
   contactId?: string;
+  targetUserId?: string;
 }) => {
-  const where: any = { userId };
+  const queryUserId = filters.targetUserId || userId;
+  const where: any = { userId: queryUserId };
   if (filters.start) where.startAt = { gte: new Date(filters.start) };
   if (filters.end) where.endAt = { ...(where.endAt || {}), lte: new Date(filters.end) };
   if (filters.eventType) where.eventType = filters.eventType;
