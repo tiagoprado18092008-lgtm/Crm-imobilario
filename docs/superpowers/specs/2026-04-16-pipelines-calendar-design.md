@@ -100,6 +100,21 @@ Dropdown "Ver consultor" no header do CalendarPage, à esquerda do seletor de m�
 
 **`CalendarPage.tsx`** — adicionar dropdown de consultor no header. Controlado por estado local `selectedUserId` (null = todos). Passado como parâmetro aos hooks/calls de eventos e appointments.
 
+### 3.5 Distinção visual: origem do evento
+
+Os eventos no calendário têm dois tipos de origem:
+- **Google Calendar** — sincronizados via integração OAuth (`externalProvider = "google"` em `CalendarEvent`)
+- **CRM** — criados diretamente no CRM (`externalProvider = null`)
+
+Cada evento no calendário mostra um indicador visual subtil da sua origem:
+- Eventos do **Google Calendar**: pequeno ícone "G" (ou símbolo de calendário externo) no canto do evento
+- Eventos do **CRM**: pequeno ícone de ponto ou sem ícone (origem nativa)
+- **Appointments** (marcações internas de visitas/calls): badge distinto da cor do tipo (VISIT, CALL, MEETING)
+
+A lógica de distinção usa o campo `externalProvider` em `CalendarEvent`. Para `Appointment`, a origem é sempre CRM.
+
+O `CalendarView.tsx` e `EventModal.tsx` recebem e exibem este campo. Não requer alterações de backend — a informação já existe no modelo.
+
 ---
 
 ## 4. Fora de âmbito
@@ -124,4 +139,6 @@ Dropdown "Ver consultor" no header do CalendarPage, à esquerda do seletor de m�
 | `frontend/src/pages/PipelinePage.tsx` | Layout sidebar + kanban |
 | `frontend/src/components/kanban/KanbanBoard.tsx` | Aceitar stages como prop |
 | `frontend/src/pages/CalendarPage.tsx` | Dropdown consultor |
+| `frontend/src/components/calendar/CalendarView.tsx` | Indicador visual de origem do evento (Google vs CRM vs Appointment) |
+| `frontend/src/components/calendar/EventModal.tsx` | Mostrar origem do evento no modal de detalhe |
 | `frontend/src/api/pipelines.api.ts` | Novo ficheiro |
