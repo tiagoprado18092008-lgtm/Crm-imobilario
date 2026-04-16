@@ -94,46 +94,61 @@ export async function fetchAllGoogleEvents(userId: string) {
     const { oauth2, integration } = await getGoogleClient(userId);
     const calendar = google.calendar({ version: 'v3', auth: oauth2 });
 
-    // Fetch 6 months back + 12 months forward, with full pagination
+    // Fetch all user's calendars (not just primary)
+    const calListRes: any = await calendar.calendarList.list({ maxResults: 250 });
+    const calendarIds: string[] = (calListRes.data.items || [])
+      .filter((c: any) => c.accessRole !== 'none')
+      .map((c: any) => c.id);
+
+    if (!calendarIds.includes('primary')) calendarIds.unshift('primary');
+
+    // Fetch 2 years back + 2 years forward to catch all events
     const timeMin = new Date();
-    timeMin.setMonth(timeMin.getMonth() - 6);
+    timeMin.setFullYear(timeMin.getFullYear() - 2);
     const timeMax = new Date();
-    timeMax.setFullYear(timeMax.getFullYear() + 1);
+    timeMax.setFullYear(timeMax.getFullYear() + 2);
 
-    let pageToken: string | undefined;
     let totalSynced = 0;
-    let nextSyncToken: string | undefined;
+    let lastSyncToken: string | undefined;
 
-    do {
-      const response: any = await calendar.events.list({
-        calendarId: 'primary',
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
-        singleEvents: true,
-        orderBy: 'startTime',
-        maxResults: 2500,
-        pageToken,
-      });
+    for (const calId of calendarIds) {
+      let pageToken: string | undefined;
+      let nextSyncToken: string | undefined;
 
-      const events = response.data.items || [];
-      for (const event of events) {
-        await upsertGoogleEvent(userId, integration.id, event);
-        totalSynced++;
-      }
+      do {
+        const response: any = await calendar.events.list({
+          calendarId: calId,
+          timeMin: timeMin.toISOString(),
+          timeMax: timeMax.toISOString(),
+          singleEvents: true,
+          orderBy: 'startTime',
+          maxResults: 2500,
+          pageToken,
+        });
 
-      pageToken = response.data.nextPageToken;
-      if (!pageToken) nextSyncToken = response.data.nextSyncToken;
-    } while (pageToken);
+        const events = response.data.items || [];
+        for (const event of events) {
+          await upsertGoogleEvent(userId, integration.id, event);
+          totalSynced++;
+        }
+
+        pageToken = response.data.nextPageToken;
+        if (!pageToken) nextSyncToken = response.data.nextSyncToken;
+      } while (pageToken);
+
+      // Use primary calendar's syncToken for incremental syncs
+      if (calId === 'primary' && nextSyncToken) lastSyncToken = nextSyncToken;
+    }
 
     await prisma.calendarIntegration.update({
       where: { id: integration.id },
       data: {
-        syncToken: nextSyncToken || undefined,
+        syncToken: lastSyncToken || undefined,
         lastSyncedAt: new Date(),
       },
     });
 
-    console.log(`[CalendarSync] Google: synced ${totalSynced} events for user ${userId}`);
+    console.log(`[CalendarSync] Google: synced ${totalSynced} events across ${calendarIds.length} calendars for user ${userId}`);
   } catch (err: any) {
     console.error(`[CalendarSync] fetchAllGoogleEvents error for ${userId}:`, err.message);
   }
@@ -148,26 +163,36 @@ export async function syncGoogleChanges(userId: string) {
     }
 
     const calendar = google.calendar({ version: 'v3', auth: oauth2 });
-    const response = await calendar.events.list({
-      calendarId: 'primary',
-      syncToken: integration.syncToken,
-    });
 
-    const events = response.data.items || [];
-    for (const event of events) {
-      await upsertGoogleEvent(userId, integration.id, event);
-    }
+    // Incremental sync on primary calendar using syncToken
+    let pageToken: string | undefined;
+    let nextSyncToken: string | undefined;
+    do {
+      const response: any = await calendar.events.list({
+        calendarId: 'primary',
+        syncToken: pageToken ? undefined : integration.syncToken,
+        pageToken,
+      });
+
+      const events = response.data.items || [];
+      for (const event of events) {
+        await upsertGoogleEvent(userId, integration.id, event);
+      }
+
+      pageToken = response.data.nextPageToken;
+      if (!pageToken) nextSyncToken = response.data.nextSyncToken;
+    } while (pageToken);
 
     await prisma.calendarIntegration.update({
       where: { id: integration.id },
       data: {
-        syncToken: response.data.nextSyncToken || integration.syncToken,
+        syncToken: nextSyncToken || integration.syncToken,
         lastSyncedAt: new Date(),
       },
     });
   } catch (err: any) {
     // Full resync if sync token expired (410)
-    if (err.code === 410) {
+    if (err.code === 410 || err.status === 410) {
       console.log(`[CalendarSync] Sync token expired for ${userId}, doing full resync`);
       await prisma.calendarIntegration.update({
         where: { userId_provider: { userId, provider: 'google' } },
