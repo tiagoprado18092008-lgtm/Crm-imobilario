@@ -5,6 +5,8 @@ export const list = async (req: Request, res: Response, next: NextFunction): Pro
   try {
     const filters = {
       stage: req.query.stage as string,
+      stageId: req.query.stageId as string,
+      pipelineId: req.query.pipelineId as string,
       assignedToId: req.query.assignedToId as string,
       contactId: req.query.contactId as string,
       page: req.query.page ? parseInt(req.query.page as string) : 1,
@@ -46,7 +48,7 @@ export const update = async (req: Request, res: Response, next: NextFunction): P
 
 export const moveStage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { stage, position } = req.body;
+    const { stage, position, stageId } = req.body;
     if (!stage) {
       res.status(400).json({ error: 'stage is required', status: 400 });
       return;
@@ -55,7 +57,8 @@ export const moveStage = async (req: Request, res: Response, next: NextFunction)
       req.params.id,
       stage,
       position ?? 0,
-      req.user
+      req.user,
+      stageId
     );
     res.status(200).json(opportunity);
   } catch (err) {

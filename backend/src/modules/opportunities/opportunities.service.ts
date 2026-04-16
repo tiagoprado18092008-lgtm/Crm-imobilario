@@ -10,6 +10,8 @@ const buildWhereClause = async (user: any): Promise<any> => {
 export const list = async (
   filters: {
     stage?: string;
+    stageId?: string;
+    pipelineId?: string;
     assignedToId?: string;
     contactId?: string;
     page?: number;
@@ -19,6 +21,8 @@ export const list = async (
 ) => {
   const where: any = await buildWhereClause(user);
   if (filters.stage) where.stage = filters.stage;
+  if (filters.stageId) where.stageId = filters.stageId;
+  if (filters.pipelineId) where.pipelineId = filters.pipelineId;
   if (filters.assignedToId) where.assignedToId = filters.assignedToId;
   if (filters.contactId) where.contactId = filters.contactId;
 
@@ -296,7 +300,8 @@ export const moveStage = async (
   id: string,
   newStage: string,
   newPosition: number,
-  user: any
+  user: any,
+  newStageId?: string
 ) => {
   const where: any = await buildWhereClause(user);
   where.id = id;
@@ -341,7 +346,7 @@ export const moveStage = async (
     // Move the opportunity
     const updated = await tx.opportunity.update({
       where: { id },
-      data: { stage: newStage as any, position: adjustedPosition },
+      data: { stage: newStage as any, position: adjustedPosition, stageId: newStageId || null },
       include: {
         contact: { select: { id: true, name: true, email: true } },
         property: { select: { id: true, title: true, price: true } },
