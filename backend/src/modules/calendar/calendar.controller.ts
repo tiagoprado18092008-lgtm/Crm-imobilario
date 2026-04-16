@@ -79,24 +79,24 @@ export const disconnect = async (req: Request, res: Response) => {
 export const debugSync = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
-    const errors: string[] = [];
-
-    // Clear stale data
-    await prisma.calendarIntegration.updateMany({ where: { userId, isActive: true }, data: { syncToken: null } });
-    await prisma.appointment.deleteMany({ where: { assignedToId: userId, description: { contains: 'gcal:' } } });
-    await prisma.calendarEvent.deleteMany({ where: { userId, externalProvider: 'google' } });
-
-    // Sync
-    try { await fetchAllGoogleEvents(userId); } catch(e: any) { errors.push('fetchAllGoogleEvents: ' + e.message); }
-    try { await importGoogleEventsAsAppointments(userId); } catch(e: any) { errors.push('importAppointments: ' + e.message); }
 
     const calEventCount = await prisma.calendarEvent.count({ where: { userId, externalProvider: 'google' } });
-    const apptCount = await prisma.appointment.count({ where: { assignedToId: userId, description: { contains: 'gcal:' } } });
+    const apptGcalCount = await prisma.appointment.count({ where: { assignedToId: userId, description: { contains: 'gcal:' } } });
+    const apptTotalCount = await prisma.appointment.count({ where: { assignedToId: userId } });
     const integration = await prisma.calendarIntegration.findFirst({ where: { userId, provider: 'google' } });
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, role: true, agencyId: true } });
 
-    res.json({ userId, calEventCount, apptCount, errors, lastSyncedAt: integration?.lastSyncedAt });
+    res.json({
+      userId,
+      user,
+      calEventCount,
+      apptGcalCount,
+      apptTotalCount,
+      lastSyncedAt: integration?.lastSyncedAt,
+      syncToken: integration?.syncToken ? 'exists' : null,
+    });
   } catch (err: any) {
-    res.status(500).json({ error: err.message, stack: err.stack });
+    res.status(500).json({ error: err.message });
   }
 };
 
