@@ -6,6 +6,7 @@ const router = Router();
 
 // Auth-protected routes
 router.get('/status', authenticate, ctrl.getStatus);
+router.post('/debug-sync', authenticate, ctrl.debugSync);
 router.post('/sync', authenticate, ctrl.sync);
 router.get('/slots', authenticate, ctrl.getSlots);
 router.put('/slots', authenticate, ctrl.upsertSlots);
