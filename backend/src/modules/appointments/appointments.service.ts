@@ -23,6 +23,9 @@ export const list = async (user: any, filters: any = {}) => {
     if (filters.from) where.startAt.gte = new Date(filters.from);
     if (filters.to) where.startAt.lte = new Date(filters.to);
   }
+  if (filters.assignedToId) {
+    where.assignedToId = filters.assignedToId;
+  }
   return prisma.appointment.findMany({ where, select, orderBy: { startAt: 'asc' } });
 };
 

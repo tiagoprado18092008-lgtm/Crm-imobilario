@@ -2,7 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import * as service from './appointments.service';
 
 export const list = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try { res.json(await service.list(req.user, req.query)); }
+  try {
+    const { status, type, contactId, assignedToId, from, to } = req.query as any;
+    const adminRoles = ['AGENCY_OWNER', 'AGENCY_ADMIN', 'TEAM_LEADER'];
+    const canViewOthers = adminRoles.includes(req.user.role);
+    const filters: any = { status, type, contactId, from, to };
+    if (canViewOthers && assignedToId) filters.assignedToId = assignedToId;
+    res.json(await service.list(req.user, filters));
+  }
   catch (e) { next(e); }
 };
 
