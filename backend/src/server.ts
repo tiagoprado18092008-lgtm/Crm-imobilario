@@ -35,6 +35,8 @@ import calendarEventsRouter from './modules/calendar/calendar-events.router';
 import webhooksRouter from './modules/webhooks/webhooks.router';
 import locationsRouter from './modules/locations/locations.router';
 import activityRouter from './modules/activity/activity.router';
+import pipelinesRouter from './modules/pipelines/pipelines.router';
+import { ensureDefaultPipelines } from './modules/pipelines/pipelines.service';
 import { errorMiddleware } from './middleware/error.middleware';
 import { requestLogger } from './utils/logger';
 import prisma from './config/database';
@@ -306,6 +308,7 @@ app.use('/api/search', searchRouter);
 app.use('/api/agency', agencyRouter);
 app.use('/api/locations', locationsRouter);
 app.use('/api/activity', activityRouter);
+app.use('/api/pipelines', pipelinesRouter);
 app.use('/api/calendar', calendarRouter);
 app.use('/api/calendar', calendarEventsRouter);
 app.use('/api/webhooks', webhooksRouter);
@@ -435,7 +438,8 @@ if (process.env.NODE_ENV !== 'test') {
   // Load persisted settings from DB before starting background services.
   // Done outside the listen callback so async errors are properly catchable.
   loadSettingsFromDB()
-    .then(() => {
+    .then(async () => {
+      await ensureDefaultPipelines();
       startImapPolling();
       registerEventListeners();
       registerV2EventListeners();
