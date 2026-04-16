@@ -105,12 +105,14 @@ export async function fetchAllGoogleEvents(userId: string) {
     const calendarIds: string[] = (calListRes.data.items || [])
       .filter((c: any) =>
         c.accessRole !== 'none' &&
-        // Skip holiday/birthday/read-only system calendars
-        !['holiday', 'birthday'].includes(c.id?.split('#')[1]?.split('@')[0] || '') &&
-        !c.id?.includes('holiday') &&
-        !c.id?.includes('#holiday') &&
-        // Only include calendars where the user is owner or has write access
-        ['owner', 'writer'].includes(c.accessRole)
+        // Skip holiday and birthday system calendars
+        !c.id?.includes('#holiday@group') &&
+        !c.id?.includes('#contacts@group') &&
+        c.summary !== 'Feriados em Portugal' &&
+        !c.summary?.toLowerCase().includes('holiday') &&
+        !c.summary?.toLowerCase().includes('feriado') &&
+        !c.summary?.toLowerCase().includes('aniversário') &&
+        !c.summary?.toLowerCase().includes('birthday')
       )
       .map((c: any) => c.id);
 
