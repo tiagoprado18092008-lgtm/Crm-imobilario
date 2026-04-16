@@ -154,12 +154,11 @@ export async function importGoogleEventsAsAppointments(userId: string) {
     const client = await getOAuth2Client(userId);
     if (!client) return;
 
-    // Get all CalendarEvents synced from Google that don't have appt: marker (not CRM-created)
+    // Get all CalendarEvents synced from Google
     const googleEvents = await prisma.calendarEvent.findMany({
       where: {
         userId,
         externalProvider: 'google',
-        NOT: { description: { contains: 'appt:' } },
       },
     });
 
