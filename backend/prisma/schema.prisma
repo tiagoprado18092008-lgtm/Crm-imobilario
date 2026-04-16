@@ -57,6 +57,7 @@ model Agency {
   automations Automation[]
   locations   Location[]
   settings    AgencySettings?
+  pipelines   Pipeline[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -89,6 +90,7 @@ model Location {
   settings      LocationSettings?
   activityLogs  ActivityLog[]
   calendarEvents CalendarEvent[] @relation("CalendarEventLocation")
+  pipelines     Pipeline[]     @relation("PipelineLocation")
 
   @@unique([agencyId, slug])
 }
@@ -319,6 +321,10 @@ model Opportunity {
   lostReason        String?
   notes             String?
   position          Int       @default(0)
+  pipelineId    String?
+  pipeline      Pipeline?      @relation(fields: [pipelineId], references: [id])
+  stageId       String?
+  pipelineStage PipelineStage? @relation(fields: [stageId], references: [id])
 
   contactId    String
   contact      Contact   @relation(fields: [contactId], references: [id])
@@ -761,4 +767,30 @@ model SystemSettings {
   key       String   @id
   value     String   // plain text or AES-encrypted (prefix "enc:")
   updatedAt DateTime @updatedAt
+}
+
+model Pipeline {
+  id            String          @id @default(cuid())
+  name          String
+  position      Int             @default(0)
+  agencyId      String?
+  agency        Agency?         @relation(fields: [agencyId], references: [id])
+  locationId    String?
+  location      Location?       @relation("PipelineLocation", fields: [locationId], references: [id])
+  stages        PipelineStage[]
+  opportunities Opportunity[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model PipelineStage {
+  id            String        @id @default(cuid())
+  name          String
+  color         String        @default("#6366f1")
+  position      Int           @default(0)
+  pipelineId    String
+  pipeline      Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  opportunities Opportunity[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
