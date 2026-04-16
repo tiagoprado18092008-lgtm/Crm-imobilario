@@ -28,7 +28,8 @@ import { Badge } from '../ui/Badge'
 import { PageSpinner } from '../ui/Spinner'
 import { useUIStore } from '../../store/ui.store'
 import { STAGE_ORDER, STAGE_LABELS } from '../../utils/constants'
-import type { PipelineStage } from '../../api/pipelines.api'
+import type { PipelineStage, Pipeline } from '../../api/pipelines.api'
+import { getPipelines, createPipeline, deletePipeline } from '../../api/pipelines.api'
 import { formatCurrency, formatDate, getInitials } from '../../utils/formatters'
 
 const oppSchema = z.object({
@@ -367,6 +368,51 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId, stages }) 
   const [showColumnPanel, setShowColumnPanel] = useState(false)
   const [pageTab, setPageTab] = useState<'opportunities' | 'pipelines' | 'bulk'>('opportunities')
   const [showPipelineDropdown, setShowPipelineDropdown] = useState(false)
+  const [allPipelines, setAllPipelines] = useState<Pipeline[]>([])
+  const [newPipelineName, setNewPipelineName] = useState('')
+  const [creatingPipeline, setCreatingPipeline] = useState(false)
+  const [pipelinesLoading, setPipelinesLoading] = useState(false)
+
+  const loadAllPipelines = useCallback(async () => {
+    setPipelinesLoading(true)
+    try {
+      const res = await getPipelines()
+      setAllPipelines(Array.isArray(res.data) ? res.data : [])
+    } catch {
+      showToast('Erro ao carregar pipelines', 'error')
+    } finally {
+      setPipelinesLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (pageTab === 'pipelines') loadAllPipelines()
+  }, [pageTab])
+
+  const handleCreatePipeline = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newPipelineName.trim()) return
+    try {
+      await createPipeline(newPipelineName.trim())
+      showToast('Pipeline criada com sucesso', 'success')
+      setNewPipelineName('')
+      setCreatingPipeline(false)
+      loadAllPipelines()
+    } catch {
+      showToast('Erro ao criar pipeline', 'error')
+    }
+  }
+
+  const handleDeletePipeline = async (id: string, name: string) => {
+    if (!confirm(`Eliminar a pipeline "${name}"? Esta ação não pode ser desfeita.`)) return
+    try {
+      await deletePipeline(id)
+      showToast('Pipeline eliminada', 'success')
+      loadAllPipelines()
+    } catch {
+      showToast('Erro ao eliminar pipeline', 'error')
+    }
+  }
 
   const fetchOpportunities = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
@@ -840,21 +886,67 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId, stages }) 
 
       {/* ── Pipelines Management Tab ── */}
       {pageTab === 'pipelines' && (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ textAlign: 'center', maxWidth: 400 }}>
-            <div style={{ width: 56, height: 56, borderRadius: 16, background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <LayoutGrid size={24} style={{ color: '#6366f1' }} />
+        <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+          <div style={{ maxWidth: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Gestão de Pipelines</h3>
+              <button
+                onClick={() => setCreatingPipeline(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'inherit' }}
+              >
+                <Plus size={14} /> Nova Pipeline
+              </button>
             </div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Gestão de Pipelines</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 20 }}>
-              Cria e gere múltiplos pipelines para diferentes processos de vendas (Angariação, Compradores, Créditos, etc.)
-            </p>
-            <button
-              onClick={() => setPageTab('opportunities')}
-              style={{ padding: '8px 20px', borderRadius: 8, background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
-            >
-              Voltar às Oportunidades
-            </button>
+
+            {creatingPipeline && (
+              <form onSubmit={handleCreatePipeline} style={{ background: 'var(--bg-card)', border: '1.5px solid #6366f1', borderRadius: 10, padding: '16px', marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 10 }}>Nova Pipeline</div>
+                <input
+                  autoFocus
+                  value={newPipelineName}
+                  onChange={e => setNewPipelineName(e.target.value)}
+                  placeholder="Nome da pipeline (ex: Compradores, Angariação...)"
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', fontSize: 13, fontFamily: 'inherit', marginBottom: 12, boxSizing: 'border-box' as const, outline: 'none', background: 'var(--bg-page)', color: 'var(--text-primary)' }}
+                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" onClick={() => { setCreatingPipeline(false); setNewPipelineName('') }} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-page)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text-primary)' }}>Cancelar</button>
+                  <button type="submit" style={{ flex: 1, padding: '8px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Criar</button>
+                </div>
+              </form>
+            )}
+
+            {pipelinesLoading ? (
+              <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', fontSize: 13 }}>A carregar...</div>
+            ) : allPipelines.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)', fontSize: 13 }}>
+                Nenhuma pipeline criada ainda. Clica em "Nova Pipeline" para começar.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {allPipelines.map(p => (
+                  <div key={p.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{p.stages?.length || 0} fases · {p._count?.opportunities || 0} oportunidades</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => { setPageTab('opportunities') }}
+                        style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border-color)', background: 'transparent', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text-primary)' }}
+                      >
+                        Ver
+                      </button>
+                      <button
+                        onClick={() => handleDeletePipeline(p.id, p.name)}
+                        style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid #fee2e2', background: '#fef2f2', fontSize: 12, cursor: 'pointer', color: '#ef4444', fontFamily: 'inherit' }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
