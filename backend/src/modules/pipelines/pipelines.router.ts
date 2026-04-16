@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { requireAuth } from '../../middleware/auth.middleware';
+import { authenticate } from '../../middleware/auth.middleware';
+const requireAuth = authenticate;
 import * as svc from './pipelines.service';
 
 const router = Router();
