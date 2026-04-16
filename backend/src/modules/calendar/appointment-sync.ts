@@ -163,17 +163,36 @@ export async function importGoogleEventsAsAppointments(userId: string) {
       },
     });
 
+    let imported = 0;
+    let updated = 0;
+
     for (const ev of googleEvents) {
-      // Check if appointment already exists for this google event
+      // Use externalId as the deduplication key (stored in description as gcal:<externalId>)
+      const marker = `gcal:${ev.externalId}`;
+
       const existing = await prisma.appointment.findFirst({
-        where: { assignedToId: userId, title: ev.title, startAt: ev.startAt },
+        where: { assignedToId: userId, description: { contains: marker } },
       });
-      if (existing) continue;
+
+      if (existing) {
+        // Update title/times in case they changed in Google
+        await prisma.appointment.update({
+          where: { id: existing.id },
+          data: {
+            title: ev.title,
+            startAt: ev.startAt,
+            endAt: ev.endAt,
+            location: ev.location || undefined,
+          },
+        });
+        updated++;
+        continue;
+      }
 
       await prisma.appointment.create({
         data: {
           title: ev.title,
-          description: ev.description || undefined,
+          description: (ev.description ? ev.description + '\n' : '') + marker,
           startAt: ev.startAt,
           endAt: ev.endAt,
           status: 'SCHEDULED',
@@ -183,9 +202,10 @@ export async function importGoogleEventsAsAppointments(userId: string) {
           contactId: ev.contactId || undefined,
         },
       });
+      imported++;
     }
 
-    console.log(`[AppointmentSync] Imported ${googleEvents.length} Google events as appointments for user ${userId}`);
+    console.log(`[AppointmentSync] Google events → appointments: ${imported} imported, ${updated} updated for user ${userId}`);
   } catch (err: any) {
     console.error(`[AppointmentSync] importGoogleEventsAsAppointments error:`, err.message);
   }
