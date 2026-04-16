@@ -379,9 +379,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId, stages }) 
       ])
       const data: Opportunity[] = Array.isArray(res.data) ? res.data : res.data.data || []
       const cols: ColumnsMap = {}
-      const stageKeys = stages && stages.length > 0 ? stages.map(s => s.id) : STAGE_ORDER
-      for (const stage of stageKeys) {
-        cols[stage] = data.filter(o => o.stage === stage).sort((a, b) => a.position - b.position)
+      const usingDynamicStages = stages && stages.length > 0
+      const stageKeys = usingDynamicStages ? stages!.map(s => s.id) : STAGE_ORDER
+      for (const stageKey of stageKeys) {
+        cols[stageKey] = data
+          .filter(o => usingDynamicStages ? (o as any).stageId === stageKey : o.stage === stageKey)
+          .sort((a, b) => a.position - b.position)
       }
       setColumns(cols)
       const ud = uRes.data
@@ -392,7 +395,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId, stages }) 
       setLoading(false)
       setInitialLoad(false)
     }
-  }, [])
+  }, [pipelineId, stages])
 
   useEffect(() => { fetchOpportunities() }, [fetchOpportunities])
 
