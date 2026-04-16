@@ -149,6 +149,11 @@ export const disconnectProvider = async (userId: string, provider: string) => {
 };
 
 export const manualSync = async (userId: string) => {
+  // Clear sync tokens to force a full resync instead of incremental
+  await prisma.calendarIntegration.updateMany({
+    where: { userId, isActive: true },
+    data: { syncToken: null, deltaLink: null },
+  });
   await Promise.allSettled([
     syncGoogleChanges(userId),
     syncOutlookChanges(userId),
