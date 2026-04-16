@@ -127,9 +127,12 @@ export async function fetchAllGoogleEvents(userId: string) {
     let totalSynced = 0;
     let lastSyncToken: string | undefined;
 
+    console.log(`[CalendarSync] Found calendars for user ${userId}: ${JSON.stringify(calendarIds)}`);
+
     for (const calId of calendarIds) {
       let pageToken: string | undefined;
       let nextSyncToken: string | undefined;
+      let calCount = 0;
 
       do {
         const response: any = await calendar.events.list({
@@ -146,12 +149,14 @@ export async function fetchAllGoogleEvents(userId: string) {
         for (const event of events) {
           await upsertGoogleEvent(userId, integration.id, event, calId);
           totalSynced++;
+          calCount++;
         }
 
         pageToken = response.data.nextPageToken;
         if (!pageToken) nextSyncToken = response.data.nextSyncToken;
       } while (pageToken);
 
+      console.log(`[CalendarSync] Calendar "${calId}": ${calCount} events for user ${userId}`);
       // Use primary calendar's syncToken for incremental syncs
       if (calId === 'primary' && nextSyncToken) lastSyncToken = nextSyncToken;
     }
