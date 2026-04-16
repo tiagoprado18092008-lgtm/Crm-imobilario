@@ -151,6 +151,8 @@ function TaskForm({
 export const CalendarPage: React.FC = () => {
   const { showToast } = useUIStore()
   const { isAgencyAdmin } = usePermissions()
+  const { user } = useAuthStore()
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [allTasks, setAllTasks] = useState<Task[]>([])
   const [calendarEvents, setCalendarEvents] = useState<any[]>([])
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -180,10 +182,12 @@ export const CalendarPage: React.FC = () => {
 
   const fetchCalendarEvents = useCallback(async () => {
     try {
-      const res = await listCalendarEvents()
+      const params: any = {}
+      if (selectedUserId) params.userId = selectedUserId
+      const res = await listCalendarEvents(params)
       setCalendarEvents(res.data || [])
     } catch {}
-  }, [])
+  }, [selectedUserId])
 
   const fetchSyncStatus = useCallback(async () => {
     try {
@@ -219,13 +223,35 @@ export const CalendarPage: React.FC = () => {
         setUsers(Array.isArray(d) ? d : d.data || [])
       }
     })
-  }, [fetchTasks, fetchCalendarEvents, fetchSyncStatus])
+  }, [fetchTasks, fetchCalendarEvents, fetchSyncStatus, selectedUserId])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {/* Sync status + settings strip */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {(user?.role === 'AGENCY_OWNER' || user?.role === 'AGENCY_ADMIN' || user?.role === 'TEAM_LEADER') && users.length > 0 && (
+            <select
+              value={selectedUserId || ''}
+              onChange={e => setSelectedUserId(e.target.value || null)}
+              style={{
+                padding: '7px 12px',
+                borderRadius: 8,
+                border: '1.5px solid #dce3ef',
+                fontSize: 13,
+                color: '#374151',
+                background: '#fff',
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              <option value="">Todos os consultores</option>
+              {users.map((u: any) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
+          )}
           {syncStatus && (
             <SyncStatusBadge
               lastSyncedAt={syncStatus.lastSyncedAt}
