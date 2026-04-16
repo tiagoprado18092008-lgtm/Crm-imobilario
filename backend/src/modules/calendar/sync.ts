@@ -38,11 +38,17 @@ async function getGoogleClient(userId: string) {
   return { oauth2, integration };
 }
 
-async function upsertGoogleEvent(userId: string, integrationId: string, event: any) {
+async function upsertGoogleEvent(userId: string, integrationId: string, event: any, calendarId?: string) {
   if (!event.id) return;
+
+  // Use calendarId prefix to make externalId unique across calendars
+  const externalId = calendarId && calendarId !== 'primary'
+    ? `${calendarId}::${event.id}`
+    : event.id;
+
   if (event.status === 'cancelled') {
     await prisma.calendarEvent.deleteMany({
-      where: { userId, externalId: event.id, externalProvider: 'google' },
+      where: { userId, externalId, externalProvider: 'google' },
     });
     return;
   }
@@ -54,7 +60,7 @@ async function upsertGoogleEvent(userId: string, integrationId: string, event: a
     where: {
       userId_externalId_externalProvider: {
         userId,
-        externalId: event.id,
+        externalId,
         externalProvider: 'google',
       },
     },
@@ -73,7 +79,7 @@ async function upsertGoogleEvent(userId: string, integrationId: string, event: a
     create: {
       userId,
       integrationId,
-      externalId: event.id,
+      externalId,
       externalProvider: 'google',
       title: event.summary || '(sem título)',
       description: event.description,
@@ -128,7 +134,7 @@ export async function fetchAllGoogleEvents(userId: string) {
 
         const events = response.data.items || [];
         for (const event of events) {
-          await upsertGoogleEvent(userId, integration.id, event);
+          await upsertGoogleEvent(userId, integration.id, event, calId);
           totalSynced++;
         }
 
@@ -176,7 +182,7 @@ export async function syncGoogleChanges(userId: string) {
 
       const events = response.data.items || [];
       for (const event of events) {
-        await upsertGoogleEvent(userId, integration.id, event);
+        await upsertGoogleEvent(userId, integration.id, event, 'primary');
       }
 
       pageToken = response.data.nextPageToken;
