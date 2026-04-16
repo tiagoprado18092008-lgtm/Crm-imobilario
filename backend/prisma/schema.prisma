@@ -58,6 +58,7 @@ model Agency {
   locations   Location[]
   settings    AgencySettings?
   pipelines   Pipeline[]
+  appointmentCalendars AppointmentCalendar[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -91,6 +92,7 @@ model Location {
   activityLogs  ActivityLog[]
   calendarEvents CalendarEvent[] @relation("CalendarEventLocation")
   pipelines     Pipeline[]     @relation("PipelineLocation")
+  appointmentCalendars AppointmentCalendar[]
 
   @@unique([agencyId, slug])
 }
@@ -495,6 +497,20 @@ model PhoneNumber {
   updatedAt DateTime @updatedAt
 }
 
+model AppointmentCalendar {
+  id          String   @id @default(cuid())
+  name        String
+  color       String   @default("#6366f1")
+  description String?
+  agencyId    String?
+  locationId  String?
+  agency      Agency?   @relation(fields: [agencyId], references: [id])
+  location    Location? @relation(fields: [locationId], references: [id])
+  appointments Appointment[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Appointment {
   id          String   @id @default(cuid())
   title       String
@@ -517,6 +533,9 @@ model Appointment {
   reminderSent Boolean @default(false)
   notes        String?
   location     String?
+
+  calendarId   String?
+  calendar     AppointmentCalendar? @relation(fields: [calendarId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

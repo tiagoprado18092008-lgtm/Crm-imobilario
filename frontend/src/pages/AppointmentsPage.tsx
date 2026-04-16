@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Calendar, Plus, Clock, MapPin, User, X, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { listAppointments, createAppointment, updateAppointment, deleteAppointment } from '../api/appointments.api'
+import { getCalendars, createCalendar, deleteCalendar, type AppointmentCalendar } from '../api/appointment-calendars.api'
 import { getContacts } from '../api/contacts.api'
 import { getUsers } from '../api/users.api'
 import { useAuthStore } from '../store/auth.store'
@@ -464,6 +465,60 @@ export const AppointmentsPage: React.FC = () => {
   const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
   const selectedKey = `${weekStart.getFullYear()}-${String(weekStart.getMonth()+1).padStart(2,'0')}-${String(weekStart.getDate()).padStart(2,'0')}`
 
+  // Appointment calendars state
+  const [calendars, setCalendars] = useState<AppointmentCalendar[]>([])
+  const [activeCalendarIds, setActiveCalendarIds] = useState<Set<string>>(new Set(['ALL']))
+  const [showCalendarForm, setShowCalendarForm] = useState(false)
+  const [newCalendarName, setNewCalendarName] = useState('')
+  const [newCalendarColor, setNewCalendarColor] = useState('#6366f1')
+
+  const loadCalendars = async () => {
+    try {
+      const res = await getCalendars()
+      setCalendars(Array.isArray(res.data) ? res.data : [])
+    } catch { /* silently fail */ }
+  }
+
+  useEffect(() => { loadCalendars() }, [])
+
+  const handleCreateCalendar = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newCalendarName.trim()) return
+    try {
+      await createCalendar({ name: newCalendarName.trim(), color: newCalendarColor })
+      showToast('Calendário criado', 'success')
+      setNewCalendarName('')
+      setNewCalendarColor('#6366f1')
+      setShowCalendarForm(false)
+      loadCalendars()
+    } catch {
+      showToast('Erro ao criar calendário', 'error')
+    }
+  }
+
+  const handleDeleteCalendar = async (id: string, name: string) => {
+    if (!confirm(`Eliminar o calendário "${name}"?`)) return
+    try {
+      await deleteCalendar(id)
+      showToast('Calendário eliminado', 'success')
+      setActiveCalendarIds(prev => { const n = new Set(prev); n.delete(id); if (n.size === 0) n.add('ALL'); return n })
+      loadCalendars()
+    } catch {
+      showToast('Erro ao eliminar calendário', 'error')
+    }
+  }
+
+  const toggleCalendar = (id: string) => {
+    setActiveCalendarIds(prev => {
+      const next = new Set(prev)
+      if (id === 'ALL') return new Set(['ALL'])
+      next.delete('ALL')
+      if (next.has(id)) { next.delete(id); if (next.size === 0) next.add('ALL') }
+      else next.add(id)
+      return next
+    })
+  }
+
   // Compromissos tab state
   const [listTab, setListTab] = useState<'upcoming' | 'cancelled' | 'all'>('upcoming')
   const [listSearch, setListSearch] = useState('')
@@ -724,6 +779,80 @@ export const AppointmentsPage: React.FC = () => {
             })}
           </div>
         )}
+        {/* Calendars section */}
+        <div style={{ padding: '12px 16px', borderTop: '1px solid #e0e0e0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#70757a', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Calendários</div>
+            <button
+              onClick={() => setShowCalendarForm(v => !v)}
+              title="Novo calendário"
+              style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 2, color: '#1a73e8', display: 'flex', borderRadius: 4 }}
+            >
+              <Plus size={14} />
+            </button>
+          </div>
+
+          {showCalendarForm && (
+            <form onSubmit={handleCreateCalendar} style={{ marginBottom: 10 }}>
+              <input
+                autoFocus
+                value={newCalendarName}
+                onChange={e => setNewCalendarName(e.target.value)}
+                placeholder="Nome do calendário"
+                style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1.5px solid #1a73e8', fontSize: 12, fontFamily: 'inherit', marginBottom: 6, boxSizing: 'border-box', outline: 'none' }}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <label style={{ fontSize: 11, color: '#70757a' }}>Cor:</label>
+                {['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#ec4899','#14b8a6'].map(c => (
+                  <button
+                    key={c} type="button"
+                    onClick={() => setNewCalendarColor(c)}
+                    style={{ width: 16, height: 16, borderRadius: '50%', background: c, border: newCalendarColor === c ? '2px solid #000' : '2px solid transparent', cursor: 'pointer', padding: 0 }}
+                  />
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button type="button" onClick={() => { setShowCalendarForm(false); setNewCalendarName('') }} style={{ flex: 1, padding: '5px', borderRadius: 6, border: '1px solid #dadce0', background: '#fff', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+                <button type="submit" style={{ flex: 1, padding: '5px', borderRadius: 6, border: 'none', background: '#1a73e8', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Criar</button>
+              </div>
+            </form>
+          )}
+
+          <label
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '3px 0', cursor: 'pointer', userSelect: 'none' }}
+            onClick={() => toggleCalendar('ALL')}
+          >
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: activeCalendarIds.has('ALL') ? '#1a73e8' : 'transparent', border: '2px solid #1a73e8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {activeCalendarIds.has('ALL') && <svg width="8" height="6" viewBox="0 0 8 6"><path d="M1 3L3 5L7 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            </span>
+            <span style={{ fontSize: 12, color: '#3c4043' }}>Todos</span>
+          </label>
+
+          {calendars.map(cal => {
+            const active = !activeCalendarIds.has('ALL') && activeCalendarIds.has(cal.id)
+            return (
+              <div key={cal.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#f1f3f4')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, cursor: 'pointer', userSelect: 'none' }} onClick={() => toggleCalendar(cal.id)}>
+                  <span style={{ width: 12, height: 12, borderRadius: 3, background: active ? cal.color : 'transparent', border: `2px solid ${cal.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {active && <svg width="8" height="6" viewBox="0 0 8 6"><path d="M1 3L3 5L7 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </span>
+                  <span style={{ fontSize: 12, color: '#3c4043', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cal.name}</span>
+                </label>
+                <button
+                  onClick={() => handleDeleteCalendar(cal.id, cal.name)}
+                  style={{ padding: 2, border: 'none', background: 'none', cursor: 'pointer', color: '#9aa0a6', display: 'flex', opacity: 0, transition: 'opacity 0.1s' }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {/* ── Main area ── */}
