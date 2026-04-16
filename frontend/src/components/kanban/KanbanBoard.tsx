@@ -28,6 +28,7 @@ import { Badge } from '../ui/Badge'
 import { PageSpinner } from '../ui/Spinner'
 import { useUIStore } from '../../store/ui.store'
 import { STAGE_ORDER, STAGE_LABELS } from '../../utils/constants'
+import type { PipelineStage } from '../../api/pipelines.api'
 import { formatCurrency, formatDate, getInitials } from '../../utils/formatters'
 
 const oppSchema = z.object({
@@ -332,7 +333,12 @@ type ColumnsMap = Record<string, Opportunity[]>
 type SortField = 'value' | 'createdAt' | 'expectedCloseDate' | 'title'
 type SortDir = 'asc' | 'desc'
 
-export const KanbanBoard: React.FC = () => {
+interface KanbanBoardProps {
+  pipelineId?: string;
+  stages?: PipelineStage[];
+}
+
+export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId, stages }) => {
   const { showToast } = useUIStore()
   const [columns, setColumns] = useState<ColumnsMap>({})
   const [loading, setLoading] = useState(true)
@@ -365,13 +371,16 @@ export const KanbanBoard: React.FC = () => {
   const fetchOpportunities = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     try {
+      const oppParams: any = { limit: 500 }
+      if (pipelineId) oppParams.pipelineId = pipelineId
       const [res, uRes] = await Promise.all([
-        getOpportunities({ limit: 500 }),
+        getOpportunities(oppParams),
         getUsers(),
       ])
       const data: Opportunity[] = Array.isArray(res.data) ? res.data : res.data.data || []
       const cols: ColumnsMap = {}
-      for (const stage of STAGE_ORDER) {
+      const stageKeys = stages && stages.length > 0 ? stages.map(s => s.id) : STAGE_ORDER
+      for (const stage of stageKeys) {
         cols[stage] = data.filter(o => o.stage === stage).sort((a, b) => a.position - b.position)
       }
       setColumns(cols)
@@ -425,7 +434,7 @@ export const KanbanBoard: React.FC = () => {
     }
     if (selectedOpp?.id === draggableId) setSelectedOpp(updatedMoved)
     try {
-      const res = await moveOpportunityStage(draggableId, dstStage, destination.index)
+      const res = await moveOpportunityStage(draggableId, dstStage, destination.index, stages ? dstStage : undefined)
       const saved = res.data as Opportunity
       // Merge server response (stage/position) with existing item (preserves loaded relations)
       setColumns(prev => {
@@ -482,7 +491,8 @@ export const KanbanBoard: React.FC = () => {
   }
 
   const filteredColumns: ColumnsMap = {}
-  for (const stage of STAGE_ORDER) {
+  const activeStageKeys = stages && stages.length > 0 ? stages.map(s => s.id) : STAGE_ORDER
+  for (const stage of activeStageKeys) {
     filteredColumns[stage] = applyFilters(columns[stage] || [])
   }
 
@@ -871,12 +881,16 @@ export const KanbanBoard: React.FC = () => {
       {pageTab === 'opportunities' && viewMode === 'kanban' && (
         <DragDropContext onDragEnd={onDragEnd}>
           <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 16, flex: 1 }}>
-            {STAGE_ORDER.map(stage => (
+            {(stages && stages.length > 0
+              ? stages.map(s => ({ key: s.id, label: s.name, color: s.color }))
+              : STAGE_ORDER.map(s => ({ key: s, label: STAGE_LABELS[s], color: undefined }))
+            ).map(({ key, label, color }) => (
               <KanbanColumn
-                key={stage}
-                stage={stage}
-                label={STAGE_LABELS[stage]}
-                opportunities={filteredColumns[stage] || []}
+                key={key}
+                stage={key}
+                label={label}
+                color={color}
+                opportunities={filteredColumns[key] || []}
                 onCardClick={(opp) => setSelectedOpp(opp)}
                 onAddClick={(s) => { setNewStage(s); setShowModal(true) }}
                 onAction={(opp, action) => { setSelectedOpp(opp); setQuickAction({ opp, action }) }}
