@@ -103,7 +103,15 @@ export async function fetchAllGoogleEvents(userId: string) {
     // Fetch all user's calendars (not just primary)
     const calListRes: any = await calendar.calendarList.list({ maxResults: 250 });
     const calendarIds: string[] = (calListRes.data.items || [])
-      .filter((c: any) => c.accessRole !== 'none')
+      .filter((c: any) =>
+        c.accessRole !== 'none' &&
+        // Skip holiday/birthday/read-only system calendars
+        !['holiday', 'birthday'].includes(c.id?.split('#')[1]?.split('@')[0] || '') &&
+        !c.id?.includes('holiday') &&
+        !c.id?.includes('#holiday') &&
+        // Only include calendars where the user is owner or has write access
+        ['owner', 'writer'].includes(c.accessRole)
+      )
       .map((c: any) => c.id);
 
     if (!calendarIds.includes('primary')) calendarIds.unshift('primary');
