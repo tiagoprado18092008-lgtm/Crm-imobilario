@@ -20,7 +20,7 @@ const userScope = (user: any) => {
 export const list = async (user: any) => {
   const where = userScope(user);
 
-  return prisma.pipeline.findMany({
+  let pipelines = await prisma.pipeline.findMany({
     where,
     orderBy: { position: 'asc' },
     include: {
@@ -28,6 +28,26 @@ export const list = async (user: any) => {
       _count: { select: { opportunities: true } },
     },
   });
+
+  // Auto-create default pipeline if agency has none yet
+  if (pipelines.length === 0 && (user.agencyId || user.locationId)) {
+    const created = await prisma.pipeline.create({
+      data: {
+        name: 'Geral',
+        position: 0,
+        agencyId: user.agencyId || null,
+        locationId: !user.agencyId ? user.locationId || null : null,
+        stages: { create: DEFAULT_STAGES },
+      },
+      include: {
+        stages: { orderBy: { position: 'asc' } },
+        _count: { select: { opportunities: true } },
+      },
+    });
+    pipelines = [created];
+  }
+
+  return pipelines;
 };
 
 export const getById = async (id: string, user: any) => {
