@@ -143,6 +143,27 @@ export const EventModal: React.FC<EventModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* Origin */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            {event?.externalProvider === 'google' && (
+              <>
+                <svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 11v2h2.5c-.1.7-.8 2-2.5 2-1.5 0-2.7-1.2-2.7-2.7S10.5 9.6 12 9.6c.8 0 1.4.4 1.7.7l1.4-1.4C14.2 8 13.2 7.5 12 7.5 9.5 7.5 7.5 9.5 7.5 12s2 4.5 4.5 4.5c2.6 0 4.3-1.8 4.3-4.4 0-.3 0-.5-.1-.7H12z" fill="#4285F4"/>
+                </svg>
+                <span style={{ fontSize: 12, color: '#6b7a99' }}>Google Calendar</span>
+              </>
+            )}
+            {event?.externalProvider === 'outlook' && (
+              <>
+                <span style={{ fontSize: 12, fontWeight: 700 as const, color: '#0078d4' }}>O</span>
+                <span style={{ fontSize: 12, color: '#6b7a99' }}>Outlook</span>
+              </>
+            )}
+            {!event?.externalProvider && (
+              <span style={{ fontSize: 12, color: '#6b7a99' }}>Criado no CRM</span>
+            )}
+          </div>
+
           {/* Title */}
           <div style={{ marginBottom: 14 }}>
             <label style={labelStyle}>Título *</label>
