@@ -245,10 +245,10 @@ export const receiveInbound = async (
       let contact = await prisma.contact.findFirst({
         where: { OR: [{ phone }, { whatsapp: phone }, { phone: externalId }, { whatsapp: externalId }] },
       });
-      if (!contact && profileName) {
-        // Create a new contact automatically from the WhatsApp profile
+      if (!contact) {
+        // Create a new contact automatically — use profileName or fall back to phone number
+        const contactName = profileName || phone;
         const resolvedLoc = locationId || (await prisma.location.findFirst({ select: { id: true } }))?.id || null;
-        // Find a default agent to assign to (oldest user of the location, or global oldest)
         const defaultUser = await prisma.user.findFirst({
           where: resolvedLoc
             ? { locationId: resolvedLoc }
@@ -259,7 +259,7 @@ export const receiveInbound = async (
         if (defaultUser) {
           contact = await prisma.contact.create({
             data: {
-              name: profileName,
+              name: contactName,
               phone,
               whatsapp: phone,
               source: 'WHATSAPP_INBOUND',
@@ -267,7 +267,7 @@ export const receiveInbound = async (
               assignedToId: defaultUser.id,
             },
           });
-          console.log(`[Inbound] Auto-created contact: ${profileName} (${phone})`);
+          console.log(`[Inbound] Auto-created contact: ${contactName} (${phone})`);
         }
       }
       if (contact) resolvedContactId = contact.id;

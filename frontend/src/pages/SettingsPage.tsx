@@ -314,7 +314,7 @@ const GuidePanel: React.FC<{ status: any; onNavigate: (tab: any) => void }> = ({
 // ─── SettingsPage ─────────────────────────────────────────────────────────────
 
 export const SettingsPage: React.FC = () => {
-  const { darkMode, setDarkMode, setCrmName: setGlobalCrmName } = useUIStore()
+  const { darkMode, setDarkMode, setCrmName: setGlobalCrmName, showToast } = useUIStore()
   const [tab, setTab] = useState<Tab>(() => {
     const p = new URLSearchParams(window.location.search).get('tab')
     return (p as Tab) || 'whatsapp'
@@ -588,6 +588,7 @@ export const SettingsPage: React.FC = () => {
           {/* WhatsApp */}
           {tab === 'whatsapp' && (
             <div className="space-y-5">
+              {/* Credenciais */}
               <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
@@ -595,7 +596,7 @@ export const SettingsPage: React.FC = () => {
                       <MessageCircle size={20} style={{ color: '#25d366' }} />
                     </div>
                     <div>
-                      <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>WhatsApp Business</h3>
+                      <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>WhatsApp Business API</h3>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <StatusDot status={status.whatsapp} />
                         <StatusLabel status={status.whatsapp} />
@@ -605,51 +606,86 @@ export const SettingsPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
+                  {/* Token */}
                   <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>WhatsApp Token</label>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                      Token de Acesso
+                      <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>— começa por EAAxx...</span>
+                    </label>
                     <div className="relative">
                       <input
                         type={showToken ? 'text' : 'password'}
                         value={wa.whatsappToken}
                         onChange={(e) => setWa({ ...wa, whatsappToken: e.target.value })}
-                        placeholder="EAAxxxxxx..."
+                        placeholder={status.whatsapp === 'configured' ? '••••••••••••••••••••' : 'EAAxxxxxx...'}
                         autoComplete="new-password"
                         className={inputClass + ' pr-10'}
                         style={inputStyle}
                       />
-                      <button
-                        onClick={() => setShowToken(!showToken)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2"
-                        style={{ color: 'var(--text-muted)' }}
-                      >
+                      <button type="button" onClick={() => setShowToken(!showToken)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
                         {showToken ? <EyeOff size={15} /> : <Eye size={15} />}
                       </button>
                     </div>
                   </div>
+
+                  {/* Phone Number ID */}
                   <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Phone Number ID</label>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                      Phone Number ID
+                      <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>— número no painel Meta</span>
+                    </label>
                     <input
                       type="text"
                       value={wa.phoneNumberId}
                       onChange={(e) => setWa({ ...wa, phoneNumberId: e.target.value })}
-                      placeholder="123456789..."
-                      className={inputClass}
-                      style={inputStyle}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Verify Token</label>
-                    <input
-                      type="text"
-                      value={wa.verifyToken}
-                      onChange={(e) => setWa({ ...wa, verifyToken: e.target.value })}
-                      placeholder="meu_verify_token"
+                      placeholder={status.whatsapp === 'configured' ? '••••••••••' : '123456789012345'}
                       className={inputClass}
                       style={inputStyle}
                     />
                   </div>
 
-                  <div className="flex items-center gap-3 pt-2">
+                  {/* Verify Token */}
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                      Verify Token
+                      <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>— palavra-passe para validar o webhook</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={wa.verifyToken}
+                      onChange={(e) => setWa({ ...wa, verifyToken: e.target.value })}
+                      placeholder="ex: casaflow_webhook_2024"
+                      className={inputClass}
+                      style={inputStyle}
+                    />
+                    <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                      Podes usar qualquer texto — tens de usar o mesmo valor no painel Meta ao configurar o webhook.
+                    </p>
+                  </div>
+
+                  {/* Webhook URL — para copiar */}
+                  <div className="rounded-lg p-3" style={{ background: 'var(--hover-bg)', border: '1px solid var(--border-color)' }}>
+                    <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>URL do Webhook (para configurar na Meta)</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 text-xs px-2 py-1.5 rounded" style={{ background: 'var(--bg-card)', color: '#25d366', fontFamily: 'monospace', border: '1px solid var(--border-color)', wordBreak: 'break-all' }}>
+                        {(import.meta as any).env?.VITE_API_URL?.replace('/api', '') || window.location.origin.replace('casaflow-frontend', 'casaflow-backend')}/webhook/whatsapp
+                      </code>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = `${(import.meta as any).env?.VITE_API_URL?.replace('/api', '') || window.location.origin.replace('casaflow-frontend', 'casaflow-backend')}/webhook/whatsapp`
+                          navigator.clipboard.writeText(url)
+                          showToast('URL copiado!', 'success')
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0"
+                        style={{ background: '#25d366', color: '#fff', border: 'none', cursor: 'pointer' }}
+                      >
+                        <Copy size={12} /> Copiar
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
                     <button
                       onClick={() => handleSave({ whatsappToken: wa.whatsappToken, phoneNumberId: wa.phoneNumberId, verifyToken: wa.verifyToken })}
                       disabled={saving}
@@ -657,7 +693,7 @@ export const SettingsPage: React.FC = () => {
                       style={{ background: '#0066ff', opacity: saving ? 0.7 : 1 }}
                     >
                       {saving && <Loader2 size={14} className="animate-spin" />}
-                      Guardar
+                      Guardar credenciais
                     </button>
                     <button
                       onClick={() => handleTest('whatsapp', testWhatsApp)}
@@ -665,8 +701,8 @@ export const SettingsPage: React.FC = () => {
                       className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
                       style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)', background: 'var(--bg-card)' }}
                     >
-                      {testing['whatsapp'] && <Loader2 size={14} className="animate-spin" />}
-                      Testar conexão
+                      {testing['whatsapp'] ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                      Testar ligação
                     </button>
                     {saveMsg && <span className={`text-sm font-medium ${saveMsg.includes('Erro') ? 'text-red-500' : 'text-emerald-600'}`}>{saveMsg}</span>}
                     {testResult['whatsapp'] && (
@@ -679,27 +715,57 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Instructions */}
+              {/* Guia passo-a-passo */}
               <div className="rounded-xl border p-5" style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)' }}>
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-4">
                   <Info size={15} style={{ color: '#3b82f6' }} />
-                  <h4 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Como obter as credenciais Meta</h4>
+                  <h4 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Como configurar — passo a passo</h4>
                 </div>
-                <ol className="space-y-2">
+                <ol className="space-y-3">
                   {[
-                    'Aceda a developers.facebook.com e crie uma app Business',
-                    'Adicione o produto "WhatsApp" à sua app',
-                    'No painel de WhatsApp, copie o "Token de Acesso Temporário"',
-                    'Copie o "Phone Number ID" do número de telefone configurado',
-                    'Defina o seu Verify Token e configure o webhook para: /api/webhooks/whatsapp',
-                    'Em produção, gere um Token de Acesso Permanente via Sistema de Utilizadores',
-                  ].map((step, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    { step: 'Acede a developers.facebook.com e cria uma app do tipo "Business"', link: 'https://developers.facebook.com' },
+                    { step: 'Dentro da app, clica em "Adicionar produto" e escolhe "WhatsApp"', link: null },
+                    { step: 'Em WhatsApp → Configuração, copia o "Token de acesso temporário" e o "Phone Number ID"', link: null },
+                    { step: 'Cola os valores nos campos acima e clica em "Guardar credenciais"', link: null },
+                    { step: 'Ainda em WhatsApp → Configuração, clica em "Configurar webhook", cola o URL acima e o Verify Token', link: null },
+                    { step: 'Subscreve os eventos: messages, message_deliveries, message_reads', link: null },
+                    { step: 'Clica em "Testar ligação" para confirmar que está tudo correto', link: null },
+                    { step: 'Para produção, gera um Token Permanente em WhatsApp → Contas do sistema', link: null },
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
                       <span className="w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: '#dbeafe', color: '#1d4ed8' }}>{i + 1}</span>
-                      {step}
+                      <span>
+                        {item.step}
+                        {item.link && (
+                          <a href={item.link} target="_blank" rel="noopener noreferrer" className="ml-1.5 inline-flex items-center gap-0.5 text-xs" style={{ color: '#3b82f6' }}>
+                            Abrir <ExternalLink size={10} />
+                          </a>
+                        )}
+                      </span>
                     </li>
                   ))}
                 </ol>
+              </div>
+
+              {/* O que acontece após configurar */}
+              <div className="rounded-xl border p-5" style={{ borderColor: '#bbf7d0', background: '#f0fdf4' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <MessageCircle size={15} style={{ color: '#16a34a' }} />
+                  <h4 className="text-sm font-semibold" style={{ color: '#15803d' }}>O que acontece automaticamente</h4>
+                </div>
+                <ul className="space-y-1.5">
+                  {[
+                    'Mensagens recebidas aparecem em tempo real na secção "Conversas"',
+                    'Se o número não existir como contacto, é criado automaticamente',
+                    'Podes responder diretamente do CRM sem sair da plataforma',
+                    'Todo o histórico de mensagens fica guardado no perfil do contacto',
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#166534' }}>
+                      <Check size={13} className="mt-0.5 flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           )}
