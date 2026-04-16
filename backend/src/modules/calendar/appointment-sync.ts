@@ -163,49 +163,60 @@ export async function importGoogleEventsAsAppointments(userId: string) {
       },
     });
 
-    let imported = 0;
-    let updated = 0;
+    // Fetch all existing gcal-imported appointments in one query and build a lookup set
+    const existingAppts = await prisma.appointment.findMany({
+      where: { assignedToId: userId, description: { contains: 'gcal:' } },
+      select: { id: true, description: true },
+    });
+
+    // Map: externalId → appointment id (for updates)
+    const existingByExternalId = new Map<string, string>();
+    for (const a of existingAppts) {
+      const match = a.description?.match(/gcal:([^\s\n]+)/);
+      if (match) existingByExternalId.set(match[1], a.id);
+    }
+
+    const toCreate: any[] = [];
+    const toUpdate: Array<{ id: string; data: any }> = [];
 
     for (const ev of googleEvents) {
-      // Use externalId as the deduplication key (stored in description as gcal:<externalId>)
-      const marker = `gcal:${ev.externalId}`;
-
-      const existing = await prisma.appointment.findFirst({
-        where: { assignedToId: userId, description: { contains: marker } },
-      });
-
-      if (existing) {
-        // Update title/times in case they changed in Google
-        await prisma.appointment.update({
-          where: { id: existing.id },
-          data: {
-            title: ev.title,
-            startAt: ev.startAt,
-            endAt: ev.endAt,
-            location: ev.location || undefined,
-          },
+      if (existingByExternalId.has(ev.externalId)) {
+        toUpdate.push({
+          id: existingByExternalId.get(ev.externalId)!,
+          data: { title: ev.title, startAt: ev.startAt, endAt: ev.endAt, location: ev.location || null },
         });
-        updated++;
-        continue;
-      }
-
-      await prisma.appointment.create({
-        data: {
+      } else {
+        const marker = `gcal:${ev.externalId}`;
+        toCreate.push({
           title: ev.title,
           description: (ev.description ? ev.description + '\n' : '') + marker,
           startAt: ev.startAt,
           endAt: ev.endAt,
           status: 'SCHEDULED',
           type: 'GENERAL_MEETING',
-          location: ev.location || undefined,
+          location: ev.location || null,
           assignedToId: userId,
-          contactId: ev.contactId || undefined,
-        },
-      });
-      imported++;
+          contactId: ev.contactId || null,
+        });
+      }
     }
 
-    console.log(`[AppointmentSync] Google events → appointments: ${imported} imported, ${updated} updated for user ${userId}`);
+    // Batch create all new appointments
+    if (toCreate.length > 0) {
+      await prisma.appointment.createMany({ data: toCreate, skipDuplicates: true });
+    }
+
+    // Update existing ones in parallel batches of 50
+    const BATCH = 50;
+    for (let i = 0; i < toUpdate.length; i += BATCH) {
+      await Promise.all(
+        toUpdate.slice(i, i + BATCH).map(({ id, data }) =>
+          prisma.appointment.update({ where: { id }, data })
+        )
+      );
+    }
+
+    console.log(`[AppointmentSync] Google events → appointments: ${toCreate.length} imported, ${toUpdate.length} updated for user ${userId}`);
   } catch (err: any) {
     console.error(`[AppointmentSync] importGoogleEventsAsAppointments error:`, err.message);
   }
