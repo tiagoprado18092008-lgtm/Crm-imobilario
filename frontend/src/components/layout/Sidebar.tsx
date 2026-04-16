@@ -5,7 +5,7 @@ import {
   BarChart3, UserCog, LogOut, Settings,
   CalendarClock, ChevronRight,
   UserCircle, ChevronsUpDown, UserPlus, Briefcase,
-  MessageSquare, Activity,
+  MessageSquare, Activity, Layers,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../store/auth.store'
@@ -99,6 +99,7 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
         { to: '/agency/users',    icon: Users,     label: 'Utilizadores' },
         { to: '/agency/settings', icon: Settings,  label: 'Config. Agência' },
         { to: '/agency/activity', icon: Activity,  label: 'Actividade' },
+        { to: '/agency/pipelines', icon: Layers,   label: 'Pipelines' },
       ],
     })
   }

@@ -31,6 +31,7 @@ import { LocationsPage } from './pages/agency/LocationsPage'
 import { AgencyUsersPage } from './pages/agency/AgencyUsersPage'
 import { AgencySettingsPage } from './pages/agency/AgencySettingsPage'
 import { ActivityPage } from './pages/agency/ActivityPage'
+import { PipelineSettingsPage } from './pages/agency/PipelineSettingsPage'
 import { TeamPage } from './pages/settings/TeamPage'
 import { GeneralSettingsPage } from './pages/settings/GeneralSettingsPage'
 import { InviteAcceptPage } from './pages/InviteAcceptPage'
@@ -109,6 +110,11 @@ function App() {
         <Route path="agency/activity" element={
           <ProtectedRoute allowedRoles={['AGENCY_OWNER', 'AGENCY_ADMIN']}>
             <ActivityPage />
+          </ProtectedRoute>
+        } />
+        <Route path="agency/pipelines" element={
+          <ProtectedRoute allowedRoles={['AGENCY_OWNER', 'AGENCY_ADMIN']}>
+            <PipelineSettingsPage />
           </ProtectedRoute>
         } />
         <Route path="settings/team" element={<TeamPage />} />
