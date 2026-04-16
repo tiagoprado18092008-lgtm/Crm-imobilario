@@ -186,7 +186,7 @@ async function runTwilioAutoSetup(sid: string, token: string): Promise<void> {
   const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
   const autoUpdates: Record<string, string> = {};
 
-  // 1. Create TwiML App if not already configured
+  // 1. Create TwiML App if not already configured, or update voiceUrl if PUBLIC_URL changed
   if (!process.env.TWILIO_TWIML_APP_SID) {
     try {
       const voiceUrl = publicUrl
@@ -201,6 +201,16 @@ async function runTwilioAutoSetup(sid: string, token: string): Promise<void> {
       console.log(`[Twilio Auto-Setup] TwiML App created: ${app.sid}`);
     } catch (err) {
       console.error('[Twilio Auto-Setup] Failed to create TwiML App:', err);
+    }
+  } else if (publicUrl) {
+    try {
+      await client.applications(process.env.TWILIO_TWIML_APP_SID).update({
+        voiceUrl: `${publicUrl}/webhook/twilio/voice`,
+        voiceMethod: 'POST',
+      });
+      console.log(`[Twilio Auto-Setup] TwiML App updated: ${process.env.TWILIO_TWIML_APP_SID}`);
+    } catch (err) {
+      console.error('[Twilio Auto-Setup] Failed to update TwiML App:', err);
     }
   }
 

@@ -1,28 +1,11 @@
 import twilio from 'twilio';
 import Stripe from 'stripe';
-import fs from 'fs';
-import path from 'path';
 import prisma from '../../config/database';
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw Object.assign(new Error('Stripe não configurado. Adiciona STRIPE_SECRET_KEY nas Definições.'), { status: 400 });
   return new Stripe(key);
-}
-
-const ENV_FILE = path.resolve(__dirname, '..', '..', '..', '.env');
-
-function setEnvVar(key: string, value: string) {
-  let content = '';
-  try { content = fs.readFileSync(ENV_FILE, 'utf-8'); } catch { content = ''; }
-  const regex = new RegExp(`^(${key}=).*$`, 'm');
-  if (regex.test(content)) {
-    content = content.replace(regex, `$1"${value}"`);
-  } else {
-    content += `\n${key}="${value}"`;
-  }
-  fs.writeFileSync(ENV_FILE, content, 'utf-8');
-  process.env[key] = value;
 }
 
 function getClient() {
@@ -98,9 +81,14 @@ export const purchase = async (userId: string, phoneNumber: string, friendlyName
     smsMethod: 'POST',
   });
 
-  // Auto-set TWILIO_PHONE_NUMBER if not already set
+  // Auto-set TWILIO_PHONE_NUMBER if not already set — persist to DB (works on Render)
   if (!process.env.TWILIO_PHONE_NUMBER) {
-    setEnvVar('TWILIO_PHONE_NUMBER', twilioNum.phoneNumber);
+    await prisma.systemSettings.upsert({
+      where: { key: 'TWILIO_PHONE_NUMBER' },
+      update: { value: twilioNum.phoneNumber },
+      create: { key: 'TWILIO_PHONE_NUMBER', value: twilioNum.phoneNumber },
+    });
+    process.env.TWILIO_PHONE_NUMBER = twilioNum.phoneNumber;
   }
 
   return prisma.phoneNumber.create({
