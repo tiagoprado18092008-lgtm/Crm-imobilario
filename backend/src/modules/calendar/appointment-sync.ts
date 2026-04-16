@@ -180,6 +180,7 @@ export async function importGoogleEventsAsAppointments(userId: string) {
     const toUpdate: Array<{ id: string; data: any }> = [];
 
     for (const ev of googleEvents) {
+      if (!ev.externalId) continue;
       if (existingByExternalId.has(ev.externalId)) {
         toUpdate.push({
           id: existingByExternalId.get(ev.externalId)!,
