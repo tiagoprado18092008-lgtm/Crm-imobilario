@@ -1,5 +1,4 @@
 import prisma from '../../config/database';
-import { buildScope } from '../../lib/scope';
 
 const DEFAULT_STAGES = [
   { name: 'Lead Novo',         color: '#6366f1', position: 0 },
@@ -12,11 +11,14 @@ const DEFAULT_STAGES = [
   { name: 'Perdido',           color: '#ef4444', position: 7 },
 ];
 
+const userScope = (user: any) => {
+  if (user.agencyId) return { agencyId: user.agencyId };
+  if (user.locationId) return { locationId: user.locationId };
+  return {};
+};
+
 export const list = async (user: any) => {
-  const scope = await buildScope(user);
-  const where: any = {};
-  if (scope.agencyId) where.agencyId = scope.agencyId;
-  else if (scope.locationId) where.locationId = scope.locationId;
+  const where = userScope(user);
 
   return prisma.pipeline.findMany({
     where,
@@ -29,10 +31,7 @@ export const list = async (user: any) => {
 };
 
 export const getById = async (id: string, user: any) => {
-  const scope = await buildScope(user);
-  const where: any = { id };
-  if (scope.agencyId) where.agencyId = scope.agencyId;
-  else if (scope.locationId) where.locationId = scope.locationId;
+  const where: any = { id, ...userScope(user) };
 
   const pipeline = await prisma.pipeline.findFirst({
     where,
@@ -43,17 +42,15 @@ export const getById = async (id: string, user: any) => {
 };
 
 export const create = async (name: string, user: any) => {
-  const scope = await buildScope(user);
-  const count = await prisma.pipeline.count({
-    where: scope.agencyId ? { agencyId: scope.agencyId } : { locationId: scope.locationId },
-  });
+  const scope = userScope(user);
+  const count = await prisma.pipeline.count({ where: scope });
 
   return prisma.pipeline.create({
     data: {
       name,
       position: count,
-      agencyId: scope.agencyId || null,
-      locationId: !scope.agencyId ? scope.locationId || null : null,
+      agencyId: user.agencyId || null,
+      locationId: !user.agencyId ? user.locationId || null : null,
       stages: { create: DEFAULT_STAGES },
     },
     include: { stages: { orderBy: { position: 'asc' } } },
