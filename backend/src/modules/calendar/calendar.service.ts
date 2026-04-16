@@ -155,27 +155,18 @@ export const manualSync = async (userId: string) => {
     data: { syncToken: null, deltaLink: null },
   });
 
-  // Delete ALL previously auto-imported Google appointments (gcal: or not)
-  // so we can reimport cleanly with the full event set
+  // Delete only appointments that were auto-imported from Google (have gcal: marker)
+  // This is safe — manually created appointments never have gcal: in description
   await prisma.appointment.deleteMany({
     where: {
       assignedToId: userId,
-      type: 'GENERAL_MEETING',
-      contactId: null,
-      opportunityId: null,
-      OR: [
-        { description: { contains: 'gcal:' } },
-        { description: { not: { contains: 'appt:' } } },
-      ],
+      description: { contains: 'gcal:' },
     },
   });
 
-  // Also clear old CalendarEvents from Google so stale entries don't persist
+  // Clear all CalendarEvents from Google so stale entries don't persist
   await prisma.calendarEvent.deleteMany({
-    where: {
-      userId,
-      externalProvider: 'google',
-    },
+    where: { userId, externalProvider: 'google' },
   });
 
   // Full resync from Google + Outlook
@@ -184,7 +175,7 @@ export const manualSync = async (userId: string) => {
     syncOutlookChanges(userId),
   ]);
 
-  // Import all Google events as appointments
+  // Import ALL Google events as appointments — no filtering
   await importGoogleEventsAsAppointments(userId);
   return { synced: true };
 };
