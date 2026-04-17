@@ -46,7 +46,9 @@ const optionalDate = z.string().refine(s => !s || !isNaN(Date.parse(s)), { messa
 // Opportunities
 export const createOpportunitySchema = z.object({
   title: z.string().min(1, 'Título obrigatório').max(200, 'Título demasiado longo'),
-  stage: z.enum(VALID_STAGES, { errorMap: () => ({ message: 'Fase inválida' }) }).default('LEAD_IN'),
+  stage: z.string().default('LEAD_IN'),
+  stageId: z.string().optional(),
+  pipelineId: z.string().optional(),
   value: z.number().nonnegative('Valor deve ser positivo').optional(),
   source: z.string().max(100).optional(),
   expectedCloseDate: optionalDate,
@@ -56,12 +58,19 @@ export const createOpportunitySchema = z.object({
   contactId: z.string().min(1, 'Contacto obrigatório'),
   propertyId: z.string().optional(),
   assignedToId: z.string().optional(),
+  selling_also: z.boolean().optional(),
+  needs_financing: z.boolean().optional(),
+  property_address: z.string().optional(),
+  asking_price: z.number().nonnegative().optional(),
+  sale_reason: z.string().optional(),
+  buying_also: z.boolean().optional(),
 });
 
 export const updateOpportunitySchema = createOpportunitySchema.partial();
 
 export const moveStageSchema = z.object({
-  stage: z.enum(VALID_STAGES, { errorMap: () => ({ message: 'Fase inválida. Valores aceites: ' + VALID_STAGES.join(', ') }) }),
+  stage: z.string().min(1, 'Fase obrigatória'),
+  stageId: z.string().optional(),
   position: z.number().int().nonnegative().default(0),
 });
 
