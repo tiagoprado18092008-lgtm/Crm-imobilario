@@ -1308,6 +1308,18 @@ export const SettingsPage: React.FC = () => {
                       {numberError && (
                         <div className="text-sm rounded-xl px-4 py-3 border" style={{ color: '#f87171', background: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.2)' }}>
                           {numberError}
+                          {(numberError.toLowerCase().includes('address') || numberError.toLowerCase().includes('endereço')) && (
+                            <div className="mt-2">
+                              <a
+                                href="https://console.twilio.com/us1/develop/phone-numbers/regulatory-compliance/addresses"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: '#818cf8', textDecoration: 'underline', fontSize: 12 }}
+                              >
+                                → Registar endereço no Twilio Console
+                              </a>
+                            </div>
+                          )}
                         </div>
                       )}
                       <div className="rounded-xl p-3 text-xs" style={{ background: 'rgba(99,102,241,0.08)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.2)' }}>

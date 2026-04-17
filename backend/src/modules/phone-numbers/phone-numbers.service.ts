@@ -72,14 +72,36 @@ export const purchase = async (userId: string, phoneNumber: string, friendlyName
   const client = getClient();
   const publicUrl = process.env.PUBLIC_URL || '';
 
-  const twilioNum = await client.incomingPhoneNumbers.create({
+  // Some countries (PT, DE, etc.) require a registered address on the Twilio account
+  let addressSid: string | undefined;
+  try {
+    const addresses = await client.addresses.list({ limit: 1 });
+    if (addresses.length > 0) addressSid = addresses[0].sid;
+  } catch (_) {}
+
+  const createParams: any = {
     phoneNumber,
     friendlyName: friendlyName || phoneNumber,
     voiceUrl: publicUrl ? `${publicUrl}/webhook/twilio/inbound-call` : undefined,
     smsUrl: publicUrl ? `${publicUrl}/webhook/twilio/sms` : undefined,
     voiceMethod: 'POST',
     smsMethod: 'POST',
-  });
+  };
+  if (addressSid) createParams.addressSid = addressSid;
+
+  let twilioNum: any;
+  try {
+    twilioNum = await client.incomingPhoneNumbers.create(createParams);
+  } catch (err: any) {
+    // Provide a clear message when address is required but missing
+    if (err.message?.includes('Address') || err.code === 21650) {
+      throw Object.assign(
+        new Error('Este número requer um endereço registado na tua conta Twilio. Vai a twilio.com/console/addresses, adiciona um endereço e tenta novamente.'),
+        { status: 400 }
+      );
+    }
+    throw err;
+  }
 
   // Auto-set TWILIO_PHONE_NUMBER if not already set — persist to DB (works on Render)
   if (!process.env.TWILIO_PHONE_NUMBER) {
