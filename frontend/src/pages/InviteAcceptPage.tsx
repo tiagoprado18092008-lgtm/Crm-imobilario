@@ -57,16 +57,18 @@ export const InviteAcceptPage: React.FC = () => {
 
     setSubmitting(true)
     try {
-      await axios.post(`${BASE}/auth/register`, {
+      const res = await axios.post(`${BASE}/auth/register`, {
         name: name.trim(),
         email: invitation!.email,
         password,
         phone: phone.trim() || undefined,
         invitationToken: token,
       })
+      const jwt = res.data?.token ?? res.data?.data?.token
+      if (jwt) localStorage.setItem('crm_token', jwt)
       setStep('success')
       toast.success('Conta criada com sucesso!')
-      setTimeout(() => navigate('/login'), 2000)
+      setTimeout(() => navigate('/'), 1500)
     } catch (err: any) {
       const msg = err?.response?.data?.error || err?.response?.data?.message || 'Erro ao criar conta.'
       toast.error(msg)
@@ -124,7 +126,7 @@ export const InviteAcceptPage: React.FC = () => {
         </div>
         <h1 className="text-white font-bold text-xl">Conta criada!</h1>
         <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>
-          A redirecionar para o login...
+          A entrar na aplicação...
         </p>
         <Loader2 size={18} className="animate-spin" style={{ color: '#818cf8' }} />
       </div>
