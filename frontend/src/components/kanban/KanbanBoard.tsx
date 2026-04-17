@@ -96,7 +96,7 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
     resolver: zodResolver(oppSchema),
     defaultValues: {
       title: opportunity?.title || '',
-      stage: opportunity?.stage || initialStage || 'LEAD_IN',
+      stage: opportunity?.stage || (opportunity as any)?.stageId || initialStage || 'LEAD_IN',
       value: opportunity?.value?.toString() || '',
       source: opportunity?.source || '',
       expectedCloseDate: opportunity?.expectedCloseDate ? opportunity.expectedCloseDate.slice(0, 10) : '',
@@ -120,7 +120,14 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
 
   useEffect(() => {
     if (!opportunity) {
-      setFormValue('stage', initialStage || 'LEAD_IN')
+      // If pipeline has dynamic stages, initialStage should be the first stage UUID
+      const hasDynamicStages = activePipeline && activePipeline.stages && activePipeline.stages.length > 0
+      const defaultStage = hasDynamicStages
+        ? (initialStage && activePipeline!.stages.find(s => s.id === initialStage)
+            ? initialStage
+            : activePipeline!.stages[0].id)
+        : (initialStage || 'LEAD_IN')
+      setFormValue('stage', defaultStage)
     }
     Promise.all([getContacts({ limit: 200 }), getProperties({ limit: 200 }), getUsers()])
       .then(([cRes, pRes, uRes]) => {
@@ -738,7 +745,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
 
           {/* Add opportunity */}
           <button
-            onClick={() => { setNewStage('LEAD_IN'); setShowModal(true) }}
+            onClick={() => {
+              const firstStage = (stages && stages.length > 0) ? stages[0].id : 'LEAD_IN'
+              setNewStage(firstStage)
+              setShowModal(true)
+            }}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '6px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600,
