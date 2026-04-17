@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { AlertCircle, CheckCircle, Loader2, Eye, EyeOff } from 'lucide-react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { useAuthStore } from '../store/auth.store'
 
 const BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000/api'
 
@@ -17,6 +18,7 @@ interface InvitationInfo {
 export const InviteAcceptPage: React.FC = () => {
   const { token } = useParams<{ token: string }>()
   const navigate = useNavigate()
+  const setAuth = useAuthStore(s => s.setAuth)
 
   const [step, setStep] = useState<Step>('loading')
   const [invitation, setInvitation] = useState<InvitationInfo | null>(null)
@@ -64,8 +66,10 @@ export const InviteAcceptPage: React.FC = () => {
         phone: phone.trim() || undefined,
         invitationToken: token,
       })
-      const jwt = res.data?.token ?? res.data?.data?.token
-      if (jwt) localStorage.setItem('crm_token', jwt)
+      const data = res.data?.data ?? res.data
+      const jwt = data?.token
+      const user = data?.user
+      if (jwt && user) setAuth(user, jwt)
       setStep('success')
       toast.success('Conta criada com sucesso!')
       setTimeout(() => navigate('/'), 1500)

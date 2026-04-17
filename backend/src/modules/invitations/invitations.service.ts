@@ -12,7 +12,7 @@ const getTransporter = () => {
   });
 };
 
-export const create = async (email: string, role: string, invitedById: string, locationId?: string, permissions?: any, _agencyId?: string) => {
+export const create = async (email: string, role: string, invitedById: string, locationId?: string, permissions?: any, agencyId?: string) => {
   // Check if email already registered
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw Object.assign(new Error('Email já registado'), { status: 409 });
@@ -30,12 +30,13 @@ export const create = async (email: string, role: string, invitedById: string, l
     data: {
       email, role, token, invitedById, expiresAt,
       ...(locationId ? { locationId } : {}),
+      ...(agencyId ? { agencyId } : {}),
       ...(permissions ? { permissions } : {}),
     },
   });
 
   // Send invite email
-  const inviteUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/register?token=${token}`;
+  const inviteUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/invite/${token}`;
   const transporter = getTransporter();
   if (transporter) {
     await transporter.sendMail({
