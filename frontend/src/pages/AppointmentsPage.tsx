@@ -1137,6 +1137,7 @@ export const AppointmentsPage: React.FC = () => {
                           key={a.id}
                           data-appt-card
                           onClick={() => { if (didDragMoveRef.current) { didDragMoveRef.current = false; return } openEdit(a) }}
+                          onDoubleClick={() => openEdit(a)}
                           title={`${a.title} — ${formatTime(a.startAt)} até ${formatTime(a.endAt)}`}
                           onMouseDown={(e) => {
                             if (e.button !== 0) return
@@ -1159,7 +1160,7 @@ export const AppointmentsPage: React.FC = () => {
                             borderRadius: 6,
                             background: sc,
                             padding: '3px 6px',
-                            cursor: isDragging ? 'grabbing' : 'grab',
+                            cursor: isDragging ? 'grabbing' : 'pointer',
                             overflow: 'hidden',
                             zIndex: isDragging ? 0 : 1,
                             opacity: isDragging ? 0.35 : 1,
@@ -1169,8 +1170,13 @@ export const AppointmentsPage: React.FC = () => {
                           onMouseEnter={e => { if (!isDragging) e.currentTarget.style.filter = 'brightness(0.88)' }}
                           onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
                         >
-                          <div style={{ fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {a.title}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                            {a.description?.includes('gcal:') && (
+                              <img src="https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_16_2x.png" width={10} height={10} style={{ flexShrink: 0, borderRadius: 2 }} title="Google Calendar" />
+                            )}
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {a.title}
+                            </div>
                           </div>
                           {height > 28 && (
                             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -1315,6 +1321,12 @@ export const AppointmentsPage: React.FC = () => {
         size="lg"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {editing?.description?.includes('gcal:') && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: '#f1f3f4', borderRadius: 8, fontSize: 12, color: '#5f6368' }}>
+              <img src="https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_16_2x.png" width={14} height={14} />
+              <span>Evento importado do Google Calendar</span>
+            </div>
+          )}
           <div>
             <label style={labelStyle}>Título *</label>
             <input
