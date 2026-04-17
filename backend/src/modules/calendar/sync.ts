@@ -102,21 +102,27 @@ export async function fetchAllGoogleEvents(userId: string) {
 
     // Fetch all user's calendars (not just primary)
     const calListRes: any = await calendar.calendarList.list({ maxResults: 250 });
-    const calendarIds: string[] = (calListRes.data.items || [])
+    const allCalItems: any[] = (calListRes.data.items || []);
+
+    // Get the user's primary email to detect duplicate "primary" calendar
+    const primaryItem = allCalItems.find((c: any) => c.primary === true);
+    const primaryEmail = primaryItem?.id;
+
+    const calendarIds: string[] = allCalItems
       .filter((c: any) =>
         c.accessRole !== 'none' &&
-        // Skip holiday and birthday system calendars
         !c.id?.includes('#holiday@group') &&
         !c.id?.includes('#contacts@group') &&
         c.summary !== 'Feriados em Portugal' &&
         !c.summary?.toLowerCase().includes('holiday') &&
         !c.summary?.toLowerCase().includes('feriado') &&
         !c.summary?.toLowerCase().includes('aniversário') &&
-        !c.summary?.toLowerCase().includes('birthday')
+        !c.summary?.toLowerCase().includes('birthday') &&
+        // Skip the email-named calendar if it's the same as primary (avoid duplicates)
+        !(primaryEmail && c.id === primaryEmail && c.primary !== true)
       )
-      .map((c: any) => c.id);
-
-    if (!calendarIds.includes('primary')) calendarIds.unshift('primary');
+      .map((c: any) => c.primary ? 'primary' : c.id)
+      .filter((id, idx, arr) => arr.indexOf(id) === idx); // deduplicate
 
     // Fetch 2 years back + 2 years forward to catch all events
     const timeMin = new Date();
