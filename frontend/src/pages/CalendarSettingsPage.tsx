@@ -149,8 +149,13 @@ export const CalendarSettingsPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fff',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: '1px solid var(--border-color)', fontSize: 18 }}>
-                  G
+                  border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg"
+                    alt="Google Calendar"
+                    width="26" height="26"
+                    style={{ objectFit: 'contain' }}
+                  />
                 </div>
                 <div>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -198,10 +203,15 @@ export const CalendarSettingsPage: React.FC = () => {
           <div style={cardStyle}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#0078d4',
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fff',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 18, color: '#fff', fontWeight: 700 }}>
-                  O
+                  border: '1px solid var(--border-color)', overflow: 'hidden' }}>
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/d/df/Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg"
+                    alt="Outlook Calendar"
+                    width="26" height="26"
+                    style={{ objectFit: 'contain' }}
+                  />
                 </div>
                 <div>
                   <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
