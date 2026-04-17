@@ -339,7 +339,10 @@ interface KanbanBoardProps {
   stages?: PipelineStage[];
 }
 
-export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId, stages }) => {
+export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPipelineId, stages: externalStages }) => {
+  const [activePipeline, setActivePipeline] = useState<Pipeline | null>(null)
+  const pipelineId = externalPipelineId ?? activePipeline?.id
+  const stages = externalStages ?? activePipeline?.stages
   const { showToast } = useUIStore()
   const [columns, setColumns] = useState<ColumnsMap>({})
   const [loading, setLoading] = useState(true)
@@ -373,17 +376,23 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId, stages }) 
   const [creatingPipeline, setCreatingPipeline] = useState(false)
   const [pipelinesLoading, setPipelinesLoading] = useState(false)
 
-  const loadAllPipelines = useCallback(async () => {
+  const loadAllPipelines = useCallback(async (selectFirst = false) => {
     setPipelinesLoading(true)
     try {
       const res = await getPipelines()
-      setAllPipelines(Array.isArray(res.data) ? res.data : [])
+      const list: Pipeline[] = Array.isArray(res.data) ? res.data : []
+      setAllPipelines(list)
+      if (selectFirst && list.length > 0 && !externalPipelineId) {
+        setActivePipeline(list[0])
+      }
     } catch {
       showToast('Erro ao carregar pipelines', 'error')
     } finally {
       setPipelinesLoading(false)
     }
-  }, [])
+  }, [externalPipelineId])
+
+  useEffect(() => { loadAllPipelines(true) }, [])
 
   useEffect(() => {
     if (pageTab === 'pipelines') loadAllPipelines()
@@ -393,11 +402,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId, stages }) 
     e.preventDefault()
     if (!newPipelineName.trim()) return
     try {
-      await createPipeline(newPipelineName.trim())
+      const res = await createPipeline(newPipelineName.trim())
       showToast('Pipeline criada com sucesso', 'success')
       setNewPipelineName('')
       setCreatingPipeline(false)
-      loadAllPipelines()
+      setShowPipelineDropdown(false)
+      await loadAllPipelines()
+      if (res.data) setActivePipeline(res.data)
     } catch {
       showToast('Erro ao criar pipeline', 'error')
     }
@@ -603,7 +614,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId, stages }) 
                 minWidth: 200,
               }}
             >
-              <span style={{ flex: 1, textAlign: 'left' }}>1 - Pipeline Principal</span>
+              <span style={{ flex: 1, textAlign: 'left' }}>
+                {activePipeline ? `${allPipelines.indexOf(activePipeline) + 1} - ${activePipeline.name}` : 'Selecionar pipeline'}
+              </span>
               <ChevronDown size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
             </button>
             {showPipelineDropdown && (
@@ -613,31 +626,51 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId, stages }) 
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden',
               }}>
                 <div style={{ padding: '4px 0' }}>
-                  <button
-                    onClick={() => setShowPipelineDropdown(false)}
-                    style={{
-                      width: '100%', textAlign: 'left', padding: '8px 14px',
-                      fontSize: 13, background: 'var(--hover-bg)',
-                      color: 'var(--text-primary)', border: 'none', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    }}
-                  >
-                    1 - Pipeline Principal
-                    <Check size={13} style={{ color: '#3b82f6' }} />
-                  </button>
+                  {allPipelines.map((p, i) => (
+                    <button
+                      key={p.id}
+                      onClick={() => { setActivePipeline(p); setShowPipelineDropdown(false) }}
+                      style={{
+                        width: '100%', textAlign: 'left', padding: '8px 14px',
+                        fontSize: 13, background: activePipeline?.id === p.id ? 'var(--hover-bg)' : 'none',
+                        color: 'var(--text-primary)', border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      }}
+                    >
+                      {i + 1} - {p.name}
+                      {activePipeline?.id === p.id && <Check size={13} style={{ color: '#3b82f6' }} />}
+                    </button>
+                  ))}
                 </div>
                 <div style={{ borderTop: '1px solid var(--border-color)', padding: '4px 0' }}>
-                  <button
-                    onClick={() => { setShowPipelineDropdown(false); setPageTab('pipelines') }}
-                    style={{
-                      width: '100%', textAlign: 'left', padding: '8px 14px',
-                      fontSize: 13, color: '#3b82f6', background: 'none',
-                      border: 'none', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 6,
-                    }}
-                  >
-                    <Plus size={13} /> Novo pipeline
-                  </button>
+                  {creatingPipeline ? (
+                    <form onSubmit={handleCreatePipeline} style={{ padding: '6px 10px', display: 'flex', gap: 6 }}>
+                      <input
+                        autoFocus
+                        value={newPipelineName}
+                        onChange={e => setNewPipelineName(e.target.value)}
+                        placeholder="Nome do pipeline"
+                        style={{
+                          flex: 1, padding: '5px 8px', borderRadius: 6, fontSize: 12,
+                          border: '1.5px solid #6366f1', outline: 'none', fontFamily: 'inherit',
+                        }}
+                      />
+                      <button type="submit" style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: '#6366f1', color: '#fff', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>OK</button>
+                      <button type="button" onClick={() => setCreatingPipeline(false)} style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'none', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
+                    </form>
+                  ) : (
+                    <button
+                      onClick={() => setCreatingPipeline(true)}
+                      style={{
+                        width: '100%', textAlign: 'left', padding: '8px 14px',
+                        fontSize: 13, color: '#3b82f6', background: 'none',
+                        border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 6,
+                      }}
+                    >
+                      <Plus size={13} /> Novo pipeline
+                    </button>
+                  )}
                 </div>
               </div>
             )}
