@@ -14,7 +14,6 @@ export const buildScope = async (user: any, opts: ScopeOptions = {}): Promise<Re
   if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') {
     if (user.agencyId) {
       if (useLocationId) {
-        // Scope via location's agencyId
         return { location: { agencyId: user.agencyId } };
       }
       return { assignedTo: { agencyId: user.agencyId } };

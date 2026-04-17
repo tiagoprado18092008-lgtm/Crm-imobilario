@@ -4,6 +4,9 @@ import { buildScope } from '../../lib/scope';
 import { logActivity } from '../../lib/activity-logger';
 
 const buildWhereClause = async (user: any): Promise<any> => {
+  if ((user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') && user.agencyId) {
+    return { agencyId: user.agencyId };
+  }
   return buildScope(user);
 };
 
@@ -95,6 +98,7 @@ export const create = async (
       contactId: dto.contactId,
       propertyId: dto.propertyId || undefined,
       assignedToId: (user.role === 'CONSULTANT' ? user.id : dto.assignedToId) || user.id,
+      agencyId: user.agencyId ?? null,
       locationId: user.locationId ?? null,
       selling_also: dto.selling_also ?? false,
       needs_financing: dto.needs_financing ?? false,
