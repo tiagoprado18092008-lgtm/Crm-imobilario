@@ -61,6 +61,7 @@ type OppFormData = z.infer<typeof oppSchema>
 interface OppFormProps {
   opportunity?: Opportunity
   initialStage?: string
+  activePipeline?: Pipeline | null
   onSuccess: () => void
   onCancel: () => void
 }
@@ -83,7 +84,7 @@ const labelStyle: React.CSSProperties = {
   fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4,
 }
 
-const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, onSuccess, onCancel }) => {
+const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipeline, onSuccess, onCancel }) => {
   const { showToast } = useUIStore()
   const { user: currentUser } = useAuthStore()
   const [submitting, setSubmitting] = useState(false)
@@ -138,9 +139,16 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, onSuccess,
   const onSubmit = async (data: OppFormData) => {
     setSubmitting(true)
     try {
+      // When using dynamic pipeline stages, stageId is a UUID; map to a base stage for DB
+      const hasDynamicStages = activePipeline && activePipeline.stages && activePipeline.stages.length > 0
+      const resolvedStageId = hasDynamicStages ? data.stage : undefined
+      // For dynamic pipelines, stage enum defaults to LEAD_IN (stageId carries the real stage)
+      const resolvedStage = hasDynamicStages ? 'LEAD_IN' : data.stage
       const basePayload = {
         title: data.title,
-        stage: data.stage,
+        stage: resolvedStage,
+        stageId: resolvedStageId || undefined,
+        pipelineId: activePipeline?.id || undefined,
         value: data.value ? Number(data.value) : undefined,
         source: data.source || undefined,
         expectedCloseDate: data.expectedCloseDate || undefined,
@@ -197,7 +205,11 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, onSuccess,
     <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <Input label="Título" required error={errors.title?.message} {...register('title')} />
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <Select label="Fase" options={STAGE_ORDER.map(s => ({ value: s, label: STAGE_LABELS[s] }))} {...register('stage')} />
+        <Select label="Fase" options={
+          activePipeline && activePipeline.stages && activePipeline.stages.length > 0
+            ? activePipeline.stages.map(s => ({ value: s.id, label: s.name }))
+            : STAGE_ORDER.map(s => ({ value: s, label: STAGE_LABELS[s] }))
+        } {...register('stage')} />
         <Input label="Valor (€)" type="number" {...register('value')} />
         <Select label="Contacto" required error={errors.contactId?.message} placeholder="Selecionar contacto" options={contacts.map(c => ({ value: c.id, label: c.name }))} {...register('contactId')} />
         <Select label="Responsável" required error={errors.assignedToId?.message} placeholder="Selecionar responsável" options={users.map(u => ({ value: u.id, label: u.name }))} {...register('assignedToId')} />
@@ -1127,12 +1139,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
 
       {/* Create Modal */}
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nova Oportunidade" size="xl">
-        <OppForm initialStage={newStage} onSuccess={() => { setShowModal(false); fetchOpportunities(true) }} onCancel={() => setShowModal(false)} />
+        <OppForm initialStage={newStage} activePipeline={activePipeline} onSuccess={() => { setShowModal(false); fetchOpportunities(true) }} onCancel={() => setShowModal(false)} />
       </Modal>
 
       {/* Edit Modal */}
       <Modal isOpen={!!editOpp} onClose={() => setEditOpp(undefined)} title="Editar Oportunidade" size="xl">
-        {editOpp && <OppForm opportunity={editOpp} onSuccess={() => { setEditOpp(undefined); setSelectedOpp(null); fetchOpportunities(true) }} onCancel={() => setEditOpp(undefined)} />}
+        {editOpp && <OppForm opportunity={editOpp} activePipeline={activePipeline} onSuccess={() => { setEditOpp(undefined); setSelectedOpp(null); fetchOpportunities(true) }} onCancel={() => setEditOpp(undefined)} />}
       </Modal>
 
       {/* Detail Panel */}

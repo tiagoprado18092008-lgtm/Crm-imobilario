@@ -65,6 +65,8 @@ export const create = async (
   dto: {
     title: string;
     stage?: string;
+    stageId?: string;
+    pipelineId?: string;
     value?: number;
     source?: string;
     expectedCloseDate?: string;
@@ -98,6 +100,8 @@ export const create = async (
     data: {
       title: dto.title,
       stage: targetStage,
+      stageId: dto.stageId || null,
+      pipelineId: dto.pipelineId || null,
       value: dto.value,
       source: dto.source,
       expectedCloseDate: dto.expectedCloseDate ? new Date(dto.expectedCloseDate) : undefined,
