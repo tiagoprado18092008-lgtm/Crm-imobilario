@@ -31,10 +31,11 @@ export const search = async (countryCode: string, areaCode?: string, numberType?
     monthlyPrice: type === 'tollFree' ? 2.15 : 1.15,
   });
 
-  // Try types in order of preference — some countries only support certain types
+  // Always try all types — if user picked one, try it first then fall back
+  const allTypes = ['local', 'mobile', 'tollFree'];
   const typesToTry = numberType
-    ? [numberType]
-    : ['local', 'mobile', 'tollFree'];
+    ? [numberType, ...allTypes.filter(t => t !== numberType)]
+    : allTypes;
 
   const errors: string[] = [];
   for (const type of typesToTry) {
@@ -48,10 +49,7 @@ export const search = async (countryCode: string, areaCode?: string, numberType?
     }
   }
 
-  // If all types returned empty or errored, throw descriptive error
-  const errMsg = errors.length > 0
-    ? `Nenhum número disponível para ${countryCode}. Detalhes: ${errors.join(' | ')}`
-    : `Nenhum número disponível para ${countryCode}. Tenta outro país (ex: US, GB).`;
+  const errMsg = `Nenhum número disponível para ${countryCode}. Tenta outro país (ex: US, GB).`;
   throw Object.assign(new Error(errMsg), { status: 400 });
 };
 
