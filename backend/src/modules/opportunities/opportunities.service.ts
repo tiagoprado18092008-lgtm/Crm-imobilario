@@ -7,7 +7,16 @@ const buildWhereClause = async (user: any): Promise<any> => {
   if ((user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') && user.agencyId) {
     return { agencyId: user.agencyId };
   }
-  return buildScope(user);
+  if (user.role === 'LOCATION_ADMIN' && user.locationId) {
+    // locationId OR agencyId (covers opps created before locationId was set)
+    return { OR: [{ locationId: user.locationId }, { agencyId: user.agencyId ?? '__none__' }] };
+  }
+  if (user.role === 'TEAM_LEADER') {
+    const subs = await prisma.user.findMany({ where: { supervisorId: user.id }, select: { id: true } });
+    const ids = [user.id, ...subs.map((s: any) => s.id)];
+    return { assignedToId: { in: ids } };
+  }
+  return { assignedToId: user.id };
 };
 
 export const list = async (
