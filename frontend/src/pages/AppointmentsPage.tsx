@@ -1170,7 +1170,7 @@ export const AppointmentsPage: React.FC = () => {
                           onMouseEnter={e => { if (!isDragging) e.currentTarget.style.filter = 'brightness(0.88)' }}
                           onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 3, pointerEvents: 'none' }}>
                             {a.description?.includes('gcal:') && (
                               <img src="https://ssl.gstatic.com/calendar/images/dynamiclogo_2020q4/calendar_16_2x.png" width={10} height={10} style={{ flexShrink: 0, borderRadius: 2 }} title="Google Calendar" />
                             )}
@@ -1179,7 +1179,7 @@ export const AppointmentsPage: React.FC = () => {
                             </div>
                           </div>
                           {height > 28 && (
-                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.88)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', pointerEvents: 'none' }}>
                               {formatTime(a.startAt)} – {formatTime(a.endAt)}
                               {a.location ? `, ${a.location}` : ''}
                             </div>
