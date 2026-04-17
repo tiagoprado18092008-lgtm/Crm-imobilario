@@ -318,11 +318,6 @@ export const AppointmentsPage: React.FC = () => {
     if (new Date(form.endAt) <= new Date(form.startAt)) {
       showToast('Data de fim deve ser posterior ao início', 'error'); return
     }
-    const startDay = new Date(form.startAt); startDay.setHours(0, 0, 0, 0)
-    const endDay = new Date(form.endAt); endDay.setHours(0, 0, 0, 0)
-    if (endDay.getTime() !== startDay.getTime()) {
-      showToast('O agendamento deve começar e terminar no mesmo dia', 'error'); return
-    }
     setSaving(true)
     try {
       const payload = {
