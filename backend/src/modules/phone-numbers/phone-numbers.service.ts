@@ -75,8 +75,10 @@ export const purchase = async (userId: string, phoneNumber: string, friendlyName
   // Some countries (PT, DE, etc.) require a registered address on the Twilio account
   let addressSid: string | undefined;
   try {
-    const addresses = await client.addresses.list({ limit: 1 });
-    if (addresses.length > 0) addressSid = addresses[0].sid;
+    const addresses = await client.addresses.list({ limit: 20 });
+    // Prefer validated address, fall back to first available
+    const validated = addresses.find((a: any) => a.validated);
+    addressSid = (validated || addresses[0])?.sid;
   } catch (_) {}
 
   const createParams: any = {
