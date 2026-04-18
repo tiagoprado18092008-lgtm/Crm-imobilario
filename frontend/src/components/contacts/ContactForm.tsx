@@ -213,7 +213,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit as any, (errs) => console.error('[ContactForm] validation errors:', errs))} className="space-y-4">
       {/* Dados base */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Input label="Nome" required error={errors.name?.message} {...register('name')} />
