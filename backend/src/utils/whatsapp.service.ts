@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getStatus, sendViaBaileys } from '../modules/whatsapp/whatsapp.service';
 
 const BASE_URL = 'https://graph.facebook.com/v21.0';
 
@@ -6,11 +7,17 @@ export async function sendWhatsAppMessage(
   to: string,
   message: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Prefer Baileys (QR-connected) when available
+  const waStatus = getStatus();
+  if (waStatus.status === 'CONNECTED') {
+    const sent = await sendViaBaileys(to, message);
+    if (sent) return { success: true, messageId: `baileys_${Date.now()}` };
+  }
+
   const token = process.env.WHATSAPP_TOKEN;
   const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
   if (!token || !phoneId) {
-    // Credenciais não configuradas
     console.log(`[WhatsApp SIM] To: ${to} | Message: ${message}`);
     return { success: true, messageId: `sim_${Date.now()}` };
   }

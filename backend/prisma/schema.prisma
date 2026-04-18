@@ -816,3 +816,12 @@ model PipelineStage {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
+
+model WhatsAppSession {
+  id        String   @id @default("singleton")
+  creds     String   @db.Text
+  keys      String?  @db.Text
+  status    String   @default("DISCONNECTED")
+  phone     String?
+  updatedAt DateTime @updatedAt
+}

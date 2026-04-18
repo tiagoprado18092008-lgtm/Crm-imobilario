@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 import {
   MessageCircle, Mail, Instagram, Settings,
   AlertCircle, Loader2, Eye, EyeOff, Info, Phone, Moon, Sun,
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getCommSettings, updateCommSettings, getCommStatus, triggerTwilioSetup, testWhatsApp, testEmail, testTwilio } from '../api/settings.api'
+import { getWhatsAppStatus, connectWhatsApp, disconnectWhatsApp as disconnectWA } from '../api/whatsapp.api'
 import { listNumbers, searchNumbers, purchaseNumber, releaseNumber, updateNumber } from '../api/phone-numbers.api'
 import { useUIStore } from '../store/ui.store'
 
@@ -336,6 +337,13 @@ export const SettingsPage: React.FC = () => {
   })
 
   const [wa, setWa] = useState<WhatsAppSettings>({ whatsappToken: '', phoneNumberId: '', verifyToken: '' })
+
+  // WhatsApp QR / Baileys state
+  const [waQrStatus, setWaQrStatus] = useState<'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'>('DISCONNECTED')
+  const [waQrPhone, setWaQrPhone] = useState<string | null>(null)
+  const [waQrImage, setWaQrImage] = useState<string | null>(null)
+  const [waQrLoading, setWaQrLoading] = useState(false)
+  const waSSERef = useRef<EventSource | null>(null)
   const [email, setEmail] = useState<EmailSettings>({
     smtpHost: '', smtpPort: '587', smtpUser: '', smtpPass: '', fromName: '', fromEmail: '',
   })
@@ -415,6 +423,57 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     if (tab === 'phone') fetchPhoneNumbers()
   }, [tab, fetchPhoneNumbers])
+
+  useEffect(() => {
+    getWhatsAppStatus().then(r => {
+      setWaQrStatus(r.data.status as any)
+      setWaQrPhone(r.data.phone)
+    }).catch(() => {})
+  }, [])
+
+  const startWaSSE = (token: string) => {
+    if (waSSERef.current) waSSERef.current.close()
+    const apiBase = (import.meta as any).env?.VITE_API_URL?.replace('/api', '') ?? ''
+    const es = new EventSource(`${apiBase}/api/sse?token=${encodeURIComponent(token)}`)
+    waSSERef.current = es
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data)
+        if (data.type === 'whatsapp_qr') {
+          setWaQrImage(data.qr)
+          setWaQrStatus('CONNECTING')
+          setWaQrLoading(false)
+        } else if (data.type === 'whatsapp_connected') {
+          setWaQrImage(null)
+          setWaQrStatus('CONNECTED')
+          setWaQrPhone(data.phone)
+          setWaQrLoading(false)
+          es.close()
+          waSSERef.current = null
+        }
+      } catch {}
+    }
+  }
+
+  const handleWaConnect = async () => {
+    setWaQrLoading(true)
+    setWaQrImage(null)
+    try {
+      await connectWhatsApp()
+      const token = localStorage.getItem('crm_token') || ''
+      startWaSSE(token)
+    } catch {
+      setWaQrLoading(false)
+    }
+  }
+
+  const handleWaDisconnect = async () => {
+    if (waSSERef.current) { waSSERef.current.close(); waSSERef.current = null }
+    await disconnectWA()
+    setWaQrStatus('DISCONNECTED')
+    setWaQrPhone(null)
+    setWaQrImage(null)
+  }
 
   const handleNumberSearch = async () => {
     setNumberSearchLoading(true)
@@ -588,6 +647,50 @@ export const SettingsPage: React.FC = () => {
           {/* WhatsApp */}
           {tab === 'whatsapp' && (
             <div className="space-y-5">
+              {/* WhatsApp QR / Baileys */}
+              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#dcfce7' }}>
+                    <MessageCircle size={20} style={{ color: '#25d366' }} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>WhatsApp via QR Code</h3>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Liga o teu WhatsApp pessoal ou de empresa sem precisar da API da Meta</p>
+                  </div>
+                </div>
+
+                {waQrStatus === 'CONNECTED' ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                      <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Ligado{waQrPhone ? ` — +${waQrPhone}` : ''}</span>
+                    </div>
+                    <button
+                      onClick={handleWaDisconnect}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold"
+                      style={{ border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                    >
+                      <X size={13} /> Desligar
+                    </button>
+                  </div>
+                ) : waQrImage ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Abre o WhatsApp no telemóvel → Dispositivos ligados → Ligar dispositivo → Lê o QR</p>
+                    <img src={waQrImage} alt="WhatsApp QR Code" style={{ width: 220, height: 220, borderRadius: 12, border: '1px solid var(--border-color)' }} />
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleWaConnect}
+                    disabled={waQrLoading}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-semibold"
+                    style={{ background: '#25d366', opacity: waQrLoading ? 0.7 : 1, border: 'none', cursor: waQrLoading ? 'not-allowed' : 'pointer' }}
+                  >
+                    {waQrLoading ? <Loader2 size={14} className="animate-spin" /> : <MessageCircle size={14} />}
+                    {waQrLoading ? 'A gerar QR code...' : 'Ligar com QR Code'}
+                  </button>
+                )}
+              </div>
+
               {/* Credenciais */}
               <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
                 <div className="flex items-center justify-between mb-5">

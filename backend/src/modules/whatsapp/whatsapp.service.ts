@@ -1,0 +1,141 @@
+import makeWASocket, { DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys'
+import { Boom } from '@hapi/boom'
+import QRCode from 'qrcode'
+import { PrismaClient } from '@prisma/client'
+import { usePrismaAuthState } from './whatsapp.session'
+import { eventBus } from '../../utils/event-bus'
+import { receiveInbound } from '../conversations/conversations.service'
+
+const prisma = new PrismaClient()
+const SESSION_ID = 'singleton'
+
+let sock: ReturnType<typeof makeWASocket> | null = null
+let currentStatus: 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' = 'DISCONNECTED'
+let currentPhone: string | null = null
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+
+export function getStatus() {
+  return { status: currentStatus, phone: currentPhone }
+}
+
+export async function initWhatsApp(): Promise<void> {
+  if (sock) return
+
+  currentStatus = 'CONNECTING'
+  await prisma.whatsAppSession.upsert({
+    where: { id: SESSION_ID },
+    create: { id: SESSION_ID, creds: '{}', status: 'CONNECTING' },
+    update: { status: 'CONNECTING' },
+  })
+
+  try {
+    const { state, saveCreds } = await usePrismaAuthState()
+    const { version } = await fetchLatestBaileysVersion()
+
+    sock = makeWASocket({
+      version,
+      auth: state,
+      printQRInTerminal: false,
+      browser: ['CasaFlow CRM', 'Chrome', '1.0.0'],
+    })
+
+    sock.ev.on('creds.update', saveCreds)
+
+    sock.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update
+
+      if (qr) {
+        try {
+          const qrDataUrl = await QRCode.toDataURL(qr)
+          eventBus.emit('whatsapp_qr', { qr: qrDataUrl })
+        } catch {}
+      }
+
+      if (connection === 'open') {
+        currentStatus = 'CONNECTED'
+        const jid = sock?.user?.id || ''
+        currentPhone = jid.split(':')[0].replace('@s.whatsapp.net', '') || null
+        await prisma.whatsAppSession.upsert({
+          where: { id: SESSION_ID },
+          create: { id: SESSION_ID, creds: '{}', status: 'CONNECTED', phone: currentPhone },
+          update: { status: 'CONNECTED', phone: currentPhone },
+        })
+        eventBus.emit('whatsapp_connected', { phone: currentPhone })
+      }
+
+      if (connection === 'close') {
+        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut
+        currentStatus = 'DISCONNECTED'
+        sock = null
+        await prisma.whatsAppSession.updateMany({
+          where: { id: SESSION_ID },
+          data: { status: 'DISCONNECTED' },
+        })
+        if (shouldReconnect) {
+          if (reconnectTimer) clearTimeout(reconnectTimer)
+          reconnectTimer = setTimeout(() => initWhatsApp(), 5000)
+        }
+      }
+    })
+
+    sock.ev.on('messages.upsert', async ({ messages, type }) => {
+      if (type !== 'notify') return
+      for (const msg of messages) {
+        if (msg.key.fromMe) continue
+        await handleIncoming(msg)
+      }
+    })
+  } catch (err) {
+    currentStatus = 'DISCONNECTED'
+    sock = null
+  }
+}
+
+async function handleIncoming(msg: any) {
+  try {
+    const jid = msg.key.remoteJid || ''
+    const phone = jid.replace('@s.whatsapp.net', '').replace('@g.us', '')
+    const text =
+      msg.message?.conversation ||
+      msg.message?.extendedTextMessage?.text ||
+      msg.message?.imageMessage?.caption ||
+      ''
+    if (!text || !phone) return
+
+    await receiveInbound(
+      'WHATSAPP',
+      phone,
+      text,
+      JSON.stringify({ messageId: msg.key.id, profileName: msg.pushName }),
+    )
+  } catch {}
+}
+
+export async function sendViaBaileys(to: string, text: string): Promise<boolean> {
+  if (!sock || currentStatus !== 'CONNECTED') return false
+  try {
+    const jid = to.replace(/\D/g, '') + '@s.whatsapp.net'
+    await sock.sendMessage(jid, { text })
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function disconnectWhatsApp(): Promise<void> {
+  if (reconnectTimer) clearTimeout(reconnectTimer)
+  reconnectTimer = null
+  if (sock) {
+    try {
+      await sock.logout()
+    } catch {}
+    sock = null
+  }
+  currentStatus = 'DISCONNECTED'
+  currentPhone = null
+  await prisma.whatsAppSession.updateMany({
+    where: { id: SESSION_ID },
+    data: { status: 'DISCONNECTED', phone: null, creds: '{}', keys: null },
+  })
+}

@@ -38,6 +38,8 @@ import locationsRouter from './modules/locations/locations.router';
 import activityRouter from './modules/activity/activity.router';
 import pipelinesRouter from './modules/pipelines/pipelines.router';
 import { ensureDefaultPipelines } from './modules/pipelines/pipelines.service';
+import whatsappRouter from './modules/whatsapp/whatsapp.router';
+import { initWhatsApp } from './modules/whatsapp/whatsapp.service';
 import { errorMiddleware } from './middleware/error.middleware';
 import { requestLogger } from './utils/logger';
 import prisma from './config/database';
@@ -107,6 +109,20 @@ app.get('/api/sse', (req, res) => {
 
 eventBus.on('new_message', (payload: any) => {
   const data = `data: ${JSON.stringify({ type: 'new_message', ...payload })}\n\n`
+  sseClients.forEach((client) => {
+    try { client.write(data) } catch {}
+  })
+})
+
+eventBus.on('whatsapp_qr', (payload: any) => {
+  const data = `data: ${JSON.stringify({ type: 'whatsapp_qr', ...payload })}\n\n`
+  sseClients.forEach((client) => {
+    try { client.write(data) } catch {}
+  })
+})
+
+eventBus.on('whatsapp_connected', (payload: any) => {
+  const data = `data: ${JSON.stringify({ type: 'whatsapp_connected', ...payload })}\n\n`
   sseClients.forEach((client) => {
     try { client.write(data) } catch {}
   })
@@ -314,6 +330,7 @@ app.use('/api/pipelines', pipelinesRouter);
 app.use('/api/calendar', calendarRouter);
 app.use('/api/calendar', calendarEventsRouter);
 app.use('/api/webhooks', webhooksRouter);
+app.use('/api/whatsapp', whatsappRouter);
 
 // ─── Twilio Webhooks ─────────────────────────────────────────────────────────
 
@@ -447,6 +464,7 @@ if (process.env.NODE_ENV !== 'test') {
       registerV2EventListeners();
       startAutomationCron();
       startCalendarCron();
+      initWhatsApp().catch(() => {});
     })
     .catch((err) => {
       console.error('[Boot] Fatal error loading settings from DB:', err);
