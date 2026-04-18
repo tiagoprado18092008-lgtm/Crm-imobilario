@@ -38,4 +38,7 @@ router.patch('/:id/read', conversationsController.markAsRead);
 // PATCH /api/conversations/:id/star  - toggle estrela
 router.patch('/:id/star', conversationsController.toggleStar);
 
+// DELETE /api/conversations/:id      - apagar conversa
+router.delete('/:id', conversationsController.deleteConversation);
+
 export default router;

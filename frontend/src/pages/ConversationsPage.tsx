@@ -5,14 +5,14 @@ import {
   Smartphone, ChevronDown, ChevronRight, User, Tag,
   PhoneCall, Calendar, AtSign, Edit2, Save, Archive,
   FileText, Phone, ChevronLeft, Wifi, WifiOff, BookOpen,
-  MessageSquare, Users, Hash,
+  MessageSquare, Users, Hash, Trash2,
 } from 'lucide-react'
 import { format, parseISO, formatDistanceToNow, isToday, isYesterday } from 'date-fns'
 import { pt } from 'date-fns/locale'
 import {
   getConversations, getConversation, sendMessage,
   updateConversationStatus, assignConversation, createConversation,
-  markAsRead, toggleStar,
+  markAsRead, toggleStar, deleteConversation,
 } from '../api/conversations.api'
 import { getContacts, updateContact } from '../api/contacts.api'
 import { getUsers } from '../api/users.api'
@@ -716,6 +716,13 @@ export const ConversationsPage: React.FC = () => {
     if (selected?.id === convId) setSelected(s => s ? { ...s, isStarred: !s.isStarred } : null)
   }
 
+  const handleDeleteConversation = async (convId: string) => {
+    if (!window.confirm('Apagar esta conversa? Esta ação não pode ser desfeita.')) return
+    await deleteConversation(convId).catch(() => {})
+    setConversations(cs => cs.filter(c => c.id !== convId))
+    if (selected?.id === convId) setSelected(null)
+  }
+
   const handleResolve = async () => {
     if (!selected) return
     const newStatus = selected.status === 'OPEN' ? 'RESOLVED' : 'OPEN'
@@ -963,6 +970,9 @@ export const ConversationsPage: React.FC = () => {
                 </button>
                 <button onClick={async () => { await updateConversationStatus(selected.id, 'ARCHIVED'); setSelected(s => s ? { ...s, status: 'ARCHIVED' } : null); loadConversations() }} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
                   <Archive size={14} />
+                </button>
+                <button onClick={() => handleDeleteConversation(selected.id)} title="Apagar conversa" style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
+                  <Trash2 size={14} />
                 </button>
                 <button onClick={handleResolve} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, background: selected.status === 'OPEN' ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.12)', color: selected.status === 'OPEN' ? '#10b981' : '#6366f1' }}>
                   {selected.status === 'OPEN' ? '✓ Resolver' : '↺ Reabrir'}

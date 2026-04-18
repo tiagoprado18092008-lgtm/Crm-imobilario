@@ -10,3 +10,4 @@ export const updateConversationStatus = (id: string, status: string) => api.patc
 export const assignConversation = (id: string, userId: string) => api.patch(`/conversations/${id}/assign`, { userId })
 export const markAsRead = (id: string) => api.patch(`/conversations/${id}/read`)
 export const toggleStar = (id: string) => api.patch(`/conversations/${id}/star`)
+export const deleteConversation = (id: string) => api.delete(`/conversations/${id}`)

@@ -127,7 +127,12 @@ export async function initWhatsApp(): Promise<void> {
 async function handleIncoming(msg: any) {
   try {
     const jid = msg.key.remoteJid || ''
-    const phone = jid.replace('@s.whatsapp.net', '').replace('@g.us', '')
+    // Skip group chats, broadcast lists, and linked-identity JIDs
+    if (jid.endsWith('@g.us') || jid.endsWith('@broadcast') || jid.endsWith('@lid')) {
+      console.log('[WA] skipping non-individual JID:', jid)
+      return
+    }
+    const phone = jid.replace('@s.whatsapp.net', '')
     const text =
       msg.message?.conversation ||
       msg.message?.extendedTextMessage?.text ||

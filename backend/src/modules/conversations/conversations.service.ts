@@ -401,6 +401,16 @@ export const toggleStar = async (id: string, user: any) => {
   return prisma.conversation.update({ where: { id }, data: { isStarred: !conv.isStarred } });
 };
 
+// ─── deleteConversation ───────────────────────────────────────────────────────
+
+export const deleteConversation = async (id: string, user: any) => {
+  const baseWhere: any = await buildConversationWhere(user);
+  const conv = await prisma.conversation.findFirst({ where: { id, ...baseWhere } });
+  if (!conv) throw Object.assign(new Error('Conversation not found'), { status: 404 });
+  await prisma.message.deleteMany({ where: { conversationId: id } });
+  await prisma.conversation.delete({ where: { id } });
+};
+
 // ─── getUnreadCount ───────────────────────────────────────────────────────────
 
 export const getUnreadCount = async (user: any) => {

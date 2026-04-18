@@ -165,6 +165,19 @@ export const toggleStar = async (
   }
 };
 
+export const deleteConversation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    await conversationsService.deleteConversation(req.params.id, req.user);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getUnreadCount = async (
   req: Request,
   res: Response,
