@@ -160,7 +160,8 @@ export const sendMessage = async (
   content: string,
   channel: string,
   userId: string,
-  subject?: string
+  subject?: string,
+  senderAgencyId?: string
 ) => {
   // Verify conversation exists
   const conversation = await prisma.conversation.findUnique({
@@ -183,7 +184,7 @@ export const sendMessage = async (
 
   const destination = conversation.externalId || '';
 
-  const agencyId = (conversation as any).location?.agencyId;
+  const agencyId = senderAgencyId || (conversation as any).location?.agencyId;
 
   if (channel === 'WHATSAPP') {
     sendResult = await sendWhatsAppMessage(destination, content, agencyId);

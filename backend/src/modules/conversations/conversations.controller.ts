@@ -90,12 +90,14 @@ export const sendMessage = async (
     const conversation = await conversationsService.getById(req.params.id, req.user);
     const resolvedChannel = channel || conversation.channel;
 
+    const senderAgencyId = (req.user as any)?.agencyId || req.user.id || 'default';
     const result = await conversationsService.sendMessage(
       req.params.id,
       content,
       resolvedChannel,
       req.user.id,
-      subject
+      subject,
+      senderAgencyId
     );
     res.status(201).json(result);
   } catch (err) {
