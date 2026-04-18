@@ -109,9 +109,11 @@ export async function initWhatsApp(): Promise<void> {
     })
 
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
-      if (type !== 'notify') return
+      console.log('[WA] messages.upsert type:', type, 'count:', messages.length)
       for (const msg of messages) {
+        console.log('[WA] msg fromMe:', msg.key.fromMe, 'remoteJid:', msg.key.remoteJid, 'type:', type)
         if (msg.key.fromMe) continue
+        if (type !== 'notify') continue
         await handleIncoming(msg)
       }
     })
