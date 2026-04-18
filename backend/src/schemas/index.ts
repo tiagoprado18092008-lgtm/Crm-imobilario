@@ -35,6 +35,14 @@ export const createContactSchema = z.object({
   timeline: z.string().optional(),
   gdprConsent: z.boolean().optional(),
   gdprConsentOrigin: z.string().optional(),
+  // BUYER fields
+  selling_also: z.boolean().optional(),
+  needs_financing: z.boolean().optional(),
+  // OWNER fields
+  property_address: z.string().optional(),
+  asking_price: z.number().nonnegative().optional(),
+  sale_reason: z.string().optional(),
+  buying_also: z.boolean().optional(),
 });
 
 export const updateContactSchema = createContactSchema.partial();

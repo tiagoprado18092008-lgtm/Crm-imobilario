@@ -213,7 +213,11 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit as any, (errs) => console.error('[ContactForm] validation errors:', errs))} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit as any, (errs) => {
+      console.error('[ContactForm] validation errors:', errs)
+      const firstMsg = Object.values(errs).map((e: any) => e?.message).filter(Boolean)[0]
+      showToast(firstMsg || 'Preencha os campos obrigatórios', 'error')
+    })} className="space-y-4">
       {/* Dados base */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Input label="Nome" required error={errors.name?.message} {...register('name')} />
