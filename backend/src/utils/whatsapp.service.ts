@@ -5,15 +5,15 @@ const BASE_URL = 'https://graph.facebook.com/v21.0';
 
 export async function sendWhatsAppMessage(
   to: string,
-  message: string
+  message: string,
+  agencyId?: string
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  // Prefer Baileys (QR-connected) when available
-  const waStatus = getStatus();
-  console.log('[WA send] status:', waStatus.status, '| to:', to)
-  if (waStatus.status === 'CONNECTED') {
-    const sent = await sendViaBaileys(to, message);
-    console.log('[WA send] baileys result:', sent)
-    if (sent) return { success: true, messageId: `baileys_${Date.now()}` };
+  if (agencyId) {
+    const waStatus = getStatus(agencyId);
+    if (waStatus.status === 'CONNECTED') {
+      const sent = await sendViaBaileys(agencyId, to, message);
+      if (sent) return { success: true, messageId: `baileys_${Date.now()}` };
+    }
   }
 
   const token = process.env.WHATSAPP_TOKEN;
@@ -29,7 +29,7 @@ export async function sendWhatsAppMessage(
       `${BASE_URL}/${phoneId}/messages`,
       {
         messaging_product: 'whatsapp',
-        to: to.replace(/\D/g, ''), // strip non-digits
+        to: to.replace(/\D/g, ''),
         type: 'text',
         text: { body: message },
       },

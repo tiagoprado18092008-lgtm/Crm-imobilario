@@ -39,7 +39,7 @@ import activityRouter from './modules/activity/activity.router';
 import pipelinesRouter from './modules/pipelines/pipelines.router';
 import { ensureDefaultPipelines } from './modules/pipelines/pipelines.service';
 import whatsappRouter from './modules/whatsapp/whatsapp.router';
-import { initWhatsApp } from './modules/whatsapp/whatsapp.service';
+import { restoreAllSessions } from './modules/whatsapp/whatsapp.service';
 import { errorMiddleware } from './middleware/error.middleware';
 import { requestLogger } from './utils/logger';
 import prisma from './config/database';
@@ -464,7 +464,7 @@ if (process.env.NODE_ENV !== 'test') {
       registerV2EventListeners();
       startAutomationCron();
       startCalendarCron();
-      initWhatsApp().catch(() => {});
+      restoreAllSessions().catch(() => {});
     })
     .catch((err) => {
       console.error('[Boot] Fatal error loading settings from DB:', err);

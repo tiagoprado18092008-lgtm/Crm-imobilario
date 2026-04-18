@@ -110,9 +110,9 @@ export const createOrFind = async (
   userId?: string,
   locationId?: string
 ) => {
-  // Look for an open conversation with the same channel + externalId
+  // Look for an open conversation with the same channel + externalId (scoped to location if provided)
   const existing = await prisma.conversation.findFirst({
-    where: { channel, externalId, status: 'OPEN' },
+    where: { channel, externalId, status: 'OPEN', ...(locationId ? { locationId } : {}) },
   });
 
   if (existing) return existing;
@@ -152,6 +152,7 @@ export const sendMessage = async (
     where: { id: conversationId },
     include: {
       contact: { select: { email: true, whatsapp: true, phone: true } },
+      location: { select: { agencyId: true } },
     },
   });
 
@@ -167,8 +168,10 @@ export const sendMessage = async (
 
   const destination = conversation.externalId || '';
 
+  const agencyId = (conversation as any).location?.agencyId;
+
   if (channel === 'WHATSAPP') {
-    sendResult = await sendWhatsAppMessage(destination, content);
+    sendResult = await sendWhatsAppMessage(destination, content, agencyId);
   } else if (channel === 'EMAIL') {
     sendResult = await sendEmail({
       to: destination,
@@ -231,8 +234,19 @@ export const receiveInbound = async (
   externalId: string,
   content: string,
   metadata?: string,
-  locationId?: string
+  agencyId?: string
 ) => {
+  // Resolve locationId from agencyId
+  let resolvedLocationId: string | null = null;
+  if (agencyId) {
+    const loc = await prisma.location.findFirst({ where: { agencyId }, select: { id: true } });
+    resolvedLocationId = loc?.id || null;
+  }
+  if (!resolvedLocationId) {
+    const loc = await prisma.location.findFirst({ select: { id: true } });
+    resolvedLocationId = loc?.id || null;
+  }
+
   // Auto-create or find a contact matching the sender, using profileName if available
   let resolvedContactId: string | undefined;
   try {
@@ -248,10 +262,9 @@ export const receiveInbound = async (
       if (!contact) {
         // Create a new contact automatically — use profileName or fall back to phone number
         const contactName = profileName || phone;
-        const resolvedLoc = locationId || (await prisma.location.findFirst({ select: { id: true } }))?.id || null;
         const defaultUser = await prisma.user.findFirst({
-          where: resolvedLoc
-            ? { locationId: resolvedLoc }
+          where: resolvedLocationId
+            ? { locationId: resolvedLocationId }
             : { role: { in: ['AGENCY_OWNER', 'AGENCY_ADMIN'] } },
           orderBy: { createdAt: 'asc' },
           select: { id: true },
@@ -263,7 +276,7 @@ export const receiveInbound = async (
               phone,
               whatsapp: phone,
               source: 'WHATSAPP_INBOUND',
-              locationId: resolvedLoc,
+              locationId: resolvedLocationId,
               assignedToId: defaultUser.id,
             },
           });
@@ -274,7 +287,7 @@ export const receiveInbound = async (
     }
   } catch { /* non-critical */ }
 
-  const conversation = await createOrFind(channel, externalId, resolvedContactId, undefined, locationId);
+  const conversation = await createOrFind(channel, externalId, resolvedContactId, undefined, resolvedLocationId || undefined);
 
   // If we found/created a contact and the conversation didn't have one, link it
   if (resolvedContactId && !conversation.contactId) {

@@ -4,29 +4,32 @@ import fs from 'fs'
 import path from 'path'
 
 const prisma = new PrismaClient()
-const SESSION_ID = 'singleton'
-const KEYS_FILE = path.join('/tmp', 'wa-keys.json')
 
-function readKeysFromFile(): Record<string, any> {
+function keysFile(agencyId: string) {
+  return path.join('/tmp', `wa-keys-${agencyId}.json`)
+}
+
+function readKeysFromFile(agencyId: string): Record<string, any> {
   try {
-    if (fs.existsSync(KEYS_FILE)) {
-      return JSON.parse(fs.readFileSync(KEYS_FILE, 'utf-8'), BufferJSON.reviver)
+    const file = keysFile(agencyId)
+    if (fs.existsSync(file)) {
+      return JSON.parse(fs.readFileSync(file, 'utf-8'), BufferJSON.reviver)
     }
   } catch {}
   return {}
 }
 
-function writeKeysToFile(data: Record<string, any>) {
+function writeKeysToFile(agencyId: string, data: Record<string, any>) {
   try {
-    fs.writeFileSync(KEYS_FILE, JSON.stringify(data, BufferJSON.replacer))
+    fs.writeFileSync(keysFile(agencyId), JSON.stringify(data, BufferJSON.replacer))
   } catch (e) {
     console.error('[WA] Failed to write keys file:', e)
   }
 }
 
-export async function usePrismaAuthState() {
+export async function usePrismaAuthState(agencyId: string) {
   const loadCreds = async () => {
-    const row = await prisma.whatsAppSession.findUnique({ where: { id: SESSION_ID } })
+    const row = await prisma.whatsAppSession.findUnique({ where: { id: agencyId } })
     if (row?.creds && row.creds !== '{}') {
       try { return JSON.parse(row.creds, BufferJSON.reviver) } catch {}
     }
@@ -34,14 +37,14 @@ export async function usePrismaAuthState() {
   }
 
   const creds = await loadCreds()
-  let keysData = readKeysFromFile()
+  let keysData = readKeysFromFile(agencyId)
 
   const saveCreds = async (updatedCreds: any) => {
     Object.assign(creds, updatedCreds)
     try {
       await prisma.whatsAppSession.upsert({
-        where: { id: SESSION_ID },
-        create: { id: SESSION_ID, creds: JSON.stringify(creds, BufferJSON.replacer), status: 'CONNECTING' },
+        where: { id: agencyId },
+        create: { id: agencyId, creds: JSON.stringify(creds, BufferJSON.replacer), status: 'CONNECTING' },
         update: { creds: JSON.stringify(creds, BufferJSON.replacer) },
       })
     } catch (err) {
@@ -68,7 +71,7 @@ export async function usePrismaAuthState() {
           }
         }
       }
-      writeKeysToFile(keysData)
+      writeKeysToFile(agencyId, keysData)
     },
   }
 

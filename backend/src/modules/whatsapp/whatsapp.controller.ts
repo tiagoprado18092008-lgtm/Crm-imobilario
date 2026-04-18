@@ -1,24 +1,38 @@
 import { Request, Response } from 'express'
 import { getStatus, initWhatsApp, disconnectWhatsApp } from './whatsapp.service'
 
-export const status = async (_req: Request, res: Response) => {
-  res.json(getStatus())
+function requireAgencyId(req: Request, res: Response): string | null {
+  const agencyId = (req.user as any)?.agencyId
+  if (!agencyId) {
+    res.status(403).json({ error: 'Utilizador não associado a nenhuma agência.' })
+    return null
+  }
+  return agencyId
 }
 
-export const connect = async (_req: Request, res: Response) => {
-  const current = getStatus()
+export const status = async (req: Request, res: Response) => {
+  const agencyId = requireAgencyId(req, res)
+  if (!agencyId) return
+  res.json(getStatus(agencyId))
+}
+
+export const connect = async (req: Request, res: Response) => {
+  const agencyId = requireAgencyId(req, res)
+  if (!agencyId) return
+  const current = getStatus(agencyId)
   if (current.status === 'CONNECTED') {
     return res.json({ ok: true, already: true })
   }
-  // If already connecting with a QR available, just return ok (polling will pick it up)
   if (current.status === 'CONNECTING' && current.qr) {
     return res.json({ ok: true })
   }
-  initWhatsApp().catch((e) => console.error('[WA] connect error:', e))
+  initWhatsApp(agencyId).catch((e) => console.error('[WA] connect error:', e))
   res.json({ ok: true })
 }
 
-export const disconnect = async (_req: Request, res: Response) => {
-  await disconnectWhatsApp()
+export const disconnect = async (req: Request, res: Response) => {
+  const agencyId = requireAgencyId(req, res)
+  if (!agencyId) return
+  await disconnectWhatsApp(agencyId)
   res.json({ ok: true })
 }

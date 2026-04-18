@@ -7,54 +7,66 @@ import { eventBus } from '../../utils/event-bus'
 import { receiveInbound } from '../conversations/conversations.service'
 
 const prisma = new PrismaClient()
-const SESSION_ID = 'singleton'
 
-let sock: ReturnType<typeof makeWASocket> | null = null
-let currentStatus: 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' = 'DISCONNECTED'
-let currentPhone: string | null = null
-let currentQR: string | null = null
-let reconnectTimer: ReturnType<typeof setTimeout> | null = null
-
-export function getStatus() {
-  return { status: currentStatus, phone: currentPhone, qr: currentQR }
+interface SessionState {
+  sock: ReturnType<typeof makeWASocket> | null
+  status: 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'
+  phone: string | null
+  qr: string | null
+  reconnectTimer: ReturnType<typeof setTimeout> | null
 }
 
-export async function initWhatsApp(): Promise<void> {
-  if (sock) {
-    console.log('[WA] Already initialised, sock exists')
+const sessions = new Map<string, SessionState>()
+
+function getSession(agencyId: string): SessionState {
+  if (!sessions.has(agencyId)) {
+    sessions.set(agencyId, { sock: null, status: 'DISCONNECTED', phone: null, qr: null, reconnectTimer: null })
+  }
+  return sessions.get(agencyId)!
+}
+
+export function getStatus(agencyId: string) {
+  const s = getSession(agencyId)
+  return { status: s.status, phone: s.phone, qr: s.qr }
+}
+
+export async function initWhatsApp(agencyId: string): Promise<void> {
+  const s = getSession(agencyId)
+  if (s.sock) {
+    console.log(`[WA:${agencyId}] Already initialised`)
     return
   }
 
-  currentStatus = 'CONNECTING'
-  currentQR = null
-  console.log('[WA] Starting initWhatsApp...')
+  s.status = 'CONNECTING'
+  s.qr = null
+  console.log(`[WA:${agencyId}] Starting initWhatsApp...`)
 
   await prisma.whatsAppSession.upsert({
-    where: { id: SESSION_ID },
-    create: { id: SESSION_ID, creds: '{}', status: 'CONNECTING' },
+    where: { id: agencyId },
+    create: { id: agencyId, creds: '{}', status: 'CONNECTING' },
     update: { status: 'CONNECTING' },
   })
 
   try {
-    const { state, saveCreds } = await usePrismaAuthState()
-    console.log('[WA] Auth state loaded')
+    const { state, saveCreds } = await usePrismaAuthState(agencyId)
+    console.log(`[WA:${agencyId}] Auth state loaded`)
 
     let version: [number, number, number] = [2, 3000, 1035194821]
     try {
       const v = await fetchLatestBaileysVersion()
       version = v.version
-      console.log('[WA] Using version:', version)
     } catch {
-      console.log('[WA] Using fallback version:', version)
+      console.log(`[WA:${agencyId}] Using fallback version`)
     }
 
-    sock = makeWASocket({
+    const sock = makeWASocket({
       version,
       auth: state,
-      printQRInTerminal: true,
+      printQRInTerminal: false,
       browser: ['CasaFlow CRM', 'Chrome', '1.0.0'],
       connectTimeoutMs: 30000,
     })
+    s.sock = sock
 
     sock.ev.on('creds.update', saveCreds)
 
@@ -62,74 +74,70 @@ export async function initWhatsApp(): Promise<void> {
       const { connection, lastDisconnect, qr } = update
 
       if (qr) {
-        console.log('[WA] QR received, encoding...')
         try {
-          currentQR = await QRCode.toDataURL(qr)
-          console.log('[WA] QR encoded, length:', currentQR?.length)
-          eventBus.emit('whatsapp_qr', { qr: currentQR })
+          s.qr = await QRCode.toDataURL(qr)
+          eventBus.emit(`whatsapp_qr:${agencyId}`, { qr: s.qr })
+          eventBus.emit('whatsapp_qr', { qr: s.qr, agencyId })
         } catch (e) {
-          console.error('[WA] QR encode error:', e)
+          console.error(`[WA:${agencyId}] QR encode error:`, e)
         }
       }
 
       if (connection === 'open') {
-        currentQR = null
-        currentStatus = 'CONNECTED'
+        s.qr = null
+        s.status = 'CONNECTED'
         const jid = sock?.user?.id || ''
-        currentPhone = jid.split(':')[0].replace('@s.whatsapp.net', '') || null
+        s.phone = jid.split(':')[0].replace('@s.whatsapp.net', '') || null
         await prisma.whatsAppSession.upsert({
-          where: { id: SESSION_ID },
-          create: { id: SESSION_ID, creds: '{}', status: 'CONNECTED', phone: currentPhone },
-          update: { status: 'CONNECTED', phone: currentPhone },
+          where: { id: agencyId },
+          create: { id: agencyId, creds: '{}', status: 'CONNECTED', phone: s.phone },
+          update: { status: 'CONNECTED', phone: s.phone },
         })
-        eventBus.emit('whatsapp_connected', { phone: currentPhone })
+        eventBus.emit(`whatsapp_connected:${agencyId}`, { phone: s.phone })
+        eventBus.emit('whatsapp_connected', { phone: s.phone, agencyId })
+        console.log(`[WA:${agencyId}] Connected as`, s.phone)
       }
 
       if (connection === 'close') {
         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode
         const isLoggedOut = statusCode === DisconnectReason.loggedOut
         const isConflict = statusCode === DisconnectReason.connectionReplaced || statusCode === 440
-        console.log('[WA] connection closed, statusCode:', statusCode, 'conflict:', isConflict)
-        currentQR = null
-        currentStatus = 'DISCONNECTED'
-        sock = null
+        console.log(`[WA:${agencyId}] Closed, statusCode:`, statusCode)
+        s.qr = null
+        s.status = 'DISCONNECTED'
+        s.sock = null
         await prisma.whatsAppSession.updateMany({
-          where: { id: SESSION_ID },
+          where: { id: agencyId },
           data: { status: 'DISCONNECTED' },
         })
         if (!isLoggedOut && !isConflict) {
-          if (reconnectTimer) clearTimeout(reconnectTimer)
-          reconnectTimer = setTimeout(() => initWhatsApp(), 5000)
+          if (s.reconnectTimer) clearTimeout(s.reconnectTimer)
+          s.reconnectTimer = setTimeout(() => initWhatsApp(agencyId), 5000)
         } else if (isConflict) {
-          // Another session took over — wait longer before reconnecting
-          if (reconnectTimer) clearTimeout(reconnectTimer)
-          reconnectTimer = setTimeout(() => initWhatsApp(), 15000)
+          if (s.reconnectTimer) clearTimeout(s.reconnectTimer)
+          s.reconnectTimer = setTimeout(() => initWhatsApp(agencyId), 15000)
         }
       }
     })
 
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
-      console.log('[WA] messages.upsert type:', type, 'count:', messages.length)
       for (const msg of messages) {
-        console.log('[WA] msg fromMe:', msg.key.fromMe, 'remoteJid:', msg.key.remoteJid, 'type:', type)
         if (type !== 'notify') continue
         if (msg.key.fromMe) continue
-        await handleIncoming(msg)
+        await handleIncoming(msg, agencyId)
       }
     })
   } catch (err) {
-    console.error('[WA] initWhatsApp error:', err)
-    currentStatus = 'DISCONNECTED'
-    sock = null
+    console.error(`[WA:${agencyId}] initWhatsApp error:`, err)
+    s.status = 'DISCONNECTED'
+    s.sock = null
   }
 }
 
-async function handleIncoming(msg: any) {
+async function handleIncoming(msg: any, agencyId: string) {
   try {
     const jid = msg.key.remoteJid || ''
-    // Skip group chats, broadcast lists, and linked-identity JIDs
     if (jid.endsWith('@g.us') || jid.endsWith('@broadcast') || jid.endsWith('@lid')) {
-      console.log('[WA] skipping non-individual JID:', jid)
       return
     }
     const phone = jid.replace('@s.whatsapp.net', '')
@@ -138,51 +146,59 @@ async function handleIncoming(msg: any) {
       msg.message?.extendedTextMessage?.text ||
       msg.message?.imageMessage?.caption ||
       ''
-    console.log('[WA] handleIncoming phone:', phone, 'text:', text?.substring(0, 50))
-    if (!phone) { console.log('[WA] no phone, skipping'); return }
-    if (!text) { console.log('[WA] no text content, msg keys:', Object.keys(msg.message || {})); return }
+    if (!phone || !text) return
 
     await receiveInbound(
       'WHATSAPP',
       phone,
       text,
       JSON.stringify({ messageId: msg.key.id, profileName: msg.pushName }),
+      agencyId,
     )
-    console.log('[WA] receiveInbound done for', phone)
+    console.log(`[WA:${agencyId}] receiveInbound done for`, phone)
   } catch (e) {
-    console.error('[WA] handleIncoming error:', e)
+    console.error(`[WA:${agencyId}] handleIncoming error:`, e)
   }
 }
 
-export async function sendViaBaileys(to: string, text: string): Promise<boolean> {
-  if (!sock || currentStatus !== 'CONNECTED') return false
+export async function sendViaBaileys(agencyId: string, to: string, text: string): Promise<boolean> {
+  const s = getSession(agencyId)
+  if (!s.sock || s.status !== 'CONNECTED') return false
   try {
     let digits = to.replace(/\D/g, '')
-    // Add Portugal country code if 9-digit number
     if (digits.length === 9) digits = '351' + digits
     const jid = digits + '@s.whatsapp.net'
-    console.log('[WA] sending to jid:', jid)
-    await sock.sendMessage(jid, { text })
+    await s.sock.sendMessage(jid, { text })
     return true
   } catch (e) {
-    console.error('[WA] sendViaBaileys error:', e)
+    console.error(`[WA:${agencyId}] sendViaBaileys error:`, e)
     return false
   }
 }
 
-export async function disconnectWhatsApp(): Promise<void> {
-  if (reconnectTimer) clearTimeout(reconnectTimer)
-  reconnectTimer = null
-  if (sock) {
-    try {
-      await sock.logout()
-    } catch {}
-    sock = null
+export async function disconnectWhatsApp(agencyId: string): Promise<void> {
+  const s = getSession(agencyId)
+  if (s.reconnectTimer) clearTimeout(s.reconnectTimer)
+  s.reconnectTimer = null
+  if (s.sock) {
+    try { await s.sock.logout() } catch {}
+    s.sock = null
   }
-  currentStatus = 'DISCONNECTED'
-  currentPhone = null
+  s.status = 'DISCONNECTED'
+  s.phone = null
   await prisma.whatsAppSession.updateMany({
-    where: { id: SESSION_ID },
+    where: { id: agencyId },
     data: { status: 'DISCONNECTED', phone: null, creds: '{}', keys: null },
   })
+}
+
+// Called on server startup — restore all connected sessions
+export async function restoreAllSessions(): Promise<void> {
+  const rows = await prisma.whatsAppSession.findMany({
+    where: { status: 'CONNECTED' },
+  })
+  for (const row of rows) {
+    console.log(`[WA] Restoring session for agency: ${row.id}`)
+    initWhatsApp(row.id).catch(e => console.error(`[WA] Restore error for ${row.id}:`, e))
+  }
 }
