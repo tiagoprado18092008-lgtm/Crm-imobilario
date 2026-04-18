@@ -112,8 +112,8 @@ export async function initWhatsApp(): Promise<void> {
       console.log('[WA] messages.upsert type:', type, 'count:', messages.length)
       for (const msg of messages) {
         console.log('[WA] msg fromMe:', msg.key.fromMe, 'remoteJid:', msg.key.remoteJid, 'type:', type)
-        if (msg.key.fromMe) continue
         if (type !== 'notify') continue
+        if (msg.key.fromMe) continue
         await handleIncoming(msg)
       }
     })
@@ -133,7 +133,9 @@ async function handleIncoming(msg: any) {
       msg.message?.extendedTextMessage?.text ||
       msg.message?.imageMessage?.caption ||
       ''
-    if (!text || !phone) return
+    console.log('[WA] handleIncoming phone:', phone, 'text:', text?.substring(0, 50))
+    if (!phone) { console.log('[WA] no phone, skipping'); return }
+    if (!text) { console.log('[WA] no text content, msg keys:', Object.keys(msg.message || {})); return }
 
     await receiveInbound(
       'WHATSAPP',
@@ -141,7 +143,10 @@ async function handleIncoming(msg: any) {
       text,
       JSON.stringify({ messageId: msg.key.id, profileName: msg.pushName }),
     )
-  } catch {}
+    console.log('[WA] receiveInbound done for', phone)
+  } catch (e) {
+    console.error('[WA] handleIncoming error:', e)
+  }
 }
 
 export async function sendViaBaileys(to: string, text: string): Promise<boolean> {
