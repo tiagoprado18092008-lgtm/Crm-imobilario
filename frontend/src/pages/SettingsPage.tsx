@@ -462,8 +462,10 @@ export const SettingsPage: React.FC = () => {
       await connectWhatsApp()
       const token = localStorage.getItem('crm_token') || ''
       startWaSSE(token)
-    } catch {
+      setTimeout(() => { setWaQrLoading(false) }, 30000)
+    } catch (err: any) {
       setWaQrLoading(false)
+      showToast(err?.response?.data?.error || 'Erro ao ligar WhatsApp', 'error')
     }
   }
 
