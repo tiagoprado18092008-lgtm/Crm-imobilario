@@ -21,7 +21,7 @@ export const createContactSchema = z.object({
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   phone: z.string().optional(),
   whatsapp: z.string().optional(),
-  type: z.enum(['LEAD', 'CLIENT', 'OWNER', 'PARTNER']).default('LEAD'),
+  type: z.enum(['LEAD', 'CLIENT', 'OWNER', 'PARTNER', 'BUYER']).default('LEAD'),
   status: z.enum(['NEW', 'QUALIFIED', 'CONTACTED', 'INACTIVE']).default('NEW'),
   source: z.string().optional(),
   notes: z.string().optional(),
