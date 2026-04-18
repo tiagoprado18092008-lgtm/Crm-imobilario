@@ -1,8 +1,28 @@
 import { PrismaClient } from '@prisma/client'
 import { initAuthCreds, BufferJSON } from '@whiskeysockets/baileys'
+import fs from 'fs'
+import path from 'path'
 
 const prisma = new PrismaClient()
 const SESSION_ID = 'singleton'
+const KEYS_FILE = path.join('/tmp', 'wa-keys.json')
+
+function readKeysFromFile(): Record<string, any> {
+  try {
+    if (fs.existsSync(KEYS_FILE)) {
+      return JSON.parse(fs.readFileSync(KEYS_FILE, 'utf-8'), BufferJSON.reviver)
+    }
+  } catch {}
+  return {}
+}
+
+function writeKeysToFile(data: Record<string, any>) {
+  try {
+    fs.writeFileSync(KEYS_FILE, JSON.stringify(data, BufferJSON.replacer))
+  } catch (e) {
+    console.error('[WA] Failed to write keys file:', e)
+  }
+}
 
 export async function usePrismaAuthState() {
   const loadCreds = async () => {
@@ -13,38 +33,22 @@ export async function usePrismaAuthState() {
     return initAuthCreds()
   }
 
-  const loadKeys = async () => {
-    const row = await prisma.whatsAppSession.findUnique({ where: { id: SESSION_ID } })
-    if (row?.keys) {
-      try { return JSON.parse(row.keys, BufferJSON.reviver) } catch {}
-    }
-    return {}
-  }
-
   const creds = await loadCreds()
-  let keysData = await loadKeys()
+  let keysData = readKeysFromFile()
 
-  const saveState = async (newCreds: any, newKeys?: any) => {
+  const saveCreds = async (updatedCreds: any) => {
+    Object.assign(creds, updatedCreds)
     try {
       await prisma.whatsAppSession.upsert({
         where: { id: SESSION_ID },
-        create: {
-          id: SESSION_ID,
-          creds: JSON.stringify(newCreds, BufferJSON.replacer),
-          keys: newKeys ? JSON.stringify(newKeys, BufferJSON.replacer) : null,
-          status: 'CONNECTING',
-        },
-        update: {
-          creds: JSON.stringify(newCreds, BufferJSON.replacer),
-          ...(newKeys !== undefined ? { keys: JSON.stringify(newKeys, BufferJSON.replacer) } : {}),
-        },
+        create: { id: SESSION_ID, creds: JSON.stringify(creds, BufferJSON.replacer), status: 'CONNECTING' },
+        update: { creds: JSON.stringify(creds, BufferJSON.replacer) },
       })
     } catch (err) {
-      console.error('[WA] Failed to save session:', err)
+      console.error('[WA] Failed to save creds:', err)
     }
   }
 
-  // Simple in-memory key store (no makeCacheableSignalKeyStore to avoid logger incompatibility)
   const keys = {
     get: async (type: string, ids: string[]) => {
       const data: Record<string, any> = {}
@@ -57,22 +61,16 @@ export async function usePrismaAuthState() {
     set: async (data: Record<string, Record<string, any>>) => {
       for (const type in data) {
         for (const id in data[type]) {
-          if (data[type][id]) {
+          if (data[type][id] != null) {
             keysData[`${type}-${id}`] = data[type][id]
           } else {
             delete keysData[`${type}-${id}`]
           }
         }
       }
-      await saveState(creds, keysData)
+      writeKeysToFile(keysData)
     },
   }
 
-  return {
-    state: { creds, keys },
-    saveCreds: async (updatedCreds: any) => {
-      Object.assign(creds, updatedCreds)
-      await saveState(creds, keysData)
-    },
-  }
+  return { state: { creds, keys }, saveCreds }
 }
