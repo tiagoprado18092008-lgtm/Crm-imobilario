@@ -110,9 +110,24 @@ export const createOrFind = async (
   userId?: string,
   locationId?: string
 ) => {
+  // Build phone variants so we match regardless of +351 prefix format
+  const digits = externalId.replace(/\D/g, '')
+  const externalIdVariants = digits
+    ? [externalId, digits, `+${digits}`]
+    : [externalId]
+  if (digits.startsWith('351') && digits.length === 12) {
+    const local = digits.slice(3)
+    externalIdVariants.push(local, `+${local}`)
+  }
+
   // Look for an open conversation with the same channel + externalId (scoped to location if provided)
   const existing = await prisma.conversation.findFirst({
-    where: { channel, externalId, status: 'OPEN', ...(locationId ? { locationId } : {}) },
+    where: {
+      channel,
+      externalId: { in: externalIdVariants },
+      status: 'OPEN',
+      ...(locationId ? { locationId } : {}),
+    },
   });
 
   if (existing) return existing;
@@ -254,10 +269,16 @@ export const receiveInbound = async (
     const profileName: string | undefined = meta.profileName;
 
     if (channel === 'WHATSAPP' || channel === 'SMS') {
-      // externalId is the phone number
-      const phone = externalId.startsWith('+') ? externalId : `+${externalId}`;
+      // Build all number variants to match regardless of formatting
+      const digits = externalId.replace(/\D/g, '')
+      const withPlus = `+${digits}`
+      const withoutPT = digits.startsWith('351') && digits.length === 12 ? digits.slice(3) : null
+      const phoneVariants: string[] = [digits, withPlus, externalId]
+      if (withoutPT) phoneVariants.push(withoutPT, `+${withoutPT}`)
+      const phone = withPlus
+
       let contact = await prisma.contact.findFirst({
-        where: { OR: [{ phone }, { whatsapp: phone }, { phone: externalId }, { whatsapp: externalId }] },
+        where: { OR: phoneVariants.flatMap(v => [{ phone: v }, { whatsapp: v }]) },
       });
       if (!contact) {
         // Create a new contact automatically — use profileName or fall back to phone number
