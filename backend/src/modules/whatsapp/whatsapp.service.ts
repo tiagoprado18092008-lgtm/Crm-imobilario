@@ -139,10 +139,15 @@ async function handleIncoming(msg: any) {
 export async function sendViaBaileys(to: string, text: string): Promise<boolean> {
   if (!sock || currentStatus !== 'CONNECTED') return false
   try {
-    const jid = to.replace(/\D/g, '') + '@s.whatsapp.net'
+    let digits = to.replace(/\D/g, '')
+    // Add Portugal country code if 9-digit number
+    if (digits.length === 9) digits = '351' + digits
+    const jid = digits + '@s.whatsapp.net'
+    console.log('[WA] sending to jid:', jid)
     await sock.sendMessage(jid, { text })
     return true
-  } catch {
+  } catch (e) {
+    console.error('[WA] sendViaBaileys error:', e)
     return false
   }
 }
