@@ -87,7 +87,9 @@ export async function initWhatsApp(): Promise<void> {
 
       if (connection === 'close') {
         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode
-        const shouldReconnect = statusCode !== DisconnectReason.loggedOut
+        const isLoggedOut = statusCode === DisconnectReason.loggedOut
+        const isConflict = statusCode === DisconnectReason.connectionReplaced || statusCode === 440
+        console.log('[WA] connection closed, statusCode:', statusCode, 'conflict:', isConflict)
         currentQR = null
         currentStatus = 'DISCONNECTED'
         sock = null
@@ -95,9 +97,13 @@ export async function initWhatsApp(): Promise<void> {
           where: { id: SESSION_ID },
           data: { status: 'DISCONNECTED' },
         })
-        if (shouldReconnect) {
+        if (!isLoggedOut && !isConflict) {
           if (reconnectTimer) clearTimeout(reconnectTimer)
           reconnectTimer = setTimeout(() => initWhatsApp(), 5000)
+        } else if (isConflict) {
+          // Another session took over — wait longer before reconnecting
+          if (reconnectTimer) clearTimeout(reconnectTimer)
+          reconnectTimer = setTimeout(() => initWhatsApp(), 15000)
         }
       }
     })
