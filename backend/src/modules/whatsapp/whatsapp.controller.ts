@@ -1,24 +1,17 @@
 import { Request, Response } from 'express'
 import { getStatus, initWhatsApp, disconnectWhatsApp } from './whatsapp.service'
 
-function requireAgencyId(req: Request, res: Response): string | null {
-  const agencyId = (req.user as any)?.agencyId
-  if (!agencyId) {
-    res.status(403).json({ error: 'Utilizador não associado a nenhuma agência.' })
-    return null
-  }
-  return agencyId
+function resolveAgencyId(req: Request): string {
+  return (req.user as any)?.agencyId || (req.user as any)?.id || 'default'
 }
 
 export const status = async (req: Request, res: Response) => {
-  const agencyId = requireAgencyId(req, res)
-  if (!agencyId) return
+  const agencyId = resolveAgencyId(req)
   res.json(getStatus(agencyId))
 }
 
 export const connect = async (req: Request, res: Response) => {
-  const agencyId = requireAgencyId(req, res)
-  if (!agencyId) return
+  const agencyId = resolveAgencyId(req)
   const current = getStatus(agencyId)
   if (current.status === 'CONNECTED') {
     return res.json({ ok: true, already: true })
@@ -31,8 +24,7 @@ export const connect = async (req: Request, res: Response) => {
 }
 
 export const disconnect = async (req: Request, res: Response) => {
-  const agencyId = requireAgencyId(req, res)
-  if (!agencyId) return
+  const agencyId = resolveAgencyId(req)
   await disconnectWhatsApp(agencyId)
   res.json({ ok: true })
 }
