@@ -12,10 +12,11 @@ const SESSION_ID = 'singleton'
 let sock: ReturnType<typeof makeWASocket> | null = null
 let currentStatus: 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED' = 'DISCONNECTED'
 let currentPhone: string | null = null
+let currentQR: string | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
 export function getStatus() {
-  return { status: currentStatus, phone: currentPhone }
+  return { status: currentStatus, phone: currentPhone, qr: currentQR }
 }
 
 export async function initWhatsApp(): Promise<void> {
@@ -46,12 +47,13 @@ export async function initWhatsApp(): Promise<void> {
 
       if (qr) {
         try {
-          const qrDataUrl = await QRCode.toDataURL(qr)
-          eventBus.emit('whatsapp_qr', { qr: qrDataUrl })
+          currentQR = await QRCode.toDataURL(qr)
+          eventBus.emit('whatsapp_qr', { qr: currentQR })
         } catch {}
       }
 
       if (connection === 'open') {
+        currentQR = null
         currentStatus = 'CONNECTED'
         const jid = sock?.user?.id || ''
         currentPhone = jid.split(':')[0].replace('@s.whatsapp.net', '') || null
@@ -66,6 +68,7 @@ export async function initWhatsApp(): Promise<void> {
       if (connection === 'close') {
         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut
+        currentQR = null
         currentStatus = 'DISCONNECTED'
         sock = null
         await prisma.whatsAppSession.updateMany({

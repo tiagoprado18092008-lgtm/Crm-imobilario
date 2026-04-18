@@ -431,28 +431,35 @@ export const SettingsPage: React.FC = () => {
     }).catch(() => {})
   }, [])
 
-  const startWaSSE = (token: string) => {
-    if (waSSERef.current) waSSERef.current.close()
-    const apiBase = (import.meta as any).env?.VITE_API_URL?.replace('/api', '') ?? ''
-    const es = new EventSource(`${apiBase}/api/sse?token=${encodeURIComponent(token)}`)
-    waSSERef.current = es
-    es.onmessage = (e) => {
+  const startWaPolling = () => {
+    if (waSSERef.current) clearInterval(waSSERef.current as any)
+    let attempts = 0
+    const interval = setInterval(async () => {
+      attempts++
       try {
-        const data = JSON.parse(e.data)
-        if (data.type === 'whatsapp_qr') {
-          setWaQrImage(data.qr)
+        const r = await getWhatsAppStatus()
+        const { status, phone, qr } = r.data as any
+        if (qr && status !== 'CONNECTED') {
+          setWaQrImage(qr)
           setWaQrStatus('CONNECTING')
           setWaQrLoading(false)
-        } else if (data.type === 'whatsapp_connected') {
+        }
+        if (status === 'CONNECTED') {
           setWaQrImage(null)
           setWaQrStatus('CONNECTED')
-          setWaQrPhone(data.phone)
+          setWaQrPhone(phone)
           setWaQrLoading(false)
-          es.close()
+          clearInterval(interval)
           waSSERef.current = null
         }
       } catch {}
-    }
+      if (attempts >= 20) { // 20 * 3s = 60s timeout
+        clearInterval(interval)
+        waSSERef.current = null
+        setWaQrLoading(false)
+      }
+    }, 3000)
+    waSSERef.current = interval as any
   }
 
   const handleWaConnect = async () => {
@@ -460,9 +467,7 @@ export const SettingsPage: React.FC = () => {
     setWaQrImage(null)
     try {
       await connectWhatsApp()
-      const token = localStorage.getItem('crm_token') || ''
-      startWaSSE(token)
-      setTimeout(() => { setWaQrLoading(false) }, 30000)
+      startWaPolling()
     } catch (err: any) {
       setWaQrLoading(false)
       showToast(err?.response?.data?.error || 'Erro ao ligar WhatsApp', 'error')
@@ -470,7 +475,7 @@ export const SettingsPage: React.FC = () => {
   }
 
   const handleWaDisconnect = async () => {
-    if (waSSERef.current) { waSSERef.current.close(); waSSERef.current = null }
+    if (waSSERef.current) { clearInterval(waSSERef.current as any); waSSERef.current = null }
     await disconnectWA()
     setWaQrStatus('DISCONNECTED')
     setWaQrPhone(null)
