@@ -1,4 +1,4 @@
-import makeWASocket, { DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys'
+import makeWASocket, { DisconnectReason } from '@whiskeysockets/baileys'
 import { Boom } from '@hapi/boom'
 import QRCode from 'qrcode'
 import { PrismaClient } from '@prisma/client'
@@ -20,9 +20,15 @@ export function getStatus() {
 }
 
 export async function initWhatsApp(): Promise<void> {
-  if (sock) return
+  if (sock) {
+    console.log('[WA] Already initialised, sock exists')
+    return
+  }
 
   currentStatus = 'CONNECTING'
+  currentQR = null
+  console.log('[WA] Starting initWhatsApp...')
+
   await prisma.whatsAppSession.upsert({
     where: { id: SESSION_ID },
     create: { id: SESSION_ID, creds: '{}', status: 'CONNECTING' },
@@ -31,13 +37,14 @@ export async function initWhatsApp(): Promise<void> {
 
   try {
     const { state, saveCreds } = await usePrismaAuthState()
-    const { version } = await fetchLatestBaileysVersion()
+    console.log('[WA] Auth state loaded')
 
     sock = makeWASocket({
-      version,
+      version: [2, 3000, 1015901307],
       auth: state,
-      printQRInTerminal: false,
+      printQRInTerminal: true,
       browser: ['CasaFlow CRM', 'Chrome', '1.0.0'],
+      connectTimeoutMs: 30000,
     })
 
     sock.ev.on('creds.update', saveCreds)
@@ -46,10 +53,14 @@ export async function initWhatsApp(): Promise<void> {
       const { connection, lastDisconnect, qr } = update
 
       if (qr) {
+        console.log('[WA] QR received, encoding...')
         try {
           currentQR = await QRCode.toDataURL(qr)
+          console.log('[WA] QR encoded, length:', currentQR?.length)
           eventBus.emit('whatsapp_qr', { qr: currentQR })
-        } catch {}
+        } catch (e) {
+          console.error('[WA] QR encode error:', e)
+        }
       }
 
       if (connection === 'open') {
@@ -90,6 +101,7 @@ export async function initWhatsApp(): Promise<void> {
       }
     })
   } catch (err) {
+    console.error('[WA] initWhatsApp error:', err)
     currentStatus = 'DISCONNECTED'
     sock = null
   }

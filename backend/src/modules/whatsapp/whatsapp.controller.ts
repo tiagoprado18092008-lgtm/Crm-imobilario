@@ -10,7 +10,11 @@ export const connect = async (_req: Request, res: Response) => {
   if (current.status === 'CONNECTED') {
     return res.json({ ok: true, already: true })
   }
-  initWhatsApp().catch(() => {})
+  // If already connecting with a QR available, just return ok (polling will pick it up)
+  if (current.status === 'CONNECTING' && current.qr) {
+    return res.json({ ok: true })
+  }
+  initWhatsApp().catch((e) => console.error('[WA] connect error:', e))
   res.json({ ok: true })
 }
 
