@@ -9,8 +9,10 @@ export async function sendWhatsAppMessage(
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   // Prefer Baileys (QR-connected) when available
   const waStatus = getStatus();
+  console.log('[WA send] status:', waStatus.status, '| to:', to)
   if (waStatus.status === 'CONNECTED') {
     const sent = await sendViaBaileys(to, message);
+    console.log('[WA send] baileys result:', sent)
     if (sent) return { success: true, messageId: `baileys_${Date.now()}` };
   }
 

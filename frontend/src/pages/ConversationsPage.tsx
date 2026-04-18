@@ -702,7 +702,10 @@ export const ConversationsPage: React.FC = () => {
       const newMsg = res.data?.message || res.data
       setMessages(prev => [...prev, newMsg])
       setConversations(cs => cs.map(c => c.id === selected.id ? { ...c, lastMessageText: content.substring(0, 100), lastMessageAt: new Date().toISOString() } : c))
-    } catch {}
+    } catch (err: any) {
+      console.error('[Send error]', err?.response?.data || err)
+      alert('Erro ao enviar: ' + (err?.response?.data?.error || err?.message || 'desconhecido'))
+    }
     setSending(false)
   }
 
