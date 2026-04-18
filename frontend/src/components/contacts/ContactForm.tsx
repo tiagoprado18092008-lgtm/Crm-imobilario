@@ -30,12 +30,12 @@ const schema = z.object({
   preferences: z.string().optional(),
   // BUYER fields
   budget_min: z.preprocess(
-    (v) => (v === '' || v === null || (typeof v === 'number' && isNaN(v)) ? undefined : Number(v)),
-    z.number().positive().optional()
+    (v) => (v === '' || v === null || v === undefined || (typeof v === 'number' && isNaN(v)) ? undefined : Number(v)),
+    z.number().nonnegative().optional()
   ),
   budget_max: z.preprocess(
-    (v) => (v === '' || v === null || (typeof v === 'number' && isNaN(v)) ? undefined : Number(v)),
-    z.number().positive().optional()
+    (v) => (v === '' || v === null || v === undefined || (typeof v === 'number' && isNaN(v)) ? undefined : Number(v)),
+    z.number().nonnegative().optional()
   ),
   interest_type: z.string().optional(),
   timeline: z.string().optional(),
@@ -44,8 +44,8 @@ const schema = z.object({
   // OWNER fields
   property_address: z.string().optional(),
   asking_price: z.preprocess(
-    (v) => (v === '' || v === null || (typeof v === 'number' && isNaN(v)) ? undefined : Number(v)),
-    z.number().positive().optional()
+    (v) => (v === '' || v === null || v === undefined || (typeof v === 'number' && isNaN(v)) ? undefined : Number(v)),
+    z.number().nonnegative().optional()
   ),
   sale_reason: z.string().optional(),
   buying_also: z.boolean().optional(),
