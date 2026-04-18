@@ -1,4 +1,4 @@
-import makeWASocket, { DisconnectReason } from '@whiskeysockets/baileys'
+import makeWASocket, { DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys'
 import { Boom } from '@hapi/boom'
 import QRCode from 'qrcode'
 import { PrismaClient } from '@prisma/client'
@@ -39,8 +39,17 @@ export async function initWhatsApp(): Promise<void> {
     const { state, saveCreds } = await usePrismaAuthState()
     console.log('[WA] Auth state loaded')
 
+    let version: [number, number, number] = [2, 3000, 1035194821]
+    try {
+      const v = await fetchLatestBaileysVersion()
+      version = v.version
+      console.log('[WA] Using version:', version)
+    } catch {
+      console.log('[WA] Using fallback version:', version)
+    }
+
     sock = makeWASocket({
-      version: [2, 3000, 1015901307],
+      version,
       auth: state,
       printQRInTerminal: true,
       browser: ['CasaFlow CRM', 'Chrome', '1.0.0'],

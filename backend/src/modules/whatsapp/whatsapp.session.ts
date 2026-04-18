@@ -1,20 +1,14 @@
 import { PrismaClient } from '@prisma/client'
-import { initAuthCreds, BufferJSON, makeCacheableSignalKeyStore } from '@whiskeysockets/baileys'
-import { logger } from '../../utils/logger'
+import { initAuthCreds, BufferJSON } from '@whiskeysockets/baileys'
 
 const prisma = new PrismaClient()
-
 const SESSION_ID = 'singleton'
 
 export async function usePrismaAuthState() {
   const loadCreds = async () => {
     const row = await prisma.whatsAppSession.findUnique({ where: { id: SESSION_ID } })
-    if (row?.creds) {
-      try {
-        return JSON.parse(row.creds, BufferJSON.reviver)
-      } catch {
-        return initAuthCreds()
-      }
+    if (row?.creds && row.creds !== '{}') {
+      try { return JSON.parse(row.creds, BufferJSON.reviver) } catch {}
     }
     return initAuthCreds()
   }
@@ -22,11 +16,7 @@ export async function usePrismaAuthState() {
   const loadKeys = async () => {
     const row = await prisma.whatsAppSession.findUnique({ where: { id: SESSION_ID } })
     if (row?.keys) {
-      try {
-        return JSON.parse(row.keys, BufferJSON.reviver)
-      } catch {
-        return {}
-      }
+      try { return JSON.parse(row.keys, BufferJSON.reviver) } catch {}
     }
     return {}
   }
@@ -50,10 +40,11 @@ export async function usePrismaAuthState() {
         },
       })
     } catch (err) {
-      logger.error('Failed to save WhatsApp session', err)
+      console.error('[WA] Failed to save session:', err)
     }
   }
 
+  // Simple in-memory key store (no makeCacheableSignalKeyStore to avoid logger incompatibility)
   const keys = {
     get: async (type: string, ids: string[]) => {
       const data: Record<string, any> = {}
@@ -78,10 +69,7 @@ export async function usePrismaAuthState() {
   }
 
   return {
-    state: {
-      creds,
-      keys: makeCacheableSignalKeyStore(keys as any, logger as any),
-    },
+    state: { creds, keys },
     saveCreds: async (updatedCreds: any) => {
       Object.assign(creds, updatedCreds)
       await saveState(creds, keysData)
