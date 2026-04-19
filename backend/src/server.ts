@@ -281,6 +281,8 @@ app.post('/webhook/instagram', async (req, res) => {
 
 // ─── Rate Limiting ───────────────────────────────────────────────────────────
 
+app.set('trust proxy', 1);
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
   max: 200,
