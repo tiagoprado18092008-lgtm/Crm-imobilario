@@ -13,6 +13,7 @@ export const registerSchema = z.object({
   phone: z.string().optional(),
   agency: z.string().optional(),
   invitationToken: z.string().optional(),
+  role: z.string().optional(),
 });
 
 // Contacts
