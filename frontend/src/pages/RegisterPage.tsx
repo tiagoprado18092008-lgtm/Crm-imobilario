@@ -73,12 +73,15 @@ export const RegisterPage: React.FC = () => {
         undefined,
         form.role === 'AGENCY_OWNER' ? form.agencyName : undefined,
       )
-      const { token } = res.data
-      // Guardar token antes do getMe para o interceptor o usar
+      const { token, user } = res.data
       localStorage.setItem('crm_token', token)
-      // Buscar o user fresco da BD para garantir role correto
-      const meRes = await getMe()
-      setAuth(meRes.data, token)
+      // Try to fetch fresh user, fall back to register response
+      let finalUser = user
+      try {
+        const meRes = await getMe()
+        finalUser = meRes.data
+      } catch {}
+      setAuth(finalUser, token)
       navigate('/dashboard', { replace: true })
     } catch (err: any) {
       setError(err?.response?.data?.error || err?.response?.data?.message || 'Erro ao criar conta.')
