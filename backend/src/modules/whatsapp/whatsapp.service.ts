@@ -113,10 +113,8 @@ export async function initWhatsApp(agencyId: string): Promise<void> {
         if (!isLoggedOut && !isConflict) {
           if (s.reconnectTimer) clearTimeout(s.reconnectTimer)
           s.reconnectTimer = setTimeout(() => initWhatsApp(agencyId), 5000)
-        } else if (isConflict) {
-          if (s.reconnectTimer) clearTimeout(s.reconnectTimer)
-          s.reconnectTimer = setTimeout(() => initWhatsApp(agencyId), 15000)
         }
+        // On conflict (440): do NOT auto-reconnect — user must reconnect manually via Settings
       }
     })
 
