@@ -330,7 +330,7 @@ model Opportunity {
   pipelineStage PipelineStage? @relation(fields: [stageId], references: [id])
 
   contactId    String
-  contact      Contact   @relation(fields: [contactId], references: [id])
+  contact      Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
   propertyId   String?
   property     Property? @relation(fields: [propertyId], references: [id])
   assignedToId String
@@ -366,7 +366,7 @@ model Interaction {
   direction String  @default("OUTBOUND")
 
   contactId     String
-  contact       Contact      @relation(fields: [contactId], references: [id])
+  contact       Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
   opportunityId String?
   opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
   createdById   String
@@ -578,7 +578,7 @@ model EmailCampaignRecipient {
   campaignId String
   campaign   EmailCampaign @relation(fields: [campaignId], references: [id])
   contactId  String
-  contact    Contact @relation(fields: [contactId], references: [id])
+  contact    Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
   email      String
   status     String @default("PENDING") // PENDING, SENT, OPENED, CLICKED, BOUNCED, UNSUBSCRIBED
   sentAt     DateTime?
@@ -655,7 +655,7 @@ model AutomationEnrollment {
   automationId    String
   automation      Automation       @relation(fields: [automationId], references: [id])
   contactId       String
-  contact         Contact          @relation(fields: [contactId], references: [id])
+  contact         Contact          @relation(fields: [contactId], references: [id], onDelete: Cascade)
   status          EnrollmentStatus @default(ACTIVE)
   currentStepId   String?
   waitingUntil    DateTime?
