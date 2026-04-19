@@ -52,6 +52,9 @@ import { loadSettingsFromDB } from './modules/settings/settings.service';
 
 const app = express();
 
+// Trust the first proxy (required on Render — avoids ERR_ERL_UNEXPECTED_X_FORWARDED_FOR)
+app.set('trust proxy', 1);
+
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
@@ -281,23 +284,23 @@ app.post('/webhook/instagram', async (req, res) => {
 
 // ─── Rate Limiting ───────────────────────────────────────────────────────────
 
-app.set('trust proxy', 1);
-
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
+  windowMs: 15 * 60 * 1000,
   max: 200,
   message: { error: 'Demasiadas tentativas. Aguarde 15 minutos.', status: 429 },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   skip: () => process.env.NODE_ENV !== 'production',
 });
 
 const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 min
+  windowMs: 60 * 1000,
   max: 200,
   message: { error: 'Demasiados pedidos. Aguarde um momento.', status: 429 },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 // ─── API Routes ─────────────────────────────────────────────────────────────
