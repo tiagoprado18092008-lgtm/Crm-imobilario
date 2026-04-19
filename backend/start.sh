@@ -6,4 +6,4 @@ export DATABASE_DIRECT_URL="${DATABASE_DIRECT_URL:-$DATABASE_URL}"
 npx prisma db push --accept-data-loss --skip-generate
 
 # Start server
-node dist/server.js
+node --max-old-space-size=400 dist/server.js
