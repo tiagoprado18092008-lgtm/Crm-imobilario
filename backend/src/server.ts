@@ -58,11 +58,24 @@ app.set('trust proxy', 1);
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://casaflow.pt',
+  'https://www.casaflow.pt',
+  'https://casaflow-frontend.onrender.com',
+  ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map(u => u.trim()) : []),
+];
 app.use(
   cors({
-    origin: process.env.CLIENT_URL
-      ? process.env.CLIENT_URL.split(',').map(u => u.trim())
-      : ['http://localhost:5173', 'http://localhost:5174'],
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      // Allow any *.casaflow.pt and *.onrender.com subdomain
+      if (/^https:\/\/([a-z0-9-]+\.)?casaflow\.pt$/i.test(origin)) return cb(null, true);
+      if (/^https:\/\/[a-z0-9-]+\.onrender\.com$/i.test(origin)) return cb(null, true);
+      cb(new Error(`CORS blocked: ${origin}`));
+    },
     credentials: true,
   })
 );
