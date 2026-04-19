@@ -1,0 +1,17 @@
+-- AddColumn: dynamic fields for Contact
+ALTER TABLE "Contact" ADD COLUMN IF NOT EXISTS "selling_also" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Contact" ADD COLUMN IF NOT EXISTS "needs_financing" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Contact" ADD COLUMN IF NOT EXISTS "property_address" TEXT;
+ALTER TABLE "Contact" ADD COLUMN IF NOT EXISTS "asking_price" DOUBLE PRECISION;
+ALTER TABLE "Contact" ADD COLUMN IF NOT EXISTS "sale_reason" TEXT;
+ALTER TABLE "Contact" ADD COLUMN IF NOT EXISTS "buying_also" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Contact" ADD COLUMN IF NOT EXISTS "commission" DOUBLE PRECISION;
+
+-- AddColumn: dynamic fields for Opportunity
+ALTER TABLE "Opportunity" ADD COLUMN IF NOT EXISTS "selling_also" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Opportunity" ADD COLUMN IF NOT EXISTS "needs_financing" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Opportunity" ADD COLUMN IF NOT EXISTS "property_address" TEXT;
+ALTER TABLE "Opportunity" ADD COLUMN IF NOT EXISTS "asking_price" DOUBLE PRECISION;
+ALTER TABLE "Opportunity" ADD COLUMN IF NOT EXISTS "sale_reason" TEXT;
+ALTER TABLE "Opportunity" ADD COLUMN IF NOT EXISTS "buying_also" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Opportunity" ADD COLUMN IF NOT EXISTS "opp_commission" DOUBLE PRECISION;
