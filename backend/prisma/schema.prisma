@@ -486,12 +486,15 @@ model PhoneNumber {
   id           String  @id @default(cuid())
   number       String  @unique
   friendlyName String?
-  twilioSid    String
+  twilioSid    String?
   status       String  @default("ACTIVE") // ACTIVE, RELEASED
   countryCode  String
   numberType   String  @default("LOCAL") // LOCAL, TOLLFREE, MOBILE
   capabilities String  @default("{\"voice\":true,\"sms\":true}")
   monthlyPrice Float   @default(1.15)
+  source       String  @default("TWILIO") // TWILIO, EXTERNAL_VERIFIED
+  ringAll      Boolean @default(false)
+  voicemailEnabled Boolean @default(true)
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
