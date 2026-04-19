@@ -59,12 +59,19 @@ export const LoginPage: React.FC = () => {
     setError('')
     setLoading(true)
     try {
+      console.log('[LOGIN] calling API', { email, url: import.meta.env.VITE_API_URL })
       const res = await login(email, password)
+      console.log('[LOGIN] response', res.status, res.data)
       const { token, user } = res.data
       setAuth(user, token)
       navigate('/dashboard', { replace: true })
     } catch (err: any) {
-      setError(err?.response?.data?.error || err?.response?.data?.message || 'Email ou password incorretos.')
+      console.error('[LOGIN] error', err?.response?.status, err?.response?.data, err?.message, err)
+      const msg = err?.response?.data?.error
+        || err?.response?.data?.message
+        || err?.message
+        || 'Email ou password incorretos.'
+      setError(msg)
     } finally {
       setLoading(false)
     }
