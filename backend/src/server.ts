@@ -393,29 +393,59 @@ app.post('/webhook/twilio/inbound-call', async (req, res) => {
     await receiveInbound('CALL' as any, From, `Chamada recebida de ${From}`, JSON.stringify({ to: To }));
   } catch (err) { console.error('[Twilio Inbound Call]', err); }
 
-  // Find the active agent to route the call to in the browser
-  let clientIdentity: string | null = null;
+  let clientIdentities: string[] = [];
+  let voicemailEnabled = false;
+  let phoneNumberId: string | null = null;
+
   try {
-    const agent = await prisma.user.findFirst({
-      where: { role: 'AGENCY_OWNER', isActive: true },
-      select: { email: true },
-    }) || await prisma.user.findFirst({
+    const pn = await prisma.phoneNumber.findFirst({
+      where: { number: To, status: 'ACTIVE' },
+      include: { user: { select: { id: true, email: true, agencyId: true } } },
+    });
+    if (pn) {
+      phoneNumberId = pn.id;
+      voicemailEnabled = pn.voicemailEnabled;
+      if (pn.ringAll && pn.user?.agencyId) {
+        const agencyUsers = await prisma.user.findMany({
+          where: { isActive: true, agencyId: pn.user.agencyId },
+          select: { email: true },
+        });
+        clientIdentities = agencyUsers
+          .filter(u => !!u.email)
+          .map(u => u.email!.replace(/[^a-zA-Z0-9]/g, '_'));
+      } else if (pn.user?.email) {
+        clientIdentities = [pn.user.email.replace(/[^a-zA-Z0-9]/g, '_')];
+      }
+    }
+  } catch (err) {
+    console.error('[Twilio Inbound Call] routing lookup failed', err);
+  }
+
+  // Backwards-compat fallback: no PhoneNumber matched, use first active user
+  if (clientIdentities.length === 0) {
+    const fallback = await prisma.user.findFirst({
       where: { isActive: true },
       select: { email: true },
     });
-    if (agent?.email) {
-      clientIdentity = agent.email.replace(/[^a-zA-Z0-9]/g, '_');
-    }
-  } catch (err) { console.error('[Twilio Inbound Call] Could not find agent', err); }
+    if (fallback?.email) clientIdentities = [fallback.email.replace(/[^a-zA-Z0-9]/g, '_')];
+  }
+
+  const publicUrl = process.env.PUBLIC_URL || '';
+  const voicemailAction = voicemailEnabled && publicUrl
+    ? `${publicUrl}/webhook/twilio/voicemail-complete?phoneNumberId=${phoneNumberId || ''}&from=${encodeURIComponent(From)}`
+    : '';
 
   let twiml: string;
-  if (clientIdentity) {
+  if (clientIdentities.length > 0) {
+    const clientTags = clientIdentities.map(id => `<Client>${id}</Client>`).join('');
     twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say language="pt-PT">Olá, obrigado por ligar. Aguarde um momento.</Say>
-  <Dial timeout="30">
-    <Client>${clientIdentity}</Client>
+  <Dial timeout="30"${voicemailAction ? ` action="${voicemailAction}"` : ''}>
+    ${clientTags}
   </Dial>
+  ${voicemailEnabled ? `<Say language="pt-PT">Deixe a sua mensagem após o sinal.</Say>
+  <Record maxLength="120" action="${voicemailAction}" playBeep="true"/>` : ''}
 </Response>`;
   } else {
     twiml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -424,6 +454,40 @@ app.post('/webhook/twilio/inbound-call', async (req, res) => {
 </Response>`;
   }
   res.type('text/xml').send(twiml);
+});
+
+// ─── Voicemail completion ─────────────────────────────────────────────────────
+app.post('/webhook/twilio/voicemail-complete', async (req, res) => {
+  res.type('text/xml').send('<Response><Say language="pt-PT">Obrigado. Até breve.</Say></Response>');
+  try {
+    const { RecordingUrl, RecordingDuration } = req.body || {};
+    const { phoneNumberId, from } = req.query as any;
+    if (!RecordingUrl || !phoneNumberId) return;
+    const pn = await prisma.phoneNumber.findUnique({ where: { id: phoneNumberId } });
+    if (!pn) return;
+    const contact = await prisma.contact.findFirst({ where: { phone: from as string } });
+    const fallbackContact = contact
+      ? contact.id
+      : (await prisma.contact.findFirst({ where: { assignedToId: pn.userId } }))?.id;
+    if (!fallbackContact) return;
+    await prisma.interaction.create({
+      data: {
+        type: 'CALL',
+        direction: 'INBOUND',
+        body: `Voicemail (${RecordingDuration || '?'}s): ${RecordingUrl}`,
+        contactId: fallbackContact,
+        createdById: pn.userId,
+        metadata: JSON.stringify({
+          voicemailUrl: RecordingUrl,
+          duration: RecordingDuration,
+          from,
+          to: pn.number,
+        }),
+      },
+    });
+  } catch (err) {
+    console.error('[Voicemail]', err);
+  }
 });
 
 // TwiML for outbound calls (browser SDK)
@@ -440,9 +504,10 @@ app.post('/webhook/twilio/voice', (req, res) => {
 // TwiML for browser client calls
 app.post('/webhook/twilio/client', (req, res) => {
   const to = req.body.To
+  const from = req.body.From || process.env.TWILIO_PHONE_NUMBER || ''
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial callerId="${process.env.TWILIO_PHONE_NUMBER || ''}">
+  <Dial callerId="${from}">
     ${to?.startsWith('client:') ? `<Client>${to.replace('client:', '')}</Client>` : `<Number>${to}</Number>`}
   </Dial>
 </Response>`
