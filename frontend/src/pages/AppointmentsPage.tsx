@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { Calendar, Plus, Clock, MapPin, User, X, Check, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar, Plus, Clock, MapPin, User, X, Check, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { listAppointments, createAppointment, updateAppointment, deleteAppointment } from '../api/appointments.api'
 import { getCalendars, createCalendar, deleteCalendar, type AppointmentCalendar } from '../api/appointment-calendars.api'
+import { syncCalendar, getCalendarStatus } from '../api/calendar.api'
 import { getContacts } from '../api/contacts.api'
 import { getUsers } from '../api/users.api'
 import { useAuthStore } from '../store/auth.store'
@@ -77,6 +78,8 @@ export const AppointmentsPage: React.FC = () => {
   const [filter, setFilter] = useState('ALL')
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set(['ALL']))
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [googleConnected, setGoogleConnected] = useState(false)
+  const [syncing, setSyncing] = useState(false)
   const weekGridRef = React.useRef<HTMLDivElement>(null)
   const dayColRefs = React.useRef<(HTMLDivElement | null)[]>([])
 
@@ -279,10 +282,11 @@ export const AppointmentsPage: React.FC = () => {
 
   const load = async () => {
     try {
-      const [apRes, ctRes, usRes] = await Promise.all([
+      const [apRes, ctRes, usRes, calStatus] = await Promise.all([
         listAppointments(),
         getContacts({ limit: 200 }),
         getUsers(),
+        getCalendarStatus().catch(() => ({ data: [] })),
       ])
       const d = apRes.data
       setAppointments(Array.isArray(d) ? d : d.data || [])
@@ -291,9 +295,22 @@ export const AppointmentsPage: React.FC = () => {
       const ud = usRes.data
       const uList = Array.isArray(ud) ? ud : ud.data || []
       setAllUsers(uList.map((u: any) => ({ id: u.id, name: u.name })))
+      const integrations: any[] = Array.isArray(calStatus.data) ? calStatus.data : []
+      setGoogleConnected(integrations.some((i: any) => i.provider === 'google' && i.isActive))
     } catch {
       showToast('Erro ao carregar agendamentos', 'error')
     } finally { setLoading(false) }
+  }
+
+  const handleGoogleSync = async () => {
+    setSyncing(true)
+    try {
+      await syncCalendar()
+      await load()
+      showToast('Sincronizado com Google Calendar', 'success')
+    } catch {
+      showToast('Erro ao sincronizar com Google Calendar', 'error')
+    } finally { setSyncing(false) }
   }
 
   useEffect(() => { load() }, [])
@@ -552,6 +569,17 @@ export const AppointmentsPage: React.FC = () => {
           Vista de lista de Compromisso
         </button>
         <div style={{ flex: 1 }} />
+        {googleConnected && (
+          <button onClick={handleGoogleSync} disabled={syncing} style={{
+            margin: '6px 4px 6px 12px', display: 'flex', alignItems: 'center', gap: 6,
+            padding: '8px 14px', borderRadius: 6, border: '1px solid #dadce0',
+            background: '#fff', color: '#5f6368', cursor: syncing ? 'default' : 'pointer', fontSize: 13, fontWeight: 500,
+            opacity: syncing ? 0.7 : 1,
+          }}>
+            <RefreshCw size={14} style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }} />
+            {syncing ? 'A sincronizar...' : 'Sincronizar Google'}
+          </button>
+        )}
         <button onClick={openCreate} style={{
           margin: '6px 12px', display: 'flex', alignItems: 'center', gap: 6,
           padding: '8px 16px', borderRadius: 6, border: 'none',
