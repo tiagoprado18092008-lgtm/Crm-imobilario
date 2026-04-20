@@ -53,12 +53,21 @@ export const handleGoogleCallback = async (code: string, state: string) => {
   const oauth2api = google.oauth2({ version: 'v2', auth: oauth2 });
   const { data: userInfo } = await oauth2api.userinfo.get();
 
+  // Google only sends refresh_token on first auth — preserve existing if not returned
+  const existing = await prisma.calendarIntegration.findFirst({
+    where: { userId, provider: 'google' },
+    select: { refreshToken: true },
+  });
+  const refreshTokenEncrypted = tokens.refresh_token
+    ? encrypt(tokens.refresh_token)
+    : (existing?.refreshToken ?? encrypt(''));
+
   await prisma.calendarIntegration.upsert({
     where: { userId_provider: { userId, provider: 'google' } },
     update: {
       email: userInfo.email!,
       accessToken: encrypt(tokens.access_token!),
-      refreshToken: encrypt(tokens.refresh_token!),
+      refreshToken: refreshTokenEncrypted,
       tokenExpiresAt: new Date(tokens.expiry_date!),
       isActive: true,
       syncToken: null,
@@ -68,7 +77,7 @@ export const handleGoogleCallback = async (code: string, state: string) => {
       provider: 'google',
       email: userInfo.email!,
       accessToken: encrypt(tokens.access_token!),
-      refreshToken: encrypt(tokens.refresh_token!),
+      refreshToken: refreshTokenEncrypted,
       tokenExpiresAt: new Date(tokens.expiry_date!),
     },
   });
@@ -77,7 +86,7 @@ export const handleGoogleCallback = async (code: string, state: string) => {
   fetchAllGoogleEvents(userId)
     .then(() => importGoogleEventsAsAppointments(userId))
     .then(() => setupGoogleWebhook(userId))
-    .catch(() => {});
+    .catch((err) => console.error('[Google OAuth] Background sync error:', err));
 
   return userId;
 };
