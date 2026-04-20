@@ -7,6 +7,14 @@ import { qualifyLeadFromMessage } from '../../utils/ai.service';
 import { eventBus } from '../../utils/event-bus';
 import { buildScope } from '../../lib/scope';
 
+// ─── Phone normalisation ──────────────────────────────────────────────────────
+
+function normalizeExternalId(externalId: string): string {
+  const digits = externalId.replace(/\D/g, '');
+  if (!digits) return externalId;
+  return `+${digits}`;
+}
+
 // ─── RBAC helpers ────────────────────────────────────────────────────────────
 
 const buildConversationWhere = async (user: any): Promise<any> => {
@@ -142,7 +150,7 @@ export const createOrFind = async (
   return prisma.conversation.create({
     data: {
       channel,
-      externalId,
+      externalId: normalizeExternalId(externalId),
       status: 'OPEN',
       isRead: false,
       contactId: contactId || null,
@@ -151,6 +159,68 @@ export const createOrFind = async (
       lastMessageAt: new Date(),
     },
   });
+};
+
+// ─── findOrReopenForInbound ───────────────────────────────────────────────────
+
+export const findOrReopenForInbound = async (
+  channel: string,
+  externalId: string,
+  contactId?: string,
+  locationId?: string
+) => {
+  const canonical = normalizeExternalId(externalId);
+  const digits = canonical.replace(/\D/g, '');
+  const variants: string[] = digits ? [canonical, digits, externalId] : [externalId];
+  if (digits.startsWith('351') && digits.length === 12) {
+    const local = digits.slice(3);
+    variants.push(local, `+${local}`);
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.conversation.findFirst({
+      where: {
+        channel,
+        externalId: { in: variants },
+        ...(locationId ? { locationId } : {}),
+      },
+      orderBy: { lastMessageAt: 'desc' },
+    });
+
+    if (existing) {
+      const needsUpdate = existing.status !== 'OPEN' || existing.externalId !== canonical || (contactId && !existing.contactId);
+      if (needsUpdate) {
+        console.log(`[Inbound] Reopened ${existing.status} conversation ${existing.id} for ${canonical}`);
+        return tx.conversation.update({
+          where: { id: existing.id },
+          data: {
+            status: 'OPEN',
+            externalId: canonical,
+            ...(contactId && !existing.contactId ? { contactId } : {}),
+          },
+        });
+      }
+      return existing;
+    }
+
+    let resolvedLocationId = locationId || null;
+    if (!resolvedLocationId) {
+      const firstLocation = await tx.location.findFirst({ select: { id: true } });
+      resolvedLocationId = firstLocation?.id || null;
+    }
+    console.log(`[Inbound] Created new conversation for ${canonical} (channel: ${channel})`);
+    return tx.conversation.create({
+      data: {
+        channel,
+        externalId: canonical,
+        status: 'OPEN',
+        isRead: false,
+        contactId: contactId || null,
+        locationId: resolvedLocationId,
+        lastMessageAt: new Date(),
+      },
+    });
+  }, { isolationLevel: 'Serializable' });
 };
 
 // ─── sendMessage ──────────────────────────────────────────────────────────────
@@ -309,16 +379,7 @@ export const receiveInbound = async (
     }
   } catch { /* non-critical */ }
 
-  const conversation = await createOrFind(channel, externalId, resolvedContactId, undefined, resolvedLocationId || undefined);
-
-  // If we found/created a contact and the conversation didn't have one, link it
-  if (resolvedContactId && !conversation.contactId) {
-    await prisma.conversation.update({
-      where: { id: conversation.id },
-      data: { contactId: resolvedContactId },
-    });
-    conversation.contactId = resolvedContactId;
-  }
+  const conversation = await findOrReopenForInbound(channel, externalId, resolvedContactId, resolvedLocationId || undefined);
 
   const message = await prisma.message.create({
     data: {
