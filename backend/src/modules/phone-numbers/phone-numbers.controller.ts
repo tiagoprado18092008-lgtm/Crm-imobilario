@@ -45,3 +45,36 @@ export const update = async (req: Request, res: Response) => {
     res.json(num);
   } catch (e: any) { res.status(e.status || 500).json({ error: e.message }); }
 };
+
+export const autoProvision = async (_req: Request, res: Response) => {
+  try {
+    const result = await service.autoProvisionTwilio();
+    res.json(result);
+  } catch (e: any) { res.status(e.status || 500).json({ error: e.message }); }
+};
+
+export const verifyPersonal = async (req: Request, res: Response) => {
+  try {
+    const { phoneNumber, channel } = req.body;
+    const result = await service.verifyPersonalNumber((req as any).user.id, phoneNumber, channel);
+    res.json(result);
+  } catch (e: any) { res.status(e.status || 500).json({ error: e.message }); }
+};
+
+export const confirmPersonal = async (req: Request, res: Response) => {
+  try {
+    const { phoneNumber, friendlyName } = req.body;
+    const result = await service.confirmPersonalNumber((req as any).user.id, phoneNumber, friendlyName);
+    res.status(201).json(result);
+  } catch (e: any) { res.status(e.status || 500).json({ error: e.message }); }
+};
+
+export const updateRouting = async (req: Request, res: Response) => {
+  try {
+    const { ringAll, voicemailEnabled } = req.body;
+    const result = await service.updateRoutingSettings(req.params.id, (req as any).user.id, {
+      ringAll, voicemailEnabled,
+    });
+    res.json(result);
+  } catch (e: any) { res.status(e.status || 500).json({ error: e.message }); }
+};

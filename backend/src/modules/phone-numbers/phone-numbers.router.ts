@@ -9,6 +9,10 @@ router.get('/search', ctrl.search);
 router.get('/', ctrl.list);
 router.post('/payment-intent', ctrl.createPaymentIntent);
 router.post('/', ctrl.purchase);
+router.post('/auto-provision', ctrl.autoProvision);
+router.post('/verify-personal', ctrl.verifyPersonal);
+router.post('/confirm-personal', ctrl.confirmPersonal);
+router.patch('/:id/routing', ctrl.updateRouting);
 router.patch('/:id', ctrl.update);
 router.delete('/:id', ctrl.release);
 

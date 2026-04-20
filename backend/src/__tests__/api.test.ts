@@ -41,6 +41,21 @@ describe('API protection', () => {
     const res = await request(app).post('/api/invitations').send({ email: 'a@b.com' });
     expect(res.status).toBe(401);
   });
+
+  it('POST /api/phone-numbers/auto-provision should return 401 without token', async () => {
+    const res = await request(app).post('/api/phone-numbers/auto-provision');
+    expect(res.status).toBe(401);
+  });
+
+  it('POST /api/phone-numbers/verify-personal should return 401 without token', async () => {
+    const res = await request(app).post('/api/phone-numbers/verify-personal').send({});
+    expect(res.status).toBe(401);
+  });
+
+  it('PATCH /api/phone-numbers/:id/routing should return 401 without token', async () => {
+    const res = await request(app).patch('/api/phone-numbers/x/routing').send({});
+    expect(res.status).toBe(401);
+  });
 });
 
 describe('Validation', () => {
