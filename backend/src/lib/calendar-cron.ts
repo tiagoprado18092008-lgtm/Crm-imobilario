@@ -4,8 +4,15 @@ import { syncGoogleChanges, syncOutlookChanges, renewGoogleWebhook, renewOutlook
 import { importGoogleEventsAsAppointments } from '../modules/calendar/appointment-sync';
 
 export function startCalendarCron() {
+  let syncRunning = false;
+
   // Every 15 minutes: sync changes
   cron.schedule('*/15 * * * *', async () => {
+    if (syncRunning) {
+      console.log('[CalendarCron] Skipping sync — previous run still in progress');
+      return;
+    }
+    syncRunning = true;
     try {
       const integrations = await prisma.calendarIntegration.findMany({
         where: { isActive: true },
@@ -14,15 +21,17 @@ export function startCalendarCron() {
 
       for (const integration of integrations) {
         if (integration.provider === 'google') {
-          syncGoogleChanges(integration.userId)
+          await syncGoogleChanges(integration.userId)
             .then(() => importGoogleEventsAsAppointments(integration.userId))
             .catch(() => {});
         } else if (integration.provider === 'outlook') {
-          syncOutlookChanges(integration.userId).catch(() => {});
+          await syncOutlookChanges(integration.userId).catch(() => {});
         }
       }
     } catch (err: any) {
       console.error('[CalendarCron] sync error:', err.message);
+    } finally {
+      syncRunning = false;
     }
   });
 

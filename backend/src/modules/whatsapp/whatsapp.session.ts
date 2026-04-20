@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client'
 import { initAuthCreds, BufferJSON } from '@whiskeysockets/baileys'
 import fs from 'fs'
 import path from 'path'
-
-const prisma = new PrismaClient()
+import prisma from '../../config/database'
 
 function keysFile(agencyId: string) {
   return path.join('/tmp', `wa-keys-${agencyId}.json`)

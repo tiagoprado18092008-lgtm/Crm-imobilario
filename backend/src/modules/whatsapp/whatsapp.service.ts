@@ -1,12 +1,10 @@
 import makeWASocket, { DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys'
 import { Boom } from '@hapi/boom'
 import QRCode from 'qrcode'
-import { PrismaClient } from '@prisma/client'
 import { usePrismaAuthState } from './whatsapp.session'
 import { eventBus } from '../../utils/event-bus'
 import { receiveInbound } from '../conversations/conversations.service'
-
-const prisma = new PrismaClient()
+import prisma from '../../config/database'
 
 interface SessionState {
   sock: ReturnType<typeof makeWASocket> | null
@@ -190,13 +188,15 @@ export async function disconnectWhatsApp(agencyId: string): Promise<void> {
   })
 }
 
-// Called on server startup — restore all connected sessions
+// Called on server startup — restore sessions one at a time with delay to avoid memory spike
 export async function restoreAllSessions(): Promise<void> {
   const rows = await prisma.whatsAppSession.findMany({
     where: { status: 'CONNECTED' },
   })
   for (const row of rows) {
     console.log(`[WA] Restoring session for agency: ${row.id}`)
-    initWhatsApp(row.id).catch(e => console.error(`[WA] Restore error for ${row.id}:`, e))
+    await initWhatsApp(row.id).catch(e => console.error(`[WA] Restore error for ${row.id}:`, e))
+    // Wait 3s between sessions to avoid memory spike on startup
+    await new Promise(r => setTimeout(r, 3000))
   }
 }
