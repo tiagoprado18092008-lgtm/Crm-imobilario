@@ -6,6 +6,7 @@ import { createTask } from '../../api/tasks.api'
 import { createConversation } from '../../api/conversations.api'
 import { createAppointment } from '../../api/appointments.api'
 import { useUIStore } from '../../store/ui.store'
+import { useCallStore } from '../../store/call.store'
 import { useAuthStore } from '../../store/auth.store'
 import { useNavigate } from 'react-router-dom'
 
@@ -32,7 +33,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
   if (action === 'call') {
     const phone = contact?.phone || contact?.whatsapp || ''
     if (phone) {
-      window.dispatchEvent(new CustomEvent('softphone:dial', { detail: { number: phone, contactName: contact?.name } }))
+      useCallStore.getState().openDialer(phone, contact?.id)
       showToast(`A ligar para ${contact?.name}…`, 'success')
     } else {
       showToast('Contacto sem número de telefone', 'error')

@@ -17,6 +17,7 @@ import {
 import { getContacts, updateContact } from '../api/contacts.api'
 import { getUsers } from '../api/users.api'
 import { TemplatesModal } from '../components/conversations/TemplatesModal'
+import { useCallStore } from '../store/call.store'
 import { useAuthStore } from '../store/auth.store'
 import type { Contact, Conversation, Message, User as UserType } from '../types'
 
@@ -471,7 +472,7 @@ const ContactInfoPanel: React.FC<{ contact: Contact; conversation: Conversation;
 
         {/* quick actions */}
         <div style={{ padding: '0 16px 16px' }}>
-          <button onClick={() => contact.phone && window.dispatchEvent(new CustomEvent('softphone:dial', { detail: { number: contact.phone } }))}
+          <button onClick={() => contact.phone && useCallStore.getState().openDialer(contact.phone, contact.id)}
             style={{ width: '100%', padding: '9px', borderRadius: 9, border: 'none', background: 'rgba(99,102,241,0.1)', color: '#818cf8', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <Phone size={13} /> Ligar para {contact.phone || 'contacto'}
           </button>

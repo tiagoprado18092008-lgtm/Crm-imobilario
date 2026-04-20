@@ -5,7 +5,7 @@ import {
   BarChart3, UserCog, LogOut, Settings,
   CalendarClock, ChevronRight,
   UserCircle, ChevronsUpDown, UserPlus, Briefcase,
-  MessageSquare, Activity, Layers,
+  MessageSquare, Activity, Layers, Phone, PhoneCall,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../store/auth.store'
@@ -78,6 +78,8 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
     ...(can('appointments', 'view')  ? [{ to: '/appointments', icon: CalendarClock,label: 'Agendamentos' }]   : []),
     ...(can('properties', 'view')    ? [{ to: '/properties',   icon: Building2,    label: 'Propriedades' }]   : []),
     ...(can('conversations', 'view') ? [{ to: '/conversations', icon: MessageSquare, label: 'Conversas', badge: convBadge }] : []),
+    { to: '/calls', icon: PhoneCall, label: 'Chamadas' },
+    { to: '/phone-numbers', icon: Phone, label: 'Números' },
   ]
 
   const gestaoItems: NavItem[] = [

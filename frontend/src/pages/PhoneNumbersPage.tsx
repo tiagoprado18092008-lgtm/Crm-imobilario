@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { Phone, Plus, Search, Trash2, Edit2, Check, X, Globe, Mic, MessageSquare, ChevronDown, ChevronRight, ExternalLink, Copy, AlertCircle, CheckCircle2, Info, CreditCard, Lock } from 'lucide-react'
-import { listNumbers, searchNumbers, purchaseNumber, releaseNumber, updateNumber, createPaymentIntent } from '../api/phone-numbers.api'
+import { listNumbers, searchNumbers, purchaseNumber, releaseNumber, updateNumber, createPaymentIntent, autoProvisionTwilio, verifyPersonalNumber, confirmPersonalNumber, updateRouting } from '../api/phone-numbers.api'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
@@ -522,6 +522,17 @@ export const PhoneNumbersPage: React.FC = () => {
   const [editName, setEditName] = useState('')
   const [error, setError] = useState('')
   const [twilioStatus, setTwilioStatus] = useState<any>(null)
+  const [tab, setTab] = useState<'twilio' | 'external'>('twilio')
+  const [autoProvisioning, setAutoProvisioning] = useState(false)
+  const [autoProvisionMsg, setAutoProvisionMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [showExternalForm, setShowExternalForm] = useState(false)
+  const [extPhone, setExtPhone] = useState('')
+  const [extFriendly, setExtFriendly] = useState('')
+  const [extChannel, setExtChannel] = useState<'sms' | 'call'>('call')
+  const [extCode, setExtCode] = useState('')
+  const [extStep, setExtStep] = useState<'input' | 'waiting'>('input')
+  const [extError, setExtError] = useState('')
+  const [extLoading, setExtLoading] = useState(false)
 
   const load = async () => {
     try {
@@ -586,6 +597,50 @@ export const PhoneNumbersPage: React.FC = () => {
       await updateNumber(id, editName)
       setNumbers(n => n.map(x => x.id === id ? { ...x, friendlyName: editName } : x))
       setEditId(null)
+    } catch { }
+  }
+
+  const handleAutoProvision = async () => {
+    setAutoProvisioning(true)
+    setAutoProvisionMsg(null)
+    try {
+      const res = await autoProvisionTwilio()
+      setAutoProvisionMsg({
+        ok: true,
+        text: `Setup concluído. TwiML App: ${res.data.twimlAppSid}. Já podes fazer chamadas no browser.`,
+      })
+    } catch (e: any) {
+      setAutoProvisionMsg({ ok: false, text: e.response?.data?.error || 'Erro no setup' })
+    } finally { setAutoProvisioning(false) }
+  }
+
+  const handleVerifyExternal = async () => {
+    setExtLoading(true); setExtError('')
+    try {
+      const res = await verifyPersonalNumber(extPhone, extChannel)
+      setExtCode(res.data.validationCode)
+      setExtStep('waiting')
+    } catch (e: any) {
+      setExtError(e.response?.data?.error || 'Erro ao iniciar verificação')
+    } finally { setExtLoading(false) }
+  }
+
+  const handleConfirmExternal = async () => {
+    setExtLoading(true); setExtError('')
+    try {
+      await confirmPersonalNumber(extPhone, extFriendly || undefined)
+      await load()
+      setShowExternalForm(false)
+      setExtStep('input'); setExtPhone(''); setExtFriendly(''); setExtCode('')
+    } catch (e: any) {
+      setExtError(e.response?.data?.error || 'Ainda não verificado. Completa a chamada/SMS e tenta novamente.')
+    } finally { setExtLoading(false) }
+  }
+
+  const handleToggleRouting = async (id: string, updates: { ringAll?: boolean; voicemailEnabled?: boolean }) => {
+    try {
+      await updateRouting(id, updates)
+      setNumbers(n => n.map(x => x.id === id ? { ...x, ...updates } : x))
     } catch { }
   }
 
@@ -657,154 +712,391 @@ export const PhoneNumbersPage: React.FC = () => {
         return <SetupGuide completedSteps={completed} />
       })()}
 
-      {/* Numbers list */}
-      <div style={card}>
-        {loading ? (
-          <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>A carregar...</div>
-        ) : numbers.length === 0 ? (
-          <div style={{ padding: 56, textAlign: 'center' }}>
-            <Phone size={40} style={{ color: 'var(--text-muted)', margin: '0 auto 12px', display: 'block' }} />
-            <p style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-secondary)', marginBottom: 6 }}>
-              Sem números comprados
+      {/* Auto-provision banner */}
+      {twilioStatus?.phone === 'configured' && (
+        <div style={{ ...card, padding: 16, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Setup automático do Twilio</p>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
+              Cria TwiML App e API Keys automaticamente. Necessário para chamadas no browser.
             </p>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
-              Compra um número para receber SMS e chamadas
-            </p>
+            {autoProvisionMsg && (
+              <p style={{ fontSize: 12, color: autoProvisionMsg.ok ? '#10b981' : '#f87171', margin: '6px 0 0' }}>
+                {autoProvisionMsg.text}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={handleAutoProvision}
+            disabled={autoProvisioning}
+            style={{
+              padding: '9px 16px', borderRadius: 10, border: 'none',
+              background: autoProvisioning ? 'var(--bg-page)' : 'linear-gradient(135deg, #1a2e4a, #c9a84c)',
+              color: '#fff', fontSize: 13, fontWeight: 600, cursor: autoProvisioning ? 'not-allowed' : 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            {autoProvisioning ? 'A configurar...' : 'Configurar automaticamente'}
+          </button>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid var(--border-color)' }}>
+        {([
+          { key: 'twilio', label: 'Números Twilio' },
+          { key: 'external', label: 'Números pessoais' },
+        ] as const).map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            style={{
+              padding: '9px 16px', background: 'none', border: 'none', cursor: 'pointer',
+              color: tab === t.key ? 'var(--text-primary)' : 'var(--text-muted)',
+              fontSize: 13, fontWeight: 600,
+              borderBottom: tab === t.key ? '2px solid #c9a84c' : '2px solid transparent',
+              marginBottom: -1,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+        <div style={{ marginLeft: 'auto', padding: '4px 0' }}>
+          {tab === 'external' && (
             <button
-              onClick={() => setShowSearch(true)}
+              onClick={() => setShowExternalForm(true)}
               style={{
-                padding: '9px 20px', borderRadius: 10, border: 'none',
-                background: 'linear-gradient(135deg, #1a2e4a, #c9a84c)',
-                color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                background: 'linear-gradient(135deg, #1a2e4a, #c9a84c)', color: '#fff',
+                fontSize: 12, fontWeight: 600,
               }}
             >
-              Comprar primeiro número
+              + Adicionar número pessoal
             </button>
-          </div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                {['Número', 'Nome', 'País', 'Capacidades', 'Custo/mês', 'Ações'].map(h => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: '12px 16px', textAlign: 'left',
-                      fontSize: 11, fontWeight: 700, color: 'var(--text-muted)',
-                      textTransform: 'uppercase', letterSpacing: '0.06em',
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {numbers.map(n => {
-                let caps: any = {}
-                try { caps = JSON.parse(n.capabilities || '{}') } catch { }
-                return (
-                  <tr
-                    key={n.id}
-                    style={{ borderBottom: '1px solid var(--border-subtle)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover-bg)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = '')}
-                  >
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>
-                        {n.number}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      {editId === n.id ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <input
-                            value={editName}
-                            onChange={e => setEditName(e.target.value)}
-                            style={{ ...inputStyle, width: 120, padding: '4px 8px' }}
-                          />
+          )}
+        </div>
+      </div>
+
+      {/* Numbers list */}
+      <div style={card}>
+        {(() => {
+          const visible = numbers.filter(n =>
+            (n.source || 'TWILIO') === (tab === 'twilio' ? 'TWILIO' : 'EXTERNAL_VERIFIED')
+          );
+          if (loading) {
+            return <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>A carregar...</div>
+          }
+          if (visible.length === 0) {
+            return (
+              <div style={{ padding: 56, textAlign: 'center' }}>
+                <Phone size={40} style={{ color: 'var(--text-muted)', margin: '0 auto 12px', display: 'block' }} />
+                <p style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                  {tab === 'twilio' ? 'Sem números Twilio' : 'Sem números pessoais verificados'}
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>
+                  {tab === 'twilio'
+                    ? 'Compra um número para receber SMS e chamadas'
+                    : 'Adiciona o teu número pessoal para usar como caller ID nas chamadas'}
+                </p>
+                <button
+                  onClick={() => tab === 'twilio' ? setShowSearch(true) : setShowExternalForm(true)}
+                  style={{
+                    padding: '9px 20px', borderRadius: 10, border: 'none',
+                    background: 'linear-gradient(135deg, #1a2e4a, #c9a84c)',
+                    color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  }}
+                >
+                  {tab === 'twilio' ? 'Comprar primeiro número' : 'Adicionar número pessoal'}
+                </button>
+              </div>
+            )
+          }
+          return (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  {['Número', 'Nome', 'País', 'Capacidades', 'Roteamento', 'Custo/mês', 'Ações'].map(h => (
+                    <th
+                      key={h}
+                      style={{
+                        padding: '12px 16px', textAlign: 'left',
+                        fontSize: 11, fontWeight: 700, color: 'var(--text-muted)',
+                        textTransform: 'uppercase', letterSpacing: '0.06em',
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map(n => {
+                  let caps: any = {}
+                  try { caps = JSON.parse(n.capabilities || '{}') } catch { }
+                  const isExternal = (n.source || 'TWILIO') === 'EXTERNAL_VERIFIED'
+                  return (
+                    <tr
+                      key={n.id}
+                      style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                    >
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>
+                          {n.number}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        {editId === n.id ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <input
+                              value={editName}
+                              onChange={e => setEditName(e.target.value)}
+                              style={{ ...inputStyle, width: 120, padding: '4px 8px' }}
+                            />
+                            <button
+                              onClick={() => handleEdit(n.id)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#22c55e' }}
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              onClick={() => setEditId(null)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                            {n.friendlyName || '—'}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-muted)' }}>
+                        {n.countryCode}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          {caps.voice && (
+                            <span
+                              style={{
+                                fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
+                                background: 'rgba(59,130,246,0.15)', color: '#60a5fa',
+                                display: 'flex', alignItems: 'center', gap: 3,
+                              }}
+                            >
+                              <Mic size={10} /> Voz
+                            </span>
+                          )}
+                          {caps.sms && (
+                            <span
+                              style={{
+                                fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
+                                background: 'rgba(34,197,94,0.15)', color: '#4ade80',
+                                display: 'flex', alignItems: 'center', gap: 3,
+                              }}
+                            >
+                              <MessageSquare size={10} /> SMS
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text-secondary)' }}>
+                        {isExternal ? (
+                          <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                            Só caller ID outbound
+                          </span>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                checked={!!n.ringAll}
+                                onChange={e => handleToggleRouting(n.id, { ringAll: e.target.checked })}
+                              />
+                              Ring-all
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                checked={n.voicemailEnabled !== false}
+                                onChange={e => handleToggleRouting(n.id, { voicemailEnabled: e.target.checked })}
+                              />
+                              Voicemail
+                            </label>
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>
+                        {isExternal ? '—' : `$${n.monthlyPrice?.toFixed(2)}/mês`}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <button
-                            onClick={() => handleEdit(n.id)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#22c55e' }}
+                            onClick={() => { setEditId(n.id); setEditName(n.friendlyName || '') }}
+                            style={{
+                              padding: '5px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                              background: 'var(--bg-page)', color: 'var(--text-muted)',
+                            }}
+                            title="Renomear"
                           >
-                            <Check size={14} />
+                            <Edit2 size={13} />
                           </button>
                           <button
-                            onClick={() => setEditId(null)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            onClick={() => handleRelease(n.id)}
+                            style={{
+                              padding: '5px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                              background: 'rgba(239,68,68,0.1)', color: '#f87171',
+                            }}
+                            title={isExternal ? 'Remover' : 'Libertar número'}
                           >
-                            <X size={14} />
+                            <Trash2 size={13} />
                           </button>
                         </div>
-                      ) : (
-                        <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                          {n.friendlyName || '—'}
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-muted)' }}>
-                      {n.countryCode}
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {caps.voice && (
-                          <span
-                            style={{
-                              fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
-                              background: 'rgba(59,130,246,0.15)', color: '#60a5fa',
-                              display: 'flex', alignItems: 'center', gap: 3,
-                            }}
-                          >
-                            <Mic size={10} /> Voz
-                          </span>
-                        )}
-                        {caps.sms && (
-                          <span
-                            style={{
-                              fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
-                              background: 'rgba(34,197,94,0.15)', color: '#4ade80',
-                              display: 'flex', alignItems: 'center', gap: 3,
-                            }}
-                          >
-                            <MessageSquare size={10} /> SMS
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>
-                      ${n.monthlyPrice?.toFixed(2)}/mês
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <button
-                          onClick={() => { setEditId(n.id); setEditName(n.friendlyName || '') }}
-                          style={{
-                            padding: '5px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                            background: 'var(--bg-page)', color: 'var(--text-muted)',
-                          }}
-                          title="Renomear"
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                        <button
-                          onClick={() => handleRelease(n.id)}
-                          style={{
-                            padding: '5px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                            background: 'rgba(239,68,68,0.1)', color: '#f87171',
-                          }}
-                          title="Libertar número"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )
+        })()}
       </div>
+
+      {/* External number verification modal */}
+      {showExternalForm && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 60,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.5)',
+        }}>
+          <div style={{
+            background: 'var(--bg-card)', borderRadius: 20, width: '100%',
+            maxWidth: 440, padding: 24, border: '1px solid var(--border-color)',
+            margin: '0 16px',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                Adicionar número pessoal
+              </h2>
+              <button
+                onClick={() => {
+                  setShowExternalForm(false)
+                  setExtStep('input'); setExtPhone(''); setExtFriendly(''); setExtCode(''); setExtError('')
+                }}
+                style={{
+                  width: 32, height: 32, borderRadius: 8, border: 'none',
+                  background: 'var(--bg-page)', color: 'var(--text-muted)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {extError && (
+              <div style={{
+                fontSize: 13, color: '#f87171', background: 'rgba(239,68,68,0.1)',
+                borderRadius: 10, padding: '10px 14px', marginBottom: 12,
+                border: '1px solid rgba(239,68,68,0.2)',
+              }}>
+                {extError}
+              </div>
+            )}
+
+            {extStep === 'input' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+                    Número (formato internacional)
+                  </label>
+                  <input
+                    value={extPhone}
+                    onChange={e => setExtPhone(e.target.value.trim())}
+                    placeholder="+351912345678"
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+                    Nome (opcional)
+                  </label>
+                  <input
+                    value={extFriendly}
+                    onChange={e => setExtFriendly(e.target.value)}
+                    placeholder="ex: Meu telemóvel"
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+                    Como queres receber o código?
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {(['call', 'sms'] as const).map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setExtChannel(c)}
+                        style={{
+                          flex: 1, padding: '10px', borderRadius: 10,
+                          border: `1px solid ${extChannel === c ? '#c9a84c' : 'var(--border-color)'}`,
+                          background: extChannel === c ? 'rgba(201,168,76,0.1)' : 'var(--bg-page)',
+                          color: 'var(--text-primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                        }}
+                      >
+                        {c === 'call' ? 'Chamada' : 'SMS'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  onClick={handleVerifyExternal}
+                  disabled={extLoading || !extPhone}
+                  style={{
+                    width: '100%', padding: '11px', borderRadius: 10, border: 'none',
+                    background: !extPhone || extLoading ? 'var(--bg-page)' : 'linear-gradient(135deg, #1a2e4a, #c9a84c)',
+                    color: !extPhone || extLoading ? 'var(--text-muted)' : '#fff',
+                    fontSize: 13, fontWeight: 700,
+                    cursor: (!extPhone || extLoading) ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {extLoading ? 'A enviar...' : `Enviar código via ${extChannel === 'call' ? 'chamada' : 'SMS'}`}
+                </button>
+              </div>
+            )}
+
+            {extStep === 'waiting' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
+                  O Twilio vai {extChannel === 'call' ? 'ligar-te' : 'enviar-te um SMS'} com o código:
+                </p>
+                <p style={{
+                  fontSize: 28, fontWeight: 800, color: '#c9a84c',
+                  textAlign: 'center', margin: '8px 0', letterSpacing: '0.2em', fontFamily: 'monospace',
+                }}>
+                  {extCode}
+                </p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
+                  Se escolheste <strong>chamada</strong>, atende e introduz este código no teclado quando pedido.
+                  Se escolheste <strong>SMS</strong>, o Twilio pode simplesmente mostrar-te uma confirmação após o envio.
+                  Depois carrega em "Confirmar" aqui.
+                </p>
+                <button
+                  onClick={handleConfirmExternal}
+                  disabled={extLoading}
+                  style={{
+                    width: '100%', padding: '11px', borderRadius: 10, border: 'none',
+                    background: extLoading ? 'var(--bg-page)' : 'linear-gradient(135deg, #1a2e4a, #c9a84c)',
+                    color: extLoading ? 'var(--text-muted)' : '#fff',
+                    fontSize: 13, fontWeight: 700, cursor: extLoading ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {extLoading ? 'A confirmar...' : 'Confirmar'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Search Modal */}
       {showSearch && (

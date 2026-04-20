@@ -15,6 +15,7 @@ import { CommunicationModal } from '../components/interactions/CommunicationModa
 import { ContactForm } from '../components/contacts/ContactForm'
 import { LeadScoreBadge, calcLeadScore } from '../components/contacts/LeadScoreBadge'
 import { useUIStore } from '../store/ui.store'
+import { useCallStore } from '../store/call.store'
 import { formatDate, formatPhone } from '../utils/formatters'
 import {
   STAGE_LABELS,
@@ -332,9 +333,7 @@ export const ContactDetailPage: React.FC = () => {
                 disabled={!contact.phone}
                 onClick={() => {
                   if (!contact.phone) return
-                  window.dispatchEvent(
-                    new CustomEvent('softphone:dial', { detail: { number: contact.phone } })
-                  )
+                  useCallStore.getState().openDialer(contact.phone, contact.id)
                 }}
               >
                 <Phone className="w-4 h-4" /> Ligar
