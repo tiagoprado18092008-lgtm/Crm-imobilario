@@ -364,6 +364,7 @@ model Interaction {
   subject   String?
   body      String
   direction String  @default("OUTBOUND")
+  metadata  String? // JSON string (call details: sid, duration, status, fromNumber, toNumber, etc.)
 
   contactId     String
   contact       Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)

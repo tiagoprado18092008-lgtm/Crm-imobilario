@@ -16,8 +16,23 @@ export async function initiateCall(opts: {
   contactId?: string
   opportunityId?: string
   userId: string
+  fromNumberId?: string
 }): Promise<any> {
-  const result = await makeOutboundCall(opts.to)
+  let fromNumber: string | undefined = undefined
+  if (opts.fromNumberId) {
+    const pn = await prisma.phoneNumber.findFirst({
+      where: { id: opts.fromNumberId, userId: opts.userId, status: 'ACTIVE' },
+    })
+    if (!pn) {
+      throw Object.assign(
+        new Error('Número de origem não encontrado ou não pertence a ti'),
+        { status: 403 }
+      )
+    }
+    fromNumber = pn.number
+  }
+
+  const result = await makeOutboundCall(opts.to, fromNumber)
 
   // Resolve contactId if not provided
   let contactId = opts.contactId
@@ -26,7 +41,6 @@ export async function initiateCall(opts: {
   }
 
   if (!contactId) {
-    // Cannot create interaction without a contactId — just return the call result
     return { ...result, interactionId: null }
   }
 
@@ -38,6 +52,12 @@ export async function initiateCall(opts: {
       contactId,
       createdById: opts.userId,
       opportunityId: opts.opportunityId,
+      metadata: JSON.stringify({
+        sid: result.sid,
+        status: result.status,
+        fromNumber: fromNumber || process.env.TWILIO_PHONE_NUMBER,
+        toNumber: opts.to,
+      }),
     },
   })
 

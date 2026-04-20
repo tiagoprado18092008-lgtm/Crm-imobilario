@@ -12,7 +12,7 @@ export const getToken = async (req: Request, res: Response): Promise<void> => {
 
 export const initiate = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { to, contactId, opportunityId } = req.body
+    const { to, contactId, opportunityId, fromNumberId } = req.body
     if (!to) {
       res.status(400).json({ error: 'Missing required field: to' })
       return
@@ -21,11 +21,12 @@ export const initiate = async (req: Request, res: Response): Promise<void> => {
       to,
       contactId,
       opportunityId,
+      fromNumberId,
       userId: req.user!.id,
     })
     res.status(201).json(result)
   } catch (err: any) {
-    res.status(500).json({ error: err.message || 'Failed to initiate call' })
+    res.status(err?.status || 500).json({ error: err.message || 'Failed to initiate call' })
   }
 }
 
