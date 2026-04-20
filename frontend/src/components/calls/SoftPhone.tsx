@@ -5,7 +5,9 @@ import {
 } from 'lucide-react'
 import { Device, Call } from '@twilio/voice-sdk'
 import { getCallToken, initiateCall as apiInitiateCall } from '../../api/calls.api'
+import { listNumbers } from '../../api/phone-numbers.api'
 import { useUIStore } from '../../store/ui.store'
+import { useCallStore } from '../../store/call.store'
 
 type SoftPhoneState = 'idle' | 'connecting' | 'ringing' | 'in-call' | 'error'
 
@@ -18,6 +20,11 @@ const DIAL_KEYS = [
 
 export const SoftPhone: React.FC = () => {
   const { showToast } = useUIStore()
+  const {
+    dialerOpen, prefillNumber, prefillContactId,
+    fromNumberId, setFromNumberId,
+    closeDialer, openDialer,
+  } = useCallStore()
   const [expanded, setExpanded] = useState(false)
   const [phoneState, setPhoneState] = useState<SoftPhoneState>('idle')
   const [dialNumber, setDialNumber] = useState('')
@@ -26,6 +33,7 @@ export const SoftPhone: React.FC = () => {
   const [callDuration, setCallDuration] = useState(0)
   const [configured, setConfigured] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [myNumbers, setMyNumbers] = useState<any[]>([])
 
   const deviceRef = useRef<Device | null>(null)
   const callRef = useRef<Call | null>(null)
@@ -44,20 +52,31 @@ export const SoftPhone: React.FC = () => {
         setConfigured(false)
       })
 
-    // Listen for softphone:dial events from other components
+    // Backwards-compat: listen for softphone:dial events
     const handler = (e: Event) => {
       const ce = e as CustomEvent
-      setDialNumber(ce.detail?.number || '')
-      setExpanded(true)
+      openDialer(ce.detail?.number || '')
     }
     window.addEventListener('softphone:dial', handler)
+
+    // Load own numbers for the caller-ID selector
+    listNumbers().then(r => setMyNumbers(r.data || [])).catch(() => {})
 
     return () => {
       window.removeEventListener('softphone:dial', handler)
       if (timerRef.current) clearInterval(timerRef.current)
       if (deviceRef.current) deviceRef.current.destroy()
     }
-  }, [])
+  }, [openDialer])
+
+  // React to global call store's openDialer
+  useEffect(() => {
+    if (dialerOpen) {
+      if (prefillNumber) setDialNumber(prefillNumber)
+      setExpanded(true)
+      closeDialer()
+    }
+  }, [dialerOpen, prefillNumber, closeDialer])
 
   const initDevice = async (token: string) => {
     try {
@@ -124,11 +143,18 @@ export const SoftPhone: React.FC = () => {
     setLoading(true)
     setPhoneState('connecting')
 
+    // Resolve caller-ID based on the user's picked "from" number
+    let fromNumberValue: string | undefined
+    if (fromNumberId) {
+      const n = myNumbers.find((x) => x.id === fromNumberId)
+      if (n) fromNumberValue = n.number
+    }
+
     try {
       if (configured && deviceRef.current) {
-        const call = await deviceRef.current.connect({
-          params: { To: dialNumber },
-        })
+        const params: Record<string, string> = { To: dialNumber }
+        if (fromNumberValue) params.From = fromNumberValue
+        const call = await deviceRef.current.connect({ params })
         callRef.current = call
 
         call.on('accept', () => {
@@ -144,10 +170,18 @@ export const SoftPhone: React.FC = () => {
           showToast('Erro na chamada', 'error')
         })
 
-        await apiInitiateCall({ to: dialNumber })
+        await apiInitiateCall({
+          to: dialNumber,
+          contactId: prefillContactId || undefined,
+          fromNumberId: fromNumberId || undefined,
+        })
       } else {
         // Demo mode
-        await apiInitiateCall({ to: dialNumber })
+        await apiInitiateCall({
+          to: dialNumber,
+          contactId: prefillContactId || undefined,
+          fromNumberId: fromNumberId || undefined,
+        })
         setTimeout(() => {
           setPhoneState('in-call')
           startTimer()
@@ -155,11 +189,11 @@ export const SoftPhone: React.FC = () => {
           showToast(`Chamada registada para ${dialNumber}`, 'info')
         }, 1500)
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[Call Error]', err)
       setPhoneState('error')
       setLoading(false)
-      showToast('Erro ao iniciar chamada', 'error')
+      showToast(err?.response?.data?.error || 'Erro ao iniciar chamada', 'error')
     }
   }
 
@@ -325,6 +359,34 @@ export const SoftPhone: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* Caller-ID picker */}
+          {phoneState === 'idle' && myNumbers.length > 0 && (
+            <div style={{ padding: '0 16px 8px' }}>
+              <select
+                value={fromNumberId || ''}
+                onChange={(e) => setFromNumberId(e.target.value || null)}
+                style={{
+                  width: '100%', padding: '8px 10px', borderRadius: 8,
+                  background: '#0f172a', border: '1px solid #334155',
+                  color: '#e2e8f0', fontSize: 12,
+                }}
+              >
+                <option value="">A partir de (default)</option>
+                {myNumbers.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.friendlyName || n.number} ({n.number})
+                    {n.source === 'EXTERNAL_VERIFIED' ? ' · Pessoal' : ''}
+                  </option>
+                ))}
+              </select>
+              {prefillContactId && (
+                <p style={{ color: '#64748b', fontSize: 10, margin: '6px 0 0', textAlign: 'center' }}>
+                  Chamada será associada ao contacto selecionado
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Dial pad */}
           {phoneState !== 'ringing' && (

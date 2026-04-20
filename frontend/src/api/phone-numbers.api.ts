@@ -11,3 +11,11 @@ export const purchaseNumber = (phoneNumber: string, friendlyName?: string) =>
 export const releaseNumber = (id: string) => api.delete(`/phone-numbers/${id}`);
 export const updateNumber = (id: string, friendlyName: string) =>
   api.patch(`/phone-numbers/${id}`, { friendlyName });
+
+export const autoProvisionTwilio = () => api.post('/phone-numbers/auto-provision');
+export const verifyPersonalNumber = (phoneNumber: string, channel: 'sms' | 'call' = 'call') =>
+  api.post('/phone-numbers/verify-personal', { phoneNumber, channel });
+export const confirmPersonalNumber = (phoneNumber: string, friendlyName?: string) =>
+  api.post('/phone-numbers/confirm-personal', { phoneNumber, friendlyName });
+export const updateRouting = (id: string, updates: { ringAll?: boolean; voicemailEnabled?: boolean }) =>
+  api.patch(`/phone-numbers/${id}/routing`, updates);
