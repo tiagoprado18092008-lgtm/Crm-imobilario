@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUp, ArrowDown, Users, TrendingUp, DollarSign, CheckSquare, MoreHorizontal, CalendarDays, Clock } from 'lucide-react'
+import { ArrowUp, ArrowDown, Users, TrendingUp, DollarSign, CheckSquare, MoreHorizontal, CalendarDays, Clock, Building2, Target } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { format, isPast, parseISO } from 'date-fns'
 import { getReportSummary, getReportPipeline } from '../api/reports.api'
 import { getTasks } from '../api/tasks.api'
@@ -7,6 +8,7 @@ import { getUpcoming } from '../api/appointments.api'
 import { getContacts } from '../api/contacts.api'
 import type { ReportSummary, PipelineStage, Task, Contact } from '../types'
 import { STAGE_LABELS } from '../utils/constants'
+import { PageSpinner } from '../components/ui/Spinner'
 
 function formatCurrency(v: number) {
   if (v >= 1_000_000) return `€${(v / 1_000_000).toFixed(1)}M`
@@ -14,7 +16,6 @@ function formatCurrency(v: number) {
   return `€${v}`
 }
 
-// Smooth SVG sparkline
 function generatePath(points: number[], w: number, h: number) {
   if (points.length < 2) return ''
   const xs = w / (points.length - 1)
@@ -31,14 +32,8 @@ function generatePath(points: number[], w: number, h: number) {
   return d
 }
 
-interface SparklineProps {
-  data: number[]
-  color: string
-  positive?: boolean
-}
-const Sparkline: React.FC<SparklineProps> = ({ data, color, positive = true }) => {
-  const w = 80
-  const h = 36
+const Sparkline: React.FC<{ data: number[]; color: string }> = ({ data, color }) => {
+  const w = 72; const h = 36
   const lineRef = useRef<SVGPathElement>(null)
   const linePath = useMemo(() => generatePath(data, w, h), [data])
   const areaPath = linePath ? `${linePath} L ${w} ${h} L 0 ${h} Z` : ''
@@ -55,25 +50,18 @@ const Sparkline: React.FC<SparklineProps> = ({ data, color, positive = true }) =
     el.style.strokeDashoffset = '0'
   }, [linePath])
 
+  const gradId = `sg-${color.replace(/[^a-z0-9]/gi, '')}`
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} preserveAspectRatio="none">
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} preserveAspectRatio="none" style={{ flexShrink: 0 }}>
       <defs>
-        <linearGradient id={`sg-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity={positive ? 0.25 : 0.15} />
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.22} />
           <stop offset="100%" stopColor={color} stopOpacity={0} />
         </linearGradient>
       </defs>
-      {areaPath && <path d={areaPath} fill={`url(#sg-${color.replace('#', '')})`} />}
+      {areaPath && <path d={areaPath} fill={`url(#${gradId})`} />}
       {linePath && (
-        <path
-          ref={lineRef}
-          d={linePath}
-          fill="none"
-          stroke={color}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <path ref={lineRef} d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       )}
     </svg>
   )
@@ -85,49 +73,55 @@ interface KpiCardProps {
   trend?: number
   icon: React.ReactNode
   iconBg: string
+  iconColor: string
   sparkData?: number[]
   sparkColor?: string
 }
-const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon, iconBg, sparkData, sparkColor = '#6366f1' }) => {
+
+const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon, iconBg, iconColor, sparkData, sparkColor }) => {
   const positive = trend === undefined || trend >= 0
   return (
     <div
+      className="metric-card"
       style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border-color)',
-        borderRadius: 16,
-        padding: '20px 20px 16px',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        padding: '20px 24px 16px',
         display: 'flex',
         flexDirection: 'column',
-        gap: 12,
+        gap: 10,
         boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        fontFamily: 'var(--font-body)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--text-muted)' }}>
           {title}
         </span>
-        <div style={{ width: 34, height: 34, borderRadius: 10, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {icon}
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <span style={{ color: iconColor, display: 'flex' }}>{icon}</span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
         <div>
-          <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)', lineHeight: 1 }}>
+          <div style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: 28, fontWeight: 600,
+            letterSpacing: '-0.02em', color: 'var(--text-primary)', lineHeight: 1,
+          }}>
             {value}
           </div>
           {trend !== undefined && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 6 }}>
-              <span
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 2,
-                  fontSize: 11, fontWeight: 600,
-                  padding: '2px 6px', borderRadius: 20,
-                  background: positive ? '#f0fdf4' : '#fef2f2',
-                  color: positive ? '#16a34a' : '#dc2626',
-                }}
-              >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 2,
+                fontSize: 11, fontWeight: 600,
+                padding: '2px 7px', borderRadius: 20,
+                background: positive ? 'rgba(22,163,74,0.1)' : 'rgba(220,38,38,0.1)',
+                color: positive ? 'var(--success)' : 'var(--danger)',
+              }}>
                 {positive ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
                 {Math.abs(trend)}%
               </span>
@@ -135,15 +129,21 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon, iconBg, sp
             </div>
           )}
         </div>
-        {sparkData && sparkData.length > 1 && (
-          <Sparkline data={sparkData} color={sparkColor} positive={positive} />
+        {sparkData && sparkData.length > 1 && sparkColor && (
+          <Sparkline data={sparkData} color={sparkColor} />
         )}
       </div>
     </div>
   )
 }
 
-const FUNNEL_COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#f59e0b', '#f97316', '#10b981', '#f43f5e']
+const FUNNEL_COLORS = ['#2E6BE6', '#5B8EF0', '#7BA8F5', '#16A34A', '#D97706', '#DC2626']
+const APPOINTMENT_TYPE_COLORS: Record<string, { bg: string; color: string }> = {
+  VISIT:    { bg: 'rgba(46,107,230,0.1)',  color: 'var(--accent)' },
+  CALL:     { bg: 'rgba(22,163,74,0.1)',   color: 'var(--success)' },
+  MEETING:  { bg: 'rgba(217,119,6,0.1)',   color: 'var(--warning)' },
+  DEFAULT:  { bg: 'var(--surface-3)',      color: 'var(--text-muted)' },
+}
 
 export const DashboardPage: React.FC = () => {
   const [summary, setSummary] = useState<ReportSummary | null>(null)
@@ -172,82 +172,59 @@ export const DashboardPage: React.FC = () => {
       try {
         const apRes = await getUpcoming()
         setAppointments(Array.isArray(apRes.data) ? apRes.data.slice(0, 5) : [])
-      } catch {
-        // upcoming endpoint may not exist yet
-      }
+      } catch { /* endpoint may not exist */ }
       setLoading(false)
     }
     load()
   }, [])
 
-  // Fake sparkline seeds derived from summary (deterministic visual)
   const sparkContacts = [30, 38, 35, 45, 42, 55, summary?.totalContacts ? Math.min((summary.totalContacts % 90) + 10, 90) : 60]
   const sparkLeads    = [20, 28, 24, 35, 30, 42, summary?.totalLeads ? Math.min((summary.totalLeads % 80) + 15, 85) : 50]
   const sparkPipe     = [40, 52, 48, 68, 60, 75, 80]
   const sparkClosed   = [10, 18, 14, 22, 20, 28, 32]
 
-  // Funnel
   const funnelData = pipeline
-    .filter((s) => s.stage !== 'CLOSED_LOST')
+    .filter(s => s.stage !== 'CLOSED_LOST')
     .map((s, i, arr) => ({
       ...s,
       label: STAGE_LABELS[s.stage] || s.stage,
       conversion: i === 0 ? 100 : arr[0].count > 0 ? Math.round((s.count / arr[0].count) * 100) : 0,
     }))
-  const maxCount = Math.max(...funnelData.map((d) => d.count), 1)
+  const maxCount = Math.max(...funnelData.map(d => d.count), 1)
 
-  // Source map for mini table
   const sourceMap: Record<string, { total: number; won: number }> = {}
-  contacts.forEach((c) => {
+  contacts.forEach(c => {
     const src = c.source || 'Direto'
     if (!sourceMap[src]) sourceMap[src] = { total: 0, won: 0 }
     sourceMap[src].total++
-    ;(c.opportunities || []).forEach((o) => {
-      if (o.stage === 'CLOSED_WON') sourceMap[src].won++
-    })
+    ;(c.opportunities || []).forEach(o => { if (o.stage === 'CLOSED_WON') sourceMap[src].won++ })
   })
   const sourceRows = Object.entries(sourceMap).sort((a, b) => b[1].total - a[1].total).slice(0, 5)
+  const maxSource = Math.max(...sourceRows.map(([, d]) => d.total), 1)
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 240 }}>
-        <div
-          style={{
-            width: 28, height: 28, borderRadius: '50%',
-            border: '3px solid #e5e7eb',
-            borderTopColor: '#6366f1',
-            animation: 'spin 0.8s linear infinite',
-          }}
-        />
-        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-      </div>
-    )
-  }
+  if (loading) return <PageSpinner />
 
-  const card = (children: React.ReactNode, style?: React.CSSProperties) => (
-    <div
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border-color)',
-        borderRadius: 16,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-        overflow: 'hidden',
-        ...style,
-      }}
-    >
+  const sectionCard = (children: React.ReactNode, style?: React.CSSProperties) => (
+    <div style={{
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: 12,
+      boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+      overflow: 'hidden',
+      fontFamily: 'var(--font-body)',
+      ...style,
+    }}>
       {children}
     </div>
   )
 
   const cardHeader = (title: string, action?: React.ReactNode) => (
-    <div
-      style={{
-        padding: '14px 20px',
-        borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}
-    >
-      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+    <div style={{
+      padding: '14px 20px',
+      borderBottom: '1px solid var(--border)',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    }}>
+      <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
         {title}
       </span>
       {action}
@@ -257,86 +234,93 @@ export const DashboardPage: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-      {/* Row 1: 4 KPIs */}
+      {/* Row 1 — 4 primary KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         <KpiCard
           title="Contactos"
           value={summary?.totalContacts ?? 0}
           trend={12}
-          icon={<Users size={16} style={{ color: '#6366f1' }} />}
-          iconBg="#eef2ff"
+          icon={<Users size={16} />}
+          iconBg="rgba(46,107,230,0.1)"
+          iconColor="var(--accent)"
           sparkData={sparkContacts}
-          sparkColor="#6366f1"
+          sparkColor="var(--accent)"
         />
         <KpiCard
           title="Leads Ativos"
           value={summary?.totalLeads ?? 0}
           trend={8}
-          icon={<TrendingUp size={16} style={{ color: '#8b5cf6' }} />}
-          iconBg="#f5f3ff"
+          icon={<TrendingUp size={16} />}
+          iconBg="rgba(124,58,237,0.1)"
+          iconColor="#7C3AED"
           sparkData={sparkLeads}
-          sparkColor="#8b5cf6"
+          sparkColor="#7C3AED"
         />
         <KpiCard
           title="Pipeline"
           value={summary ? formatCurrency(summary.pipelineValue) : '€0'}
           trend={15}
-          icon={<DollarSign size={16} style={{ color: '#f59e0b' }} />}
-          iconBg="#fffbeb"
+          icon={<DollarSign size={16} />}
+          iconBg="rgba(217,119,6,0.1)"
+          iconColor="var(--warning)"
           sparkData={sparkPipe}
-          sparkColor="#f59e0b"
+          sparkColor="var(--warning)"
         />
         <KpiCard
           title="Fechados (mês)"
           value={summary?.closedWonThisMonth ?? 0}
           trend={22}
-          icon={<TrendingUp size={16} style={{ color: '#10b981' }} />}
-          iconBg="#f0fdf4"
+          icon={<Target size={16} />}
+          iconBg="rgba(22,163,74,0.1)"
+          iconColor="var(--success)"
           sparkData={sparkClosed}
-          sparkColor="#10b981"
+          sparkColor="var(--success)"
         />
       </div>
 
-      {/* Row 2: secondary KPIs */}
+      {/* Row 2 — 3 secondary KPIs */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
         <KpiCard
           title="Oportunidades Abertas"
           value={summary?.openOpportunities ?? 0}
           trend={-3}
-          icon={<TrendingUp size={16} style={{ color: '#6366f1' }} />}
-          iconBg="#eef2ff"
+          icon={<Building2 size={16} />}
+          iconBg="rgba(46,107,230,0.1)"
+          iconColor="var(--accent)"
         />
         <KpiCard
           title="Tarefas para Hoje"
           value={summary?.tasksDueToday ?? 0}
-          icon={<CheckSquare size={16} style={{ color: '#10b981' }} />}
-          iconBg="#f0fdf4"
+          icon={<CheckSquare size={16} />}
+          iconBg="rgba(22,163,74,0.1)"
+          iconColor="var(--success)"
         />
         <KpiCard
           title="Total Clientes"
           value={summary?.totalClients ?? 0}
-          icon={<Users size={16} style={{ color: '#f59e0b' }} />}
-          iconBg="#fffbeb"
+          icon={<Users size={16} />}
+          iconBg="rgba(217,119,6,0.1)"
+          iconColor="var(--warning)"
         />
       </div>
 
-      {/* Row 3: Tasks + Funnel */}
+      {/* Row 3 — Tasks + Pipeline funnel */}
       <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 14 }}>
-        {card(
+        {sectionCard(
           <>
             {cardHeader(
               'Tarefas Pendentes',
-              <a href="/tasks" style={{ fontSize: 12, fontWeight: 600, color: '#6366f1', textDecoration: 'none' }}>
-                Ver todas
-              </a>
+              <Link to="/tasks" style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none' }}>
+                Ver todas →
+              </Link>
             )}
             {tasks.length === 0 ? (
-              <div style={{ padding: '32px 20px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
                 Sem tarefas pendentes
               </div>
             ) : (
               <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {tasks.map((task) => {
+                {tasks.map(task => {
                   const overdue = task.dueDate ? isPast(parseISO(task.dueDate)) : false
                   return (
                     <li
@@ -344,18 +328,17 @@ export const DashboardPage: React.FC = () => {
                       style={{
                         display: 'flex', alignItems: 'flex-start', gap: 12,
                         padding: '12px 20px',
-                        borderBottom: '1px solid var(--border-subtle)',
+                        borderBottom: '1px solid var(--border)',
                         cursor: 'default',
+                        transition: 'background 120ms',
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <div
-                        style={{
-                          marginTop: 2, width: 14, height: 14, borderRadius: 4, flexShrink: 0,
-                          border: '1.5px solid var(--border-color)',
-                        }}
-                      />
+                      <div style={{
+                        marginTop: 2, width: 15, height: 15, borderRadius: 4, flexShrink: 0,
+                        border: '1.5px solid var(--border-strong)',
+                      }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {task.title}
@@ -365,20 +348,21 @@ export const DashboardPage: React.FC = () => {
                             <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{task.contact.name}</span>
                           )}
                           {task.dueDate && (
-                            <span
-                              style={{
-                                fontSize: 11, fontWeight: 500,
-                                padding: '1px 6px', borderRadius: 4,
-                                background: overdue ? '#fee2e2' : 'var(--border-color)',
-                                color: overdue ? '#dc2626' : 'var(--text-secondary)',
-                              }}
-                            >
+                            <span style={{
+                              fontSize: 11, fontWeight: 500,
+                              padding: '1px 6px', borderRadius: 4,
+                              background: overdue ? 'rgba(220,38,38,0.1)' : 'var(--surface-3)',
+                              color: overdue ? 'var(--danger)' : 'var(--text-secondary)',
+                            }}>
                               {overdue ? 'Vencido' : 'Pendente'} — {format(parseISO(task.dueDate), 'dd/MM/yyyy')}
                             </span>
                           )}
                         </div>
                       </div>
-                      <button style={{ padding: 4, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                      <button style={{ padding: 4, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', borderRadius: 4 }}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+                      >
                         <MoreHorizontal size={14} />
                       </button>
                     </li>
@@ -389,37 +373,39 @@ export const DashboardPage: React.FC = () => {
           </>
         )}
 
-        {card(
+        {sectionCard(
           <>
             {cardHeader('Funil de Vendas')}
             {funnelData.length === 0 ? (
-              <div style={{ padding: '32px 20px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
                 Sem dados de pipeline
               </div>
             ) : (
-              <div style={{ padding: '16px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {funnelData.map((stage, i) => (
-                  <div key={stage.stage} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 11, width: 72, flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-secondary)' }}>
-                      {stage.label}
-                    </span>
-                    <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'var(--border-color)', overflow: 'hidden' }}>
-                      <div
-                        style={{
-                          height: '100%', borderRadius: 4,
-                          width: `${(stage.count / maxCount) * 100}%`,
-                          background: FUNNEL_COLORS[i % FUNNEL_COLORS.length],
-                          minWidth: stage.count > 0 ? 4 : 0,
-                          transition: 'width 0.5s ease',
-                        }}
-                      />
+                  <div key={stage.stage}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                      <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>
+                        {stage.label}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {stage.count}
+                        </span>
+                        <span style={{ fontSize: 11, color: 'var(--text-muted)', minWidth: 28, textAlign: 'right' }}>
+                          {stage.conversion}%
+                        </span>
+                      </div>
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, width: 20, textAlign: 'right', color: 'var(--text-primary)', flexShrink: 0 }}>
-                      {stage.count}
-                    </span>
-                    <span style={{ fontSize: 11, width: 30, color: 'var(--text-muted)', flexShrink: 0 }}>
-                      {stage.conversion}%
-                    </span>
+                    <div style={{ height: 6, borderRadius: 3, background: 'var(--surface-3)', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', borderRadius: 3,
+                        width: `${(stage.count / maxCount) * 100}%`,
+                        background: FUNNEL_COLORS[i % FUNNEL_COLORS.length],
+                        minWidth: stage.count > 0 ? 4 : 0,
+                        transition: 'width 0.5s ease',
+                      }} />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -428,101 +414,106 @@ export const DashboardPage: React.FC = () => {
         )}
       </div>
 
-      {/* Row 4: Appointments + Source */}
+      {/* Row 4 — Appointments + Source conversion */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-        {card(
+        {sectionCard(
           <>
             {cardHeader(
-              'Proximos Agendamentos',
-              <a href="/appointments" style={{ fontSize: 12, fontWeight: 600, color: '#6366f1', textDecoration: 'none' }}>
-                Ver todos
-              </a>
+              'Próximos Agendamentos',
+              <Link to="/appointments" style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', textDecoration: 'none' }}>
+                Ver todos →
+              </Link>
             )}
             {appointments.length === 0 ? (
-              <div style={{ padding: '32px 20px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>
-                Sem agendamentos proximos
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                Sem agendamentos próximos
               </div>
             ) : (
               <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {appointments.map((ap: any) => (
-                  <li
-                    key={ap.id}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '11px 20px',
-                      borderBottom: '1px solid var(--border-subtle)',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <div style={{
-                      width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                      background: '#eef2ff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <CalendarDays size={16} style={{ color: '#6366f1' }} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {ap.title || ap.type || 'Agendamento'}
-                      </p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                        <Clock size={10} style={{ color: 'var(--text-muted)' }} />
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                          {ap.scheduledAt ? format(parseISO(ap.scheduledAt), 'dd/MM/yyyy HH:mm') : '—'}
-                        </span>
+                {appointments.map((ap: any) => {
+                  const tc = APPOINTMENT_TYPE_COLORS[ap.type] || APPOINTMENT_TYPE_COLORS.DEFAULT
+                  return (
+                    <li
+                      key={ap.id}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        padding: '11px 20px',
+                        borderBottom: '1px solid var(--border)',
+                        transition: 'background 120ms',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        background: tc.bg,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <CalendarDays size={16} style={{ color: tc.color }} />
                       </div>
-                    </div>
-                    {ap.contact && (
-                      <span style={{ fontSize: 11, color: 'var(--text-secondary)', flexShrink: 0 }}>
-                        {ap.contact.name}
-                      </span>
-                    )}
-                  </li>
-                ))}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {ap.title || ap.type || 'Agendamento'}
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                          <Clock size={10} style={{ color: 'var(--text-muted)' }} />
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                            {ap.scheduledAt ? format(parseISO(ap.scheduledAt), 'dd/MM/yyyy HH:mm') : '—'}
+                          </span>
+                        </div>
+                      </div>
+                      {ap.contact && (
+                        <span style={{ fontSize: 11, color: 'var(--text-secondary)', flexShrink: 0, maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {ap.contact.name}
+                        </span>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </>
         )}
 
-        {card(
+        {sectionCard(
           <>
-            {cardHeader('Conversao por Fonte')}
+            {cardHeader('Conversão por Fonte')}
             {sourceRows.length === 0 ? (
-              <div style={{ padding: '32px 20px', textAlign: 'center', fontSize: 13, color: 'var(--text-muted)' }}>
-                Sem dados
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+                Sem dados de fonte
               </div>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                    {['Fonte', 'Leads', 'Ganhos', 'Taxa'].map((h) => (
-                      <th key={h} style={{ padding: '8px 20px', textAlign: h === 'Fonte' ? 'left' : 'right', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sourceRows.map(([src, data]) => {
-                    const rate = data.total > 0 ? Math.round((data.won / data.total) * 100) : 0
-                    const rateColor = rate >= 30 ? '#22c55e' : rate >= 15 ? '#f59e0b' : '#ef4444'
-                    return (
-                      <tr
-                        key={src}
-                        style={{ borderBottom: '1px solid var(--border-subtle)' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        <td style={{ padding: '10px 20px', fontWeight: 500, color: 'var(--text-primary)' }}>{src}</td>
-                        <td style={{ padding: '10px 20px', textAlign: 'right', color: 'var(--text-secondary)' }}>{data.total}</td>
-                        <td style={{ padding: '10px 20px', textAlign: 'right', color: '#22c55e', fontWeight: 600 }}>{data.won}</td>
-                        <td style={{ padding: '10px 20px', textAlign: 'right', fontWeight: 700, color: rateColor }}>{rate}%</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+              <div style={{ padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {sourceRows.map(([src, data], i) => {
+                  const rate = data.total > 0 ? Math.round((data.won / data.total) * 100) : 0
+                  const barColor = rate >= 30 ? 'var(--success)' : rate >= 15 ? 'var(--warning)' : 'var(--accent)'
+                  const barColors = ['var(--accent)', '#7C3AED', 'var(--success)', 'var(--warning)', 'var(--danger)']
+                  return (
+                    <div key={src}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{src}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{data.total} leads</span>
+                          <span style={{
+                            fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600,
+                            color: barColor, minWidth: 32, textAlign: 'right',
+                          }}>
+                            {rate}%
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ height: 5, borderRadius: 3, background: 'var(--surface-3)', overflow: 'hidden' }}>
+                        <div style={{
+                          height: '100%', borderRadius: 3,
+                          width: `${(data.total / maxSource) * 100}%`,
+                          background: barColors[i % barColors.length],
+                          transition: 'width 0.5s ease',
+                        }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             )}
           </>
         )}
