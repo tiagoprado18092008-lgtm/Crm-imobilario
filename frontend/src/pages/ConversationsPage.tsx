@@ -61,11 +61,17 @@ function getAvatarColor(name: string): string {
 
 // ─── ChannelIcon ──────────────────────────────────────────────────────────────
 
+const WhatsAppIcon: React.FC<{ size?: number; color?: string }> = ({ size = 14, color = '#25d366' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} xmlns="http://www.w3.org/2000/svg">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+)
+
 const ChannelIcon: React.FC<{ channel: string; size?: number }> = ({ channel, size = 14 }) => {
   const c = CHANNEL_COLOR[channel] || '#64748b'
   if (channel === 'EMAIL') return <Mail size={size} style={{ color: c }} />
   if (channel === 'SMS') return <Smartphone size={size} style={{ color: c }} />
-  if (channel === 'WHATSAPP') return <MessageCircle size={size} style={{ color: c }} />
+  if (channel === 'WHATSAPP') return <WhatsAppIcon size={size} color={c} />
   if (channel === 'INSTAGRAM') return <AtSign size={size} style={{ color: c }} />
   if (channel === 'INTERNAL') return <Hash size={size} style={{ color: c }} />
   if (channel === 'CALL') return <PhoneCall size={size} style={{ color: '#8b5cf6' }} />
@@ -907,31 +913,42 @@ export const ConversationsPage: React.FC = () => {
             const isSelected = selected?.id === conv.id
             const preview = conv.lastMessageText || 'Sem mensagens'
 
+            const channelColor = CHANNEL_COLOR[conv.channel] || '#64748b'
             return (
               <div key={conv.id} onClick={() => selectConv(conv)} style={{
-                padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--border-subtle)',
-                background: isSelected ? 'rgba(99,102,241,0.06)' : 'transparent',
+                padding: '12px 14px', cursor: 'pointer', borderBottom: '1px solid var(--border-subtle)',
+                background: isSelected ? 'rgba(99,102,241,0.07)' : 'transparent',
                 borderLeft: isSelected ? '3px solid #6366f1' : '3px solid transparent',
-                transition: 'all 100ms',
+                transition: 'background 100ms',
               }}
                 onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--hover-bg)' }}
                 onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = '' }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <Avatar name={name} size={38} channel={conv.channel} />
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
+                  <Avatar name={name} size={42} channel={conv.channel} />
                   <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Row 1: name + timestamp */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: !conv.isRead ? 700 : 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{fmtTimestamp(conv.lastMessageAt)}</span>
+                      <p style={{ margin: 0, fontSize: 13.5, fontWeight: !conv.isRead ? 700 : 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
+                      <span style={{ fontSize: 10.5, color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>{fmtTimestamp(conv.lastMessageAt)}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                      <ChannelIcon channel={conv.channel} size={11} />
-                      <p style={{ margin: 0, fontSize: 12, color: !conv.isRead ? 'var(--text-secondary)' : 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontWeight: !conv.isRead ? 600 : 400 }}>
+                    {/* Row 2: channel pill + preview */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 3,
+                        padding: '1px 6px', borderRadius: 20,
+                        background: channelColor + '18', border: `1px solid ${channelColor}40`,
+                        fontSize: 10, fontWeight: 600, color: channelColor, flexShrink: 0,
+                      }}>
+                        <ChannelIcon channel={conv.channel} size={9} />
+                        {conv.channel === 'WHATSAPP' ? 'WA' : conv.channel === 'EMAIL' ? 'Email' : conv.channel === 'INSTAGRAM' ? 'IG' : conv.channel === 'SMS' ? 'SMS' : conv.channel === 'CALL' ? 'Call' : conv.channel}
+                      </span>
+                      <p style={{ margin: 0, fontSize: 12, color: !conv.isRead ? 'var(--text-secondary)' : 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontWeight: !conv.isRead ? 500 : 400 }}>
                         {preview}
                       </p>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                         {conv.isStarred && <Star size={11} fill="#f59e0b" style={{ color: '#f59e0b' }} />}
-                        {!conv.isRead && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1', flexShrink: 0 }} />}
+                        {!conv.isRead && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1', flexShrink: 0, boxShadow: '0 0 0 2px rgba(99,102,241,0.25)' }} />}
                         <button onClick={e => handleToggleStar(conv.id, e)} className="star-btn" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: conv.isStarred ? '#f59e0b' : 'var(--text-muted)', opacity: conv.isStarred ? 1 : 0, transition: 'opacity 150ms' }}>
                           <Star size={11} fill={conv.isStarred ? '#f59e0b' : 'none'} />
                         </button>
