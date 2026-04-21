@@ -6,8 +6,14 @@ import { Toaster } from 'react-hot-toast'
 import './index.css'
 import App from './App.tsx'
 import { ErrorBoundary } from './components/layout/ErrorBoundary.tsx'
+import { applyTheme, getStoredTheme, watchSystemTheme } from './lib/theme'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+
+applyTheme(getStoredTheme())
+watchSystemTheme(() => {
+  if (getStoredTheme() === 'system') applyTheme('system')
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -23,13 +29,14 @@ createRoot(document.getElementById('root')!).render(
                 borderRadius: '12px',
                 fontSize: '13px',
                 fontWeight: 500,
+                fontFamily: "'Inter', system-ui, sans-serif",
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
               },
               success: {
-                iconTheme: { primary: '#22c55e', secondary: '#fff' },
+                iconTheme: { primary: '#16A34A', secondary: '#fff' },
               },
               error: {
-                iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                iconTheme: { primary: '#DC2626', secondary: '#fff' },
               },
             }}
           />
