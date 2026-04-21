@@ -11,15 +11,15 @@ const canManage = (req: Request, res: Response): boolean => {
   return true;
 };
 
-export const list = async (_req: Request, res: Response, next: NextFunction) => {
+export const list = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    res.json(await service.list());
+    res.json(await service.list(req.user?.agencyId));
   } catch (err) { next(err); }
 };
 
 export const getById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    res.json(await service.getById(req.params.id));
+    res.json(await service.getById(req.params.id, req.user?.agencyId));
   } catch (err) { next(err); }
 };
 
@@ -31,21 +31,21 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
       res.status(400).json({ error: 'name, trigger e actions são obrigatórios' });
       return;
     }
-    res.status(201).json(await service.create({ name, trigger, isActive, actions }));
+    res.status(201).json(await service.create({ name, trigger, isActive, actions, agencyId: req.user?.agencyId }));
   } catch (err) { next(err); }
 };
 
 export const update = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!canManage(req, res)) return;
-    res.json(await service.update(req.params.id, req.body));
+    res.json(await service.update(req.params.id, req.body, req.user?.agencyId));
   } catch (err) { next(err); }
 };
 
 export const remove = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!canManage(req, res)) return;
-    await service.remove(req.params.id);
+    await service.remove(req.params.id, req.user?.agencyId);
     res.status(204).send();
   } catch (err) { next(err); }
 };
@@ -57,7 +57,7 @@ export const getLogs = async (req: Request, res: Response, next: NextFunction) =
       ruleId: ruleId as string,
       contactId: contactId as string,
       limit: limit ? parseInt(limit as string) : undefined,
-    }));
+    }, req.user?.agencyId));
   } catch (err) { next(err); }
 };
 

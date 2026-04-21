@@ -55,6 +55,7 @@ model Agency {
 
   users       User[]
   automations Automation[]
+  automationRules AutomationRule[]
   locations   Location[]
   settings    AgencySettings?
   pipelines     Pipeline[]
@@ -448,6 +449,8 @@ model AutomationRule {
   trigger     String   // NEW_LEAD, VISIT_SCHEDULED, MISSED_CALL, NO_RESPONSE_2H, LEAD_QUALIFIED, PROPOSAL_SENT
   isActive    Boolean  @default(true)
   actions     String   // JSON array of actions
+  agencyId    String?
+  agency      Agency?  @relation(fields: [agencyId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   logs        AutomationLog[]

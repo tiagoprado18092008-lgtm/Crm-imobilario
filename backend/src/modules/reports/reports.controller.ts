@@ -21,7 +21,7 @@ export const getPipeline = async (req: Request, res: Response, next: NextFunctio
 
 export const getAgentPerformance = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const performance = await reportsService.getAgentPerformance();
+    const performance = await reportsService.getAgentPerformance(req.user);
     res.status(200).json(performance);
   } catch (err) {
     next(err);

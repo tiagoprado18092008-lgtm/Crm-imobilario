@@ -89,11 +89,14 @@ export const send = async (id: string, user: any) => {
   if (!campaign) throw Object.assign(new Error('Campanha não encontrada'), { status: 404 });
   if (campaign.status === 'SENT') throw Object.assign(new Error('Campanha já enviada'), { status: 400 });
 
-  // Build recipient list from target filter
+  // Build recipient list from target filter — scoped to agency
   const filter = JSON.parse(campaign.targetFilter || '{}');
   const contactWhere: any = {};
   if (filter.type) contactWhere.type = filter.type;
   if (filter.status) contactWhere.status = filter.status;
+  if (user.agencyId) contactWhere.assignedTo = { agencyId: user.agencyId };
+  else if (user.locationId) contactWhere.assignedTo = { locationId: user.locationId };
+  else contactWhere.assignedToId = user.id;
   const contacts = await prisma.contact.findMany({ where: contactWhere, select: { id: true, email: true, name: true } });
   const withEmail = contacts.filter(c => c.email);
 

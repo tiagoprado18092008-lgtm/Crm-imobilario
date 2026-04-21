@@ -9,6 +9,7 @@ export const list = async (req: Request, res: Response, next: NextFunction): Pro
       type: req.query.type as string,
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 20,
+      user: req.user,
     };
     const result = await interactionsService.list(filters);
     res.status(200).json(result);

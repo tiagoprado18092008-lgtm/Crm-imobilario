@@ -2,16 +2,17 @@ import prisma from '../../config/database';
 import { AutomationAction, automationEngine } from '../../utils/automation.engine';
 import type { Step, AutomationTriggerConfig } from '../../types/automation.types';
 
-export const list = async () => {
+export const list = async (agencyId?: string) => {
   return prisma.automationRule.findMany({
+    where: agencyId ? { agencyId } : { agencyId: null },
     orderBy: { createdAt: 'asc' },
     include: { _count: { select: { logs: true } } },
   });
 };
 
-export const getById = async (id: string) => {
-  const rule = await prisma.automationRule.findUnique({
-    where: { id },
+export const getById = async (id: string, agencyId?: string) => {
+  const rule = await prisma.automationRule.findFirst({
+    where: agencyId ? { id, agencyId } : { id },
     include: {
       logs: {
         orderBy: { executedAt: 'desc' },
@@ -30,6 +31,7 @@ export const create = async (dto: {
   trigger: string;
   isActive?: boolean;
   actions: AutomationAction[];
+  agencyId?: string;
 }) => {
   return prisma.automationRule.create({
     data: {
@@ -37,6 +39,7 @@ export const create = async (dto: {
       trigger: dto.trigger,
       isActive: dto.isActive ?? true,
       actions: JSON.stringify(dto.actions),
+      agencyId: dto.agencyId || null,
     },
   });
 };
@@ -48,9 +51,10 @@ export const update = async (
     trigger?: string;
     isActive?: boolean;
     actions?: AutomationAction[];
-  }
+  },
+  agencyId?: string
 ) => {
-  const rule = await prisma.automationRule.findUnique({ where: { id } });
+  const rule = await prisma.automationRule.findFirst({ where: agencyId ? { id, agencyId } : { id } });
   if (!rule) throw Object.assign(new Error('Automation rule not found'), { status: 404 });
 
   return prisma.automationRule.update({
@@ -64,17 +68,18 @@ export const update = async (
   });
 };
 
-export const remove = async (id: string) => {
-  const rule = await prisma.automationRule.findUnique({ where: { id } });
+export const remove = async (id: string, agencyId?: string) => {
+  const rule = await prisma.automationRule.findFirst({ where: agencyId ? { id, agencyId } : { id } });
   if (!rule) throw Object.assign(new Error('Automation rule not found'), { status: 404 });
   await prisma.automationRule.delete({ where: { id } });
 };
 
-export const getLogs = async (filters: { ruleId?: string; contactId?: string; limit?: number }) => {
+export const getLogs = async (filters: { ruleId?: string; contactId?: string; limit?: number }, agencyId?: string) => {
   return prisma.automationLog.findMany({
     where: {
       ruleId: filters.ruleId,
       contactId: filters.contactId,
+      ...(agencyId ? { rule: { agencyId } } : {}),
     },
     orderBy: { executedAt: 'desc' },
     take: filters.limit ?? 50,

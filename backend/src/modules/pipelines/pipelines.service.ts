@@ -14,7 +14,8 @@ const DEFAULT_STAGES = [
 const userScope = (user: any) => {
   if (user.agencyId) return { agencyId: user.agencyId };
   if (user.locationId) return { locationId: user.locationId };
-  return {};
+  // Never return empty scope — return impossible match to prevent data leakage
+  return { id: '__no_match__' };
 };
 
 export const list = async (user: any) => {

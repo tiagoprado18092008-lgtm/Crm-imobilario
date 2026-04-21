@@ -45,6 +45,7 @@ export const getSummary = async (user: any) => {
     }),
     prisma.task.count({
       where: {
+        ...contactWhere,
         dueDate: { gte: startOfToday, lt: endOfToday },
         status: { notIn: ['COMPLETED', 'CANCELLED'] },
       },
@@ -124,9 +125,10 @@ export const getPipeline = async (user: any) => {
   return results;
 };
 
-export const getAgentPerformance = async () => {
+export const getAgentPerformance = async (user?: any) => {
+  const agencyFilter = user?.agencyId ? { agencyId: user.agencyId } : user?.locationId ? { locationId: user.locationId } : user ? { id: user.id } : {};
   const agents = await prisma.user.findMany({
-    where: { isActive: true, role: { in: ['TEAM_LEADER', 'CONSULTANT'] as any[] } },
+    where: { isActive: true, role: { in: ['TEAM_LEADER', 'CONSULTANT'] as any[] }, ...agencyFilter },
     select: { id: true, name: true, email: true, role: true },
   });
 

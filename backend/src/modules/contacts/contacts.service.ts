@@ -180,7 +180,7 @@ export const bulkImport = async (
     try {
       // Skip if email already exists
       if (row.email) {
-        const existing = await prisma.contact.findFirst({ where: { email: row.email } });
+        const existing = await prisma.contact.findFirst({ where: { email: row.email, assignedToId: userId } });
         if (existing) { results.skipped++; continue; }
       }
       await prisma.contact.create({

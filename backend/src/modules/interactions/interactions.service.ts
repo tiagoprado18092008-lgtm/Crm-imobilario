@@ -1,5 +1,6 @@
 import prisma from '../../config/database';
 import { sendMockEmail, sendMockWhatsApp } from '../../utils/mock-comms';
+import { buildScope } from '../../lib/scope';
 
 export const create = async (
   dto: {
@@ -50,8 +51,24 @@ export const list = async (filters: {
   type?: string;
   page?: number;
   limit?: number;
+  user?: any;
 }) => {
-  const where: any = {};
+  let scope: any = {};
+  if (filters.user) {
+    const u = filters.user;
+    if (u.role === 'AGENCY_OWNER' || u.role === 'AGENCY_ADMIN') {
+      if (u.agencyId) scope = { createdBy: { agencyId: u.agencyId } };
+      else scope = { createdById: u.id };
+    } else if (u.role === 'LOCATION_ADMIN') {
+      scope = u.locationId ? { createdBy: { locationId: u.locationId } } : { createdById: u.id };
+    } else if (u.role === 'TEAM_LEADER') {
+      const subs = await prisma.user.findMany({ where: { supervisorId: u.id }, select: { id: true } });
+      scope = { createdById: { in: [u.id, ...subs.map((s: any) => s.id)] } };
+    } else {
+      scope = { createdById: u.id };
+    }
+  }
+  const where: any = { ...scope };
   if (filters.contactId) where.contactId = filters.contactId;
   if (filters.opportunityId) where.opportunityId = filters.opportunityId;
   if (filters.type) where.type = filters.type;
