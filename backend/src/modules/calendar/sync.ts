@@ -56,6 +56,11 @@ async function upsertGoogleEvent(userId: string, integrationId: string, event: a
   const endAt = new Date(event.end?.dateTime || event.end?.date || '');
   if (isNaN(startAt.getTime()) || isNaN(endAt.getTime())) return;
 
+  // Extract meet link: hangoutLink OR conferenceData entryPoints
+  const meetLink = event.hangoutLink
+    || event.conferenceData?.entryPoints?.find((e: any) => e.entryPointType === 'video')?.uri
+    || null;
+
   await prisma.calendarEvent.upsert({
     where: {
       userId_externalId_externalProvider: {
@@ -72,7 +77,7 @@ async function upsertGoogleEvent(userId: string, integrationId: string, event: a
       endAt,
       isAllDay: !event.start?.dateTime,
       status: event.status || 'confirmed',
-      meetLink: event.hangoutLink,
+      meetLink,
       attendees: event.attendees as any,
       syncedAt: new Date(),
     },
@@ -88,7 +93,7 @@ async function upsertGoogleEvent(userId: string, integrationId: string, event: a
       endAt,
       isAllDay: !event.start?.dateTime,
       status: event.status || 'confirmed',
-      meetLink: event.hangoutLink,
+      meetLink,
       attendees: event.attendees as any,
       syncedAt: new Date(),
     },
@@ -149,7 +154,8 @@ export async function fetchAllGoogleEvents(userId: string) {
           orderBy: 'startTime',
           maxResults: 2500,
           pageToken,
-        });
+          conferenceDataVersion: 1,
+        } as any);
 
         const events = response.data.items || [];
         for (const event of events) {
@@ -199,7 +205,8 @@ export async function syncGoogleChanges(userId: string) {
         calendarId: 'primary',
         syncToken: pageToken ? undefined : integration.syncToken,
         pageToken,
-      });
+        conferenceDataVersion: 1,
+      } as any);
 
       const events = response.data.items || [];
       for (const event of events) {
