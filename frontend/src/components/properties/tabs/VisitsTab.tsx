@@ -59,7 +59,7 @@ export const VisitsTab: React.FC<Props> = ({ propertyId, visits, onChange }) => 
             const dt = new Date(visit.scheduledAt)
             const isExpanded = expanded === visit.id
             return (
-              <div key={visit.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 10, overflow: 'hidden' }}>
+              <div key={visit.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
                 <div
                   style={{ display: 'grid', gridTemplateColumns: '120px 80px 1fr auto', gap: 12, alignItems: 'center', padding: '10px 14px', cursor: visit.status === 'realizada' ? 'pointer' : 'default' }}
                   onClick={() => visit.status === 'realizada' && setExpanded(isExpanded ? null : visit.id)}
@@ -73,7 +73,7 @@ export const VisitsTab: React.FC<Props> = ({ propertyId, visits, onChange }) => 
                     value={visit.status}
                     onChange={e => { e.stopPropagation(); handleStatusChange(visit.id, e.target.value) }}
                     onClick={e => e.stopPropagation()}
-                    style={{ fontSize: 12, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, padding: '2px 6px', color: 'var(--text-primary)' }}
+                    style={{ fontSize: 12, background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 6, padding: '2px 6px', color: 'var(--text-primary)' }}
                   >
                     <option value="agendada">Agendada</option>
                     <option value="realizada">Realizada</option>
@@ -105,7 +105,7 @@ const VisitFeedback: React.FC<{ visit: PropertyVisit; onSave: (interesse: string
   const [notas, setNotas] = useState(visit.notas ?? '')
 
   return (
-    <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border-color)', background: 'var(--bg-page)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div>
         <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Cliente demonstrou interesse?</label>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -113,7 +113,7 @@ const VisitFeedback: React.FC<{ visit: PropertyVisit; onSave: (interesse: string
             <button
               key={v}
               onClick={() => setInteresse(v)}
-              style={{ padding: '4px 14px', borderRadius: 20, border: '1px solid', fontSize: 12, cursor: 'pointer', fontWeight: interesse === v ? 700 : 400, background: interesse === v ? 'var(--color-primary)' : 'var(--bg-card)', color: interesse === v ? '#fff' : 'var(--text-secondary)', borderColor: interesse === v ? 'var(--color-primary)' : 'var(--border-color)' }}
+              style={{ padding: '4px 14px', borderRadius: 20, border: '1px solid', fontSize: 12, cursor: 'pointer', fontWeight: interesse === v ? 700 : 400, background: interesse === v ? 'var(--color-primary)' : 'var(--surface)', color: interesse === v ? '#fff' : 'var(--text-secondary)', borderColor: interesse === v ? 'var(--color-primary)' : 'var(--border)' }}
             >
               {v === 'sim' ? 'Sim' : v === 'nao' ? 'Não' : 'Talvez'}
             </button>
@@ -126,7 +126,7 @@ const VisitFeedback: React.FC<{ visit: PropertyVisit; onSave: (interesse: string
           value={notas}
           onChange={e => setNotas(e.target.value)}
           rows={2}
-          style={{ width: '100%', fontSize: 13, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '6px 10px', color: 'var(--text-primary)', resize: 'vertical', boxSizing: 'border-box' }}
+          style={{ width: '100%', fontSize: 13, background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '6px 10px', color: 'var(--text-primary)', resize: 'vertical', boxSizing: 'border-box' }}
         />
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

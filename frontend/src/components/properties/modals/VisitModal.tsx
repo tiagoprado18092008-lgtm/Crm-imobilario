@@ -53,7 +53,7 @@ export const VisitModal: React.FC<Props> = ({ propertyId, isOpen, onClose, onCre
           <select
             value={contactId}
             onChange={e => setContactId(e.target.value)}
-            style={{ width: '100%', fontSize: 13, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-primary)' }}
+            style={{ width: '100%', fontSize: 13, background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-primary)' }}
           >
             <option value="">— Seleccionar cliente —</option>
             {contacts.map(c => <option key={c.id} value={c.id}>{c.name}{c.phone ? ` · ${c.phone}` : ''}</option>)}
@@ -65,7 +65,7 @@ export const VisitModal: React.FC<Props> = ({ propertyId, isOpen, onClose, onCre
             type="datetime-local"
             value={scheduledAt}
             onChange={e => setScheduledAt(e.target.value)}
-            style={{ width: '100%', fontSize: 13, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+            style={{ width: '100%', fontSize: 13, background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-primary)', boxSizing: 'border-box' }}
           />
         </div>
         <div>
@@ -74,7 +74,7 @@ export const VisitModal: React.FC<Props> = ({ propertyId, isOpen, onClose, onCre
             value={notas}
             onChange={e => setNotas(e.target.value)}
             rows={3}
-            style={{ width: '100%', fontSize: 13, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-primary)', resize: 'vertical', boxSizing: 'border-box' }}
+            style={{ width: '100%', fontSize: 13, background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-primary)', resize: 'vertical', boxSizing: 'border-box' }}
           />
         </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>

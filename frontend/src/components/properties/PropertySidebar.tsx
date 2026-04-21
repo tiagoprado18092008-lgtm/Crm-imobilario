@@ -26,7 +26,7 @@ export const PropertySidebar: React.FC<Props> = ({ property, onScheduleVisit, on
               {property.purpose === 'RENT' && <span style={{ fontSize: 14, fontWeight: 400, color: 'var(--text-muted)' }}>/mês</span>}
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13, color: 'var(--text-secondary)', paddingTop: 12, borderTop: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13, color: 'var(--text-secondary)', paddingTop: 12, borderTop: '1px solid var(--border)' }}>
             {property.area != null && <span><b>{property.area}</b> m²</span>}
             {property.bedrooms != null && <span><b>{property.bedrooms}</b> quartos</span>}
             {property.bathrooms != null && <span><b>{property.bathrooms}</b> WC</span>}

@@ -17,7 +17,7 @@ export const AppShell: React.FC = () => {
   const showOnboarding = user?.onboardingCompleted === false
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-page)' }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--surface-2)' }}>
       <ImpersonationBanner />
       {/* Mobile overlay */}
       {sidebarOpen && (

@@ -183,7 +183,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
                 alignItems: 'center',
                 gap: 4,
                 paddingTop: 8,
-                borderTop: '1px solid var(--border-subtle)',
+                borderTop: '1px solid var(--border)',
               }}
             >
               <ActionBtn icon={<Phone size={12} />} label="Ligar" onClick={handleAction('call')} />
@@ -222,15 +222,15 @@ const ActionBtn: React.FC<{
       width: 26,
       height: 26,
       borderRadius: 6,
-      border: '1px solid var(--border-color)',
-      background: 'var(--bg-page)',
+      border: '1px solid var(--border)',
+      background: 'var(--surface-2)',
       color,
       cursor: 'pointer',
       flexShrink: 0,
       transition: 'background 150ms',
     }}
     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--accent-soft)' }}
-    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-page)' }}
+    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-2)' }}
   >
     {icon}
     {count != null && count > 0 && (

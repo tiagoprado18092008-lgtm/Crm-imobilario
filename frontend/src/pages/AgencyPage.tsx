@@ -67,7 +67,7 @@ function AgencySettingsTab() {
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm(f => ({ ...f, [field]: e.target.value }))
-  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => (e.target.style.borderColor = '#6366f1')
+  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => (e.target.style.borderColor = 'var(--accent)')
   const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => (e.target.style.borderColor = '#dce3ef')
 
   const handleImagePick = (field: 'logoUrl' | 'coverUrl') => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,7 +100,7 @@ function AgencySettingsTab() {
 
       {/* Aparência */}
       <div style={sectionSt}>
-        <SecTitle icon={<Image size={15} style={{ color: '#6366f1' }} />} title="Aparência" />
+        <SecTitle icon={<Image size={15} style={{ color: 'var(--accent)' }} />} title="Aparência" />
         <div style={{ marginBottom: 20 }}>
           <label style={labelSt}>Imagem de Capa</label>
           <div
@@ -153,7 +153,7 @@ function AgencySettingsTab() {
 
       {/* Identidade */}
       <div style={sectionSt}>
-        <SecTitle icon={<Building2 size={15} style={{ color: '#6366f1' }} />} title="Identidade" />
+        <SecTitle icon={<Building2 size={15} style={{ color: 'var(--accent)' }} />} title="Identidade" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label style={labelSt}>Nome da Agência *</label>
@@ -174,7 +174,7 @@ function AgencySettingsTab() {
 
       {/* Contacto */}
       <div style={sectionSt}>
-        <SecTitle icon={<Phone size={15} style={{ color: '#6366f1' }} />} title="Contacto" />
+        <SecTitle icon={<Phone size={15} style={{ color: 'var(--accent)' }} />} title="Contacto" />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div>
             <label style={labelSt}>Email</label>
@@ -193,7 +193,7 @@ function AgencySettingsTab() {
 
       {/* Localização */}
       <div style={sectionSt}>
-        <SecTitle icon={<MapPin size={15} style={{ color: '#6366f1' }} />} title="Localização" />
+        <SecTitle icon={<MapPin size={15} style={{ color: 'var(--accent)' }} />} title="Localização" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label style={labelSt}>Morada</label>
@@ -214,7 +214,7 @@ function AgencySettingsTab() {
 
       {/* Informações de conta (read-only) */}
       <div style={sectionSt}>
-        <SecTitle icon={<Globe size={15} style={{ color: '#6366f1' }} />} title="Informações de Conta" />
+        <SecTitle icon={<Globe size={15} style={{ color: 'var(--accent)' }} />} title="Informações de Conta" />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
             <span style={{ fontSize: 13, color: '#6b7a99' }}>ID da Agência</span>
@@ -233,7 +233,7 @@ function AgencySettingsTab() {
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 32 }}>
         <button type="submit" disabled={saving}
-          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px', borderRadius: 10, border: 'none', background: saving ? '#a5b4fc' : '#6366f1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 22px', borderRadius: 10, border: 'none', background: saving ? '#a5b4fc' : 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
           <Save size={14} />{saving ? 'A guardar...' : 'Guardar alterações'}
         </button>
       </div>
@@ -258,8 +258,8 @@ type Tab = 'members' | 'invites' | 'settings'
 const ROLE_COLOR: Record<string, string> = {
   AGENCY_OWNER: '#f59e0b',
   AGENCY_DIRECTOR: '#f59e0b',
-  AGENCY_ADMIN: '#6366f1',
-  TEAM_LEADER: '#3b82f6',
+  AGENCY_ADMIN: 'var(--accent)',
+  TEAM_LEADER: 'var(--accent)',
   CONSULTANT: '#6b7a99',
 }
 
@@ -379,8 +379,8 @@ export const AgencyPage: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Building2 size={20} style={{ color: '#6366f1' }} />
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(46,107,230,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Building2 size={20} style={{ color: 'var(--accent)' }} />
           </div>
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0f2553', margin: 0, letterSpacing: '-0.02em' }}>
@@ -395,7 +395,7 @@ export const AgencyPage: React.FC = () => {
         {tab === 'invites' && (
           <button
             onClick={() => setInviteOpen(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, background: '#6366f1', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, background: 'var(--accent)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
           >
             <UserPlus size={14} /> Convidar membro
           </button>
@@ -417,10 +417,10 @@ export const AgencyPage: React.FC = () => {
               padding: '8px 16px', borderRadius: '8px 8px 0 0',
               border: 'none', fontFamily: 'inherit', fontSize: 13,
               fontWeight: tab === t.key ? 600 : 400,
-              color: tab === t.key ? '#6366f1' : '#6b7a99',
-              background: tab === t.key ? 'rgba(99,102,241,0.07)' : 'transparent',
+              color: tab === t.key ? 'var(--accent)' : '#6b7a99',
+              background: tab === t.key ? 'rgba(46,107,230,0.07)' : 'transparent',
               cursor: 'pointer',
-              borderBottom: tab === t.key ? '2px solid #6366f1' : '2px solid transparent',
+              borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
               marginBottom: -1,
             }}
           >
@@ -460,12 +460,12 @@ export const AgencyPage: React.FC = () => {
                       >
                         <td style={tdStyle}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,var(--accent),#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
                               {getInitials(member.name)}
                             </div>
                             <span style={{ fontWeight: 600, color: '#0f2553', fontSize: 13 }}>{member.name}</span>
                             {member.id === user?.id && (
-                              <span style={{ fontSize: 10, background: '#f0f1ff', color: '#6366f1', borderRadius: 4, padding: '2px 6px', fontWeight: 600 }}>Eu</span>
+                              <span style={{ fontSize: 10, background: '#f0f1ff', color: 'var(--accent)', borderRadius: 4, padding: '2px 6px', fontWeight: 600 }}>Eu</span>
                             )}
                           </div>
                         </td>
@@ -492,7 +492,7 @@ export const AgencyPage: React.FC = () => {
                 <p>Ainda não enviou nenhum convite.</p>
                 <button
                   onClick={() => setInviteOpen(true)}
-                  style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, background: '#6366f1', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, background: 'var(--accent)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
                 >
                   <UserPlus size={14} /> Convidar membro
                 </button>
@@ -580,7 +580,7 @@ export const AgencyPage: React.FC = () => {
                       Gestor
                     </label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, border: '1.5px solid #dce3ef', background: '#f8f9fc' }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
+                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,var(--accent),#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>
                         {getInitials(user?.name || '')}
                       </div>
                       <div>
@@ -627,7 +627,7 @@ export const AgencyPage: React.FC = () => {
                 <button type="button" onClick={() => setInviteOpen(false)} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid #dce3ef', background: '#fff', color: '#6b7a99', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
                   Cancelar
                 </button>
-                <button type="submit" disabled={inviteSending} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <button type="submit" disabled={inviteSending} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                   <Send size={13} />{inviteSending ? 'A enviar...' : 'Enviar convite'}
                 </button>
               </div>

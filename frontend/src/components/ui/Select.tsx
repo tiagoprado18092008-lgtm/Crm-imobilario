@@ -46,7 +46,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(({
           fontSize: 13,
           borderRadius: 8,
           border: `1px solid ${error ? '#f87171' : 'var(--input-border)'}`,
-          background: 'var(--input-bg)',
+          background: 'var(--surface-2)',
           color: 'var(--text-primary)',
           outline: 'none',
           transition: 'border-color 150ms',

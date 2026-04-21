@@ -23,7 +23,7 @@ const SortablePhoto: React.FC<SortablePhotoProps> = ({ photo, onDelete, onCatego
   const src = photo.url.startsWith('http') ? photo.url : `${apiBase}${photo.url}`
 
   return (
-    <div ref={setNodeRef} style={{ ...style, position: 'relative', borderRadius: 10, overflow: 'hidden', border: '2px solid var(--border-color)', aspectRatio: '4/3', cursor: 'grab' }}>
+    <div ref={setNodeRef} style={{ ...style, position: 'relative', borderRadius: 10, overflow: 'hidden', border: '2px solid var(--border)', aspectRatio: '4/3', cursor: 'grab' }}>
       <img
         src={src}
         alt=""
@@ -129,7 +129,7 @@ export const PhotosTab: React.FC<Props> = ({ propertyId, photos, onChange }) => 
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
         onClick={() => inputRef.current?.click()}
-        style={{ border: '2px dashed var(--border-color)', borderRadius: 12, padding: 32, textAlign: 'center', cursor: 'pointer', marginBottom: 20, color: 'var(--text-muted)', fontSize: 13 }}
+        style={{ border: '2px dashed var(--border)', borderRadius: 12, padding: 32, textAlign: 'center', cursor: 'pointer', marginBottom: 20, color: 'var(--text-muted)', fontSize: 13 }}
       >
         <Upload size={24} style={{ marginBottom: 8, opacity: 0.5 }} />
         <p style={{ margin: 0 }}>{uploading ? 'A carregar...' : 'Arrastar fotos ou clique para seleccionar'}</p>

@@ -64,7 +64,7 @@ const STEP_TYPES: {
   bg: string
   description: string
 }[] = [
-  { type: 'action',     label: 'Ação',            icon: Zap,       color: '#6366f1', bg: '#eff6ff',  description: 'Email, SMS, WhatsApp, tarefa...' },
+  { type: 'action',     label: 'Ação',            icon: Zap,       color: 'var(--accent)', bg: '#eff6ff',  description: 'Email, SMS, WhatsApp, tarefa...' },
   { type: 'condition',  label: 'Condição',         icon: GitBranch, color: '#d97706', bg: '#fffbeb',  description: 'Divide o fluxo em Sim / Não' },
   { type: 'delay',      label: 'Aguardar',         icon: Clock,     color: '#16a34a', bg: '#f0fdf4',  description: 'Pausa X tempo antes de continuar' },
   { type: 'wait_event', label: 'Aguardar Evento',  icon: Bell,      color: '#2563eb', bg: '#eff6ff',  description: 'Pausa até acontecer um evento' },
@@ -194,9 +194,9 @@ function StepEditor({ step, onChange }: { step: Step; onChange: (s: Step) => voi
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px',
                     background: s.actionType === k ? '#eff6ff' : 'var(--hover-bg, #f9fafb)',
-                    border: `1px solid ${s.actionType === k ? '#6366f1' : 'var(--border-color, #e5e7eb)'}`,
+                    border: `1px solid ${s.actionType === k ? 'var(--accent)' : 'var(--border-color, #e5e7eb)'}`,
                     borderRadius: 8, cursor: 'pointer',
-                    color: s.actionType === k ? '#6366f1' : 'var(--text-secondary)',
+                    color: s.actionType === k ? 'var(--accent)' : 'var(--text-secondary)',
                     fontSize: 11, textAlign: 'left',
                   }}
                 >
@@ -262,7 +262,7 @@ function StepEditor({ step, onChange }: { step: Step; onChange: (s: Step) => voi
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Lógica:</span>
           {(['AND', 'OR'] as const).map(l => (
             <button key={l} onClick={() => onChange({ ...s, logic: l })}
-              style={{ padding: '3px 10px', borderRadius: 4, border: `1px solid ${s.logic === l ? '#d97706' : 'var(--border-color)'}`, background: s.logic === l ? '#fffbeb' : 'transparent', color: s.logic === l ? '#d97706' : 'var(--text-muted)', cursor: 'pointer', fontSize: 11 }}
+              style={{ padding: '3px 10px', borderRadius: 4, border: `1px solid ${s.logic === l ? '#d97706' : 'var(--border)'}`, background: s.logic === l ? '#fffbeb' : 'transparent', color: s.logic === l ? '#d97706' : 'var(--text-muted)', cursor: 'pointer', fontSize: 11 }}
             >{l}</button>
           ))}
         </div>
@@ -416,8 +416,8 @@ function AddStepButton({ onAdd, show, onToggle }: {
         onClick={onToggle}
         style={{
           width: 22, height: 22, borderRadius: '50%',
-          background: show ? '#6366f1' : '#fff',
-          border: `1px solid ${show ? '#6366f1' : '#d1d5db'}`,
+          background: show ? 'var(--accent)' : '#fff',
+          border: `1px solid ${show ? 'var(--accent)' : '#d1d5db'}`,
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: show ? '#fff' : '#6b7280', transition: 'all 0.15s',
           boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
@@ -594,12 +594,12 @@ export default function AutomationBuilder({ open, onClose, initialData, onSaved 
                     style={{
                       display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px',
                       background: triggerType === k ? '#eff6ff' : 'transparent',
-                      border: `1px solid ${triggerType === k ? '#6366f1' : '#e5e7eb'}`,
+                      border: `1px solid ${triggerType === k ? 'var(--accent)' : '#e5e7eb'}`,
                       borderRadius: 7, cursor: 'pointer', textAlign: 'left',
                     }}
                   >
-                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: triggerType === k ? '#6366f1' : '#d1d5db', flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: triggerType === k ? '#6366f1' : '#374151', fontWeight: triggerType === k ? 600 : 400 }}>{v}</span>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: triggerType === k ? 'var(--accent)' : '#d1d5db', flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: triggerType === k ? 'var(--accent)' : '#374151', fontWeight: triggerType === k ? 600 : 400 }}>{v}</span>
                   </button>
                 ))}
               </div>
@@ -607,7 +607,7 @@ export default function AutomationBuilder({ open, onClose, initialData, onSaved 
 
             <div style={{ padding: '10px 14px', background: '#f9fafb', borderRadius: 8, border: '1px solid #e5e7eb' }}>
               <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 2 }}>Steps configurados</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#6366f1' }}>{steps.length}</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)' }}>{steps.length}</div>
             </div>
 
             {error && (
@@ -624,7 +624,7 @@ export default function AutomationBuilder({ open, onClose, initialData, onSaved 
               disabled={saving}
               style={{
                 width: '100%', padding: '10px 0',
-                background: '#6366f1', border: 'none', borderRadius: 8,
+                background: 'var(--accent)', border: 'none', borderRadius: 8,
                 color: '#fff', fontWeight: 600, fontSize: 14,
                 cursor: saving ? 'not-allowed' : 'pointer',
                 opacity: saving ? 0.7 : 1,
@@ -647,9 +647,9 @@ export default function AutomationBuilder({ open, onClose, initialData, onSaved 
           </div>
 
           {/* Trigger chip */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '6px 14px', background: '#eff6ff', border: '1px solid #c7d2fe', borderRadius: 100, marginBottom: 0 }}>
-            <Zap size={11} style={{ color: '#6366f1' }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: 0.5 }}>TRIGGER</span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '6px 14px', background: '#eff6ff', border: '1px solid var(--accent)', borderRadius: 100, marginBottom: 0 }}>
+            <Zap size={11} style={{ color: 'var(--accent)' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: 0.5 }}>TRIGGER</span>
             <span style={{ fontSize: 12, color: '#4338ca' }}>{TRIGGER_LABELS[triggerType]}</span>
           </div>
 

@@ -165,12 +165,12 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, defaultDate, onSuccess, onCan
           rows={3}
           style={{
             width: '100%', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
-            border: '1px solid var(--border-color)', borderRadius: 8,
-            background: 'var(--bg-page)', color: 'var(--text-primary)',
+            border: '1px solid var(--border)', borderRadius: 8,
+            background: 'var(--surface-2)', color: 'var(--text-primary)',
             outline: 'none', resize: 'vertical', fontFamily: 'inherit',
           }}
-          onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.12)' }}
-          onBlur={e => { e.target.style.borderColor = 'var(--border-color)'; e.target.style.boxShadow = 'none' }}
+          onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.boxShadow = '0 0 0 2px rgba(46,107,230,0.12)' }}
+          onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none' }}
         />
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
@@ -279,19 +279,19 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
       {/* Toolbar */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
         {/* View toggle */}
-        <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
           {(['list', 'calendar'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               style={{
                 padding: '6px 16px', fontSize: 13, fontWeight: 500,
-                background: activeTab === tab ? '#6366f1' : 'var(--bg-card)',
+                background: activeTab === tab ? 'var(--accent)' : 'var(--surface)',
                 color: activeTab === tab ? '#fff' : 'var(--text-secondary)',
                 border: 'none', cursor: 'pointer', transition: 'background 150ms',
               }}
-              onMouseEnter={e => { if (activeTab !== tab) e.currentTarget.style.background = 'var(--hover-bg)' }}
-              onMouseLeave={e => { if (activeTab !== tab) e.currentTarget.style.background = 'var(--bg-card)' }}
+              onMouseEnter={e => { if (activeTab !== tab) e.currentTarget.style.background = 'var(--surface-3)' }}
+              onMouseLeave={e => { if (activeTab !== tab) e.currentTarget.style.background = 'var(--surface)' }}
             >
               {tab === 'list' ? 'Lista' : 'Calendário'}
             </button>
@@ -337,7 +337,7 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
       {loading ? (
         <PageSpinner />
       ) : activeTab === 'calendar' ? (
-        <div style={{ borderRadius: 12, padding: 24, background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ borderRadius: 12, padding: 24, background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <CalendarView
                 tasks={allTasks}
                 onTaskClick={(task) => { setEditTask(task); setCalendarDefaultDate(undefined); setShowModal(true) }}
@@ -356,11 +356,11 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
           onAction={() => { setEditTask(undefined); setShowModal(true) }}
         />
       ) : (
-        <div style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--bg-card)', border: '1px solid var(--border-color)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ background: 'var(--hover-bg)', borderBottom: '1px solid var(--border-color)' }}>
+                <tr style={{ background: 'var(--surface-3)', borderBottom: '1px solid var(--border)' }}>
                   {['Título', 'Contacto', 'Prioridade', 'Prazo', 'Estado', 'Responsável'].map(h => (
                     <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
@@ -375,8 +375,8 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
                   return (
                     <tr
                       key={task.id}
-                      style={{ borderBottom: '1px solid var(--border-subtle)', transition: 'background 100ms' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                      style={{ borderBottom: '1px solid var(--border)', transition: 'background 100ms' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
                       <td style={{ padding: '10px 14px', fontWeight: 500, color: 'var(--text-primary)' }}>{task.title}</td>

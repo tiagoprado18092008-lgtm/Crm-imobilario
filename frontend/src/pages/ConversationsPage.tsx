@@ -24,7 +24,7 @@ import type { Contact, Conversation, Message, User as UserType } from '../types'
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 const CHANNEL_COLOR: Record<string, string> = {
-  WHATSAPP: '#25d366', EMAIL: '#3b82f6',
+  WHATSAPP: '#25d366', EMAIL: 'var(--accent)',
   INSTAGRAM: '#e1306c', SMS: '#f59e0b', INTERNAL: '#8b5cf6',
 }
 
@@ -53,7 +53,7 @@ function getInitials(name: string): string {
 }
 
 function getAvatarColor(name: string): string {
-  const colors = ['#6366f1','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#10b981','#3b82f6','#ef4444']
+  const colors = ['var(--accent)','#8b5cf6','#ec4899','#14b8a6','#f59e0b','#10b981','var(--accent)','#ef4444']
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
   return colors[Math.abs(hash) % colors.length]
@@ -96,9 +96,9 @@ const Avatar: React.FC<{ name: string; size?: number; channel?: string }> = ({ n
         <div style={{
           position: 'absolute', bottom: -2, right: -2,
           width: 16, height: 16, borderRadius: '50%',
-          background: 'var(--bg-card)',
+          background: 'var(--surface)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: '1.5px solid var(--bg-card)',
+          border: '1.5px solid var(--surface)',
         }}>
           <ChannelIcon channel={channel} size={9} />
         </div>
@@ -151,15 +151,15 @@ const NewConvModal: React.FC<{ onClose: () => void; onCreated: (c: Conversation)
 
   const chs: { id: 'WHATSAPP' | 'EMAIL' | 'SMS'; label: string; color: string }[] = [
     { id: 'WHATSAPP', label: 'WhatsApp', color: '#25d366' },
-    { id: 'EMAIL', label: 'Email', color: '#3b82f6' },
+    { id: 'EMAIL', label: 'Email', color: 'var(--accent)' },
     { id: 'SMS', label: 'SMS', color: '#f59e0b' },
   ]
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={{ background: 'var(--bg-card)', borderRadius: 16, width: 500, border: '1px solid var(--border-color)', boxShadow: '0 24px 80px rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 16, width: 500, border: '1px solid var(--border)', boxShadow: '0 24px 80px rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
         {/* Header */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Nova Conversa</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}><X size={17} /></button>
         </div>
@@ -173,7 +173,7 @@ const NewConvModal: React.FC<{ onClose: () => void; onCreated: (c: Conversation)
                 value={search}
                 onChange={e => { setSearch(e.target.value); if (selected) setSelected(null) }}
                 placeholder="Pesquisar por nome ou telefone..."
-                style={{ width: '100%', padding: '9px 12px 9px 36px', borderRadius: 10, border: selected ? '1.5px solid #25d366' : '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '9px 12px 9px 36px', borderRadius: 10, border: selected ? '1.5px solid #25d366' : '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
                 autoFocus
               />
               <Search size={13} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
@@ -194,7 +194,7 @@ const NewConvModal: React.FC<{ onClose: () => void; onCreated: (c: Conversation)
 
           {/* Contacts table */}
           {!selected && (
-            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: 10, minHeight: 0 }}>
+            <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 10, minHeight: 0 }}>
               {loading ? (
                 <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>A carregar...</div>
               ) : filtered.length === 0 ? (
@@ -202,7 +202,7 @@ const NewConvModal: React.FC<{ onClose: () => void; onCreated: (c: Conversation)
               ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-page)' }}>
+                    <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
                       <th style={{ padding: '8px 14px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Nome</th>
                       <th style={{ padding: '8px 14px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Telefone</th>
                       <th style={{ padding: '8px 14px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Email</th>
@@ -212,8 +212,8 @@ const NewConvModal: React.FC<{ onClose: () => void; onCreated: (c: Conversation)
                     {filtered.map(c => (
                       <tr key={c.id}
                         onClick={() => { setSelected(c); setSearch('') }}
-                        style={{ borderBottom: '1px solid var(--border-color)', cursor: 'pointer', transition: 'background 0.1s' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                        style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer', transition: 'background 0.1s' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
                         onMouseLeave={e => (e.currentTarget.style.background = '')}
                       >
                         <td style={{ padding: '9px 14px' }}>
@@ -237,7 +237,7 @@ const NewConvModal: React.FC<{ onClose: () => void; onCreated: (c: Conversation)
             <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>Canal</label>
             <div style={{ display: 'flex', gap: 8 }}>
               {chs.map(ch => (
-                <button key={ch.id} onClick={() => setChannel(ch.id)} style={{ flex: 1, padding: '9px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600, border: channel === ch.id ? `2px solid ${ch.color}` : '2px solid var(--border-color)', background: channel === ch.id ? ch.color + '15' : 'transparent', color: channel === ch.id ? ch.color : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <button key={ch.id} onClick={() => setChannel(ch.id)} style={{ flex: 1, padding: '9px', borderRadius: 10, cursor: 'pointer', fontSize: 13, fontWeight: 600, border: channel === ch.id ? `2px solid ${ch.color}` : '2px solid var(--border)', background: channel === ch.id ? ch.color + '15' : 'transparent', color: channel === ch.id ? ch.color : 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   <ChannelIcon channel={ch.id} size={13} /> {ch.label}
                 </button>
               ))}
@@ -246,8 +246,8 @@ const NewConvModal: React.FC<{ onClose: () => void; onCreated: (c: Conversation)
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-            <button onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
-            <button onClick={handleCreate} disabled={!selected || creating} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: !selected || creating ? 'var(--bg-page)' : 'linear-gradient(135deg,#1a2e4a,#c9a84c)', color: !selected || creating ? 'var(--text-muted)' : '#fff', fontSize: 13, fontWeight: 700, cursor: !selected || creating ? 'not-allowed' : 'pointer' }}>
+            <button onClick={onClose} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
+            <button onClick={handleCreate} disabled={!selected || creating} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: !selected || creating ? 'var(--surface-2)' : 'linear-gradient(135deg,#1a2e4a,#c9a84c)', color: !selected || creating ? 'var(--text-muted)' : '#fff', fontSize: 13, fontWeight: 700, cursor: !selected || creating ? 'not-allowed' : 'pointer' }}>
               {creating ? 'A criar...' : 'Criar Conversa'}
             </button>
           </div>
@@ -268,7 +268,7 @@ const MessageBubble: React.FC<{ msg: Message; isOutbound: boolean }> = ({ msg, i
   if (isCall) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 16px', borderRadius: 20, background: 'var(--bg-page)', border: '1px solid var(--border-color)', fontSize: 12, color: 'var(--text-muted)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 16px', borderRadius: 20, background: 'var(--surface-2)', border: '1px solid var(--border)', fontSize: 12, color: 'var(--text-muted)' }}>
           <PhoneCall size={12} style={{ color: '#8b5cf6' }} />
           <span>{msg.content}</span>
           <span style={{ opacity: 0.6 }}>· {format(parseISO(msg.createdAt), 'HH:mm')}</span>
@@ -279,9 +279,9 @@ const MessageBubble: React.FC<{ msg: Message; isOutbound: boolean }> = ({ msg, i
 
   if (isEmail) {
     return (
-      <div style={{ margin: '6px 16px', borderRadius: 10, border: '1px solid var(--border-color)', background: 'var(--bg-card)', overflow: 'hidden' }}>
+      <div style={{ margin: '6px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface)', overflow: 'hidden' }}>
         <div onClick={() => setExpanded(e => !e)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', cursor: 'pointer', justifyContent: 'space-between' }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
           onMouseLeave={e => (e.currentTarget.style.background = '')}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <Avatar name={isOutbound ? 'Eu' : (msg.sentBy?.name || 'Contacto')} size={28} />
@@ -296,7 +296,7 @@ const MessageBubble: React.FC<{ msg: Message; isOutbound: boolean }> = ({ msg, i
           </div>
         </div>
         {expanded && (
-          <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', background: 'var(--bg-page)' }}>
+          <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-wrap', background: 'var(--surface-2)' }}>
             {msg.content}
           </div>
         )}
@@ -327,8 +327,8 @@ const MessageBubble: React.FC<{ msg: Message; isOutbound: boolean }> = ({ msg, i
         <div style={{
           padding: '9px 13px',
           borderRadius: isOutbound ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-          background: isOutbound ? 'linear-gradient(135deg,#1a2e4a,#243d5e)' : 'var(--bg-page)',
-          border: isOutbound ? 'none' : '1px solid var(--border-color)',
+          background: isOutbound ? 'linear-gradient(135deg,#1a2e4a,#243d5e)' : 'var(--surface-2)',
+          border: isOutbound ? 'none' : '1px solid var(--border)',
           color: isOutbound ? '#fff' : 'var(--text-primary)',
           fontSize: 13, lineHeight: 1.55, wordBreak: 'break-word',
         }}>
@@ -353,11 +353,11 @@ const MessageBubble: React.FC<{ msg: Message; isOutbound: boolean }> = ({ msg, i
 
 const DateDivider: React.FC<{ date: string }> = ({ date }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '12px 16px' }}>
-    <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
-    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5, padding: '3px 10px', background: 'var(--bg-page)', borderRadius: 20, border: '1px solid var(--border-color)' }}>
+    <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 5, padding: '3px 10px', background: 'var(--surface-2)', borderRadius: 20, border: '1px solid var(--border)' }}>
       <Calendar size={10} /> {date}
     </span>
-    <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
+    <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
   </div>
 )
 
@@ -378,11 +378,11 @@ const ContactInfoPanel: React.FC<{ contact: Contact; conversation: Conversation;
   }
 
   const row = (label: string, value: string, field?: keyof typeof form) => (
-    <div style={{ padding: '7px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+    <div style={{ padding: '7px 0', borderBottom: '1px solid var(--border)' }}>
       <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
       {editing && field ? (
         <input value={form[field]} onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
-          style={{ width: '100%', padding: '4px 8px', borderRadius: 7, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+          style={{ width: '100%', padding: '4px 8px', borderRadius: 7, border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
       ) : (
         <p style={{ margin: 0, fontSize: 13, color: value ? 'var(--text-primary)' : 'var(--text-muted)' }}>{value || '—'}</p>
       )}
@@ -390,16 +390,16 @@ const ContactInfoPanel: React.FC<{ contact: Contact; conversation: Conversation;
   )
 
   return (
-    <div style={{ width: 280, minWidth: 280, display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border-color)', background: 'var(--bg-card)', overflow: 'hidden' }}>
+    <div style={{ width: 280, minWidth: 280, display: 'flex', flexDirection: 'column', borderLeft: '1px solid var(--border)', background: 'var(--surface)', overflow: 'hidden' }}>
       {/* header */}
-      <div style={{ padding: '13px 16px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ padding: '13px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>Informação do Contacto</span>
         <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><ChevronRight size={16} /></button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {/* avatar + name */}
-        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, borderBottom: '1px solid var(--border)' }}>
           <Avatar name={contact.name} size={56} />
           <div style={{ textAlign: 'center' }}>
             <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{contact.name}</p>
@@ -413,13 +413,13 @@ const ContactInfoPanel: React.FC<{ contact: Contact; conversation: Conversation;
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
             {editing ? (
               <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={() => setEditing(false)} style={{ padding: '3px 9px', borderRadius: 7, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer' }}>Cancelar</button>
+                <button onClick={() => setEditing(false)} style={{ padding: '3px 9px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer' }}>Cancelar</button>
                 <button onClick={save} disabled={saving} style={{ padding: '3px 9px', borderRadius: 7, border: 'none', background: '#c9a84c', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', gap: 4, alignItems: 'center' }}>
                   <Save size={10} /> {saving ? 'A guardar...' : 'Guardar'}
                 </button>
               </div>
             ) : (
-              <button onClick={() => setEditing(true)} style={{ padding: '3px 9px', borderRadius: 7, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', display: 'flex', gap: 4, alignItems: 'center' }}>
+              <button onClick={() => setEditing(true)} style={{ padding: '3px 9px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontSize: 11, cursor: 'pointer', display: 'flex', gap: 4, alignItems: 'center' }}>
                 <Edit2 size={10} /> Editar
               </button>
             )}
@@ -431,23 +431,23 @@ const ContactInfoPanel: React.FC<{ contact: Contact; conversation: Conversation;
         </div>
 
         {/* assigned */}
-        <div style={{ padding: '0 16px 12px', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ padding: '0 16px 12px', borderBottom: '1px solid var(--border)' }}>
           <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Responsável</p>
           <select value={conversation.assignedToId || ''} onChange={async e => {
             await assignConversation(conversation.id, e.target.value)
             onConvUpdate({ ...conversation, assignedToId: e.target.value })
-          }} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 12, outline: 'none' }}>
+          }} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)', fontSize: 12, outline: 'none' }}>
             <option value="">Sem responsável</option>
             {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
           </select>
         </div>
 
         {/* tags */}
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
           <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tags</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
             {(contact.tags || []).map((tag: string) => (
-              <span key={tag} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 20, background: 'var(--bg-page)', border: '1px solid var(--border-color)', fontSize: 11, color: 'var(--text-secondary)' }}>
+              <span key={tag} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 20, background: 'var(--surface-2)', border: '1px solid var(--border)', fontSize: 11, color: 'var(--text-secondary)' }}>
                 {tag} <X size={9} style={{ cursor: 'pointer', color: 'var(--text-muted)' }} />
               </span>
             ))}
@@ -457,14 +457,14 @@ const ContactInfoPanel: React.FC<{ contact: Contact; conversation: Conversation;
           </div>
           <input value={tagInput} onChange={e => setTagInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') setTagInput('') }}
             placeholder="Adicionar tag..."
-            style={{ width: '100%', padding: '5px 8px', borderRadius: 7, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+            style={{ width: '100%', padding: '5px 8px', borderRadius: 7, border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
         </div>
 
         {/* DND */}
         <div style={{ padding: '12px 16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
             <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>Não Perturbar (DND)</p>
-            <button onClick={() => setDnd(d => !d)} style={{ width: 38, height: 20, borderRadius: 10, border: 'none', background: dnd ? '#ef4444' : 'var(--border-color)', cursor: 'pointer', position: 'relative', transition: 'background 200ms' }}>
+            <button onClick={() => setDnd(d => !d)} style={{ width: 38, height: 20, borderRadius: 10, border: 'none', background: dnd ? '#ef4444' : 'var(--border)', cursor: 'pointer', position: 'relative', transition: 'background 200ms' }}>
               <div style={{ position: 'absolute', top: 2, left: dnd ? 20 : 2, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 200ms' }} />
             </button>
           </div>
@@ -479,7 +479,7 @@ const ContactInfoPanel: React.FC<{ contact: Contact; conversation: Conversation;
         {/* quick actions */}
         <div style={{ padding: '0 16px 16px' }}>
           <button onClick={() => contact.phone && useCallStore.getState().openDialer(contact.phone, contact.id)}
-            style={{ width: '100%', padding: '9px', borderRadius: 9, border: 'none', background: 'rgba(99,102,241,0.1)', color: '#818cf8', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            style={{ width: '100%', padding: '9px', borderRadius: 9, border: 'none', background: 'rgba(46,107,230,0.1)', color: '#818cf8', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <Phone size={13} /> Ligar para {contact.phone || 'contacto'}
           </button>
         </div>
@@ -512,7 +512,7 @@ const Composer: React.FC<{
   const channels: { id: ComposerChannel; label: string; color: string }[] = [
     { id: 'SMS', label: 'SMS', color: '#f59e0b' },
     { id: 'WHATSAPP', label: 'WhatsApp', color: '#25d366' },
-    { id: 'EMAIL', label: 'E-mail', color: '#3b82f6' },
+    { id: 'EMAIL', label: 'E-mail', color: 'var(--accent)' },
     { id: 'INTERNAL', label: 'Interno', color: '#8b5cf6' },
   ]
 
@@ -528,9 +528,9 @@ const Composer: React.FC<{
   }
 
   return (
-    <div style={{ borderTop: '1px solid var(--border-color)', background: 'var(--bg-card)', flexShrink: 0 }}>
+    <div style={{ borderTop: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
       {/* channel tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', padding: '0 16px' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', padding: '0 16px' }}>
         {channels.map(ch => (
           <button key={ch.id} onClick={() => setActiveChannel(ch.id)} style={{
             padding: '9px 14px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'transparent',
@@ -547,7 +547,7 @@ const Composer: React.FC<{
         {/* email subject */}
         {activeChannel === 'EMAIL' && (
           <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Assunto:"
-            style={{ width: '100%', marginBottom: 8, padding: '7px 12px', borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+            style={{ width: '100%', marginBottom: 8, padding: '7px 12px', borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
         )}
 
         {/* 24h warning for whatsapp */}
@@ -564,7 +564,7 @@ const Composer: React.FC<{
           rows={3}
           style={{
             width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--input-border)',
-            background: activeChannel === 'INTERNAL' ? '#fefce8' : 'var(--input-bg)',
+            background: activeChannel === 'INTERNAL' ? '#fefce8' : 'var(--surface-2)',
             color: 'var(--text-primary)', fontSize: 13, resize: 'none', outline: 'none', lineHeight: 1.5,
             fontFamily: 'inherit', boxSizing: 'border-box',
           }}
@@ -583,12 +583,12 @@ const Composer: React.FC<{
 
         {/* action bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-          <button onClick={() => setShowTemplates(true)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+          <button onClick={() => setShowTemplates(true)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
             <FileText size={13} /> Templates
           </button>
           <button onClick={handleSend} disabled={!text.trim() || sending} style={{
             display: 'flex', alignItems: 'center', gap: 6, padding: '7px 18px', borderRadius: 9, border: 'none', cursor: !text.trim() || sending ? 'not-allowed' : 'pointer',
-            background: !text.trim() || sending ? 'var(--bg-page)' : 'linear-gradient(135deg,#1a2e4a,#c9a84c)',
+            background: !text.trim() || sending ? 'var(--surface-2)' : 'linear-gradient(135deg,#1a2e4a,#c9a84c)',
             color: !text.trim() || sending ? 'var(--text-muted)' : '#fff', fontSize: 13, fontWeight: 700,
           }}>
             {sending ? 'A enviar...' : <><Send size={13} /> Enviar</>}
@@ -802,17 +802,17 @@ export const ConversationsPage: React.FC = () => {
 
   const channelButtons: { id: string; label: string; color: string }[] = [
     { id: 'WHATSAPP', label: 'WhatsApp', color: '#25d366' },
-    { id: 'EMAIL', label: 'Email', color: '#3b82f6' },
+    { id: 'EMAIL', label: 'Email', color: 'var(--accent)' },
     { id: 'SMS', label: 'SMS', color: '#f59e0b' },
   ]
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden', background: 'var(--bg-page)' }}>
+    <div style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden', background: 'var(--surface-2)' }}>
 
       {/* ── COL 1: Filter Sidebar (240px) ── */}
-      <div style={{ width: 240, minWidth: 240, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border-color)', background: 'var(--bg-card)', overflow: 'hidden' }}>
+      <div style={{ width: 240, minWidth: 240, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border)', background: 'var(--surface)', overflow: 'hidden' }}>
         {/* header */}
-        <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-primary)' }}>Conversas</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, color: isLive ? '#22c55e' : 'var(--text-muted)' }}>
@@ -835,13 +835,13 @@ export const ConversationsPage: React.FC = () => {
                   <button key={item.id} onClick={() => setFilter(item.id)} style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '7px 16px', border: 'none', cursor: 'pointer', textAlign: 'left',
-                    background: isActive ? 'rgba(99,102,241,0.08)' : 'transparent',
-                    color: isActive ? '#6366f1' : 'var(--text-secondary)',
+                    background: isActive ? 'rgba(46,107,230,0.08)' : 'transparent',
+                    color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
                     fontWeight: isActive ? 700 : 500, fontSize: 13,
-                    borderLeft: `3px solid ${isActive ? '#6366f1' : 'transparent'}`,
+                    borderLeft: `3px solid ${isActive ? 'var(--accent)' : 'transparent'}`,
                     transition: 'all 100ms',
                   }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--hover-bg)' }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--surface-3)' }}
                     onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = '' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -860,12 +860,12 @@ export const ConversationsPage: React.FC = () => {
           ))}
 
           {/* channel filters */}
-          <div style={{ padding: '8px 16px', marginTop: 4, borderTop: '1px solid var(--border-color)' }}>
+          <div style={{ padding: '8px 16px', marginTop: 4, borderTop: '1px solid var(--border)' }}>
             <p style={{ margin: '0 0 8px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Canal</p>
             <div style={{ display: 'flex', gap: 5 }}>
               {channelButtons.map(ch => (
                 <button key={ch.id} onClick={() => setChannelFilter(channelFilter === ch.id ? null : ch.id)} title={ch.label} style={{
-                  flex: 1, padding: '6px', borderRadius: 8, border: `1.5px solid ${channelFilter === ch.id ? ch.color : 'var(--border-color)'}`,
+                  flex: 1, padding: '6px', borderRadius: 8, border: `1.5px solid ${channelFilter === ch.id ? ch.color : 'var(--border)'}`,
                   background: channelFilter === ch.id ? ch.color + '18' : 'transparent',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 120ms',
@@ -879,18 +879,18 @@ export const ConversationsPage: React.FC = () => {
       </div>
 
       {/* ── COL 2: Conversation list (380px) ── */}
-      <div style={{ width: 360, minWidth: 360, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border-color)', background: 'var(--bg-card)', overflow: 'hidden' }}>
+      <div style={{ width: 360, minWidth: 360, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border)', background: 'var(--surface)', overflow: 'hidden' }}>
         {/* list header */}
-        <div style={{ padding: '12px 14px 8px', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ padding: '12px 14px 8px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ position: 'relative' }}>
             <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Pesquisar conversas..."
-              style={{ width: '100%', padding: '7px 10px 7px 30px', borderRadius: 9, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', padding: '7px 10px 7px 30px', borderRadius: 9, border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
             <div style={{ display: 'flex', gap: 0 }}>
               {(['Conversas', 'Acções'] as const).map((t, i) => (
-                <button key={t} style={{ padding: '4px 12px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'transparent', color: i === 0 ? '#6366f1' : 'var(--text-muted)', borderBottom: i === 0 ? '2px solid #6366f1' : '2px solid transparent' }}>
+                <button key={t} style={{ padding: '4px 12px', fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: 'transparent', color: i === 0 ? 'var(--accent)' : 'var(--text-muted)', borderBottom: i === 0 ? '2px solid var(--accent)' : '2px solid transparent' }}>
                   {t}
                 </button>
               ))}
@@ -916,12 +916,12 @@ export const ConversationsPage: React.FC = () => {
             const channelColor = CHANNEL_COLOR[conv.channel] || '#64748b'
             return (
               <div key={conv.id} onClick={() => selectConv(conv)} style={{
-                padding: '12px 14px', cursor: 'pointer', borderBottom: '1px solid var(--border-subtle)',
-                background: isSelected ? 'rgba(99,102,241,0.07)' : 'transparent',
-                borderLeft: isSelected ? '3px solid #6366f1' : '3px solid transparent',
+                padding: '12px 14px', cursor: 'pointer', borderBottom: '1px solid var(--border)',
+                background: isSelected ? 'rgba(46,107,230,0.07)' : 'transparent',
+                borderLeft: isSelected ? '3px solid var(--accent)' : '3px solid transparent',
                 transition: 'background 100ms',
               }}
-                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--hover-bg)' }}
+                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--surface-3)' }}
                 onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = '' }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
@@ -948,7 +948,7 @@ export const ConversationsPage: React.FC = () => {
                       </p>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                         {conv.isStarred && <Star size={11} fill="#f59e0b" style={{ color: '#f59e0b' }} />}
-                        {!conv.isRead && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1', flexShrink: 0, boxShadow: '0 0 0 2px rgba(99,102,241,0.25)' }} />}
+                        {!conv.isRead && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0, boxShadow: '0 0 0 2px rgba(46,107,230,0.25)' }} />}
                         <button onClick={e => handleToggleStar(conv.id, e)} className="star-btn" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: conv.isStarred ? '#f59e0b' : 'var(--text-muted)', opacity: conv.isStarred ? 1 : 0, transition: 'opacity 150ms' }}>
                           <Star size={11} fill={conv.isStarred ? '#f59e0b' : 'none'} />
                         </button>
@@ -969,7 +969,7 @@ export const ConversationsPage: React.FC = () => {
         {selected ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
             {/* thread header */}
-            <div style={{ padding: '11px 16px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+            <div style={{ padding: '11px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Avatar name={selected.contact?.name || selected.externalId || '?'} size={34} channel={selected.channel} />
                 <div>
@@ -983,19 +983,19 @@ export const ConversationsPage: React.FC = () => {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                <button onClick={e => handleToggleStar(selected.id, e)} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: selected.isStarred ? '#f59e0b' : 'var(--text-muted)' }}>
+                <button onClick={e => handleToggleStar(selected.id, e)} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: selected.isStarred ? '#f59e0b' : 'var(--text-muted)' }}>
                   <Star size={14} fill={selected.isStarred ? '#f59e0b' : 'none'} />
                 </button>
-                <button onClick={async () => { await updateConversationStatus(selected.id, 'ARCHIVED'); setSelected(s => s ? { ...s, status: 'ARCHIVED' } : null); loadConversations() }} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                <button onClick={async () => { await updateConversationStatus(selected.id, 'ARCHIVED'); setSelected(s => s ? { ...s, status: 'ARCHIVED' } : null); loadConversations() }} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
                   <Archive size={14} />
                 </button>
-                <button onClick={() => handleDeleteConversation(selected.id)} title="Apagar conversa" style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-color)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
+                <button onClick={() => handleDeleteConversation(selected.id)} title="Apagar conversa" style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
                   <Trash2 size={14} />
                 </button>
-                <button onClick={handleResolve} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, background: selected.status === 'OPEN' ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.12)', color: selected.status === 'OPEN' ? '#10b981' : '#6366f1' }}>
+                <button onClick={handleResolve} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, background: selected.status === 'OPEN' ? 'rgba(16,185,129,0.12)' : 'rgba(46,107,230,0.12)', color: selected.status === 'OPEN' ? '#10b981' : 'var(--accent)' }}>
                   {selected.status === 'OPEN' ? '✓ Resolver' : '↺ Reabrir'}
                 </button>
-                <button onClick={() => setShowInfo(v => !v)} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border-color)', background: showInfo ? 'rgba(99,102,241,0.08)' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: showInfo ? '#6366f1' : 'var(--text-muted)' }}>
+                <button onClick={() => setShowInfo(v => !v)} style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid var(--border)', background: showInfo ? 'rgba(46,107,230,0.08)' : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: showInfo ? 'var(--accent)' : 'var(--text-muted)' }}>
                   <User size={14} />
                 </button>
               </div>
@@ -1032,8 +1032,8 @@ export const ConversationsPage: React.FC = () => {
           </div>
         ) : (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(99,102,241,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <MessageCircle size={28} style={{ color: '#6366f1' }} />
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(46,107,230,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <MessageCircle size={28} style={{ color: 'var(--accent)' }} />
             </div>
             <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-secondary)', margin: 0 }}>Seleciona uma conversa</p>
             <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Clica numa conversa para ver as mensagens</p>
@@ -1051,7 +1051,7 @@ export const ConversationsPage: React.FC = () => {
               onConvUpdate={conv => setSelected(conv)}
             />
           ) : (
-            <div style={{ width: 280, minWidth: 280, borderLeft: '1px solid var(--border-color)', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 24 }}>
+            <div style={{ width: 280, minWidth: 280, borderLeft: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 24 }}>
               <User size={32} style={{ color: 'var(--text-muted)' }} />
               <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', margin: 0 }}>Sem contacto associado</p>
               <button onClick={() => setShowInfo(false)} style={{ fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Fechar painel</button>

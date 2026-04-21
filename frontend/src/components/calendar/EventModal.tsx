@@ -21,7 +21,7 @@ const EVENT_TYPES = [
   { value: 'other', label: 'Outro' },
 ]
 
-const COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#ec4899','#14b8a6']
+const COLORS = ['var(--accent)','#10b981','#f59e0b','#ef4444','var(--accent)','#8b5cf6','#ec4899','#14b8a6']
 
 const RECURRENCE = [
   { value: '', label: 'Não repete' },
@@ -55,7 +55,7 @@ export const EventModal: React.FC<EventModalProps> = ({
     recurringRule: event?.recurringRule || '',
     location: event?.location || '',
     description: event?.description || '',
-    color: event?.color || '#6366f1',
+    color: event?.color || 'var(--accent)',
     contactId: event?.contactId || '',
     attendees: (event?.attendees || []) as string[],
   })
@@ -109,7 +109,7 @@ export const EventModal: React.FC<EventModalProps> = ({
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '8px 10px', borderRadius: 8, fontSize: 13,
-    border: '1px solid var(--border-color)', background: 'var(--bg-input)',
+    border: '1px solid var(--border)', background: 'var(--bg-input)',
     color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
   }
   const labelStyle: React.CSSProperties = {
@@ -124,7 +124,7 @@ export const EventModal: React.FC<EventModalProps> = ({
       background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
     }}>
       <div style={{
-        background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+        background: 'var(--surface)', border: '1px solid var(--border)',
         borderRadius: 16, width: '100%', maxWidth: 580, maxHeight: '90vh',
         overflow: 'auto', padding: '24px 28px',
         boxShadow: '0 24px 48px rgba(0,0,0,0.3)',
@@ -245,14 +245,14 @@ export const EventModal: React.FC<EventModalProps> = ({
               value={contactSearch} onChange={e => setContactSearch(e.target.value)} />
             {contacts.length > 0 && contactSearch && (
               <div style={{
-                border: '1px solid var(--border-color)', borderRadius: 8, marginTop: 4,
-                maxHeight: 150, overflow: 'auto', background: 'var(--bg-card)',
+                border: '1px solid var(--border)', borderRadius: 8, marginTop: 4,
+                maxHeight: 150, overflow: 'auto', background: 'var(--surface)',
               }}>
                 {contacts.map(c => (
                   <div key={c.id} onClick={() => { set('contactId', c.id); setContactSearch(c.name) }}
                     style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 13,
-                      color: 'var(--text-primary)', borderBottom: '1px solid var(--border-color)',
-                      background: form.contactId === c.id ? 'var(--hover-bg)' : 'transparent' }}>
+                      color: 'var(--text-primary)', borderBottom: '1px solid var(--border)',
+                      background: form.contactId === c.id ? 'var(--surface-3)' : 'transparent' }}>
                     {c.name}
                     {c.email && <span style={{ color: 'var(--text-muted)', marginLeft: 6, fontSize: 11 }}>{c.email}</span>}
                   </div>
@@ -269,7 +269,7 @@ export const EventModal: React.FC<EventModalProps> = ({
                 onChange={e => setNewAttendee(e.target.value)} placeholder="email@exemplo.com"
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addAttendee() } }} />
               <button type="button" onClick={addAttendee} style={{
-                padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border-color)',
+                padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)',
                 background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13,
               }}>Adicionar</button>
             </div>
@@ -279,8 +279,8 @@ export const EventModal: React.FC<EventModalProps> = ({
                   <span key={a} style={{
                     display: 'flex', alignItems: 'center', gap: 4,
                     padding: '3px 8px', borderRadius: 20, fontSize: 11,
-                    background: 'var(--hover-bg)', color: 'var(--text-secondary)',
-                    border: '1px solid var(--border-color)',
+                    background: 'var(--surface-3)', color: 'var(--text-secondary)',
+                    border: '1px solid var(--border)',
                   }}>
                     {a}
                     <X size={10} style={{ cursor: 'pointer' }}
@@ -294,7 +294,7 @@ export const EventModal: React.FC<EventModalProps> = ({
           {/* Actions */}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             <button type="button" onClick={onClose} style={{
-              padding: '9px 20px', borderRadius: 8, border: '1px solid var(--border-color)',
+              padding: '9px 20px', borderRadius: 8, border: '1px solid var(--border)',
               background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13, fontWeight: 600,
             }}>Cancelar</button>
             <button type="submit" disabled={saving} style={{

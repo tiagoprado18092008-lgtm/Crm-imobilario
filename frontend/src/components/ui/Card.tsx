@@ -33,7 +33,7 @@ export const Card: React.FC<CardProps> = ({
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '14px 20px',
-            borderBottom: '1px solid var(--border-subtle)',
+            borderBottom: '1px solid var(--border)',
           }}
         >
           {title && (

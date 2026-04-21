@@ -62,7 +62,7 @@ export const DocumentsTab: React.FC<Props> = ({ propertyId, documents, onChange 
         <select
           value={uploadTipo}
           onChange={e => setUploadTipo(e.target.value)}
-          style={{ fontSize: 13, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '6px 10px', color: 'var(--text-primary)' }}
+          style={{ fontSize: 13, background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '6px 10px', color: 'var(--text-primary)' }}
         >
           <option value="">Tipo de documento</option>
           {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
@@ -70,7 +70,7 @@ export const DocumentsTab: React.FC<Props> = ({ propertyId, documents, onChange 
         <button
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, padding: '6px 14px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 8, cursor: 'pointer', color: 'var(--text-primary)' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, padding: '6px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer', color: 'var(--text-primary)' }}
         >
           <Upload size={14} /> {uploading ? 'A carregar...' : 'Adicionar documento'}
         </button>
@@ -80,7 +80,7 @@ export const DocumentsTab: React.FC<Props> = ({ propertyId, documents, onChange 
       <div
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
-        style={{ border: '2px dashed var(--border-color)', borderRadius: 12, padding: 20, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', marginBottom: 20 }}
+        style={{ border: '2px dashed var(--border)', borderRadius: 12, padding: 20, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', marginBottom: 20 }}
       >
         Ou arraste um documento para aqui
       </div>
@@ -93,7 +93,7 @@ export const DocumentsTab: React.FC<Props> = ({ propertyId, documents, onChange 
           {documents.map(doc => {
             const href = doc.url.startsWith('http') ? doc.url : `${apiBase}${doc.url}`
             return (
-              <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 10 }}>
+              <div key={doc.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10 }}>
                 <FileText size={18} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.nome}</p>

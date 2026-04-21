@@ -9,7 +9,7 @@ const TYPE_CONFIG: Record<string, { icon: React.ReactNode; bg: string; color: st
   WHATSAPP: { icon: <MessageCircle style={{ width: 13, height: 13 }} />, bg: '#f0fdf4', color: '#16a34a' },
   CALL:     { icon: <Phone   style={{ width: 13, height: 13 }} />, bg: '#fff7ed', color: '#ea580c' },
   MEETING:  { icon: <Users   style={{ width: 13, height: 13 }} />, bg: '#fdf4ff', color: '#9333ea' },
-  NOTE:     { icon: <FileText style={{ width: 13, height: 13 }} />, bg: 'var(--hover-bg)', color: 'var(--text-muted)' },
+  NOTE:     { icon: <FileText style={{ width: 13, height: 13 }} />, bg: 'var(--surface-3)', color: 'var(--text-muted)' },
 }
 
 interface InteractionLogProps {
@@ -46,15 +46,15 @@ export const InteractionLog: React.FC<InteractionLogProps> = ({ interactions }) 
         <div key={date}>
           {/* Date separator */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <div style={{ height: 1, flex: 1, background: 'var(--border-subtle)' }} />
+            <div style={{ height: 1, flex: 1, background: 'var(--border)' }} />
             <span style={{
               fontSize: 11, fontWeight: 600, color: 'var(--text-muted)',
               padding: '2px 10px', borderRadius: 20,
-              background: 'var(--hover-bg)', border: '1px solid var(--border-subtle)',
+              background: 'var(--surface-3)', border: '1px solid var(--border)',
             }}>
               {date}
             </span>
-            <div style={{ height: 1, flex: 1, background: 'var(--border-subtle)' }} />
+            <div style={{ height: 1, flex: 1, background: 'var(--border)' }} />
           </div>
 
           {/* Timeline items */}
@@ -70,7 +70,7 @@ export const InteractionLog: React.FC<InteractionLogProps> = ({ interactions }) 
                       width: 28, height: 28, borderRadius: '50%',
                       background: cfg.bg, color: cfg.color,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      border: '1.5px solid var(--border-subtle)',
+                      border: '1.5px solid var(--border)',
                       flexShrink: 0,
                     }}>
                       {cfg.icon}
@@ -78,7 +78,7 @@ export const InteractionLog: React.FC<InteractionLogProps> = ({ interactions }) 
                     {!isLast && (
                       <div style={{
                         width: 1, flex: 1, minHeight: 8,
-                        background: 'var(--border-subtle)',
+                        background: 'var(--border)',
                         margin: '2px 0',
                       }} />
                     )}
@@ -89,8 +89,8 @@ export const InteractionLog: React.FC<InteractionLogProps> = ({ interactions }) 
                     flex: 1, minWidth: 0,
                     padding: '6px 10px 10px',
                     borderRadius: 8,
-                    background: 'var(--hover-bg)',
-                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--surface-3)',
+                    border: '1px solid var(--border)',
                     marginBottom: isLast ? 0 : 4,
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>

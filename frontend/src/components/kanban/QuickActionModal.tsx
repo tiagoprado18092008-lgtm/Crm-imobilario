@@ -86,11 +86,11 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
       width: '100%', padding: '9px 12px', borderRadius: 8,
       border: '1px solid #e2e8f0', fontSize: 13, outline: 'none',
       fontFamily: 'inherit', color: 'var(--text-primary)',
-      background: 'var(--bg-card)', boxSizing: 'border-box',
+      background: 'var(--surface)', boxSizing: 'border-box',
     }
 
     return (
-      <Overlay onClose={onClose} title="Novo Agendamento" icon={<CalendarDays size={16} />} color="#6366f1">
+      <Overlay onClose={onClose} title="Novo Agendamento" icon={<CalendarDays size={16} />} color="var(--accent)">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <input autoFocus style={inputStyle} value={title}
             onChange={e => setTitle(e.target.value)}
@@ -121,7 +121,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
             placeholder="Local (opcional)" />
         </div>
         <ContextRow opportunity={opportunity} />
-        <ActionButtons onCancel={onClose} onConfirm={saveAppt} loading={loading} confirmLabel="Criar Agendamento" confirmColor="#6366f1" />
+        <ActionButtons onCancel={onClose} onConfirm={saveAppt} loading={loading} confirmLabel="Criar Agendamento" confirmColor="var(--accent)" />
       </Overlay>
     )
   }
@@ -148,7 +148,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
     }
 
     return (
-      <Overlay onClose={onClose} title="Adicionar Nota" icon={<FileText size={16} />} color="#6366f1">
+      <Overlay onClose={onClose} title="Adicionar Nota" icon={<FileText size={16} />} color="var(--accent)">
         <textarea
           autoFocus
           value={noteText}
@@ -229,7 +229,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
               style={{
                 width: '100%', padding: '8px 10px', borderRadius: 8,
                 border: '1px solid #e2e8f0', fontSize: 12,
-                outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--bg-card)',
+                outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--surface)',
               }}
             >
               <option value="LOW">Baixa</option>
@@ -321,7 +321,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
     }
 
     return (
-      <Overlay onClose={onClose} title="Enviar SMS" icon={<MessageSquare size={16} />} color="#3b82f6">
+      <Overlay onClose={onClose} title="Enviar SMS" icon={<MessageSquare size={16} />} color="var(--accent)">
         <div style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
           Para: <strong style={{ color: 'var(--text-primary)' }}>{contact?.name}</strong>
           {contact?.phone && <span style={{ marginLeft: 6, color: '#94a3b8' }}>{contact.phone}</span>}
@@ -369,7 +369,7 @@ const Overlay: React.FC<{
   >
     <div
       style={{
-        background: 'var(--bg-card)', borderRadius: 14, width: 420, maxWidth: '95vw',
+        background: 'var(--surface)', borderRadius: 14, width: 420, maxWidth: '95vw',
         boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
         overflow: 'hidden',
       }}
@@ -414,7 +414,7 @@ const ContextRow: React.FC<{ opportunity: Opportunity }> = ({ opportunity }) => 
   <div
     style={{
       display: 'flex', alignItems: 'center', gap: 8, marginTop: 12,
-      padding: '8px 10px', borderRadius: 8, background: 'var(--bg-page)',
+      padding: '8px 10px', borderRadius: 8, background: 'var(--surface-2)',
       border: '1px solid #f1f5f9',
     }}
   >
@@ -437,7 +437,7 @@ const ActionButtons: React.FC<{
       onClick={onCancel}
       style={{
         padding: '8px 16px', borderRadius: 8, border: '1px solid #e2e8f0',
-        background: 'var(--bg-page)', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+        background: 'var(--surface-2)', color: '#64748b', fontSize: 13, fontWeight: 600, cursor: 'pointer',
       }}
     >
       Cancelar

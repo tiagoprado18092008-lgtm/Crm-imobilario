@@ -84,7 +84,7 @@ export const GlobalSearch: React.FC = () => {
 
   const hasResults = allItems.length > 0
   const iconFor = (type: string) => {
-    if (type === 'contact') return <Users style={{ width: 16, height: 16, color: '#3b82f6' }} />
+    if (type === 'contact') return <Users style={{ width: 16, height: 16, color: 'var(--accent)' }} />
     if (type === 'property') return <Building2 style={{ width: 16, height: 16, color: '#8b5cf6' }} />
     return <TrendingUp style={{ width: 16, height: 16, color: '#22c55e' }} />
   }
@@ -113,7 +113,7 @@ export const GlobalSearch: React.FC = () => {
               onClick={() => goTo(type === 'contact' ? `/contacts/${item.id}` : type === 'property' ? `/properties/${item.id}` : `/opportunities/${item.id}`)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', cursor: 'pointer',
-                background: isSelected ? 'var(--hover-bg)' : 'transparent', transition: 'background 100ms',
+                background: isSelected ? 'var(--surface-3)' : 'transparent', transition: 'background 100ms',
               }}
               onMouseEnter={() => setSelectedIndex(idx)}
             >
@@ -144,7 +144,7 @@ export const GlobalSearch: React.FC = () => {
       }}
     >
       <div style={{
-        width: '100%', maxWidth: 560, background: 'var(--bg-card)', borderRadius: 16,
+        width: '100%', maxWidth: 560, background: 'var(--surface)', borderRadius: 16,
         boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden',
       }}>
         {/* Search input */}
@@ -163,11 +163,11 @@ export const GlobalSearch: React.FC = () => {
           />
           {loading && (
             <div style={{
-              width: 18, height: 18, border: '2px solid #e2e8f0', borderTopColor: '#3b82f6',
+              width: 18, height: 18, border: '2px solid #e2e8f0', borderTopColor: 'var(--accent)',
               borderRadius: '50%', animation: 'spin 0.6s linear infinite', flexShrink: 0,
             }} />
           )}
-          <button onClick={() => setOpen(false)} style={{ display: 'flex', alignItems: 'center', padding: 4, border: 'none', background: 'var(--hover-bg)', borderRadius: 6, cursor: 'pointer', color: '#64748b', fontSize: 11, gap: 2 }}>
+          <button onClick={() => setOpen(false)} style={{ display: 'flex', alignItems: 'center', padding: 4, border: 'none', background: 'var(--surface-3)', borderRadius: 6, cursor: 'pointer', color: '#64748b', fontSize: 11, gap: 2 }}>
             <span>Esc</span>
           </button>
         </div>

@@ -77,7 +77,7 @@ export const PropertyDetailPage: React.FC = () => {
       {/* Galeria + sidebar */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 20 }}>
         {/* Galeria de capa */}
-        <div style={{ background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', overflow: 'hidden', minHeight: 220 }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden', minHeight: 220 }}>
           {property.photos && property.photos.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               <img
@@ -99,7 +99,7 @@ export const PropertyDetailPage: React.FC = () => {
                   {property.photos.length > 6 && (
                     <button
                       onClick={() => setActiveTab('photos')}
-                      style={{ width: 72, height: 52, borderRadius: 6, flexShrink: 0, background: 'var(--bg-page)', border: '1px dashed var(--border-color)', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)' }}
+                      style={{ width: 72, height: 52, borderRadius: 6, flexShrink: 0, background: 'var(--surface-2)', border: '1px dashed var(--border)', cursor: 'pointer', fontSize: 12, color: 'var(--text-muted)' }}
                     >
                       +{property.photos.length - 6}
                     </button>
@@ -127,8 +127,8 @@ export const PropertyDetailPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div style={{ background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', overflow: 'hidden' }}>
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
           {tabs.map(tab => (
             <button
               key={tab.key}

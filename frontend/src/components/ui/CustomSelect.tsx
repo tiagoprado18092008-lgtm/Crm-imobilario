@@ -99,7 +99,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           fontSize: fs,
           borderRadius: 8,
           border: `1px solid ${error ? '#f87171' : open ? '#c9a84c' : 'var(--input-border)'}`,
-          background: disabled ? 'var(--hover-bg)' : 'var(--input-bg)',
+          background: disabled ? 'var(--surface-3)' : 'var(--surface-2)',
           color: selected ? 'var(--text-primary)' : 'var(--text-muted)',
           cursor: disabled ? 'not-allowed' : 'pointer',
           textAlign: 'left',
@@ -138,8 +138,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
             left: 0,
             right: 0,
             zIndex: 9999,
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-color)',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
             borderRadius: 12,
             boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)',
             overflow: 'hidden',
@@ -147,8 +147,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           }}
         >
           {searchable && (
-            <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border-subtle)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 8, background: 'var(--hover-bg)', border: '1px solid var(--input-border)' }}>
+            <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 8, background: 'var(--surface-3)', border: '1px solid var(--input-border)' }}>
                 <Search size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                 <input
                   ref={searchRef}
@@ -195,7 +195,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                     opacity: opt.disabled ? 0.5 : 1,
                   }}
                   onMouseEnter={e => {
-                    if (!isSelected && !opt.disabled) (e.currentTarget as HTMLElement).style.background = 'var(--hover-bg)'
+                    if (!isSelected && !opt.disabled) (e.currentTarget as HTMLElement).style.background = 'var(--surface-3)'
                   }}
                   onMouseLeave={e => {
                     if (!isSelected) (e.currentTarget as HTMLElement).style.background = isSelected ? 'rgba(201,168,76,0.1)' : 'transparent'

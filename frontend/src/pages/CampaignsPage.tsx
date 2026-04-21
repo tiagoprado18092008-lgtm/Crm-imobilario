@@ -34,7 +34,7 @@ const tdSt: React.CSSProperties = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  DRAFT: '#94a3b8', SCHEDULED: '#f59e0b', SENDING: '#6366f1',
+  DRAFT: '#94a3b8', SCHEDULED: '#f59e0b', SENDING: 'var(--accent)',
   SENT: '#10b981', CANCELLED: '#ef4444',
 }
 const STATUS_LABELS: Record<string, string> = {
@@ -117,7 +117,7 @@ export const CampaignsPage: React.FC = () => {
         style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center rounded-xl"
-            style={{ width: 38, height: 38, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.25)' }}>
+            style={{ width: 38, height: 38, background: 'rgba(46,107,230,0.15)', border: '1px solid rgba(46,107,230,0.25)' }}>
             <Mail size={18} style={{ color: '#818cf8' }} />
           </div>
           <div>
@@ -127,7 +127,7 @@ export const CampaignsPage: React.FC = () => {
         </div>
         <button onClick={() => setShowModal(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-semibold"
-          style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', cursor: 'pointer' }}>
+          style={{ background: 'linear-gradient(135deg,var(--accent),#4f46e5)', border: 'none', cursor: 'pointer' }}>
           <Plus size={15} /> Nova campanha
         </button>
       </div>
@@ -136,7 +136,7 @@ export const CampaignsPage: React.FC = () => {
         {/* Stats */}
         <div className="grid grid-cols-4 gap-3 mb-5">
           {[
-            { label: 'Total campanhas', value: campaigns.length, color: '#6366f1' },
+            { label: 'Total campanhas', value: campaigns.length, color: 'var(--accent)' },
             { label: 'Enviadas', value: campaigns.filter(c => c.status === 'SENT').length, color: '#10b981' },
             { label: 'Emails enviados', value: campaigns.reduce((s, c) => s + (c.sentCount || 0), 0), color: '#f59e0b' },
             { label: 'Rascunhos', value: campaigns.filter(c => c.status === 'DRAFT').length, color: '#94a3b8' },
@@ -156,7 +156,7 @@ export const CampaignsPage: React.FC = () => {
             <p className="font-medium text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>Sem campanhas</p>
             <button onClick={() => setShowModal(true)}
               className="mt-4 px-4 py-2 rounded-xl text-white text-sm font-medium"
-              style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', cursor: 'pointer' }}>
+              style={{ background: 'linear-gradient(135deg,var(--accent),#4f46e5)', border: 'none', cursor: 'pointer' }}>
               Criar primeira campanha
             </button>
           </div>
@@ -278,7 +278,7 @@ export const CampaignsPage: React.FC = () => {
                 </button>
                 <button onClick={handleCreate} disabled={saving || !form.name || !form.subject || !form.body}
                   className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
-                  style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', cursor: 'pointer' }}>
+                  style={{ background: 'linear-gradient(135deg,var(--accent),#4f46e5)', border: 'none', cursor: 'pointer' }}>
                   {saving ? 'A guardar...' : 'Criar campanha'}
                 </button>
               </div>

@@ -26,8 +26,8 @@ import {
 import { Badge } from '../components/ui/Badge'
 
 const AVATAR_COLORS = [
-  '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b',
-  '#10b981', '#3b82f6', '#ef4444', '#14b8a6',
+  'var(--accent)', '#8b5cf6', '#ec4899', '#f59e0b',
+  '#10b981', 'var(--accent)', '#ef4444', '#14b8a6',
 ]
 function avatarColor(name: string) {
   let h = 0
@@ -217,7 +217,7 @@ export const ContactDetailPage: React.FC = () => {
             </div>
 
             {contact.notes && (
-              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
                 <p className="text-xs font-semibold uppercase mb-1" style={{ color: 'var(--text-secondary)' }}>Notas</p>
                 <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{contact.notes}</p>
               </div>
@@ -232,7 +232,7 @@ export const ContactDetailPage: React.FC = () => {
 
             {/* BUYER details */}
             {contact.type === 'BUYER' && (contact.budget_min || contact.budget_max || contact.interest_type || contact.timeline) && (
-              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
                 <p className="text-xs font-semibold uppercase mb-2" style={{ color: 'var(--text-secondary)' }}>Perfil de Compra</p>
                 <div className="space-y-1 text-sm">
                   {(contact.budget_min || contact.budget_max) && (
@@ -263,7 +263,7 @@ export const ContactDetailPage: React.FC = () => {
 
             {/* OWNER details */}
             {contact.type === 'OWNER' && ((contact as any).property_address || (contact as any).asking_price) && (
-              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
                 <p className="text-xs font-semibold uppercase mb-2" style={{ color: 'var(--text-secondary)' }}>Dados do Imóvel</p>
                 <div className="space-y-1 text-sm">
                   {(contact as any).property_address && (
@@ -353,15 +353,15 @@ export const ContactDetailPage: React.FC = () => {
         <div className="lg:col-span-2">
           <Card padding={false}>
             {/* Tab Headers */}
-            <div className="flex" style={{ borderBottom: '1px solid var(--border-color)' }}>
+            <div className="flex" style={{ borderBottom: '1px solid var(--border)' }}>
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className="flex items-center gap-2 px-5 py-3 text-sm font-medium transition-colors"
                   style={{
-                    color: activeTab === tab.key ? '#6366f1' : 'var(--text-secondary)',
-                    borderBottom: activeTab === tab.key ? '2px solid #6366f1' : '2px solid transparent',
+                    color: activeTab === tab.key ? 'var(--accent)' : 'var(--text-secondary)',
+                    borderBottom: activeTab === tab.key ? '2px solid var(--accent)' : '2px solid transparent',
                     background: 'none',
                     cursor: 'pointer',
                   }}
@@ -370,8 +370,8 @@ export const ContactDetailPage: React.FC = () => {
                   <span
                     className="px-1.5 py-0.5 rounded-full text-xs"
                     style={{
-                      background: activeTab === tab.key ? 'rgba(99,102,241,0.12)' : 'var(--bg-page)',
-                      color: activeTab === tab.key ? '#6366f1' : 'var(--text-secondary)',
+                      background: activeTab === tab.key ? 'rgba(46,107,230,0.12)' : 'var(--surface-2)',
+                      color: activeTab === tab.key ? 'var(--accent)' : 'var(--text-secondary)',
                     }}
                   >
                     {tab.count}
@@ -394,7 +394,7 @@ export const ContactDetailPage: React.FC = () => {
                         <div
                           key={appt.id}
                           className="flex items-start gap-3 p-3 rounded-lg"
-                          style={{ background: 'var(--hover-bg)' }}
+                          style={{ background: 'var(--surface-3)' }}
                         >
                           <div style={{
                             width: 40, height: 40, borderRadius: 8, flexShrink: 0,
@@ -404,7 +404,7 @@ export const ContactDetailPage: React.FC = () => {
                             <span style={{ fontSize: 13, fontWeight: 700, color: '#4f46e5', lineHeight: 1 }}>
                               {start.getDate()}
                             </span>
-                            <span style={{ fontSize: 10, color: '#6366f1' }}>
+                            <span style={{ fontSize: 10, color: 'var(--accent)' }}>
                               {start.toLocaleString('pt-PT', { month: 'short' })}
                             </span>
                           </div>
@@ -442,7 +442,7 @@ export const ContactDetailPage: React.FC = () => {
                       <div
                         key={opp.id}
                         className="flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors"
-                        style={{ background: 'var(--hover-bg)' }}
+                        style={{ background: 'var(--surface-3)' }}
                         onClick={() => navigate('/pipeline')}
                       >
                         <div>
@@ -472,7 +472,7 @@ export const ContactDetailPage: React.FC = () => {
                       <div
                         key={task.id}
                         className="flex items-start gap-3 p-3 rounded-lg"
-                        style={{ background: 'var(--hover-bg)' }}
+                        style={{ background: 'var(--surface-3)' }}
                       >
                         <div className="flex-1">
                           <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{task.title}</p>

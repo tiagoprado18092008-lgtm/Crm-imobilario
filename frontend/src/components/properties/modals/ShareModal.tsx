@@ -31,11 +31,11 @@ export const ShareModal: React.FC<Props> = ({ isOpen, onClose, url }) => {
             <input
               readOnly
               value={url}
-              style={{ flex: 1, fontSize: 12, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-secondary)' }}
+              style={{ flex: 1, fontSize: 12, background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-secondary)' }}
             />
             <button
               onClick={copyLink}
-              style={{ padding: '8px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 8, cursor: 'pointer', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}
+              style={{ padding: '8px 12px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}
             >
               {copied ? <Check size={14} style={{ color: '#4ade80' }} /> : <Copy size={14} />}
               {copied ? 'Copiado' : 'Copiar'}
@@ -54,7 +54,7 @@ export const ShareModal: React.FC<Props> = ({ isOpen, onClose, url }) => {
           </a>
           <a
             href={`mailto:?subject=Imóvel&body=${waText}`}
-            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 0', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 0', background: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
           >
             Email
           </a>

@@ -39,8 +39,8 @@ import { TRIGGER_LABELS } from '../types/automation'
 
 /* ── Style tokens ─────────────────────────────────────────────── */
 const card: React.CSSProperties = {
-  background: 'var(--bg-card)',
-  border: '1px solid var(--border-color)',
+  background: 'var(--surface)',
+  border: '1px solid var(--border)',
   borderRadius: 16,
 }
 
@@ -73,7 +73,7 @@ const TRIGGERS = [
 
 const ACTION_TYPES = [
   { value: 'SEND_WHATSAPP', label: 'Enviar WhatsApp', icon: MessageSquare, color: '#25D366' },
-  { value: 'SEND_EMAIL', label: 'Enviar Email', icon: Mail, color: '#3b82f6' },
+  { value: 'SEND_EMAIL', label: 'Enviar Email', icon: Mail, color: 'var(--accent)' },
   { value: 'SEND_SMS', label: 'Enviar SMS', icon: Bell, color: '#f59e0b' },
   { value: 'CREATE_TASK', label: 'Criar Tarefa', icon: CheckSquare, color: '#8b5cf6' },
 ]
@@ -106,7 +106,7 @@ function AutomationV2Card({
   onViewEnrollments: () => void
 }) {
   const triggerType = automation.trigger?.type as TriggerType
-  const triggerStyle = TRIGGER_STYLE[triggerType] || { color: '#818cf8', bg: 'rgba(99,102,241,0.12)' }
+  const triggerStyle = TRIGGER_STYLE[triggerType] || { color: '#818cf8', bg: 'rgba(46,107,230,0.12)' }
   const triggerLabel = TRIGGER_LABELS[triggerType] || triggerType
 
   return (
@@ -115,8 +115,8 @@ function AutomationV2Card({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
       style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border-color)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
         borderRadius: 16, padding: 20,
         position: 'relative', overflow: 'hidden',
         boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
@@ -126,7 +126,7 @@ function AutomationV2Card({
       {automation.isActive && (
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-          background: 'linear-gradient(90deg, #6366f1, #818cf8)',
+          background: 'linear-gradient(90deg, var(--accent), #818cf8)',
         }} />
       )}
 
@@ -134,11 +134,11 @@ function AutomationV2Card({
         {/* Icon */}
         <div style={{
           width: 44, height: 44, borderRadius: 12,
-          background: automation.isActive ? '#eff6ff' : 'var(--hover-bg)',
+          background: automation.isActive ? '#eff6ff' : 'var(--surface-3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}>
-          <Zap size={20} style={{ color: automation.isActive ? '#6366f1' : 'var(--text-muted)' }} />
+          <Zap size={20} style={{ color: automation.isActive ? 'var(--accent)' : 'var(--text-muted)' }} />
         </div>
 
         {/* Info */}
@@ -150,7 +150,7 @@ function AutomationV2Card({
             {/* Toggle badge */}
             <span style={{
               fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 100,
-              background: automation.isActive ? '#f0fdf4' : 'var(--hover-bg)',
+              background: automation.isActive ? '#f0fdf4' : 'var(--surface-3)',
               color: automation.isActive ? '#16a34a' : 'var(--text-muted)',
             }}>
               {automation.isActive ? 'ATIVO' : 'INATIVO'}
@@ -200,14 +200,14 @@ function AutomationV2Card({
           <button
             onClick={onEdit}
             title="Editar"
-            style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--hover-bg)', border: '1px solid var(--border-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}
+            style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--surface-3)', border: '1px solid var(--border)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}
           >
             <Edit3 size={14} />
           </button>
           <button
             onClick={onToggle}
             title={automation.isActive ? 'Desativar' : 'Ativar'}
-            style={{ width: 32, height: 32, borderRadius: 8, background: automation.isActive ? '#f0fdf4' : 'var(--hover-bg)', border: `1px solid ${automation.isActive ? '#bbf7d0' : 'var(--border-color)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: automation.isActive ? '#16a34a' : 'var(--text-muted)' }}
+            style={{ width: 32, height: 32, borderRadius: 8, background: automation.isActive ? '#f0fdf4' : 'var(--surface-3)', border: `1px solid ${automation.isActive ? '#bbf7d0' : 'var(--border)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: automation.isActive ? '#16a34a' : 'var(--text-muted)' }}
           >
             {automation.isActive ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
           </button>
@@ -386,7 +386,7 @@ export const AutomationsPage: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {/* ── Toolbar ── */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-        <div style={{ display: 'flex', background: 'var(--hover-bg)', borderRadius: 10, padding: 3, border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', background: 'var(--surface-3)', borderRadius: 10, padding: 3, border: '1px solid var(--border)' }}>
           {(['v2', 'v1'] as const).map(tab => (
             <button
               key={tab}
@@ -394,7 +394,7 @@ export const AutomationsPage: React.FC = () => {
               style={{
                 padding: '6px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
                 background: activeTab === tab ? '#fff' : 'transparent',
-                color: activeTab === tab ? '#6366f1' : 'var(--text-muted)',
+                color: activeTab === tab ? 'var(--accent)' : 'var(--text-muted)',
                 fontSize: 13, fontWeight: activeTab === tab ? 700 : 400,
                 transition: 'all 0.2s',
                 boxShadow: activeTab === tab ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
@@ -409,12 +409,12 @@ export const AutomationsPage: React.FC = () => {
           {activeTab === 'v2' ? (
             <button
               onClick={() => openBuilder()}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, background: '#6366f1', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 13, fontWeight: 600 }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, background: 'var(--accent)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 13, fontWeight: 600 }}>
               <Plus size={15} /> Nova Automação
             </button>
           ) : (
             <button onClick={() => setShowNew(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, background: '#6366f1', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 13, fontWeight: 600 }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 8, background: 'var(--accent)', border: 'none', cursor: 'pointer', color: '#fff', fontSize: 13, fontWeight: 600 }}>
               <Plus size={15} /> Nova Regra
             </button>
           )}
@@ -427,7 +427,7 @@ export const AutomationsPage: React.FC = () => {
             {/* Stats row */}
             <div className="grid grid-cols-4 gap-3 mb-6">
               {[
-                { label: 'Total de automações', value: v2Stats.total, color: '#6366f1' },
+                { label: 'Total de automações', value: v2Stats.total, color: 'var(--accent)' },
                 { label: 'Ativas', value: v2Stats.active, color: '#16a34a' },
                 { label: 'Total de inscrições', value: v2Stats.totalEnrollments, color: '#2563eb' },
                 { label: 'Tipos de trigger', value: new Set(automationsV2.map(a => a.trigger?.type)).size, color: '#d97706' },
@@ -455,7 +455,7 @@ export const AutomationsPage: React.FC = () => {
                 style={{ ...card, padding: '60px 24px', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
               >
                 <div style={{ width: 64, height: 64, borderRadius: 20, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                  <Zap size={28} style={{ color: '#6366f1' }} />
+                  <Zap size={28} style={{ color: 'var(--accent)' }} />
                 </div>
                 <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
                   Ainda não tens automações
@@ -465,7 +465,7 @@ export const AutomationsPage: React.FC = () => {
                 </p>
                 <button
                   onClick={() => openBuilder()}
-                  style={{ padding: '10px 24px', background: '#6366f1', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                  style={{ padding: '10px 24px', background: 'var(--accent)', border: 'none', borderRadius: 10, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}
                 >
                   <Plus size={16} /> Criar primeira automação
                 </button>
@@ -500,7 +500,7 @@ export const AutomationsPage: React.FC = () => {
               {[
                 { label: 'Regras ativas', value: rules.filter(r => r.isActive).length, color: '#16a34a' },
                 { label: 'Ações configuradas', value: rules.reduce((acc, r) => acc + r.actions.length, 0), color: '#2563eb' },
-                { label: 'Execuções totais', value: rules.reduce((acc, r) => acc + (r._count?.logs || 0), 0), color: '#6366f1' },
+                { label: 'Execuções totais', value: rules.reduce((acc, r) => acc + (r._count?.logs || 0), 0), color: 'var(--accent)' },
               ].map(s => (
                 <div key={s.label} style={{ ...card, padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
                   <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
@@ -525,8 +525,8 @@ export const AutomationsPage: React.FC = () => {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                          style={{ background: rule.isActive ? '#eff6ff' : 'var(--hover-bg)' }}>
-                          <Zap size={18} style={{ color: rule.isActive ? '#6366f1' : 'var(--text-muted)' }} />
+                          style={{ background: rule.isActive ? '#eff6ff' : 'var(--surface-3)' }}>
+                          <Zap size={18} style={{ color: rule.isActive ? 'var(--accent)' : 'var(--text-muted)' }} />
                         </div>
                         <div>
                           <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{rule.name}</p>
@@ -540,9 +540,9 @@ export const AutomationsPage: React.FC = () => {
                         <button onClick={() => toggleRule(rule.id)}
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
                           style={{
-                            background: rule.isActive ? '#f0fdf4' : 'var(--hover-bg)',
+                            background: rule.isActive ? '#f0fdf4' : 'var(--surface-3)',
                             color: rule.isActive ? '#16a34a' : 'var(--text-muted)',
-                            border: `1px solid ${rule.isActive ? '#bbf7d0' : 'var(--border-color)'}`, cursor: 'pointer',
+                            border: `1px solid ${rule.isActive ? '#bbf7d0' : 'var(--border)'}`, cursor: 'pointer',
                           }}>
                           {rule.isActive ? <><Play size={12} /> Ativo</> : <><Pause size={12} /> Inativo</>}
                         </button>
@@ -559,7 +559,7 @@ export const AutomationsPage: React.FC = () => {
 
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-                        style={{ background: 'var(--hover-bg)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                        style={{ background: 'var(--surface-3)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
                         {getTriggerLabel(rule.trigger)}
                       </div>
                       {rule.actions.map((action, i) => {
@@ -601,8 +601,8 @@ export const AutomationsPage: React.FC = () => {
       {showNew && (
         <div className="fixed inset-0 flex items-center justify-center z-50" style={{ background: 'rgba(0,0,0,0.5)' }}>
           <div className="rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-            <div className="p-6" style={{ borderBottom: '1px solid var(--border-color)' }}>
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <div className="p-6" style={{ borderBottom: '1px solid var(--border)' }}>
               <h3 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>Nova Regra Clássica</h3>
             </div>
             <div className="p-6 space-y-4">
@@ -614,7 +614,7 @@ export const AutomationsPage: React.FC = () => {
                   onChange={e => setNewRule(r => ({ ...r, name: e.target.value }))}
                   placeholder="Ex: Speed to Lead"
                   className="w-full px-4 py-2.5 text-sm rounded-xl outline-none"
-                  style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }} />
+                  style={{ border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)' }} />
               </div>
               <div>
                 <CustomSelect
@@ -632,7 +632,7 @@ export const AutomationsPage: React.FC = () => {
                   const cfg = getActionConfig(action.type)
                   return (
                     <div key={i} className="flex items-center gap-2 mb-2 p-3 rounded-xl"
-                      style={{ background: 'var(--hover-bg)', border: '1px solid var(--border-color)' }}>
+                      style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                       <span className="text-xs font-medium" style={{ color: cfg?.color }}>{cfg?.label}</span>
                       {action.delay > 0 && (
                         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>(+{action.delay}min)</span>
@@ -642,7 +642,7 @@ export const AutomationsPage: React.FC = () => {
                   )
                 })}
                 <div className="mt-3 p-4 rounded-xl space-y-3"
-                  style={{ background: 'var(--hover-bg)', border: '1px dashed var(--border-color)' }}>
+                  style={{ background: 'var(--surface-3)', border: '1px dashed var(--border)' }}>
                   <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Adicionar ação</p>
                   <div className="grid grid-cols-2 gap-2">
                     <CustomSelect
@@ -655,16 +655,16 @@ export const AutomationsPage: React.FC = () => {
                       onChange={e => setNewAction(a => ({ ...a, delay: Number(e.target.value) }))}
                       placeholder="Delay (min)"
                       className="px-3 py-2 text-xs rounded-lg outline-none"
-                      style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }} />
+                      style={{ border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)' }} />
                   </div>
                   <input type="text" value={newAction.message || ''}
                     onChange={e => setNewAction(a => ({ ...a, message: e.target.value }))}
                     placeholder="Mensagem (use {{nome}}, {{consultor}}, {{data}})"
                     className="w-full px-3 py-2 text-xs rounded-lg outline-none"
-                    style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }} />
+                    style={{ border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)' }} />
                   <button onClick={addAction}
                     className="text-xs px-3 py-1.5 rounded-lg font-medium"
-                    style={{ background: '#eff6ff', color: '#6366f1', border: '1px solid #c7d2fe', cursor: 'pointer' }}>
+                    style={{ background: '#eff6ff', color: 'var(--accent)', border: '1px solid var(--accent)', cursor: 'pointer' }}>
                     + Adicionar ação
                   </button>
                 </div>
@@ -673,12 +673,12 @@ export const AutomationsPage: React.FC = () => {
             <div className="flex gap-3 px-6 pb-6">
               <button onClick={() => { setShowNew(false); setNewRule({ name: '', trigger: 'NEW_LEAD', actions: [], isActive: true }) }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer' }}>
+                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'transparent', cursor: 'pointer' }}>
                 Cancelar
               </button>
               <button onClick={saveRule} disabled={saving}
                 className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-                style={{ background: '#6366f1', border: 'none', cursor: saving ? 'not-allowed' : 'pointer' }}>
+                style={{ background: 'var(--accent)', border: 'none', cursor: saving ? 'not-allowed' : 'pointer' }}>
                 {saving && <Loader2 size={14} className="animate-spin" />}
                 Criar Regra
               </button>

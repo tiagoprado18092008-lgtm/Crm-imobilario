@@ -240,7 +240,7 @@ export const PropertiesPage: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Pesquisar propriedades..."
-            style={{ width: '100%', paddingLeft: 36, paddingRight: 12, paddingTop: 8, paddingBottom: 8, fontSize: 13, background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', outline: 'none' }}
+            style={{ width: '100%', paddingLeft: 36, paddingRight: 12, paddingTop: 8, paddingBottom: 8, fontSize: 13, background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 8, color: 'var(--text-primary)', outline: 'none' }}
           />
         </div>
         <div style={{ width: 176 }}>
@@ -281,11 +281,11 @@ export const PropertiesPage: React.FC = () => {
           onAction={() => { setEditProp(undefined); setShowModal(true) }}
         />
       ) : (
-        <div style={{ background: 'var(--bg-card)', borderRadius: 12, border: '1px solid var(--border-color)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: 'var(--bg-page)', borderBottom: '1px solid var(--border-color)' }}>
+                <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
                   <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Título</th>
                   <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Tipo</th>
                   <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Estado</th>
@@ -297,12 +297,12 @@ export const PropertiesPage: React.FC = () => {
                   <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Ações</th>
                 </tr>
               </thead>
-              <tbody style={{ borderColor: 'var(--border-subtle)' }}>
+              <tbody style={{ borderColor: 'var(--border)' }}>
                 {filtered.map((prop) => (
                   <tr
                     key={prop.id}
-                    style={{ borderBottom: '1px solid var(--border-subtle)', cursor: 'pointer' }}
-                    className="hover:bg-[var(--hover-bg)]"
+                    style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
+                    className="hover:bg-[var(--surface-3)]"
                     onClick={() => navigate(`/properties/${prop.id}`)}
                   >
                     <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{prop.title}</td>
@@ -343,7 +343,7 @@ export const PropertiesPage: React.FC = () => {
           </div>
 
           {totalPages > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderTop: '1px solid var(--border)' }}>
               <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
                 {(page - 1) * limit + 1}–{Math.min(page * limit, total)} de {total} propriedades
               </p>

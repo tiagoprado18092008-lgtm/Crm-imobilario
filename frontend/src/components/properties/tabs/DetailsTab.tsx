@@ -34,12 +34,12 @@ const InlineField: React.FC<InlineFieldProps> = ({ label, value, type = 'text', 
 
   if (type === 'select') {
     return (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
         <span style={{ fontSize: 12, color: 'var(--text-muted)', minWidth: 140 }}>{label}</span>
         <select
           value={current}
           onChange={(e) => { setCurrent(e.target.value); onSave(e.target.value) }}
-          style={{ fontSize: 13, color: 'var(--text-primary)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, padding: '2px 6px' }}
+          style={{ fontSize: 13, color: 'var(--text-primary)', background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 6, padding: '2px 6px' }}
         >
           <option value="">—</option>
           {options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -57,14 +57,14 @@ const InlineField: React.FC<InlineFieldProps> = ({ label, value, type = 'text', 
           onChange={(e) => setCurrent(e.target.value)}
           onBlur={save}
           rows={4}
-          style={{ width: '100%', marginTop: 4, fontSize: 13, color: 'var(--text-primary)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', resize: 'vertical', boxSizing: 'border-box' }}
+          style={{ width: '100%', marginTop: 4, fontSize: 13, color: 'var(--text-primary)', background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', resize: 'vertical', boxSizing: 'border-box' }}
         />
       </div>
     )
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
       <span style={{ fontSize: 12, color: 'var(--text-muted)', minWidth: 140 }}>{label}</span>
       {editing ? (
         <input
@@ -74,7 +74,7 @@ const InlineField: React.FC<InlineFieldProps> = ({ label, value, type = 'text', 
           onChange={(e) => setCurrent(e.target.value)}
           onBlur={save}
           onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
-          style={{ fontSize: 13, color: 'var(--text-primary)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 6, padding: '2px 8px', width: 180 }}
+          style={{ fontSize: 13, color: 'var(--text-primary)', background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 6, padding: '2px 8px', width: 180 }}
         />
       ) : (
         <span
@@ -214,7 +214,7 @@ export const DetailsTab: React.FC<Props> = ({ property, onChange }) => {
             onChange={e => setDescription(e.target.value)}
             onBlur={() => save('description', description)}
             rows={5}
-            style={{ width: '100%', fontSize: 13, color: 'var(--text-primary)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', resize: 'vertical', boxSizing: 'border-box' }}
+            style={{ width: '100%', fontSize: 13, color: 'var(--text-primary)', background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', resize: 'vertical', boxSizing: 'border-box' }}
             placeholder="Descrição do imóvel..."
           />
         </div>

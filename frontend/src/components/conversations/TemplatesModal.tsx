@@ -59,16 +59,16 @@ export const TemplatesModal: React.FC<Props> = ({ open, onClose, channel, contac
   }
 
   const tabLabel = { ALL: 'Todos', WHATSAPP: 'WhatsApp', EMAIL: 'Email', SMS: 'SMS' }
-  const tabColor = { ALL: 'var(--text-primary)', WHATSAPP: '#25d366', EMAIL: '#3b82f6', SMS: '#f59e0b' }
+  const tabColor = { ALL: 'var(--text-primary)', WHATSAPP: '#25d366', EMAIL: 'var(--accent)', SMS: '#f59e0b' }
 
   return (
     <div
       style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div style={{ background: 'var(--bg-card)', borderRadius: 16, width: 520, maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-color)', boxShadow: '0 24px 80px rgba(0,0,0,0.35)', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 16, width: 520, maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)', boxShadow: '0 24px 80px rgba(0,0,0,0.35)', overflow: 'hidden' }}>
         {/* header */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <FileText size={16} style={{ color: 'var(--text-muted)' }} />
             <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Templates de Mensagem</span>
@@ -77,11 +77,11 @@ export const TemplatesModal: React.FC<Props> = ({ open, onClose, channel, contac
         </div>
 
         {/* tabs */}
-        <div style={{ display: 'flex', gap: 2, padding: '10px 16px 0', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', gap: 2, padding: '10px 16px 0', borderBottom: '1px solid var(--border)' }}>
           {tabs.map(t => (
             <button key={t} onClick={() => setActiveTab(t)} style={{
               padding: '6px 14px', borderRadius: '8px 8px 0 0', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600,
-              background: activeTab === t ? 'var(--bg-page)' : 'transparent',
+              background: activeTab === t ? 'var(--surface-2)' : 'transparent',
               color: activeTab === t ? tabColor[t] : 'var(--text-muted)',
               borderBottom: activeTab === t ? `2px solid ${tabColor[t]}` : '2px solid transparent',
               transition: 'all 120ms',
@@ -92,13 +92,13 @@ export const TemplatesModal: React.FC<Props> = ({ open, onClose, channel, contac
         </div>
 
         {/* search */}
-        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ position: 'relative' }}>
             <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Pesquisar templates..."
-              style={{ width: '100%', padding: '7px 10px 7px 30px', borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '7px 10px 7px 30px', borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
             />
           </div>
         </div>
@@ -113,8 +113,8 @@ export const TemplatesModal: React.FC<Props> = ({ open, onClose, channel, contac
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Sem templates disponíveis</p>
             </div>
           ) : filtered.map(t => (
-            <div key={t.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+            <div key={t.id} style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
               onMouseLeave={e => (e.currentTarget.style.background = '')}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>{t.name}</p>
@@ -124,7 +124,7 @@ export const TemplatesModal: React.FC<Props> = ({ open, onClose, channel, contac
                 <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>
                   {t.body}
                 </p>
-                <span style={{ marginTop: 5, display: 'inline-block', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: 'var(--bg-page)', color: 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
+                <span style={{ marginTop: 5, display: 'inline-block', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20, background: 'var(--surface-2)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
                   {t.channel === 'ALL' ? 'Todos os canais' : t.channel}
                 </span>
               </div>

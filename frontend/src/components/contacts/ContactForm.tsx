@@ -61,7 +61,7 @@ interface ContactFormProps {
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '8px 12px', borderRadius: 8,
-  border: '1px solid var(--input-border)', background: 'var(--input-bg)',
+  border: '1px solid var(--input-border)', background: 'var(--surface-2)',
   color: 'var(--text-primary)', fontSize: 13,
 }
 const labelStyle: React.CSSProperties = {
@@ -73,7 +73,7 @@ const sectionTitleStyle: React.CSSProperties = {
   textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12,
 }
 const sectionStyle: React.CSSProperties = {
-  borderTop: '1px solid var(--border-color)', paddingTop: 16, marginTop: 8,
+  borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8,
 }
 
 function ToggleField({
@@ -91,7 +91,7 @@ function ToggleField({
         onClick={() => onChange(!checked)}
         style={{
           width: 36, height: 20, borderRadius: 10, flexShrink: 0,
-          background: checked ? '#c9a84c' : 'var(--border-color)',
+          background: checked ? '#c9a84c' : 'var(--border)',
           position: 'relative', cursor: 'pointer', transition: 'background 0.2s',
         }}
       >

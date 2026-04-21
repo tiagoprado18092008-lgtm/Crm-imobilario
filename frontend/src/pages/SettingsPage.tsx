@@ -103,12 +103,12 @@ const WebhookRow: React.FC<{ label: string; path: string }> = ({ label, path }) 
     : 'https://SEU-DOMINIO.com'
   const url = `${base}${path}`
   return (
-    <div style={{ border: '1px solid var(--border-color)', borderRadius: 8, overflow: 'hidden', marginBottom: 6 }}>
+    <div style={{ border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', marginBottom: 6 }}>
       <button
         onClick={() => setOpen(o => !o)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '8px 12px', background: 'var(--hover-bg)', border: 'none', cursor: 'pointer',
+          padding: '8px 12px', background: 'var(--surface-3)', border: 'none', cursor: 'pointer',
           color: 'var(--text-primary)', fontWeight: 600, fontSize: 13,
         }}
       >
@@ -116,8 +116,8 @@ const WebhookRow: React.FC<{ label: string; path: string }> = ({ label, path }) 
         {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
       </button>
       {open && (
-        <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-card)' }}>
-          <code style={{ flex: 1, fontSize: 12, fontFamily: 'monospace', color: '#6366f1', wordBreak: 'break-all' }}>{url}</code>
+        <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, background: 'var(--surface)' }}>
+          <code style={{ flex: 1, fontSize: 12, fontFamily: 'monospace', color: 'var(--accent)', wordBreak: 'break-all' }}>{url}</code>
           <CopyButton text={url} />
         </div>
       )}
@@ -147,7 +147,7 @@ const GuidePanel: React.FC<{ status: any; onNavigate: (tab: any) => void }> = ({
     {
       key: 'email',
       label: 'Email (SMTP + IMAP)',
-      color: '#3b82f6',
+      color: 'var(--accent)',
       bg: '#dbeafe',
       icon: '✉️',
       steps: [
@@ -180,7 +180,7 @@ const GuidePanel: React.FC<{ status: any; onNavigate: (tab: any) => void }> = ({
     {
       key: 'phone',
       label: 'SMS e Chamadas (Twilio)',
-      color: '#6366f1',
+      color: 'var(--accent)',
       bg: '#ede9fe',
       icon: '📞',
       steps: [
@@ -201,7 +201,7 @@ const GuidePanel: React.FC<{ status: any; onNavigate: (tab: any) => void }> = ({
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+      <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#fef9ee' }}>
             <Zap size={20} style={{ color: '#f59e0b' }} />
@@ -216,17 +216,17 @@ const GuidePanel: React.FC<{ status: any; onNavigate: (tab: any) => void }> = ({
         <div className="grid grid-cols-2 gap-2">
           {[
             { key: 'whatsapp', label: 'WhatsApp', color: '#25d366' },
-            { key: 'email', label: 'Email', color: '#3b82f6' },
+            { key: 'email', label: 'Email', color: 'var(--accent)' },
             { key: 'instagram', label: 'Instagram', color: '#e1306c' },
-            { key: 'phone', label: 'Telefone', color: '#6366f1' },
+            { key: 'phone', label: 'Telefone', color: 'var(--accent)' },
           ].map(c => (
             <button
               key={c.key}
               onClick={() => onNavigate(c.key as any)}
               className="flex items-center justify-between p-3 rounded-xl transition-all"
               style={{
-                border: `1px solid ${status[c.key] === 'configured' ? c.color + '40' : 'var(--border-color)'}`,
-                background: status[c.key] === 'configured' ? c.color + '10' : 'var(--hover-bg)',
+                border: `1px solid ${status[c.key] === 'configured' ? c.color + '40' : 'var(--border)'}`,
+                background: status[c.key] === 'configured' ? c.color + '10' : 'var(--surface-3)',
                 cursor: 'pointer',
               }}
             >
@@ -251,8 +251,8 @@ const GuidePanel: React.FC<{ status: any; onNavigate: (tab: any) => void }> = ({
 
       {/* Step-by-step per channel */}
       {channels.map(ch => (
-        <div key={ch.key} className="rounded-xl border shadow-sm overflow-hidden" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-          <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-color)', background: ch.bg + '30' }}>
+        <div key={ch.key} className="rounded-xl border shadow-sm overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border)', background: ch.bg + '30' }}>
             <div className="flex items-center gap-3">
               <span style={{ fontSize: 20 }}>{ch.icon}</span>
               <h4 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{ch.label}</h4>
@@ -300,9 +300,9 @@ const GuidePanel: React.FC<{ status: any; onNavigate: (tab: any) => void }> = ({
       ))}
 
       {/* IMAP note */}
-      <div className="rounded-xl border p-4" style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)' }}>
+      <div className="rounded-xl border p-4" style={{ background: 'var(--surface-3)', borderColor: 'var(--border)' }}>
         <div className="flex items-start gap-2">
-          <Info size={14} style={{ color: '#3b82f6', flexShrink: 0, marginTop: 2 }} />
+          <Info size={14} style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
           <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             <strong>Nota sobre IMAP (receção de emails):</strong> As credenciais IMAP (IMAP_HOST, IMAP_USER, IMAP_PASS, IMAP_PORT) são configuradas diretamente no ficheiro <code>.env</code> do servidor. O CRM verifica automaticamente novos emails a cada 60 segundos e cria conversas para cada mensagem recebida.
           </p>
@@ -584,7 +584,7 @@ export const SettingsPage: React.FC = () => {
   const tabs: { key: Tab; label: string; icon: React.ReactNode; status: string }[] = [
     { key: 'guide', label: 'Guia de Início', icon: <BookOpen size={15} style={{ color: '#f59e0b' }} />, status: 'configured' },
     { key: 'whatsapp', label: 'WhatsApp', icon: <MessageCircle size={15} style={{ color: '#25d366' }} />, status: status.whatsapp },
-    { key: 'email', label: 'Email (SMTP)', icon: <Mail size={15} style={{ color: '#3b82f6' }} />, status: status.email },
+    { key: 'email', label: 'Email (SMTP)', icon: <Mail size={15} style={{ color: 'var(--accent)' }} />, status: status.email },
     { key: 'instagram', label: 'Instagram', icon: <Instagram size={15} style={{ color: '#e1306c' }} />, status: status.instagram },
     { key: 'phone', label: 'Telefone', icon: <Phone size={15} style={{ color: '#22c55e' }} />, status: status.phone },
     { key: 'general', label: 'Geral', icon: <Settings size={15} style={{ color: 'var(--text-muted)' }} />, status: 'configured' },
@@ -592,7 +592,7 @@ export const SettingsPage: React.FC = () => {
 
   // Shared input class (no bg/border hardcoded — use inline styles)
   const inputClass = 'w-full px-3 py-2.5 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400/30'
-  const inputStyle = { border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }
+  const inputStyle = { border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)' }
 
   if (loading) {
     return (
@@ -619,7 +619,7 @@ export const SettingsPage: React.FC = () => {
                 onClick={() => setTab(t.key)}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all"
                 style={{
-                  background: tab === t.key ? 'var(--hover-bg)' : 'transparent',
+                  background: tab === t.key ? 'var(--surface-3)' : 'transparent',
                   color: tab === t.key ? 'var(--text-primary)' : 'var(--text-secondary)',
                   fontWeight: tab === t.key ? 600 : 400,
                 }}
@@ -655,7 +655,7 @@ export const SettingsPage: React.FC = () => {
           {tab === 'whatsapp' && (
             <div className="space-y-5">
               {/* WhatsApp QR / Baileys */}
-              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#dcfce7' }}>
                     <MessageCircle size={20} style={{ color: '#25d366' }} />
@@ -675,7 +675,7 @@ export const SettingsPage: React.FC = () => {
                     <button
                       onClick={handleWaDisconnect}
                       className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold"
-                      style={{ border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                      style={{ border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}
                     >
                       <X size={13} /> Desligar
                     </button>
@@ -683,7 +683,7 @@ export const SettingsPage: React.FC = () => {
                 ) : waQrImage ? (
                   <div className="flex flex-col items-center gap-3">
                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Abre o WhatsApp no telemóvel → Dispositivos ligados → Ligar dispositivo → Lê o QR</p>
-                    <img src={waQrImage} alt="WhatsApp QR Code" style={{ width: 220, height: 220, borderRadius: 12, border: '1px solid var(--border-color)' }} />
+                    <img src={waQrImage} alt="WhatsApp QR Code" style={{ width: 220, height: 220, borderRadius: 12, border: '1px solid var(--border)' }} />
                   </div>
                 ) : (
                   <button
@@ -699,7 +699,7 @@ export const SettingsPage: React.FC = () => {
               </div>
 
               {/* Credenciais */}
-              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#dcfce7' }}>
@@ -774,10 +774,10 @@ export const SettingsPage: React.FC = () => {
                   </div>
 
                   {/* Webhook URL — para copiar */}
-                  <div className="rounded-lg p-3" style={{ background: 'var(--hover-bg)', border: '1px solid var(--border-color)' }}>
+                  <div className="rounded-lg p-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                     <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>URL do Webhook (para configurar na Meta)</p>
                     <div className="flex items-center gap-2">
-                      <code className="flex-1 text-xs px-2 py-1.5 rounded" style={{ background: 'var(--bg-card)', color: '#25d366', fontFamily: 'monospace', border: '1px solid var(--border-color)', wordBreak: 'break-all' }}>
+                      <code className="flex-1 text-xs px-2 py-1.5 rounded" style={{ background: 'var(--surface)', color: '#25d366', fontFamily: 'monospace', border: '1px solid var(--border)', wordBreak: 'break-all' }}>
                         {(import.meta as any).env?.VITE_API_URL?.replace('/api', '') || window.location.origin.replace('casaflow-frontend', 'casaflow-backend')}/webhook/whatsapp
                       </code>
                       <button
@@ -809,7 +809,7 @@ export const SettingsPage: React.FC = () => {
                       onClick={() => handleTest('whatsapp', testWhatsApp)}
                       disabled={!!testing['whatsapp']}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
-                      style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)', background: 'var(--bg-card)' }}
+                      style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--surface)' }}
                     >
                       {testing['whatsapp'] ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                       Testar ligação
@@ -826,9 +826,9 @@ export const SettingsPage: React.FC = () => {
               </div>
 
               {/* Guia passo-a-passo */}
-              <div className="rounded-xl border p-5" style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)' }}>
+              <div className="rounded-xl border p-5" style={{ background: 'var(--surface-3)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-2 mb-4">
-                  <Info size={15} style={{ color: '#3b82f6' }} />
+                  <Info size={15} style={{ color: 'var(--accent)' }} />
                   <h4 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Como configurar — passo a passo</h4>
                 </div>
                 <ol className="space-y-3">
@@ -847,7 +847,7 @@ export const SettingsPage: React.FC = () => {
                       <span>
                         {item.step}
                         {item.link && (
-                          <a href={item.link} target="_blank" rel="noopener noreferrer" className="ml-1.5 inline-flex items-center gap-0.5 text-xs" style={{ color: '#3b82f6' }}>
+                          <a href={item.link} target="_blank" rel="noopener noreferrer" className="ml-1.5 inline-flex items-center gap-0.5 text-xs" style={{ color: 'var(--accent)' }}>
                             Abrir <ExternalLink size={10} />
                           </a>
                         )}
@@ -883,11 +883,11 @@ export const SettingsPage: React.FC = () => {
           {/* Email */}
           {tab === 'email' && (
             <div className="space-y-5">
-              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#dbeafe' }}>
-                      <Mail size={20} style={{ color: '#3b82f6' }} />
+                      <Mail size={20} style={{ color: 'var(--accent)' }} />
                     </div>
                     <div>
                       <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Email (SMTP)</h3>
@@ -903,12 +903,12 @@ export const SettingsPage: React.FC = () => {
                     <button
                       onClick={() => setEmail({ ...email, ...GMAIL_PRESET })}
                       className="text-xs px-2.5 py-1 rounded-lg font-medium"
-                      style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)', background: 'var(--bg-card)' }}
+                      style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--surface)' }}
                     >Gmail</button>
                     <button
                       onClick={() => setEmail({ ...email, ...OUTLOOK_PRESET })}
                       className="text-xs px-2.5 py-1 rounded-lg font-medium"
-                      style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)', background: 'var(--bg-card)' }}
+                      style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--surface)' }}
                     >Outlook</button>
                   </div>
                 </div>
@@ -1005,7 +1005,7 @@ export const SettingsPage: React.FC = () => {
                     onClick={() => handleTest('email', testEmail)}
                     disabled={!!testing['email']}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold"
-                    style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)', background: 'var(--bg-card)' }}
+                    style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--surface)' }}
                   >
                     {testing['email'] && <Loader2 size={14} className="animate-spin" />}
                     Testar conexão
@@ -1025,7 +1025,7 @@ export const SettingsPage: React.FC = () => {
           {/* Instagram */}
           {tab === 'instagram' && (
             <div className="space-y-5">
-              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#fce7f3' }}>
                     <Instagram size={20} style={{ color: '#e1306c' }} />
@@ -1039,7 +1039,7 @@ export const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mb-4 p-3 rounded-lg" style={{ background: 'var(--hover-bg)', border: '1px solid var(--border-color)' }}>
+                <div className="mb-4 p-3 rounded-lg" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                   <div className="flex items-start gap-2">
                     <AlertCircle size={14} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--text-secondary)' }} />
                     <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Requer aprovação da Meta para acesso completo à Instagram Messaging API.</p>
@@ -1099,9 +1099,9 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="rounded-xl border p-5" style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)' }}>
+              <div className="rounded-xl border p-5" style={{ background: 'var(--surface-3)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-2 mb-3">
-                  <Info size={15} style={{ color: '#3b82f6' }} />
+                  <Info size={15} style={{ color: 'var(--accent)' }} />
                   <h4 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Como obter acesso à Instagram Graph API</h4>
                 </div>
                 <ol className="space-y-2">
@@ -1126,7 +1126,7 @@ export const SettingsPage: React.FC = () => {
           {/* Telefone (Twilio) */}
           {tab === 'phone' && (
             <div className="space-y-5">
-              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#dcfce7' }}>
                     <Phone size={20} style={{ color: '#22c55e' }} />
@@ -1144,7 +1144,7 @@ export const SettingsPage: React.FC = () => {
                   <div>
                     <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
                       Account SID
-                      <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer" className="ml-2 text-xs" style={{ color: '#6366f1', fontWeight: 400 }}>
+                      <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer" className="ml-2 text-xs" style={{ color: 'var(--accent)', fontWeight: 400 }}>
                         Obter em twilio.com →
                       </a>
                     </label>
@@ -1179,7 +1179,7 @@ export const SettingsPage: React.FC = () => {
                   </div>
 
                   {/* Public URL */}
-                  <div className="pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
                     <div>
                       <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
                         URL Pública do Servidor
@@ -1200,7 +1200,7 @@ export const SettingsPage: React.FC = () => {
                   </div>
 
                   {/* Browser calling — auto-configured */}
-                  <div className="pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
                     <div className="flex items-start gap-2.5 p-3 rounded-lg" style={{ background: twilioTwimlAppSid && twilioApiKey ? 'rgba(34,197,94,0.08)' : 'rgba(245,158,11,0.08)' }}>
                       <div
                         className="w-2 h-2 rounded-full flex-shrink-0 mt-1"
@@ -1243,7 +1243,7 @@ export const SettingsPage: React.FC = () => {
                         onClick={() => handleTest('twilio', testTwilio)}
                         disabled={!!testing['twilio']}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-60"
-                        style={{ border: '1px solid var(--border-color)', color: 'var(--text-secondary)', background: 'var(--bg-card)', cursor: testing['twilio'] ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+                        style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--surface)', cursor: testing['twilio'] ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
                       >
                         {testing['twilio'] && <Loader2 size={14} className="animate-spin" />}
                         Testar conexão
@@ -1252,7 +1252,7 @@ export const SettingsPage: React.FC = () => {
                         onClick={() => handleSave({ twilioAccountSid, twilioAuthToken, twilioPhoneNumber, twilioTwimlAppSid, twilioApiKey, twilioApiSecret, publicUrl })}
                         disabled={saving}
                         className="flex items-center gap-2 px-5 py-2 rounded-lg text-white text-sm font-semibold disabled:opacity-60"
-                        style={{ background: '#6366f1', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+                        style={{ background: 'var(--accent)', border: 'none', cursor: saving ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
                       >
                         {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                         Guardar
@@ -1272,8 +1272,8 @@ export const SettingsPage: React.FC = () => {
               </div>
 
               {/* Phone Numbers Management */}
-              <div className="rounded-xl border shadow-sm" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-                <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+              <div className="rounded-xl border shadow-sm" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
                   <div>
                     <h4 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Números Comprados</h4>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Gere os teus números Twilio para SMS e chamadas</p>
@@ -1288,13 +1288,13 @@ export const SettingsPage: React.FC = () => {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-3 gap-0 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                <div className="grid grid-cols-3 gap-0 border-b" style={{ borderColor: 'var(--border)' }}>
                   {[
-                    { label: 'Números ativos', value: phoneNumbers.length, icon: Phone, color: '#6366f1' },
+                    { label: 'Números ativos', value: phoneNumbers.length, icon: Phone, color: 'var(--accent)' },
                     { label: 'Custo mensal', value: `$${(phoneNumbers.length * 1.15).toFixed(2)}`, icon: Globe, color: '#10b981' },
                     { label: 'Com SMS', value: phoneNumbers.filter(n => { try { return JSON.parse(n.capabilities || '{}').sms } catch { return false } }).length, icon: MessageSquare, color: '#f59e0b' },
                   ].map((s, i) => (
-                    <div key={s.label} className={`flex items-center gap-3 p-4 ${i < 2 ? 'border-r' : ''}`} style={{ borderColor: 'var(--border-color)' }}>
+                    <div key={s.label} className={`flex items-center gap-3 p-4 ${i < 2 ? 'border-r' : ''}`} style={{ borderColor: 'var(--border)' }}>
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: s.color + '20' }}>
                         <s.icon size={16} style={{ color: s.color }} />
                       </div>
@@ -1327,7 +1327,7 @@ export const SettingsPage: React.FC = () => {
                 ) : (
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b" style={{ borderColor: 'var(--border-color)' }}>
+                      <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
                         {['Número', 'Nome', 'País', 'Capacidades', 'Custo/mês', 'Ações'].map(h => (
                           <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{h}</th>
                         ))}
@@ -1338,8 +1338,8 @@ export const SettingsPage: React.FC = () => {
                         let caps: any = {}
                         try { caps = JSON.parse(n.capabilities || '{}') } catch { }
                         return (
-                          <tr key={n.id} className="border-b" style={{ borderColor: 'var(--border-subtle)' }}
-                            onMouseOver={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                          <tr key={n.id} className="border-b" style={{ borderColor: 'var(--border)' }}
+                            onMouseOver={e => (e.currentTarget.style.background = 'var(--surface-3)')}
                             onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
                             <td className="px-4 py-3">
                               <span className="font-mono font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{n.number}</span>
@@ -1351,7 +1351,7 @@ export const SettingsPage: React.FC = () => {
                                     value={numberEditName}
                                     onChange={e => setNumberEditName(e.target.value)}
                                     className="rounded-lg px-2 py-1 text-xs focus:outline-none"
-                                    style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)', width: 110 }}
+                                    style={{ border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)', width: 110 }}
                                   />
                                   <button onClick={() => handleNumberEdit(n.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#22c55e' }}><Check size={13} /></button>
                                   <button onClick={() => setNumberEditId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={13} /></button>
@@ -1364,7 +1364,7 @@ export const SettingsPage: React.FC = () => {
                             <td className="px-4 py-3">
                               <div className="flex gap-1">
                                 {caps.voice && (
-                                  <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa' }}>
+                                  <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(46,107,230,0.15)', color: '#60a5fa' }}>
                                     <Mic size={9} /> Voz
                                   </span>
                                 )}
@@ -1405,13 +1405,13 @@ export const SettingsPage: React.FC = () => {
               {/* Search/Purchase Modal */}
               {showNumberSearch && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
-                  <div className="rounded-2xl shadow-2xl w-full max-w-lg mx-4 border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)', maxHeight: '90vh', overflowY: 'auto' }}>
-                    <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="rounded-2xl shadow-2xl w-full max-w-lg mx-4 border" style={{ background: 'var(--surface)', borderColor: 'var(--border)', maxHeight: '90vh', overflowY: 'auto' }}>
+                    <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
                       <h3 className="font-bold text-base" style={{ color: 'var(--text-primary)' }}>Pesquisar números disponíveis</h3>
                       <button
                         onClick={() => { setShowNumberSearch(false); setNumberSearchResults([]); setNumberError('') }}
                         className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ border: 'none', background: 'var(--hover-bg)', cursor: 'pointer', color: 'var(--text-muted)' }}
+                        style={{ border: 'none', background: 'var(--surface-3)', cursor: 'pointer', color: 'var(--text-muted)' }}
                       ><X size={15} /></button>
                     </div>
                     <div className="p-6 space-y-4">
@@ -1432,7 +1432,7 @@ export const SettingsPage: React.FC = () => {
                           )}
                         </div>
                       )}
-                      <div className="rounded-xl p-3 text-xs" style={{ background: 'rgba(99,102,241,0.08)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.2)' }}>
+                      <div className="rounded-xl p-3 text-xs" style={{ background: 'rgba(46,107,230,0.08)', color: 'var(--accent)', border: '1px solid rgba(46,107,230,0.2)' }}>
                         💡 Para Portugal, o Twilio raramente disponibiliza números. Recomendamos <strong>Reino Unido (GB)</strong> ou <strong>Estados Unidos (US)</strong>.
                       </div>
                       <div className="grid grid-cols-2 gap-3">
@@ -1442,7 +1442,7 @@ export const SettingsPage: React.FC = () => {
                             value={numberSearchCountry}
                             onChange={e => setNumberSearchCountry(e.target.value)}
                             className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
-                            style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
+                            style={{ border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)' }}
                           >
                             {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name} ({c.code})</option>)}
                           </select>
@@ -1453,7 +1453,7 @@ export const SettingsPage: React.FC = () => {
                             value={numberSearchType}
                             onChange={e => setNumberSearchType(e.target.value)}
                             className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
-                            style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
+                            style={{ border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)' }}
                           >
                             <option value="">Auto (recomendado)</option>
                             <option value="local">Local</option>
@@ -1480,13 +1480,13 @@ export const SettingsPage: React.FC = () => {
                           {numberSearchResults.map(r => {
                             const caps = r.capabilities || {}
                             return (
-                              <div key={r.phoneNumber} className="flex items-center justify-between p-3 rounded-xl border" style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)' }}>
+                              <div key={r.phoneNumber} className="flex items-center justify-between p-3 rounded-xl border" style={{ background: 'var(--surface-3)', borderColor: 'var(--border)' }}>
                                 <div>
                                   <p className="font-mono font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{r.phoneNumber}</p>
                                   <div className="flex items-center gap-1.5 mt-1">
-                                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--border-color)', color: 'var(--text-muted)' }}>{r.numberType || 'local'}</span>
+                                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--border)', color: 'var(--text-muted)' }}>{r.numberType || 'local'}</span>
                                     {caps.SMS && <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981' }}>SMS</span>}
-                                    {caps.voice && <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(99,102,241,0.12)', color: '#6366f1' }}>Voz</span>}
+                                    {caps.voice && <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'rgba(46,107,230,0.12)', color: 'var(--accent)' }}>Voz</span>}
                                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>${r.monthlyPrice || '1.15'}/mês</span>
                                   </div>
                                 </div>
@@ -1520,9 +1520,9 @@ export const SettingsPage: React.FC = () => {
           {tab === 'general' && (
             <div className="space-y-5">
               {/* CRM Name */}
-              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--hover-bg)' }}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--surface-3)' }}>
                     <Settings size={20} style={{ color: 'var(--text-muted)' }} />
                   </div>
                   <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Configurações Gerais</h3>
@@ -1554,7 +1554,7 @@ export const SettingsPage: React.FC = () => {
               </div>
 
               {/* Appearance */}
-              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: darkMode ? '#1e3a5f' : '#fef9ee' }}>
                     {darkMode ? <Moon size={20} style={{ color: '#93c5fd' }} /> : <Sun size={20} style={{ color: '#f59e0b' }} />}
@@ -1565,7 +1565,7 @@ export const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--hover-bg)', border: '1px solid var(--border-color)' }}>
+                <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                   <div>
                     <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                       {darkMode ? 'Modo Escuro' : 'Modo Claro'}
@@ -1580,7 +1580,7 @@ export const SettingsPage: React.FC = () => {
                     className="relative flex-shrink-0"
                     style={{
                       width: 52, height: 28, borderRadius: 14,
-                      background: darkMode ? '#3b82f6' : '#d1d5db',
+                      background: darkMode ? 'var(--accent)' : '#d1d5db',
                       border: 'none', cursor: 'pointer', transition: 'background 200ms',
                       padding: 0,
                     }}
@@ -1605,7 +1605,7 @@ export const SettingsPage: React.FC = () => {
                       key={label}
                       onClick={() => setDarkMode(dark)}
                       style={{
-                        border: `2px solid ${darkMode === dark ? '#3b82f6' : 'var(--border-color)'}`,
+                        border: `2px solid ${darkMode === dark ? 'var(--accent)' : 'var(--border)'}`,
                         borderRadius: 12, padding: 12, cursor: 'pointer',
                         background: preview.bg, textAlign: 'left',
                       }}
@@ -1616,7 +1616,7 @@ export const SettingsPage: React.FC = () => {
                       </div>
                       <p style={{ fontSize: 11, fontWeight: 600, color: preview.text, margin: 0 }}>{label}</p>
                       {darkMode === dark && (
-                        <p style={{ fontSize: 10, color: '#3b82f6', margin: '2px 0 0', fontWeight: 600 }}>✓ Ativo</p>
+                        <p style={{ fontSize: 10, color: 'var(--accent)', margin: '2px 0 0', fontWeight: 600 }}>✓ Ativo</p>
                       )}
                     </button>
                   ))}

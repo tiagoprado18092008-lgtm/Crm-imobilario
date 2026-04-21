@@ -23,11 +23,11 @@ import { Button } from '../components/ui/Button'
 import { exportContacts, exportOpportunities } from '../api/exports.api'
 import { downloadBlob } from '../utils/download'
 
-const FUNNEL_COLORS = ['#3b82f6', '#6366f1', '#f59e0b', '#f97316', '#8b5cf6', '#22c55e', '#ef4444']
+const FUNNEL_COLORS = ['var(--accent)', 'var(--accent)', '#f59e0b', '#f97316', '#8b5cf6', '#22c55e', '#ef4444']
 
 const CHANNEL_COLORS: Record<string, string> = {
   WHATSAPP: '#25d366',
-  EMAIL: '#3b82f6',
+  EMAIL: 'var(--accent)',
   INSTAGRAM: '#e1306c',
   SMS: '#6b7280',
   INTERNAL: '#8b5cf6',
@@ -147,7 +147,7 @@ export const ReportsPage: React.FC = () => {
 
       {/* 6 KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#dbeafe' }}>
               <Users className="w-5 h-5" style={{ color: '#2563eb' }} />
@@ -160,7 +160,7 @@ export const ReportsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#dcfce7' }}>
               <UserPlus className="w-5 h-5" style={{ color: '#16a34a' }} />
@@ -171,7 +171,7 @@ export const ReportsPage: React.FC = () => {
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>últimos 30 dias</p>
         </div>
 
-        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#ede9fe' }}>
               <TrendingUp className="w-5 h-5" style={{ color: '#7c3aed' }} />
@@ -182,7 +182,7 @@ export const ReportsPage: React.FC = () => {
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>em aberto</p>
         </div>
 
-        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#dcfce7' }}>
               <DollarSign className="w-5 h-5" style={{ color: '#16a34a' }} />
@@ -193,7 +193,7 @@ export const ReportsPage: React.FC = () => {
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{summary?.closedWonThisMonth ?? 0} fechados/mês</p>
         </div>
 
-        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#fef3c7' }}>
               <CheckSquare className="w-5 h-5" style={{ color: '#d97706' }} />
@@ -206,7 +206,7 @@ export const ReportsPage: React.FC = () => {
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>este mês</p>
         </div>
 
-        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+        <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: '#fce7f3' }}>
               <Clock className="w-5 h-5" style={{ color: '#db2777' }} />
@@ -224,7 +224,7 @@ export const ReportsPage: React.FC = () => {
           {pipelineChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={pipelineChartData} margin={{ top: 5, right: 10, left: -10, bottom: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis
                   dataKey="stage"
                   tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
@@ -235,7 +235,7 @@ export const ReportsPage: React.FC = () => {
                 />
                 <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
                 <Tooltip
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
                   formatter={(value: any) => [value + ' oportunidades', 'Quantidade']}
                 />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]}>
@@ -257,7 +257,7 @@ export const ReportsPage: React.FC = () => {
             <ResponsiveContainer width="100%" height={280}>
               <FunnelChart>
                 <Tooltip
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
                   formatter={(value: any) => [value + ' oportunidades', '']}
                 />
                 <Funnel dataKey="value" data={funnelData} isAnimationActive>
@@ -282,7 +282,7 @@ export const ReportsPage: React.FC = () => {
           {pipelineChartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={pipelineChartData} margin={{ top: 5, right: 10, left: 10, bottom: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis
                   dataKey="stage"
                   tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
@@ -298,7 +298,7 @@ export const ReportsPage: React.FC = () => {
                   tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`}
                 />
                 <Tooltip
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
                   formatter={(value: any) => [formatCurrency(Number(value)), 'Valor Total']}
                 />
                 <Bar dataKey="totalValue" radius={[4, 4, 0, 0]}>
@@ -317,11 +317,11 @@ export const ReportsPage: React.FC = () => {
           {channelData.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={channelData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" horizontal={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} tickLine={false} axisLine={false} width={80} />
                 <Tooltip
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)' }}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)' }}
                   formatter={(value: any) => [value + ' conversas', 'Total']}
                 />
                 <Bar dataKey="count" radius={[0, 4, 4, 0]}>
@@ -375,7 +375,7 @@ export const ReportsPage: React.FC = () => {
                         <Badge variant="default" small>{ROLE_LABELS[perf.agent?.role] || perf.agent?.role}</Badge>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="flex-1 h-1.5 rounded-full" style={{ background: 'var(--border-color)' }}>
+                        <div className="flex-1 h-1.5 rounded-full" style={{ background: 'var(--border)' }}>
                           <div
                             className="h-1.5 rounded-full transition-all"
                             style={{ width: `${barWidth}%`, background: '#22c55e' }}

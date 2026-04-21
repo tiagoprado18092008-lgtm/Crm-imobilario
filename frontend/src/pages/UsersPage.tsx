@@ -230,10 +230,10 @@ export const UsersPage: React.FC = () => {
           onAction={() => { setEditUser(undefined); setShowModal(true) }}
         />
       ) : (
-        <div className="rounded-xl border shadow-sm overflow-hidden" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+        <div className="rounded-xl border shadow-sm overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b" style={{ background: 'var(--hover-bg)', borderColor: 'var(--border-color)' }}>
+              <tr className="border-b" style={{ background: 'var(--surface-3)', borderColor: 'var(--border)' }}>
                 <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-primary)' }}>Utilizador</th>
                 <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-primary)' }}>Email</th>
                 <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-primary)' }}>Função</th>
@@ -245,8 +245,8 @@ export const UsersPage: React.FC = () => {
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id} className="border-b" style={{ borderColor: 'var(--border-subtle)' }}
-                  onMouseOver={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                <tr key={user.id} className="border-b" style={{ borderColor: 'var(--border)' }}
+                  onMouseOver={e => (e.currentTarget.style.background = 'var(--surface-3)')}
                   onMouseOut={e => (e.currentTarget.style.background = 'transparent')}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -316,8 +316,8 @@ export const UsersPage: React.FC = () => {
       {/* Invite Modal */}
       {showInviteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
-          <div className="rounded-2xl shadow-2xl w-full max-w-lg mx-4" style={{ background: 'var(--bg-card)' }}>
-            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
+          <div className="rounded-2xl shadow-2xl w-full max-w-lg mx-4" style={{ background: 'var(--surface)' }}>
+            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: 'var(--border)' }}>
               <div>
                 <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Convidar Consultor</h2>
                 <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>O convite é enviado por email e expira em 7 dias</p>
@@ -331,13 +331,13 @@ export const UsersPage: React.FC = () => {
                   <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
                     placeholder="consultor@email.com" type="email"
                     className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
-                    style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }} />
+                    style={{ border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)' }} />
                 </div>
                 <div style={{ width: 160 }}>
                   <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Função</label>
                   <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}
                     className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
-                    style={{ border: '1px solid var(--input-border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}>
+                    style={{ border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)' }}>
                     {Object.entries(ROLE_LABELS).filter(([k]) => k !== 'ADMIN').map(([v, l]) => (
                       <option key={v} value={v}>{l}</option>
                     ))}
@@ -346,7 +346,7 @@ export const UsersPage: React.FC = () => {
               </div>
               <button onClick={handleInvite} disabled={inviting || !inviteEmail}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
-                style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', cursor: inviting || !inviteEmail ? 'not-allowed' : 'pointer' }}>
+                style={{ background: 'linear-gradient(135deg,var(--accent),#8b5cf6)', border: 'none', cursor: inviting || !inviteEmail ? 'not-allowed' : 'pointer' }}>
                 <Send size={14} />{inviting ? 'A enviar...' : 'Enviar convite'}
               </button>
 
@@ -358,7 +358,7 @@ export const UsersPage: React.FC = () => {
                       const expired = new Date(inv.expiresAt) < new Date()
                       const used = !!inv.usedAt
                       return (
-                        <div key={inv.id} className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--hover-bg)', border: '1px solid var(--border-color)' }}>
+                        <div key={inv.id} className="flex items-center justify-between p-3 rounded-xl" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                           <div>
                             <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{inv.email}</p>
                             <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
@@ -370,7 +370,7 @@ export const UsersPage: React.FC = () => {
                               <button onClick={() => copyInviteLink(inv.token, inv.id)}
                                 className="p-1.5 rounded-lg" title="Copiar link"
                                 style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
-                                onMouseOver={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                                onMouseOver={e => (e.currentTarget.style.background = 'var(--surface-3)')}
                                 onMouseOut={e => (e.currentTarget.style.background = 'none')}>
                                 {copiedId === inv.id ? <Check size={14} style={{ color: '#10b981' }} /> : <Copy size={14} />}
                               </button>
