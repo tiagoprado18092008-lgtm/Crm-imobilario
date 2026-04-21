@@ -194,14 +194,14 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
             >
               {isDirector ? (
                 <>
-                  <SidebarDropItem to="/agency"              icon={Users}    label="Membros da agência"  onClick={() => setOrgMenuOpen(false)} />
-                  <SidebarDropItem to="/agency?tab=invites"  icon={UserPlus} label="Convites"            onClick={() => setOrgMenuOpen(false)} />
-                  <SidebarDropItem to="/agency?tab=settings" icon={Settings} label="Config. da agência"  onClick={() => setOrgMenuOpen(false)} />
+                  <SidebarDropItem to="/agency/users"         icon={Users}    label="Membros da agência"  onClick={() => setOrgMenuOpen(false)} />
+                  <SidebarDropItem to="/agency?tab=invites" icon={UserPlus} label="Convites"            onClick={() => setOrgMenuOpen(false)} />
+                  <SidebarDropItem to="/agency/settings" icon={Settings} label="Config. da agência"  onClick={() => setOrgMenuOpen(false)} />
                 </>
               ) : (
                 <>
-                  <SidebarDropItem to="/settings" icon={Settings} label="Configurações" onClick={() => setOrgMenuOpen(false)} />
-                  <SidebarDropItem to="/users"    icon={UserCog}  label="Utilizadores"   onClick={() => setOrgMenuOpen(false)} />
+                  <SidebarDropItem to="/settings/general" icon={Settings} label="Configurações" onClick={() => setOrgMenuOpen(false)} />
+                  <SidebarDropItem to="/settings/team"    icon={UserCog}  label="Utilizadores"   onClick={() => setOrgMenuOpen(false)} />
                 </>
               )}
             </motion.div>
