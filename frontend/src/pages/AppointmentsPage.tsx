@@ -450,9 +450,16 @@ export const AppointmentsPage: React.FC = () => {
     const start = new Date(appt.startAt)
     const end = new Date(appt.endAt)
     const GRID_END_HOUR = GRID_START_HOUR + HOURS.length
-    const startMinutes = Math.max(0, (start.getHours() - GRID_START_HOUR) * 60 + start.getMinutes())
-    const endMinutes = Math.min(GRID_END_HOUR * 60 - GRID_START_HOUR * 60, (end.getHours() - GRID_START_HOUR) * 60 + end.getMinutes())
-    const durationMinutes = Math.max(15, Math.max(endMinutes, startMinutes + 15) - startMinutes, (end.getTime() - start.getTime()) / 60000)
+    const gridStartMinutes = GRID_START_HOUR * 60
+    const gridEndMinutes = GRID_END_HOUR * 60
+    const startTotalMinutes = start.getHours() * 60 + start.getMinutes()
+    const endTotalMinutes = end.getHours() * 60 + end.getMinutes()
+    // Clamp both start and end within grid bounds
+    const clampedStart = Math.max(gridStartMinutes, Math.min(gridEndMinutes, startTotalMinutes))
+    const clampedEnd = Math.max(gridStartMinutes, Math.min(gridEndMinutes, endTotalMinutes))
+    const startMinutes = clampedStart - gridStartMinutes
+    const endMinutes = clampedEnd - gridStartMinutes
+    const durationMinutes = Math.max(15, endMinutes - startMinutes)
     const top = (startMinutes / 60) * HOUR_HEIGHT
     const height = Math.max(22, (durationMinutes / 60) * HOUR_HEIGHT - 2)
     return { top, height }
