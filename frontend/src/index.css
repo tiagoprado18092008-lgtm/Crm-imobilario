@@ -1,75 +1,163 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
-@theme {
-  --color-primary-50: #eef2ff;
-  --color-primary-100: #e0e7ff;
-  --color-primary-200: #c7d2fe;
-  --color-primary-300: #a5b4fc;
-  --color-primary-400: #818cf8;
-  --color-primary-500: #6366f1;
-  --color-primary-600: #4f46e5;
-  --color-primary-700: #4338ca;
-  --color-primary-800: #3730a3;
-  --color-primary-900: #312e81;
-  /* CasaFlow brand tokens */
-  --color-sidebar: #ffffff;
-  --color-navy: #0f2553;
-  --color-navy-mid: #1a3a6e;
-  --color-gold: #b8963e;
-  --color-gold-light: #d4af5a;
-  --color-off-white: #f8f9fc;
-  --color-border-cf: #dce3ef;
-  --color-muted-cf: #6b7a99;
+/* ═══════════════════════════════════════════════════════════════
+   CasaFlow — Design Tokens (new palette)
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Brand & accent ──────────────────────────────────────── */
+  --primary: #1B2B4B;
+  --primary-light: #243860;
+  --accent: #2E6BE6;
+  --accent-hover: #1E55C4;
+  --accent-soft: #EEF3FD;
+
+  /* ── Semantic status ─────────────────────────────────────── */
+  --success: #16A34A;
+  --warning: #D97706;
+  --danger: #DC2626;
+
+  /* ── Surfaces ────────────────────────────────────────────── */
+  --surface: #FFFFFF;
+  --surface-2: #F8F9FC;
+  --surface-3: #F1F3F8;
+
+  /* ── Borders ─────────────────────────────────────────────── */
+  --border: #E4E7EF;
+  --border-strong: #CBD0DC;
+
+  /* ── Text ────────────────────────────────────────────────── */
+  --text-primary: #0F1728;
+  --text-secondary: #4B5675;
+  --text-muted: #8B92A9;
+
+  /* ── Sidebar (new: navy, not white) ──────────────────────── */
+  --sidebar-bg: #1B2B4B;
+  --sidebar-text: #C8D3E8;
+  --sidebar-active: #FFFFFF;
+  --sidebar-active-bg: #2E6BE6;
+
+  /* ── Typography ──────────────────────────────────────────── */
+  --font-display: 'DM Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-body:    'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    'DM Mono', 'SF Mono', ui-monospace, Menlo, monospace;
+
+  /* ── Legacy aliases (retained until each page migrated) ──── */
+  --bg-page: var(--surface-2);
+  --bg-card: var(--surface);
+  --bg-header: rgba(255, 255, 255, 0.92);
+  --border-color: var(--border);
+  --border-subtle: #EEF1F7;
+  --input-bg: var(--surface);
+  --input-border: var(--border-strong);
+  --hover-bg: var(--surface-3);
+  --accent-light: var(--accent-soft);
 }
 
-/* ── shadcn/Radix semantic tokens (light) ───────────────────── */
+/* Legacy @theme brand tokens (some components still reference these) */
+@theme {
+  --color-primary-50:  #EEF3FD;
+  --color-primary-100: #D7E3FB;
+  --color-primary-200: #AFC7F6;
+  --color-primary-300: #87ABF1;
+  --color-primary-400: #5F8FEC;
+  --color-primary-500: #2E6BE6;
+  --color-primary-600: #1E55C4;
+  --color-primary-700: #1A47A0;
+  --color-primary-800: #163A7D;
+  --color-primary-900: #102C5E;
+
+  /* Brand aliases (legacy component consumers) */
+  --color-sidebar: #1B2B4B;
+  --color-navy: #1B2B4B;
+  --color-navy-mid: #243860;
+  --color-gold: #2E6BE6;          /* gold now means accent royal */
+  --color-gold-light: #EEF3FD;
+  --color-off-white: #F8F9FC;
+  --color-border-cf: #E4E7EF;
+  --color-muted-cf: #8B92A9;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   shadcn / Radix tokens (HSL) mapped to new palette
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
   --background: 0 0% 100%;
-  --foreground: 222 47% 7%;
+  --foreground: 222 50% 11%;
   --card: 0 0% 100%;
-  --card-foreground: 222 47% 7%;
+  --card-foreground: 222 50% 11%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 7%;
-  --primary: 238 84% 61%;
+  --popover-foreground: 222 50% 11%;
+  --primary-hsl: 220 65% 54%;          /* #2E6BE6 */
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 14% 96%;
+  --secondary: 222 21% 96%;
   --secondary-foreground: 222 47% 11%;
-  --muted: 220 14% 96%;
-  --muted-foreground: 215 16% 47%;
-  --accent: 220 14% 96%;
+  --muted: 222 21% 96%;
+  --muted-foreground: 222 15% 47%;
+  --accent-hsl: 220 83% 96%;           /* #EEF3FD */
   --accent-foreground: 222 47% 11%;
-  --destructive: 0 84% 60%;
+  --destructive: 0 74% 50%;
   --destructive-foreground: 0 0% 100%;
-  --border: 220 13% 91%;
-  --input: 220 13% 91%;
-  --ring: 238 84% 61%;
+  --border-hsl: 222 23% 91%;
+  --input: 222 23% 91%;
+  --ring: 220 65% 54%;
   --radius: 0.5rem;
 }
 
-.dark {
-  --background: 222 47% 7%;
-  --foreground: 213 31% 91%;
-  --card: 220 39% 14%;
-  --card-foreground: 213 31% 91%;
-  --popover: 220 39% 14%;
-  --popover-foreground: 213 31% 91%;
-  --primary: 238 84% 61%;
+/* ═══════════════════════════════════════════════════════════════
+   Dark mode — supports both `.dark` and `[data-theme="dark"]`
+   ═══════════════════════════════════════════════════════════════ */
+
+.dark,
+[data-theme="dark"] {
+  --surface: #0F1728;
+  --surface-2: #1B2B4B;
+  --surface-3: #243860;
+  --border: #2D3E5F;
+  --border-strong: #3E5380;
+
+  --text-primary: #F0F4FF;
+  --text-secondary: #A9B4CE;
+  --text-muted: #8B92A9;
+
+  --sidebar-bg: #090E1A;
+  --accent-soft: rgba(46, 107, 230, 0.12);
+
+  /* Legacy aliases update too */
+  --bg-page: var(--surface);
+  --bg-card: var(--surface-2);
+  --bg-header: rgba(15, 23, 40, 0.95);
+  --border-color: var(--border);
+  --border-subtle: #1B2740;
+  --input-bg: var(--surface-2);
+  --input-border: var(--border);
+  --hover-bg: var(--surface-3);
+  --accent-light: var(--accent-soft);
+
+  /* shadcn dark */
+  --background: 222 50% 11%;
+  --foreground: 222 30% 94%;
+  --card: 220 47% 20%;
+  --card-foreground: 222 30% 94%;
+  --popover: 220 47% 20%;
+  --popover-foreground: 222 30% 94%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 39% 18%;
-  --secondary-foreground: 213 31% 91%;
-  --muted: 220 39% 18%;
-  --muted-foreground: 215 20% 55%;
-  --accent: 220 39% 18%;
-  --accent-foreground: 213 31% 91%;
-  --destructive: 0 63% 31%;
+  --secondary: 220 47% 20%;
+  --secondary-foreground: 222 30% 94%;
+  --muted: 220 47% 20%;
+  --muted-foreground: 215 18% 65%;
+  --accent-foreground: 222 30% 94%;
+  --destructive: 0 60% 48%;
   --destructive-foreground: 0 0% 100%;
-  --border: 220 39% 18%;
-  --input: 220 39% 18%;
-  --ring: 238 84% 61%;
+  --border-hsl: 218 37% 27%;
+  --input: 218 37% 27%;
 }
 
-/* Map shadcn tokens to Tailwind v4 @theme ───────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Map semantic CSS vars into Tailwind @theme inline
+   ═══════════════════════════════════════════════════════════════ */
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -77,58 +165,32 @@
   --color-card-foreground: hsl(var(--card-foreground));
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
-  --color-primary: hsl(var(--primary));
+  --color-primary: hsl(var(--primary-hsl));
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-accent: hsl(var(--accent));
+  --color-accent: hsl(var(--accent-hsl));
   --color-accent-foreground: hsl(var(--accent-foreground));
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
-  --color-border: hsl(var(--border));
+  --color-border: hsl(var(--border-hsl));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
 }
 
-/* ── Light mode (default) ───────────────────────────────────── */
-:root {
-  --bg-page: #eef1f8;
-  --bg-card: #ffffff;
-  --bg-header: rgba(255,255,255,0.92);
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --text-muted: #94a3b8;
-  --border-color: #e4e8f0;
-  --border-subtle: #f1f5f9;
-  --input-bg: #ffffff;
-  --input-border: #dde3ed;
-  --hover-bg: #f5f7fc;
-  --accent: #c9a84c;
-  --accent-light: rgba(201,168,76,0.12);
-}
-
-/* ── Dark mode ──────────────────────────────────────────────── */
-.dark {
-  --bg-page: #0b1120;
-  --bg-card: #161f30;
-  --bg-header: rgba(11,17,32,0.95);
-  --text-primary: #e8edf5;
-  --text-secondary: #8896ae;
-  --text-muted: #3d4f6a;
-  --border-color: #1e2d45;
-  --border-subtle: #131c2e;
-  --input-bg: #131c2e;
-  --input-border: #1e2d45;
-  --hover-bg: #1e2d45;
-  --accent: #c9a84c;
-  --accent-light: rgba(201,168,76,0.1);
-}
+/* ═══════════════════════════════════════════════════════════════
+   Reset + base
+   ═══════════════════════════════════════════════════════════════ */
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -137,8 +199,8 @@
 html, body {
   margin: 0;
   padding: 0;
-  font-family: 'DM Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
-  background-color: var(--bg-page);
+  font-family: var(--font-body);
+  background-color: var(--surface-2);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -150,21 +212,40 @@ html, body {
   min-height: 100vh;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #dde1eb; border-radius: 10px; }
-.dark ::-webkit-scrollbar-thumb { background: #334155; }
-::-webkit-scrollbar-thumb:hover { background: #b0b8cc; }
+/* Display font for headings — opt-in via Tailwind utility or class */
+.font-display { font-family: var(--font-display); }
+.font-mono    { font-family: var(--font-mono); }
 
-/* Transitions */
+/* Accessibility: consistent focus ring everywhere */
+:where(button, a, [role="button"], input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Scrollbar
+   ═══════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+.dark ::-webkit-scrollbar-thumb,
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #3E5380; }
+
+/* Global short transitions */
 * {
   transition-property: color, background-color, border-color, box-shadow, opacity, transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 120ms;
 }
 
-/* ── Sidebar nav links ──────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Sidebar nav link (legacy utility — kept for current Sidebar)
+   The new sidebar design is delivered in slice 3.
+   ═══════════════════════════════════════════════════════════════ */
+
 .nav-link {
   display: flex;
   align-items: center;
@@ -173,7 +254,7 @@ html, body {
   border-radius: 10px;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: #6b7a99;
+  color: var(--sidebar-text);
   text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
@@ -182,56 +263,67 @@ html, body {
   letter-spacing: 0.01em;
 }
 .nav-link:hover {
-  background: rgba(15, 37, 83, 0.06);
-  color: #0f2553;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--sidebar-active);
 }
 .nav-link.active {
-  background: rgba(184, 150, 62, 0.12);
-  color: #0f2553;
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active);
   font-weight: 600;
 }
 .nav-link.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: #b8963e;
+  content: none;
 }
 
-/* ── Metric cards ───────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Metric cards
+   ═══════════════════════════════════════════════════════════════ */
+
 .metric-card {
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 .metric-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
 }
-.dark .metric-card:hover {
-  box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+.dark .metric-card:hover,
+[data-theme="dark"] .metric-card:hover {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
 }
 
-/* ── Premium card shadow ────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Card container
+   ═══════════════════════════════════════════════════════════════ */
+
 .card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04), 0 0 0 0.5px rgba(0,0,0,0.03);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.04),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    0 0 0 0.5px rgba(0, 0, 0, 0.03);
 }
-.dark .card {
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2), 0 0 0 0.5px rgba(255,255,255,0.02);
+.dark .card,
+[data-theme="dark"] .card {
+  background: var(--surface-2);
+  border-color: var(--border);
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.2),
+    0 0 0 0.5px rgba(255, 255, 255, 0.02);
 }
 
-/* ── Page container ─────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Page container + header
+   ═══════════════════════════════════════════════════════════════ */
+
 .page-container {
   padding: 24px 28px;
   max-width: 1400px;
 }
-
-/* ── Page header ────────────────────────────────────────────── */
 .page-header-title {
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -243,7 +335,10 @@ html, body {
   margin-top: 2px;
 }
 
-/* ── Table improvements ─────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Data table (legacy utility — refined in slice 2)
+   ═══════════════════════════════════════════════════════════════ */
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -255,8 +350,8 @@ html, body {
   text-transform: uppercase;
   color: var(--text-muted);
   padding: 10px 14px;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--hover-bg);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
   white-space: nowrap;
 }
 .data-table td {
@@ -267,56 +362,54 @@ html, body {
   vertical-align: middle;
 }
 .data-table tbody tr:hover td {
-  background: var(--hover-bg);
+  background: var(--surface-3);
   cursor: pointer;
 }
 .data-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-/* ── Dark mode Tailwind overrides ───────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Dark mode — Tailwind class overrides (legacy, kept for safety)
+   Cleaned up as each page is migrated in later slices.
+   ═══════════════════════════════════════════════════════════════ */
 
-/* Backgrounds */
 .dark .bg-white,
 .dark .bg-slate-50,
-.dark [class*="bg-white"] { background-color: var(--bg-card) !important; }
+.dark [class*="bg-white"] { background-color: var(--surface-2) !important; }
 .dark .bg-slate-100,
-.dark .bg-gray-100 { background-color: #334155 !important; }
-.dark .bg-gray-50 { background-color: #1e293b !important; }
-.dark .bg-slate-200 { background-color: #475569 !important; }
+.dark .bg-gray-100 { background-color: var(--surface-3) !important; }
+.dark .bg-gray-50 { background-color: var(--surface-2) !important; }
+.dark .bg-slate-200 { background-color: #3E5380 !important; }
 
-/* Text */
 .dark .text-slate-900,
-.dark .text-gray-900 { color: #f1f5f9 !important; }
+.dark .text-gray-900 { color: var(--text-primary) !important; }
 .dark .text-slate-800,
-.dark .text-gray-800 { color: #e2e8f0 !important; }
+.dark .text-gray-800 { color: #E2E8F0 !important; }
 .dark .text-slate-700,
-.dark .text-gray-700 { color: #cbd5e1 !important; }
+.dark .text-gray-700 { color: #CBD5E1 !important; }
 .dark .text-slate-600,
-.dark .text-gray-600 { color: #94a3b8 !important; }
+.dark .text-gray-600 { color: var(--text-secondary) !important; }
 .dark .text-slate-500,
-.dark .text-gray-500 { color: #64748b !important; }
+.dark .text-gray-500 { color: var(--text-muted) !important; }
 .dark .text-slate-400,
-.dark .text-gray-400 { color: #475569 !important; }
+.dark .text-gray-400 { color: #64748B !important; }
 
-/* Borders */
 .dark .border-slate-100,
-.dark .border-gray-100 { border-color: #1e293b !important; }
+.dark .border-gray-100 { border-color: var(--border-subtle) !important; }
 .dark .border-slate-200,
-.dark .border-gray-200 { border-color: #334155 !important; }
+.dark .border-gray-200 { border-color: var(--border) !important; }
 .dark .border-slate-300,
-.dark .border-gray-300 { border-color: #475569 !important; }
+.dark .border-gray-300 { border-color: var(--border-strong) !important; }
 .dark .divide-slate-50 > * + *,
-.dark .divide-slate-100 > * + * { border-color: #1e293b !important; }
-.dark .divide-slate-200 > * + * { border-color: #334155 !important; }
+.dark .divide-slate-100 > * + * { border-color: var(--border-subtle) !important; }
+.dark .divide-slate-200 > * + * { border-color: var(--border) !important; }
 
-/* Hover states */
 .dark .hover\:bg-slate-50:hover,
-.dark .hover\:bg-gray-50:hover { background-color: #1e293b !important; }
+.dark .hover\:bg-gray-50:hover { background-color: var(--surface-2) !important; }
 .dark .hover\:bg-slate-100:hover,
-.dark .hover\:bg-gray-100:hover { background-color: #334155 !important; }
+.dark .hover\:bg-gray-100:hover { background-color: var(--surface-3) !important; }
 
-/* Form elements */
 .dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .dark select,
 .dark textarea {
@@ -328,24 +421,29 @@ html, body {
 .dark textarea::placeholder { color: var(--text-muted) !important; }
 .dark input:focus,
 .dark select:focus,
-.dark textarea:focus { border-color: #c9a84c !important; }
-.dark option { background-color: #1e293b; color: #f1f5f9; }
+.dark textarea:focus { border-color: var(--accent) !important; }
+.dark option { background-color: var(--surface-2); color: var(--text-primary); }
 
-/* Tables */
 .dark table { color: var(--text-primary); }
 .dark thead tr,
-.dark th { background-color: var(--bg-page) !important; color: var(--text-muted) !important; border-color: var(--border-color) !important; }
+.dark th {
+  background-color: var(--surface) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border) !important;
+}
 .dark tbody tr { border-color: var(--border-subtle) !important; }
-.dark tbody tr:hover { background-color: var(--hover-bg) !important; }
+.dark tbody tr:hover { background-color: var(--surface-3) !important; }
 .dark td { color: var(--text-secondary); }
 
-/* ── Spinner animation ──────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Misc utilities
+   ═══════════════════════════════════════════════════════════════ */
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-/* ── Icon button ────────────────────────────────────────────── */
 .icon-btn {
   border: none;
   background: none;
@@ -355,20 +453,18 @@ html, body {
   transition: background 120ms, color 120ms;
 }
 .icon-btn:hover {
-  background: var(--hover-bg);
+  background: var(--surface-3);
   color: var(--text-secondary);
 }
 
-/* ── Gradient text ──────────────────────────────────────────── */
 .gradient-text {
-  background: linear-gradient(135deg, #1a2e4a, #c9a84c);
+  background: linear-gradient(135deg, var(--primary), var(--accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ── Input focus glow ───────────────────────────────────────── */
 .input-premium:focus {
-  border-color: #c9a84c !important;
-  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(46, 107, 230, 0.18);
 }
