@@ -13,7 +13,7 @@ import { Modal } from '../components/ui/Modal'
 import type { Contact } from '../types'
 
 const STATUS_COLORS: Record<string, string> = {
-  SCHEDULED: '#6366f1', CONFIRMED: '#10b981', CANCELLED: '#ef4444',
+  SCHEDULED: 'var(--accent)', CONFIRMED: '#10b981', CANCELLED: '#ef4444',
   COMPLETED: '#64748b', NO_SHOW: '#f59e0b',
 }
 const STATUS_LABELS: Record<string, string> = {
@@ -52,8 +52,8 @@ function toLocalDatetimeInput(iso: string | undefined): string {
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
-  border: '1px solid var(--border-color)', borderRadius: 8,
-  background: 'var(--bg-page)', color: 'var(--text-primary)', outline: 'none',
+  border: '1px solid var(--border)', borderRadius: 8,
+  background: 'var(--surface-2)', color: 'var(--text-primary)', outline: 'none',
   fontFamily: 'inherit',
 }
 const labelStyle: React.CSSProperties = {
@@ -489,7 +489,7 @@ export const AppointmentsPage: React.FC = () => {
   const [activeCalendarIds, setActiveCalendarIds] = useState<Set<string>>(new Set(['ALL']))
   const [showCalendarForm, setShowCalendarForm] = useState(false)
   const [newCalendarName, setNewCalendarName] = useState('')
-  const [newCalendarColor, setNewCalendarColor] = useState('#6366f1')
+  const [newCalendarColor, setNewCalendarColor] = useState('var(--accent)')
 
   const loadCalendars = async () => {
     try {
@@ -507,7 +507,7 @@ export const AppointmentsPage: React.FC = () => {
       await createCalendar({ name: newCalendarName.trim(), color: newCalendarColor })
       showToast('Calendário criado', 'success')
       setNewCalendarName('')
-      setNewCalendarColor('#6366f1')
+      setNewCalendarColor('var(--accent)')
       setShowCalendarForm(false)
       loadCalendars()
     } catch {
@@ -656,7 +656,7 @@ export const AppointmentsPage: React.FC = () => {
                     Nenhum compromisso encontrado
                   </td></tr>
                 ) : listFiltered.map((a, idx) => {
-                  const sc = STATUS_COLORS[a.status] || '#6366f1'
+                  const sc = STATUS_COLORS[a.status] || 'var(--accent)'
                   const start = new Date(a.startAt)
                   return (
                     <tr key={a.id} style={{ borderBottom: '1px solid #f1f3f4', transition: 'background 0.1s' }}
@@ -833,7 +833,7 @@ export const AppointmentsPage: React.FC = () => {
               />
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                 <label style={{ fontSize: 11, color: '#70757a' }}>Cor:</label>
-                {['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#ec4899','#14b8a6'].map(c => (
+                {['var(--accent)','#10b981','#f59e0b','#ef4444','var(--accent)','#8b5cf6','#ec4899','#14b8a6'].map(c => (
                   <button
                     key={c} type="button"
                     onClick={() => setNewCalendarColor(c)}
@@ -908,7 +908,7 @@ export const AppointmentsPage: React.FC = () => {
                 <button key={s} onClick={() => setFilter(s)} style={{
                   padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600,
                   border: 'none', cursor: 'pointer',
-                  background: filter === s ? (STATUS_COLORS[s] || '#6366f1') : '#f1f3f4',
+                  background: filter === s ? (STATUS_COLORS[s] || 'var(--accent)') : '#f1f3f4',
                   color: filter === s ? '#fff' : '#3c4043',
                 }}>{s === 'ALL' ? 'Todos' : STATUS_LABELS[s]}</button>
               ))}
@@ -956,7 +956,7 @@ export const AppointmentsPage: React.FC = () => {
         loading ? (
           <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)', fontSize: 13 }}>A carregar...</div>
         ) : visibleAppointments.length === 0 ? (
-          <div style={{ borderRadius: 12, border: '1px solid var(--border-color)', padding: '48px 24px', textAlign: 'center', background: 'var(--bg-card)' }}>
+          <div style={{ borderRadius: 12, border: '1px solid var(--border)', padding: '48px 24px', textAlign: 'center', background: 'var(--surface)' }}>
             <Calendar size={36} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} />
             <p style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12 }}>Sem agendamentos</p>
             <Button size="sm" onClick={openCreate}>Criar primeiro agendamento</Button>
@@ -964,14 +964,14 @@ export const AppointmentsPage: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {visibleAppointments.map(a => {
-              const sc = STATUS_COLORS[a.status] || '#6366f1'
+              const sc = STATUS_COLORS[a.status] || 'var(--accent)'
               return (
                 <div
                   key={a.id}
                   style={{
                     display: 'flex', alignItems: 'flex-start', gap: 12,
                     padding: '12px 16px', borderRadius: 10,
-                    background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+                    background: 'var(--surface)', border: '1px solid var(--border)',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                     transition: 'box-shadow 150ms',
                   }}
@@ -1012,7 +1012,7 @@ export const AppointmentsPage: React.FC = () => {
                         <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: sc + '18', color: sc }}>
                           {STATUS_LABELS[a.status]}
                         </span>
-                        <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'var(--hover-bg)', color: 'var(--text-secondary)' }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'var(--surface-3)', color: 'var(--text-secondary)' }}>
                           {TYPE_LABELS[a.type]}
                         </span>
                       </div>
@@ -1035,7 +1035,7 @@ export const AppointmentsPage: React.FC = () => {
                     <button
                       onClick={() => openEdit(a)}
                       style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--hover-bg)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface-3)'; e.currentTarget.style.color = 'var(--text-primary)' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}
                     >
                       Editar
@@ -1086,9 +1086,9 @@ export const AppointmentsPage: React.FC = () => {
                     key={di}
                     ref={el => { dayColRefs.current[di] = el }}
                     style={{
-                      borderLeft: '1px solid var(--border-color)',
+                      borderLeft: '1px solid var(--border)',
                       position: 'relative',
-                      background: isToday ? 'rgba(99,102,241,0.02)' : 'transparent',
+                      background: isToday ? 'rgba(46,107,230,0.02)' : 'transparent',
                       height: HOURS.length * HOUR_HEIGHT,
                       cursor: dragMove ? 'grabbing' : 'crosshair',
                       userSelect: 'none',
@@ -1099,7 +1099,7 @@ export const AppointmentsPage: React.FC = () => {
                     {HOURS.map((h, hi) => (
                       <div key={h} style={{
                         position: 'absolute', top: hi * HOUR_HEIGHT, left: 0, right: 0,
-                        borderTop: '1px solid var(--border-subtle)',
+                        borderTop: '1px solid var(--border)',
                         height: HOUR_HEIGHT,
                       }} />
                     ))}
@@ -1119,10 +1119,10 @@ export const AppointmentsPage: React.FC = () => {
                         <div style={{
                           position: 'absolute', top: previewTop + 1, left: 2, right: 2,
                           height: previewH - 2, borderRadius: 6,
-                          background: 'rgba(99,102,241,0.85)',
-                          border: '2px solid #6366f1',
+                          background: 'rgba(46,107,230,0.85)',
+                          border: '2px solid var(--accent)',
                           padding: '3px 6px', zIndex: 10, pointerEvents: 'none',
-                          boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
+                          boxShadow: '0 2px 8px rgba(46,107,230,0.35)',
                         }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>
                             Novo agendamento
@@ -1146,8 +1146,8 @@ export const AppointmentsPage: React.FC = () => {
                         <div style={{
                           position: 'absolute', top: ghostTop + 1, left: 2, right: 2,
                           height: ghostH - 2, borderRadius: 6,
-                          background: 'rgba(99,102,241,0.55)',
-                          border: '2px dashed #6366f1',
+                          background: 'rgba(46,107,230,0.55)',
+                          border: '2px dashed var(--accent)',
                           padding: '3px 6px', zIndex: 20, pointerEvents: 'none',
                         }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>
@@ -1160,7 +1160,7 @@ export const AppointmentsPage: React.FC = () => {
                     {/* Appointment blocks */}
                     {dayAppts.map(a => {
                       const { top, height } = getApptStyle(a)
-                      const sc = STATUS_COLORS[a.status] || '#6366f1'
+                      const sc = STATUS_COLORS[a.status] || 'var(--accent)'
                       const isDragging = dragMove?.apptId === a.id
                       return (
                         <div
@@ -1227,14 +1227,14 @@ export const AppointmentsPage: React.FC = () => {
 
       {/* ── CALENDAR VIEW ── (ref: calendar + calendar ddwn patterns) */}
       {view === 'calendar' && (
-        <div style={{ borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-card)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+        <div style={{ borderRadius: 12, border: '1px solid var(--border)', background: 'var(--surface)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
 
           {/* Calendar header with month/year dropdowns (ref: calendar ddwn) */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
             <button
               onClick={prevMonth}
               style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               <ChevronLeft size={16} />
@@ -1261,7 +1261,7 @@ export const AppointmentsPage: React.FC = () => {
             <button
               onClick={nextMonth}
               style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               <ChevronRight size={16} />
@@ -1269,7 +1269,7 @@ export const AppointmentsPage: React.FC = () => {
           </div>
 
           {/* Day headers (ref: calendar — DAYS_OF_WEEK pattern) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid var(--border)' }}>
             {WEEK_DAYS_PT.map(d => (
               <div key={d} style={{ padding: '8px 4px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 {d}
@@ -1287,9 +1287,9 @@ export const AppointmentsPage: React.FC = () => {
                   key={i}
                   style={{
                     minHeight: 80, padding: '6px 4px',
-                    borderBottom: '1px solid var(--border-subtle)',
-                    borderRight: '1px solid var(--border-subtle)',
-                    background: !day ? 'var(--hover-bg)' : isToday ? 'rgba(99,102,241,0.03)' : 'transparent',
+                    borderBottom: '1px solid var(--border)',
+                    borderRight: '1px solid var(--border)',
+                    background: !day ? 'var(--surface-3)' : isToday ? 'rgba(46,107,230,0.03)' : 'transparent',
                   }}
                 >
                   {day && (
@@ -1300,7 +1300,7 @@ export const AppointmentsPage: React.FC = () => {
                           width: 24, height: 24, borderRadius: '50%',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: 12, fontWeight: isToday ? 700 : 400,
-                          background: isToday ? '#6366f1' : 'transparent',
+                          background: isToday ? 'var(--accent)' : 'transparent',
                           color: isToday ? '#fff' : 'var(--text-secondary)',
                         }}>
                           {day.getDate()}
@@ -1364,8 +1364,8 @@ export const AppointmentsPage: React.FC = () => {
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               style={inputStyle}
               placeholder="ex: Visita ao apartamento T3"
-              onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.12)' }}
-              onBlur={e => { e.target.style.borderColor = 'var(--border-color)'; e.target.style.boxShadow = 'none' }}
+              onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.boxShadow = '0 0 0 2px rgba(46,107,230,0.12)' }}
+              onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none' }}
             />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -1427,7 +1427,7 @@ export const AppointmentsPage: React.FC = () => {
             <label style={labelStyle}>Localização</label>
             <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} style={inputStyle} placeholder="Morada ou link de reunião" />
             {form.location && /^https?:\/\//i.test(form.location) && (
-              <a href={form.location} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6, fontSize: 12, color: '#6366f1', textDecoration: 'none', fontWeight: 500 }}>
+              <a href={form.location} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6, fontSize: 12, color: 'var(--accent)', textDecoration: 'none', fontWeight: 500 }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 {/meet\.google\.com/i.test(form.location) ? 'Entrar no Google Meet' : /teams\.microsoft/i.test(form.location) ? 'Entrar no Teams' : /zoom\.us/i.test(form.location) ? 'Entrar no Zoom' : 'Abrir link'}
               </a>

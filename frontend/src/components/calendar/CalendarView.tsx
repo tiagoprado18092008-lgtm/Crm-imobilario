@@ -25,10 +25,10 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i)   // 0–23
 const HOUR_H = 60   // px per hour — matches Google Calendar density
 
 const TASK_COLORS: Record<string, string> = {
-  PENDING: '#6366f1', IN_PROGRESS: '#2563eb', COMPLETED: '#64748b', CANCELLED: '#94a3b8',
+  PENDING: 'var(--accent)', IN_PROGRESS: '#2563eb', COMPLETED: '#64748b', CANCELLED: '#94a3b8',
 }
 
-function taskColor(t: Task) { return TASK_COLORS[t.status] ?? '#6366f1' }
+function taskColor(t: Task) { return TASK_COLORS[t.status] ?? 'var(--accent)' }
 function evColor(ev: any) {
   if (ev.externalProvider === 'google') return ev.color || '#039be5'
   if (ev.externalProvider === 'outlook') return ev.color || '#0078d4'
@@ -126,7 +126,7 @@ function EvTooltip({ ev, pos }: { ev: any; pos: { x: number; y: number } }) {
   const isGoogle = ev.externalProvider === 'google'
   const isOutlook = ev.externalProvider === 'outlook'
   const sourceLabel = isGoogle ? 'Google Calendar' : isOutlook ? 'Outlook Calendar' : 'CRM'
-  const sourceColor = isGoogle ? '#4285f4' : isOutlook ? '#0078d4' : '#6366f1'
+  const sourceColor = isGoogle ? '#4285f4' : isOutlook ? '#0078d4' : 'var(--accent)'
   const sourceIcon = isGoogle ? '🗓' : isOutlook ? '📅' : '📌'
   const start = ev.startAt ? new Date(ev.startAt) : null
   const end = ev.endAt ? new Date(ev.endAt) : null
@@ -513,7 +513,7 @@ function MonthView({ currentDate, tasksByKey, eventsByKey, todayKey, onTaskClick
                 borderBottom: '1px solid #e0e0e0',
                 minHeight: 120, padding: '4px 4px 2px',
                 cursor: 'pointer',
-                background: 'var(--bg-card)',
+                background: 'var(--surface)',
               }}
               onMouseEnter={e => (e.currentTarget.style.background = '#f8f9fa')}
               onMouseLeave={e => (e.currentTarget.style.background = '')}
@@ -561,7 +561,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   const [sources, setSources] = useState<CalendarSource[]>([
     { id: 'crm_events', label: 'Eventos CRM', color: '#33b679', provider: 'crm', enabled: true },
-    { id: 'tasks', label: 'Tarefas', color: '#6366f1', provider: 'tasks', enabled: true },
+    { id: 'tasks', label: 'Tarefas', color: 'var(--accent)', provider: 'tasks', enabled: true },
     { id: 'google', label: 'Google Calendar', color: '#4285f4', provider: 'google', enabled: true },
     { id: 'outlook', label: 'Outlook Calendar', color: '#0078d4', provider: 'outlook', enabled: true },
   ])

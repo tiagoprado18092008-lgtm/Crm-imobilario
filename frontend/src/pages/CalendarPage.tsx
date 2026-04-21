@@ -36,8 +36,8 @@ type TaskFormData = z.infer<typeof taskSchema>
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
-  border: '1px solid var(--border-color)', borderRadius: 8,
-  background: 'var(--bg-page)', color: 'var(--text-primary)', outline: 'none',
+  border: '1px solid var(--border)', borderRadius: 8,
+  background: 'var(--surface-2)', color: 'var(--text-primary)', outline: 'none',
   fontFamily: 'inherit',
 }
 const labelStyle: React.CSSProperties = {
@@ -262,7 +262,7 @@ export const CalendarPage: React.FC = () => {
         </div>
         <Link to="/calendar/settings" style={{
           display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px',
-          borderRadius: 8, border: '1px solid var(--border-color)',
+          borderRadius: 8, border: '1px solid var(--border)',
           background: 'transparent', color: 'var(--text-secondary)',
           textDecoration: 'none', fontSize: 12, fontWeight: 600,
         }}>
