@@ -180,10 +180,11 @@ export async function importGoogleEventsAsAppointments(userId: string) {
 
     for (const ev of googleEvents) {
       if (!ev.externalId) continue;
+      const effectiveLocation = ev.location || (ev as any).meetLink || null;
       if (existingByExternalId.has(ev.externalId)) {
         toUpdate.push({
           id: existingByExternalId.get(ev.externalId)!,
-          data: { title: ev.title, startAt: ev.startAt, endAt: ev.endAt, location: ev.location || null },
+          data: { title: ev.title, startAt: ev.startAt, endAt: ev.endAt, location: effectiveLocation },
         });
       } else {
         const marker = `gcal:${ev.externalId}`;
@@ -194,7 +195,7 @@ export async function importGoogleEventsAsAppointments(userId: string) {
           endAt: ev.endAt,
           status: 'SCHEDULED',
           type: 'GENERAL_MEETING',
-          location: ev.location || null,
+          location: effectiveLocation,
           assignedToId: userId,
           contactId: ev.contactId || null,
         });

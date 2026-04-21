@@ -1426,6 +1426,12 @@ export const AppointmentsPage: React.FC = () => {
           <div>
             <label style={labelStyle}>Localização</label>
             <input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} style={inputStyle} placeholder="Morada ou link de reunião" />
+            {form.location && /^https?:\/\//i.test(form.location) && (
+              <a href={form.location} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6, fontSize: 12, color: '#6366f1', textDecoration: 'none', fontWeight: 500 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                {/meet\.google\.com/i.test(form.location) ? 'Entrar no Google Meet' : /teams\.microsoft/i.test(form.location) ? 'Entrar no Teams' : /zoom\.us/i.test(form.location) ? 'Entrar no Zoom' : 'Abrir link'}
+              </a>
+            )}
           </div>
           <div>
             <label style={labelStyle}>Contacto</label>
