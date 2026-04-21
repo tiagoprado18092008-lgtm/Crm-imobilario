@@ -29,13 +29,13 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
             onClick={() => onClick(opportunity)}
             style={{
               ...provided.draggableProps.style,
-              background: snapshot.isDragging ? 'rgba(99,102,241,0.04)' : 'var(--bg-card)',
+              background: snapshot.isDragging ? 'var(--accent-soft)' : 'var(--surface)',
               boxShadow: snapshot.isDragging
-                ? '0 8px 24px rgba(59,130,246,0.18)'
+                ? '0 8px 24px rgba(46,107,230,0.18)'
                 : '0 1px 3px rgba(0,0,0,0.06)',
               border: snapshot.isDragging
-                ? '1.5px solid #93c5fd'
-                : '1px solid var(--border-color)',
+                ? '1.5px solid var(--accent)'
+                : '1px solid var(--border)',
               borderRadius: 8,
               padding: '10px 12px',
               cursor: 'pointer',
@@ -70,7 +70,7 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
                     width: 28,
                     height: 28,
                     borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                    background: 'var(--accent)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -161,8 +161,8 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
                     alignItems: 'center',
                     fontSize: 10,
                     fontWeight: 600,
-                    color: '#6366f1',
-                    background: 'rgba(99,102,241,0.08)',
+                    color: 'var(--accent)',
+                    background: 'var(--accent-soft)',
                     padding: '2px 7px',
                     borderRadius: 20,
                     maxWidth: '100%',
@@ -229,7 +229,7 @@ const ActionBtn: React.FC<{
       flexShrink: 0,
       transition: 'background 150ms',
     }}
-    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#eff6ff' }}
+    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--accent-soft)' }}
     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--bg-page)' }}
   >
     {icon}
@@ -239,7 +239,7 @@ const ActionBtn: React.FC<{
           position: 'absolute',
           top: -5,
           right: -5,
-          background: '#3b82f6',
+          background: 'var(--accent)',
           color: '#fff',
           fontSize: 9,
           fontWeight: 700,

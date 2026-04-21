@@ -77,8 +77,8 @@ const SALE_REASON_OPTIONS = [
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box' as const,
-  border: '1px solid var(--border-color)', borderRadius: 8,
-  background: 'var(--bg-page)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit',
+  border: '1px solid var(--border)', borderRadius: 8,
+  background: 'var(--surface-2)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'inherit',
 }
 const labelStyle: React.CSSProperties = {
   fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4,
@@ -231,12 +231,12 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
           rows={3}
           style={{
             width: '100%', padding: '8px 12px', fontSize: 13, boxSizing: 'border-box',
-            border: '1px solid var(--border-color)', borderRadius: 8,
-            background: 'var(--bg-page)', color: 'var(--text-primary)',
+            border: '1px solid var(--border)', borderRadius: 8,
+            background: 'var(--surface-2)', color: 'var(--text-primary)',
             outline: 'none', resize: 'vertical', fontFamily: 'inherit',
           }}
-          onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 2px rgba(99,102,241,0.12)' }}
-          onBlur={e => { e.target.style.borderColor = 'var(--border-color)'; e.target.style.boxShadow = 'none' }}
+          onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.boxShadow = '0 0 0 3px rgba(46,107,230,0.12)' }}
+          onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none' }}
         />
       </div>
       {watchedStage === 'CLOSED_LOST' && (
@@ -257,7 +257,7 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
 
       {/* Dynamic fields — BUYER */}
       {contactType === 'BUYER' && (
-        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Perfil de Compra</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <div>
@@ -296,11 +296,11 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-              <input type="checkbox" {...register('selling_also')} checked={sellingAlso} onChange={e => setFormValue('selling_also', e.target.checked)} style={{ accentColor: '#c9a84c', width: 15, height: 15 }} />
+              <input type="checkbox" {...register('selling_also')} checked={sellingAlso} onChange={e => setFormValue('selling_also', e.target.checked)} style={{ accentColor: 'var(--accent)', width: 15, height: 15 }} />
               Pretende também vender
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-              <input type="checkbox" {...register('needs_financing')} checked={needsFinancing} onChange={e => setFormValue('needs_financing', e.target.checked)} style={{ accentColor: '#c9a84c', width: 15, height: 15 }} />
+              <input type="checkbox" {...register('needs_financing')} checked={needsFinancing} onChange={e => setFormValue('needs_financing', e.target.checked)} style={{ accentColor: 'var(--accent)', width: 15, height: 15 }} />
               Necessita de financiamento
             </label>
           </div>
@@ -309,7 +309,7 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
 
       {/* Dynamic fields — OWNER */}
       {contactType === 'OWNER' && (
-        <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Dados do Imóvel</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
@@ -323,7 +323,7 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
               </div>
               <div>
                 <label style={labelStyle}>Comissão estimada (5%)</label>
-                <input type="text" readOnly value={oppCommission !== null ? `${oppCommission.toLocaleString('pt-PT', { minimumFractionDigits: 2 })} €` : '—'} style={{ ...inputStyle, background: 'var(--bg-subtle, #f8f9fc)', color: 'var(--text-muted)', cursor: 'default' }} />
+                <input type="text" readOnly value={oppCommission !== null ? `${oppCommission.toLocaleString('pt-PT', { minimumFractionDigits: 2 })} €` : '—'} style={{ ...inputStyle, background: 'var(--surface-3)', color: 'var(--text-muted)', cursor: 'default' }} />
               </div>
             </div>
             <div>
@@ -334,7 +334,7 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
               </select>
             </div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-              <input type="checkbox" {...register('buying_also')} checked={buyingAlso} onChange={e => setFormValue('buying_also', e.target.checked)} style={{ accentColor: '#c9a84c', width: 15, height: 15 }} />
+              <input type="checkbox" {...register('buying_also')} checked={buyingAlso} onChange={e => setFormValue('buying_also', e.target.checked)} style={{ accentColor: 'var(--accent)', width: 15, height: 15 }} />
               Necessita de comprar além de vender
             </label>
           </div>
@@ -589,7 +589,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
       <div style={{ marginBottom: 0 }}>
 
         {/* Title + Tabs row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderBottom: '1px solid var(--border-color)', marginBottom: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 0 }}>
           {[
             { key: 'opportunities', label: 'Oportunidades Potenciais' },
             { key: 'pipelines',     label: 'Pipelines' },
@@ -602,10 +602,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                 padding: '10px 18px',
                 fontSize: 13,
                 fontWeight: pageTab === t.key ? 600 : 400,
-                color: pageTab === t.key ? '#3b82f6' : 'var(--text-secondary)',
+                color: pageTab === t.key ? 'var(--accent)' : 'var(--text-secondary)',
                 background: 'none',
                 border: 'none',
-                borderBottom: pageTab === t.key ? '2px solid #3b82f6' : '2px solid transparent',
+                borderBottom: pageTab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 marginBottom: -1,
@@ -628,8 +628,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '6px 12px', borderRadius: 6, fontSize: 13, fontWeight: 500,
-                background: 'var(--bg-card)', color: 'var(--text-primary)',
-                border: '1px solid var(--border-color)', cursor: 'pointer',
+                background: 'var(--surface)', color: 'var(--text-primary)',
+                border: '1px solid var(--border)', cursor: 'pointer',
                 minWidth: 200,
               }}
             >
@@ -641,7 +641,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
             {showPipelineDropdown && (
               <div style={{
                 position: 'absolute', top: 36, left: 0, zIndex: 50, minWidth: 220,
-                background: 'var(--bg-card)', borderRadius: 10, border: '1px solid var(--border-color)',
+                background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden',
               }}>
                 <div style={{ padding: '4px 0' }}>
@@ -651,17 +651,17 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                       onClick={() => { setActivePipeline(p); setShowPipelineDropdown(false) }}
                       style={{
                         width: '100%', textAlign: 'left', padding: '8px 14px',
-                        fontSize: 13, background: activePipeline?.id === p.id ? 'var(--hover-bg)' : 'none',
+                        fontSize: 13, background: activePipeline?.id === p.id ? 'var(--surface-3)' : 'none',
                         color: 'var(--text-primary)', border: 'none', cursor: 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       }}
                     >
                       {i + 1} - {p.name}
-                      {activePipeline?.id === p.id && <Check size={13} style={{ color: '#3b82f6' }} />}
+                      {activePipeline?.id === p.id && <Check size={13} style={{ color: 'var(--accent)' }} />}
                     </button>
                   ))}
                 </div>
-                <div style={{ borderTop: '1px solid var(--border-color)', padding: '4px 0' }}>
+                <div style={{ borderTop: '1px solid var(--border)', padding: '4px 0' }}>
                   {creatingPipeline ? (
                     <form onSubmit={handleCreatePipeline} style={{ padding: '6px 10px', display: 'flex', gap: 6 }}>
                       <input
@@ -671,18 +671,18 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                         placeholder="Nome do pipeline"
                         style={{
                           flex: 1, padding: '5px 8px', borderRadius: 6, fontSize: 12,
-                          border: '1.5px solid #6366f1', outline: 'none', fontFamily: 'inherit',
+                          border: '1.5px solid var(--accent)', outline: 'none', fontFamily: 'inherit',
                         }}
                       />
-                      <button type="submit" style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: '#6366f1', color: '#fff', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>OK</button>
-                      <button type="button" onClick={() => setCreatingPipeline(false)} style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'none', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
+                      <button type="submit" style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>OK</button>
+                      <button type="button" onClick={() => setCreatingPipeline(false)} style={{ padding: '5px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'none', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>✕</button>
                     </form>
                   ) : (
                     <button
                       onClick={() => setCreatingPipeline(true)}
                       style={{
                         width: '100%', textAlign: 'left', padding: '8px 14px',
-                        fontSize: 13, color: '#3b82f6', background: 'none',
+                        fontSize: 13, color: 'var(--accent)', background: 'none',
                         border: 'none', cursor: 'pointer',
                         display: 'flex', alignItems: 'center', gap: 6,
                       }}
@@ -703,13 +703,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
           <div style={{ flex: 1 }} />
 
           {/* View toggle (grid / list icons) */}
-          <div style={{ display: 'flex', gap: 2, border: '1px solid var(--border-color)', borderRadius: 6, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', gap: 2, border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
             <button
               onClick={() => setViewMode('kanban')}
               title="Vista Kanban"
               style={{
                 padding: '5px 8px', border: 'none', cursor: 'pointer',
-                background: viewMode === 'kanban' ? '#3b82f6' : 'var(--bg-card)',
+                background: viewMode === 'kanban' ? 'var(--accent)' : 'var(--surface)',
                 color: viewMode === 'kanban' ? '#fff' : 'var(--text-muted)',
                 display: 'flex', alignItems: 'center',
               }}
@@ -721,7 +721,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
               title="Vista Lista"
               style={{
                 padding: '5px 8px', border: 'none', cursor: 'pointer',
-                background: viewMode === 'list' ? '#3b82f6' : 'var(--bg-card)',
+                background: viewMode === 'list' ? 'var(--accent)' : 'var(--surface)',
                 color: viewMode === 'list' ? '#fff' : 'var(--text-muted)',
                 display: 'flex', alignItems: 'center',
               }}
@@ -736,8 +736,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
               padding: '6px 14px', borderRadius: 6, fontSize: 13, fontWeight: 500,
-              background: 'var(--bg-card)', color: 'var(--text-secondary)',
-              border: '1px solid var(--border-color)', cursor: 'pointer',
+              background: 'var(--surface)', color: 'var(--text-secondary)',
+              border: '1px solid var(--border)', cursor: 'pointer',
             }}
           >
             <Upload size={14} /> Importar
@@ -753,7 +753,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '6px 16px', borderRadius: 6, fontSize: 13, fontWeight: 600,
-              background: '#3b82f6', color: '#fff',
+              background: 'var(--accent)', color: '#fff',
               border: 'none', cursor: 'pointer',
             }}
           >
@@ -771,16 +771,16 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                 style={{
                   display: 'flex', alignItems: 'center', gap: 5,
                   padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500,
-                  background: activeFilters > 0 ? '#eef2ff' : 'var(--bg-card)',
-                  color: activeFilters > 0 ? '#6366f1' : 'var(--text-secondary)',
-                  border: `1px solid ${activeFilters > 0 ? '#c7d2fe' : 'var(--border-color)'}`,
+                  background: activeFilters > 0 ? 'var(--accent-soft)' : 'var(--surface)',
+                  color: activeFilters > 0 ? 'var(--accent)' : 'var(--text-secondary)',
+                  border: `1px solid ${activeFilters > 0 ? 'var(--accent)' : 'var(--border)'}`,
                   cursor: 'pointer',
                 }}
               >
                 <SlidersHorizontal size={12} />
                 Filtros
                 {activeFilters > 0 && (
-                  <span style={{ background: '#6366f1', color: '#fff', borderRadius: 10, fontSize: 10, padding: '0 5px', fontWeight: 700 }}>
+                  <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: 10, fontSize: 10, padding: '0 5px', fontWeight: 700 }}>
                     {activeFilters}
                   </span>
                 )}
@@ -788,7 +788,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
               {showFilterPanel && (
                 <div style={{
                   position: 'absolute', top: 34, left: 0, zIndex: 50,
-                  background: 'var(--bg-card)', borderRadius: 10, border: '1px solid var(--border-color)',
+                  background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 16, minWidth: 240,
                 }}>
                   <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Filtros</p>
@@ -797,7 +797,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                     <select
                       value={filterSource}
                       onChange={e => setFilterSource(e.target.value)}
-                      style={{ width: '100%', padding: '7px 10px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border-color)', outline: 'none', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
+                      style={{ width: '100%', padding: '7px 10px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', outline: 'none', background: 'var(--surface-2)', color: 'var(--text-primary)' }}
                     >
                       <option value="">Todas as fontes</option>
                       {SOURCE_OPTIONS_FORM.map(s => <option key={s} value={s}>{s}</option>)}
@@ -808,7 +808,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                     <select
                       value={filterAssignee}
                       onChange={e => setFilterAssignee(e.target.value)}
-                      style={{ width: '100%', padding: '7px 10px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border-color)', outline: 'none', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
+                      style={{ width: '100%', padding: '7px 10px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', outline: 'none', background: 'var(--surface-2)', color: 'var(--text-primary)' }}
                     >
                       <option value="">Todos</option>
                       {allUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
@@ -831,8 +831,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                 style={{
                   display: 'flex', alignItems: 'center', gap: 5,
                   padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500,
-                  background: 'var(--bg-card)', color: 'var(--text-secondary)',
-                  border: '1px solid var(--border-color)', cursor: 'pointer',
+                  background: 'var(--surface)', color: 'var(--text-secondary)',
+                  border: '1px solid var(--border)', cursor: 'pointer',
                 }}
               >
                 <ArrowUpDown size={12} /> Ordenar
@@ -840,7 +840,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
               {showSortPanel && (
                 <div style={{
                   position: 'absolute', top: 34, left: 0, zIndex: 50,
-                  background: 'var(--bg-card)', borderRadius: 10, border: '1px solid var(--border-color)',
+                  background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 12, minWidth: 200,
                 }}>
                   <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Ordenar por</p>
@@ -856,8 +856,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 12,
-                        background: sortField === opt.field ? '#eef2ff' : 'transparent',
-                        color: sortField === opt.field ? '#6366f1' : 'var(--text-secondary)',
+                        background: sortField === opt.field ? 'var(--accent-soft)' : 'transparent',
+                        color: sortField === opt.field ? 'var(--accent)' : 'var(--text-secondary)',
                         border: 'none', cursor: 'pointer', fontWeight: sortField === opt.field ? 600 : 400,
                       }}
                     >
@@ -881,11 +881,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                 onChange={e => setSearch(e.target.value)}
                 style={{
                   paddingLeft: 30, paddingRight: 12, paddingTop: 6, paddingBottom: 6,
-                  borderRadius: 6, border: '1px solid var(--border-color)', fontSize: 12,
-                  background: 'var(--bg-card)', color: 'var(--text-primary)', width: 220, outline: 'none',
+                  borderRadius: 6, border: '1px solid var(--border)', fontSize: 12,
+                  background: 'var(--surface)', color: 'var(--text-primary)', width: 220, outline: 'none',
                 }}
-                onFocus={e => { e.target.style.borderColor = '#3b82f6' }}
-                onBlur={e => { e.target.style.borderColor = 'var(--border-color)' }}
+                onFocus={e => { e.target.style.borderColor = 'var(--accent)' }}
+                onBlur={e => { e.target.style.borderColor = 'var(--border)' }}
               />
             </div>
 
@@ -896,8 +896,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                 style={{
                   display: 'flex', alignItems: 'center', gap: 5,
                   padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500,
-                  background: 'var(--bg-card)', color: 'var(--text-secondary)',
-                  border: '1px solid var(--border-color)', cursor: 'pointer',
+                  background: 'var(--surface)', color: 'var(--text-secondary)',
+                  border: '1px solid var(--border)', cursor: 'pointer',
                 }}
               >
                 <Columns size={12} /> Gerir campos
@@ -905,7 +905,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
               {showColumnPanel && (
                 <div style={{
                   position: 'absolute', top: 34, right: 0, zIndex: 50,
-                  background: 'var(--bg-card)', borderRadius: 10, border: '1px solid var(--border-color)',
+                  background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.1)', padding: 12, minWidth: 180,
                 }}>
                   <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mostrar colunas</p>
@@ -920,7 +920,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                         type="checkbox"
                         checked={showColumns[col.key]}
                         onChange={() => setShowColumns(c => ({ ...c, [col.key]: !c[col.key] }))}
-                        style={{ accentColor: '#3b82f6' }}
+                        style={{ accentColor: 'var(--accent)' }}
                       />
                       {col.label}
                     </label>
@@ -948,25 +948,25 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
               <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Gestão de Pipelines</h3>
               <button
                 onClick={() => setCreatingPipeline(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#6366f1', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'inherit' }}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'inherit' }}
               >
                 <Plus size={14} /> Nova Pipeline
               </button>
             </div>
 
             {creatingPipeline && (
-              <form onSubmit={handleCreatePipeline} style={{ background: 'var(--bg-card)', border: '1.5px solid #6366f1', borderRadius: 10, padding: '16px', marginBottom: 16 }}>
+              <form onSubmit={handleCreatePipeline} style={{ background: 'var(--surface)', border: '1.5px solid var(--accent)', borderRadius: 10, padding: '16px', marginBottom: 16 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 10 }}>Nova Pipeline</div>
                 <input
                   autoFocus
                   value={newPipelineName}
                   onChange={e => setNewPipelineName(e.target.value)}
                   placeholder="Nome da pipeline (ex: Compradores, Angariação...)"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-color)', fontSize: 13, fontFamily: 'inherit', marginBottom: 12, boxSizing: 'border-box' as const, outline: 'none', background: 'var(--bg-page)', color: 'var(--text-primary)' }}
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, fontFamily: 'inherit', marginBottom: 12, boxSizing: 'border-box' as const, outline: 'none', background: 'var(--surface-2)', color: 'var(--text-primary)' }}
                 />
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button type="button" onClick={() => { setCreatingPipeline(false); setNewPipelineName('') }} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-page)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text-primary)' }}>Cancelar</button>
-                  <button type="submit" style={{ flex: 1, padding: '8px', borderRadius: 8, border: 'none', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Criar</button>
+                  <button type="button" onClick={() => { setCreatingPipeline(false); setNewPipelineName('') }} style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text-primary)' }}>Cancelar</button>
+                  <button type="submit" style={{ flex: 1, padding: '8px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Criar</button>
                 </div>
               </form>
             )}
@@ -980,7 +980,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {allPipelines.map(p => (
-                  <div key={p.id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div key={p.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</div>
                       <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{p.stages?.length || 0} fases · {p._count?.opportunities || 0} oportunidades</div>
@@ -988,7 +988,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button
                         onClick={() => { setPageTab('opportunities') }}
-                        style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border-color)', background: 'transparent', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text-primary)' }}
+                        style={{ padding: '6px 12px', borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text-primary)' }}
                       >
                         Ver
                       </button>
@@ -1054,10 +1054,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
       {/* ── LIST VIEW ── */}
       {pageTab === 'opportunities' && viewMode === 'list' && (
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ background: 'var(--bg-card)', borderRadius: 14, border: '1px solid var(--border-color)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--hover-bg)' }}>
+                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-3)' }}>
                   <th style={{ textAlign: 'left', padding: '10px 16px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Título</th>
                   <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Fase</th>
                   <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 600, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Contacto</th>
@@ -1074,7 +1074,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                 ) : (
                   listOpps.map(opp => {
                     const stageColors: Record<string, string> = {
-                      LEAD_IN: '#6366f1', QUALIFYING: '#8b5cf6', VISIT_SCHEDULED: '#f59e0b',
+                      LEAD_IN: '#2E6BE6', QUALIFYING: '#7C3AED', VISIT_SCHEDULED: '#f59e0b',
                       PROPOSAL_SENT: '#f97316', NEGOTIATION: '#ec4899', CLOSED_WON: '#10b981', CLOSED_LOST: '#ef4444',
                     }
                     const sc = stageColors[opp.stage] || '#94a3b8'
@@ -1082,8 +1082,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                       <tr
                         key={opp.id}
                         onClick={() => setSelectedOpp(opp)}
-                        style={{ borderBottom: '1px solid var(--border-subtle)', cursor: 'pointer', transition: 'background 100ms' }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                        style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer', transition: 'background 100ms' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                       >
                         <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text-primary)' }}>{opp.title}</td>
@@ -1099,7 +1099,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                           <td style={{ padding: '12px 12px' }}>
                             {opp.assignedTo ? (
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff' }}>
+                                <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff' }}>
                                   {getInitials(opp.assignedTo.name)}
                                 </div>
                                 <span style={{ fontSize: 12, color: '#374151' }}>{opp.assignedTo.name}</span>
@@ -1113,7 +1113,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                             <button
                               onClick={() => setEditOpp(opp)}
                               style={{ padding: 5, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
-                              onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
+                              onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
                               onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
                               title="Editar"
                             >
@@ -1162,11 +1162,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
       {selectedOpp && (
         <div style={{
           position: 'fixed', right: 0, top: 0, height: '100%', width: 380,
-          background: 'var(--bg-card)', borderLeft: '1px solid #eaecf3',
+          background: 'var(--surface)', borderLeft: '1px solid #eaecf3',
           boxShadow: '-4px 0 32px rgba(0,0,0,0.08)', zIndex: 40,
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
             <h3 style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Oportunidade</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <button onClick={() => setEditOpp(selectedOpp)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)' }} title="Editar"><Edit size={15} /></button>
@@ -1188,7 +1188,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Responsável</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff' }}>
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#fff' }}>
                       {getInitials(selectedOpp.assignedTo.name)}
                     </div>
                     <span style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{selectedOpp.assignedTo.name}</span>
@@ -1199,20 +1199,20 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
               <InfoRow label="Criado em" value={formatDate(selectedOpp.createdAt)} />
             </div>
             {selectedOpp.notes && (
-              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Notas</p>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>{selectedOpp.notes}</p>
               </div>
             )}
             {selectedOpp.lostReason && (
-              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
                 <p style={{ fontSize: 11, fontWeight: 600, color: '#ef4444', textTransform: 'uppercase', marginBottom: 6 }}>Motivo da Perda</p>
                 <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>{selectedOpp.lostReason}</p>
               </div>
             )}
 
             {/* Interactions */}
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
               <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                 Interações {oppInteractions.length > 0 && `(${oppInteractions.length})`}
               </p>
@@ -1221,9 +1221,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {oppInteractions.map((i: any) => (
-                    <div key={i.id} style={{ background: 'var(--bg-page)', borderRadius: 8, padding: '8px 10px', border: '1px solid var(--border-subtle)' }}>
+                    <div key={i.id} style={{ background: 'var(--surface-2)', borderRadius: 8, padding: '8px 10px', border: '1px solid var(--border)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', textTransform: 'uppercase' }}>{i.type}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase' }}>{i.type}</span>
                         <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{formatDate(i.createdAt)}</span>
                       </div>
                       <p style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.5, margin: 0 }}>{i.body}</p>
@@ -1234,7 +1234,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
             </div>
 
             {/* Tasks */}
-            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
               <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
                 Tarefas {oppTasks.length > 0 && `(${oppTasks.length})`}
               </p>
@@ -1243,7 +1243,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {oppTasks.map((t: any) => (
-                    <div key={t.id} style={{ background: 'var(--bg-page)', borderRadius: 8, padding: '8px 10px', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <div key={t.id} style={{ background: 'var(--surface-2)', borderRadius: 8, padding: '8px 10px', border: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                       <div style={{
                         width: 8, height: 8, borderRadius: '50%', flexShrink: 0, marginTop: 4,
                         background: t.status === 'COMPLETED' ? '#22c55e' : t.priority === 'HIGH' ? '#ef4444' : t.priority === 'MEDIUM' ? '#f59e0b' : '#94a3b8',

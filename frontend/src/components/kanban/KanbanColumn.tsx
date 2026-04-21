@@ -9,6 +9,7 @@ import { STAGE_COLORS } from '../../utils/constants'
 interface KanbanColumnProps {
   stage: string
   label: string
+  color?: string
   opportunities: Opportunity[]
   onCardClick: (opp: Opportunity) => void
   onAddClick: (stage: string) => void
@@ -18,6 +19,7 @@ interface KanbanColumnProps {
 export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   stage,
   label,
+  color: externalColor,
   opportunities,
   onCardClick,
   onAddClick,
@@ -25,7 +27,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
 }) => {
   const [collapsed, setCollapsed] = useState(false)
   const totalValue = opportunities.reduce((sum, o) => sum + (o.value || 0), 0)
-  const accentColor = STAGE_COLORS[stage] || '#94a3b8'
+  const accentColor = externalColor || STAGE_COLORS[stage] || '#94a3b8'
 
   if (collapsed) {
     return (
@@ -33,8 +35,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
         style={{
           width: 40,
           flexShrink: 0,
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-color)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
           borderTop: `3px solid ${accentColor}`,
           borderRadius: 8,
           display: 'flex',
@@ -63,7 +65,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
         </p>
         <span
           style={{
-            background: 'var(--hover-bg)',
+            background: 'var(--surface-3)',
             color: 'var(--text-secondary)',
             fontSize: 10,
             fontWeight: 700,
@@ -82,8 +84,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
       {/* Column Header - GHL style */}
       <div
         style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-color)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
           borderBottom: 'none',
           borderTop: `3px solid ${accentColor}`,
           borderRadius: '8px 8px 0 0',
@@ -145,8 +147,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
               width: 20,
               height: 20,
               borderRadius: 4,
-              border: '1px solid var(--border-color)',
-              background: 'var(--bg-page)',
+              border: '1px solid var(--border)',
+              background: 'var(--surface-2)',
               color: 'var(--text-secondary)',
               cursor: 'pointer',
             }}
@@ -168,11 +170,11 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
               minHeight: 120,
               padding: '8px 6px',
               borderRadius: '0 0 8px 8px',
-              border: '1px solid var(--border-color)',
+              border: '1px solid var(--border)',
               borderTop: 'none',
               background: snapshot.isDraggingOver
-                ? 'rgba(99,102,241,0.03)'
-                : 'var(--bg-page)',
+                ? 'rgba(46,107,230,0.05)'
+                : 'var(--surface-2)',
               maxHeight: 'calc(100vh - 260px)',
               overflowY: 'auto',
               transition: 'background 150ms',
