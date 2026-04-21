@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ChevronLeft, ChevronRight, Trash2, Edit, Download, X, Upload } from 'lucide-react'
+import { Plus, Search, ChevronLeft, ChevronRight, Trash2, Edit, Download, X, Upload, Mail, Phone as PhoneIcon } from 'lucide-react'
 import { getContacts, deleteContact } from '../api/contacts.api'
 import { ImportModal } from '../components/import/ImportModal'
 import { exportContacts } from '../api/exports.api'
@@ -16,8 +16,6 @@ import { useUIStore } from '../store/ui.store'
 import { formatDate } from '../utils/formatters'
 import { CONTACT_STATUS_LABELS, CONTACT_TYPE_LABELS, SOURCE_OPTIONS } from '../utils/constants'
 
-// ── helpers ──────────────────────────────────────────────────────────────────
-
 function getInitials(name: string) {
   const parts = name.trim().split(' ')
   if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? '?'
@@ -25,8 +23,8 @@ function getInitials(name: string) {
 }
 
 const AVATAR_COLORS = [
-  '#6366f1', '#8b5cf6', '#ec4899', '#f59e0b',
-  '#10b981', '#3b82f6', '#ef4444', '#14b8a6',
+  '#2E6BE6', '#7C3AED', '#EC4899', '#D97706',
+  '#16A34A', '#0891B2', '#DC2626', '#0D9488',
 ]
 function avatarColor(name: string) {
   let h = 0
@@ -35,32 +33,44 @@ function avatarColor(name: string) {
 }
 
 const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  NEW:       { bg: '#eff6ff', color: '#2563eb', label: 'Novo' },
-  QUALIFIED: { bg: '#f0fdf4', color: '#16a34a', label: 'Qualificado' },
-  CONTACTED: { bg: '#fffbeb', color: '#d97706', label: 'Contactado' },
-  INACTIVE:  { bg: '#f9fafb', color: '#6b7280', label: 'Inativo' },
+  NEW:       { bg: 'var(--surface-3)',           color: 'var(--text-secondary)', label: 'Novo' },
+  QUALIFIED: { bg: 'rgba(22,163,74,0.1)',        color: 'var(--success)',        label: 'Qualificado' },
+  CONTACTED: { bg: 'rgba(217,119,6,0.1)',        color: 'var(--warning)',        label: 'Contactado' },
+  INACTIVE:  { bg: 'var(--surface-3)',           color: 'var(--text-muted)',     label: 'Inativo' },
 }
 const TYPE_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  BUYER:   { bg: '#eff6ff', color: '#2563eb', label: 'Comprador' },
-  OWNER:   { bg: '#fdf4ff', color: '#9333ea', label: 'Proprietário' },
-  PARTNER: { bg: '#fff7ed', color: '#ea580c', label: 'Parceiro' },
+  BUYER:   { bg: 'var(--accent-soft)',           color: 'var(--accent)',  label: 'Comprador' },
+  OWNER:   { bg: 'rgba(124,58,237,0.1)',         color: '#7C3AED',       label: 'Proprietário' },
+  PARTNER: { bg: 'rgba(217,119,6,0.1)',          color: 'var(--warning)', label: 'Parceiro' },
 }
 
 function Pill({ bg, color, label }: { bg: string; color: string; label: string }) {
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center',
-      padding: '2px 8px', borderRadius: 20,
+      padding: '3px 10px', borderRadius: 20,
       fontSize: 11, fontWeight: 600,
       background: bg, color,
       whiteSpace: 'nowrap',
+      fontFamily: 'var(--font-body)',
     }}>
       {label}
     </span>
   )
 }
 
-// ── page ─────────────────────────────────────────────────────────────────────
+const TH = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
+  <th style={{
+    padding: '0 14px', height: 44, textAlign: right ? 'right' : 'left',
+    fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em',
+    color: 'var(--text-muted)', whiteSpace: 'nowrap',
+    background: 'var(--surface-2)', borderBottom: '1px solid var(--border)',
+    position: 'sticky', top: 0, zIndex: 1,
+    fontFamily: 'var(--font-body)',
+  }}>
+    {children}
+  </th>
+)
 
 export const ContactsPage: React.FC = () => {
   const navigate = useNavigate()
@@ -78,6 +88,7 @@ export const ContactsPage: React.FC = () => {
   const [showImport, setShowImport] = useState(false)
   const [editContact, setEditContact] = useState<Contact | undefined>()
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null)
   const limit = 20
 
   useEffect(() => {
@@ -93,15 +104,11 @@ export const ContactsPage: React.FC = () => {
         type: typeFilter || undefined,
         status: statusFilter || undefined,
         source: sourceFilter || undefined,
-        page,
-        limit,
+        page, limit,
       })
       const d = res.data
-      if (Array.isArray(d)) {
-        setContacts(d); setTotal(d.length)
-      } else {
-        setContacts(d.data || []); setTotal(d.total || 0)
-      }
+      if (Array.isArray(d)) { setContacts(d); setTotal(d.length) }
+      else { setContacts(d.data || []); setTotal(d.total || 0) }
     } catch {
       showToast('Erro ao carregar contactos', 'error')
     } finally {
@@ -126,39 +133,30 @@ export const ContactsPage: React.FC = () => {
   }
 
   const closeModal = () => { setShowModal(false); setEditContact(undefined) }
-
   const hasFilters = !!(typeFilter || statusFilter || sourceFilter || debouncedSearch)
   const totalPages = Math.ceil(total / limit)
 
-  const TH = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
-    <th style={{
-      padding: '0 12px', height: 44, textAlign: right ? 'right' : 'left',
-      fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em',
-      color: 'var(--text-muted)', whiteSpace: 'nowrap',
-      background: 'var(--hover-bg)', borderBottom: '1px solid var(--border-color)',
-      position: 'sticky', top: 0, zIndex: 1,
-    }}>
-      {children}
-    </th>
-  )
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontFamily: 'var(--font-body)' }}>
 
       {/* Toolbar */}
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-        <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 180 }}>
-          <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+        {/* Search */}
+        <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
+          <Search size={14} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Pesquisar contactos..."
+            placeholder="Pesquisar por nome, email ou telefone..."
             style={{
-              width: '100%', paddingLeft: 32, paddingRight: 10, height: 34,
+              width: '100%', paddingLeft: 34, paddingRight: 10, height: 40,
               borderRadius: 8, fontSize: 13,
-              border: '1px solid var(--input-border)', background: 'var(--input-bg)',
+              border: '1px solid var(--border)', background: 'var(--surface)',
               color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
+              fontFamily: 'var(--font-body)',
             }}
+            onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(46,107,230,0.12)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none' }}
           />
         </div>
 
@@ -182,19 +180,22 @@ export const ContactsPage: React.FC = () => {
           <button
             onClick={() => { setSearch(''); setTypeFilter(''); setStatusFilter(''); setSourceFilter('') }}
             style={{
-              display: 'flex', alignItems: 'center', gap: 4, height: 34,
-              padding: '0 10px', borderRadius: 8, fontSize: 12, fontWeight: 500,
-              border: '1px solid var(--border-color)', background: 'transparent',
+              display: 'flex', alignItems: 'center', gap: 4, height: 40,
+              padding: '0 12px', borderRadius: 8, fontSize: 12, fontWeight: 500,
+              border: '1px solid var(--border)', background: 'transparent',
               color: 'var(--text-muted)', cursor: 'pointer',
+              fontFamily: 'var(--font-body)',
             }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
-            <X size={12} /> Limpar
+            <X size={12} /> Limpar filtros
           </button>
         )}
 
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           <Button variant="secondary" size="sm" onClick={() => setShowImport(true)}>
-            <Upload className="w-4 h-4" /> Importar
+            <Upload size={14} /> Importar
           </Button>
           <Button variant="secondary" size="sm"
             onClick={async () => {
@@ -202,10 +203,10 @@ export const ContactsPage: React.FC = () => {
               catch { showToast('Erro ao exportar', 'error') }
             }}
           >
-            <Download className="w-4 h-4" /> Exportar
+            <Download size={14} /> Exportar
           </Button>
           <Button size="sm" onClick={() => { setEditContact(undefined); setShowModal(true) }}>
-            <Plus className="w-4 h-4" /> Novo Contacto
+            <Plus size={14} /> Novo Contacto
           </Button>
         </div>
       </div>
@@ -214,15 +215,15 @@ export const ContactsPage: React.FC = () => {
       {loading ? <PageSpinner /> : contacts.length === 0 ? (
         <EmptyState
           title={hasFilters ? 'Sem resultados' : 'Nenhum contacto encontrado'}
-          description={hasFilters ? 'Tente ajustar os filtros.' : 'Crie o seu primeiro contacto.'}
+          description={hasFilters ? 'Tente ajustar os filtros.' : 'Crie o seu primeiro contacto para começar.'}
           actionLabel="Novo Contacto"
           onAction={() => { setEditContact(undefined); setShowModal(true) }}
         />
       ) : (
         <div style={{
           borderRadius: 12, overflow: 'hidden',
-          border: '1px solid var(--border-color)',
-          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          background: 'var(--surface)',
           boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
         }}>
           <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 240px)', overflowY: 'auto' }}>
@@ -244,76 +245,98 @@ export const ContactsPage: React.FC = () => {
                   const st = STATUS_STYLE[contact.status] ?? STATUS_STYLE.NEW
                   const tp = TYPE_STYLE[contact.type] ?? TYPE_STYLE.BUYER
                   const color = avatarColor(contact.name)
+                  const isHovered = hoveredRow === contact.id
                   return (
                     <tr
                       key={contact.id}
                       onClick={() => navigate(`/contacts/${contact.id}`)}
-                      style={{ borderBottom: '1px solid var(--border-subtle)', cursor: 'pointer' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                      onMouseEnter={() => setHoveredRow(contact.id)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                      style={{
+                        borderBottom: '1px solid var(--border)',
+                        cursor: 'pointer',
+                        background: isHovered ? 'var(--surface-3)' : 'var(--surface)',
+                        transition: 'background 120ms',
+                      }}
                     >
                       {/* Nome + avatar */}
-                      <td style={{ padding: '10px 12px' }}>
+                      <td style={{ padding: '12px 14px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div style={{
-                            width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                            width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
                             background: color, color: '#fff',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontSize: 11, fontWeight: 700, letterSpacing: '0.03em',
                           }}>
                             {getInitials(contact.name)}
                           </div>
-                          <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                              {contact.name}
-                            </div>
-                          </div>
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                            {contact.name}
+                          </span>
                         </div>
                       </td>
 
                       {/* Email / telefone */}
-                      <td style={{ padding: '10px 12px' }}>
-                        <div style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                          {contact.email || '-'}
-                        </div>
+                      <td style={{ padding: '12px 14px' }}>
+                        {contact.email && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                            <Mail size={11} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                            {contact.email}
+                          </div>
+                        )}
                         {contact.phone && (
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                            <PhoneIcon size={10} style={{ flexShrink: 0 }} />
                             {contact.phone}
                           </div>
                         )}
+                        {!contact.email && !contact.phone && <span style={{ color: 'var(--text-muted)' }}>—</span>}
                       </td>
 
-                      <td style={{ padding: '10px 12px' }}>
+                      <td style={{ padding: '12px 14px' }}>
                         <Pill bg={tp.bg} color={tp.color} label={tp.label} />
                       </td>
-                      <td style={{ padding: '10px 12px' }}>
+                      <td style={{ padding: '12px 14px' }}>
                         <Pill bg={st.bg} color={st.color} label={st.label} />
                       </td>
-                      <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                        {contact.source || '-'}
+                      <td style={{ padding: '12px 14px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', fontSize: 12 }}>
+                        {contact.source || '—'}
                       </td>
-                      <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                        {contact.assignedTo?.name || '-'}
+                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
+                        {contact.assignedTo ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{
+                              width: 22, height: 22, borderRadius: '50%',
+                              background: avatarColor(contact.assignedTo.name),
+                              color: '#fff', fontSize: 9, fontWeight: 700,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                              {getInitials(contact.assignedTo.name)}
+                            </div>
+                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{contact.assignedTo.name}</span>
+                          </div>
+                        ) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
                       </td>
-                      <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                      <td style={{ padding: '12px 14px', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontSize: 12 }}>
                         {formatDate(contact.createdAt)}
                       </td>
 
-                      {/* Ações */}
-                      <td style={{ padding: '10px 12px' }}>
+                      {/* Ações — visíveis só no hover */}
+                      <td style={{ padding: '12px 14px' }}>
                         <div
-                          style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 2 }}
+                          style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 2,
+                            opacity: isHovered ? 1 : 0,
+                            transition: 'opacity 120ms',
+                          }}
                           onClick={e => e.stopPropagation()}
                         >
                           <button
                             onClick={() => { setEditContact(contact); setShowModal(true) }}
                             title="Editar"
-                            style={{
-                              padding: 6, borderRadius: 6, border: 'none',
-                              background: 'transparent', cursor: 'pointer',
-                              color: 'var(--text-muted)',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.color = '#2563eb' }}
+                            style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-soft)'; e.currentTarget.style.color = 'var(--accent)' }}
                             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}
                           >
                             <Edit size={14} />
@@ -321,12 +344,8 @@ export const ContactsPage: React.FC = () => {
                           <button
                             onClick={() => setDeleteId(contact.id)}
                             title="Eliminar"
-                            style={{
-                              padding: 6, borderRadius: 6, border: 'none',
-                              background: 'transparent', cursor: 'pointer',
-                              color: 'var(--text-muted)',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#dc2626' }}
+                            style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.08)'; e.currentTarget.style.color = 'var(--danger)' }}
                             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}
                           >
                             <Trash2 size={14} />
@@ -340,13 +359,13 @@ export const ContactsPage: React.FC = () => {
             </table>
           </div>
 
-          {/* Pagination + count */}
+          {/* Pagination */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '10px 16px', borderTop: '1px solid var(--border-color)',
+            padding: '10px 16px', borderTop: '1px solid var(--border)',
           }}>
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {total === 0 ? '0 contactos' : `${(page - 1) * limit + 1}–${Math.min(page * limit, total)} de ${total}`}
+              {total === 0 ? '0 contactos' : `Mostrando ${(page - 1) * limit + 1}–${Math.min(page * limit, total)} de ${total} contactos`}
             </span>
             {totalPages > 1 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -354,25 +373,27 @@ export const ContactsPage: React.FC = () => {
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
                   style={{
-                    padding: 6, borderRadius: 6, border: 'none', background: 'transparent',
+                    width: 30, height: 30, borderRadius: 6, border: 'none', background: 'transparent',
                     cursor: page === 1 ? 'not-allowed' : 'pointer',
                     color: page === 1 ? 'var(--text-muted)' : 'var(--text-primary)',
                     opacity: page === 1 ? 0.4 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
                 >
                   <ChevronLeft size={15} />
                 </button>
                 <span style={{ fontSize: 12, color: 'var(--text-secondary)', padding: '0 6px' }}>
-                  {page} / {totalPages}
+                  Página {page} de {totalPages}
                 </span>
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
                   style={{
-                    padding: 6, borderRadius: 6, border: 'none', background: 'transparent',
+                    width: 30, height: 30, borderRadius: 6, border: 'none', background: 'transparent',
                     cursor: page === totalPages ? 'not-allowed' : 'pointer',
                     color: page === totalPages ? 'var(--text-muted)' : 'var(--text-primary)',
                     opacity: page === totalPages ? 0.4 : 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
                 >
                   <ChevronRight size={15} />
@@ -384,22 +405,13 @@ export const ContactsPage: React.FC = () => {
       )}
 
       {/* Create / Edit Modal */}
-      <Modal
-        isOpen={showModal}
-        onClose={closeModal}
-        title={editContact ? 'Editar Contacto' : 'Novo Contacto'}
-        size="xl"
-      >
-        <ContactForm
-          contact={editContact}
-          onSuccess={() => { closeModal(); fetchContacts() }}
-          onCancel={closeModal}
-        />
+      <Modal isOpen={showModal} onClose={closeModal} title={editContact ? 'Editar Contacto' : 'Novo Contacto'} size="xl">
+        <ContactForm contact={editContact} onSuccess={() => { closeModal(); fetchContacts() }} onCancel={closeModal} />
       </Modal>
 
       {/* Delete Confirmation */}
       <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Confirmar Eliminação" size="sm">
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.5 }}>
           Tem a certeza que deseja eliminar este contacto? Esta ação não pode ser desfeita.
         </p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
@@ -409,11 +421,7 @@ export const ContactsPage: React.FC = () => {
       </Modal>
 
       {showImport && (
-        <ImportModal
-          type="contacts"
-          onClose={() => setShowImport(false)}
-          onSuccess={() => { setShowImport(false); fetchContacts() }}
-        />
+        <ImportModal type="contacts" onClose={() => setShowImport(false)} onSuccess={() => { setShowImport(false); fetchContacts() }} />
       )}
     </div>
   )
