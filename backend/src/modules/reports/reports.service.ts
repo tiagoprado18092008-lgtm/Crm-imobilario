@@ -126,9 +126,15 @@ export const getPipeline = async (user: any) => {
 };
 
 export const getAgentPerformance = async (user?: any) => {
-  const agencyFilter = user?.agencyId ? { agencyId: user.agencyId } : user?.locationId ? { locationId: user.locationId } : user ? { id: user.id } : {};
+  if (!user) return [];
+  // Strict tenant filter — no fallback to empty
+  let agentFilter: any;
+  if (user.agencyId) agentFilter = { agencyId: user.agencyId };
+  else if (user.locationId) agentFilter = { locationId: user.locationId };
+  else agentFilter = { id: user.id };
+
   const agents = await prisma.user.findMany({
-    where: { isActive: true, role: { in: ['TEAM_LEADER', 'CONSULTANT'] as any[] }, ...agencyFilter },
+    where: { isActive: true, role: { in: ['TEAM_LEADER', 'CONSULTANT'] as any[] }, ...agentFilter },
     select: { id: true, name: true, email: true, role: true },
   });
 
@@ -138,17 +144,22 @@ export const getAgentPerformance = async (user?: any) => {
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
 
+      // Cross-check: contacts/opps must also belong to the same agency (agent.assignedTo.agencyId)
+      const contactScope = user.agencyId ? { assignedTo: { agencyId: user.agencyId } } : user.locationId ? { assignedTo: { locationId: user.locationId } } : {};
+
       const [contacts, openOpportunities, closedWon] = await Promise.all([
-        prisma.contact.count({ where: { assignedToId: agent.id } }),
+        prisma.contact.count({ where: { assignedToId: agent.id, ...contactScope } }),
         prisma.opportunity.count({
           where: {
             assignedToId: agent.id,
+            ...contactScope,
             stage: { notIn: ['CLOSED_WON', 'CLOSED_LOST'] },
           },
         }),
         prisma.opportunity.count({
           where: {
             assignedToId: agent.id,
+            ...contactScope,
             stage: 'CLOSED_WON',
             updatedAt: { gte: startOfMonth, lt: endOfMonth },
           },
@@ -163,20 +174,23 @@ export const getAgentPerformance = async (user?: any) => {
 };
 
 export const getConversationStats = async (user: any) => {
-  let baseWhere: any = {};
+  let baseWhere: any;
 
-  if (user.role !== 'AGENCY_OWNER' && user.role !== 'AGENCY_ADMIN') {
-    if (user.role === 'TEAM_LEADER') {
-      const subAgents = await prisma.user.findMany({
-        where: { supervisorId: user.id },
-        select: { id: true },
-      });
-      baseWhere = {
-        assignedToId: { in: [user.id, ...subAgents.map((a: any) => a.id)] },
-      };
-    } else {
-      baseWhere = { assignedToId: user.id };
-    }
+  if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') {
+    if (user.agencyId) baseWhere = { assignedTo: { agencyId: user.agencyId } };
+    else baseWhere = { assignedToId: user.id };
+  } else if (user.role === 'LOCATION_ADMIN') {
+    baseWhere = user.locationId ? { assignedTo: { locationId: user.locationId } } : { assignedToId: user.id };
+  } else if (user.role === 'TEAM_LEADER') {
+    const subAgents = await prisma.user.findMany({
+      where: { supervisorId: user.id },
+      select: { id: true },
+    });
+    baseWhere = {
+      assignedToId: { in: [user.id, ...subAgents.map((a: any) => a.id)] },
+    };
+  } else {
+    baseWhere = { assignedToId: user.id };
   }
 
   const today = new Date();

@@ -97,7 +97,13 @@ export async function listCalls(
   return { data: calls, total, page, limit }
 }
 
-export async function updateCallNotes(id: string, notes: string, _userId: string) {
+export async function updateCallNotes(id: string, notes: string, userId: string) {
+  const existing = await prisma.interaction.findFirst({ where: { id, createdById: userId } })
+  if (!existing) {
+    const err: any = new Error('Chamada não encontrada ou acesso negado')
+    err.status = 404
+    throw err
+  }
   return prisma.interaction.update({
     where: { id },
     data: { body: notes },

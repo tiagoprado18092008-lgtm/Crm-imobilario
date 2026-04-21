@@ -168,9 +168,11 @@ export const bulkImport = async (
     notes?: string;
     city?: string;
   }>,
-  userId: string
+  userId: string,
+  user?: any
 ) => {
   const results = { created: 0, skipped: 0, errors: [] as string[] };
+  const agencyScope: any = user?.agencyId ? { assignedTo: { agencyId: user.agencyId } } : user?.locationId ? { assignedTo: { locationId: user.locationId } } : { assignedToId: userId };
 
   for (const row of rows) {
     if (!row.name || row.name.trim().length < 2) {
@@ -178,9 +180,9 @@ export const bulkImport = async (
       continue;
     }
     try {
-      // Skip if email already exists
+      // Skip if email already exists within agency
       if (row.email) {
-        const existing = await prisma.contact.findFirst({ where: { email: row.email, assignedToId: userId } });
+        const existing = await prisma.contact.findFirst({ where: { email: row.email, ...agencyScope } });
         if (existing) { results.skipped++; continue; }
       }
       await prisma.contact.create({
@@ -336,7 +338,15 @@ export const update = async (
   return updated;
 };
 
-export const archive = async (id: string) => {
+export const archive = async (id: string, user: any) => {
+  const where: any = await buildWhereClause(user);
+  where.id = id;
+  const existing = await prisma.contact.findFirst({ where });
+  if (!existing) {
+    const err: any = new Error('Contact not found or access denied');
+    err.status = 404;
+    throw err;
+  }
   return prisma.contact.update({
     where: { id },
     data: { status: 'INACTIVE' },

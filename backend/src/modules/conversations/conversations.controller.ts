@@ -116,7 +116,7 @@ export const updateStatus = async (
       res.status(400).json({ error: 'status is required', status: 400 });
       return;
     }
-    const conversation = await conversationsService.updateStatus(req.params.id, status);
+    const conversation = await conversationsService.updateStatus(req.params.id, status, req.user);
     res.status(200).json(conversation);
   } catch (err) {
     next(err);
@@ -134,7 +134,7 @@ export const assignConversation = async (
       res.status(400).json({ error: 'userId is required', status: 400 });
       return;
     }
-    const conversation = await conversationsService.assign(req.params.id, userId);
+    const conversation = await conversationsService.assign(req.params.id, userId, req.user);
     res.status(200).json(conversation);
   } catch (err) {
     next(err);

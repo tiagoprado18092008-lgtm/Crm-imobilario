@@ -158,13 +158,14 @@ export const bulkImport = async (
   for (const row of rows) {
     if (!row.title || row.title.trim().length < 2) { results.skipped++; continue; }
     try {
-      // Find or create contact
+      // Find or create contact — scoped to user's agency
       let contact: any = null;
+      const contactScope: any = user.agencyId ? { assignedTo: { agencyId: user.agencyId } } : user.locationId ? { assignedTo: { locationId: user.locationId } } : { assignedToId: user.id };
       if (row.contactEmail) {
-        contact = await prisma.contact.findFirst({ where: { email: row.contactEmail } });
+        contact = await prisma.contact.findFirst({ where: { email: row.contactEmail, ...contactScope } });
       }
       if (!contact && row.contactName) {
-        contact = await prisma.contact.findFirst({ where: { name: { contains: row.contactName } } });
+        contact = await prisma.contact.findFirst({ where: { name: { contains: row.contactName }, ...contactScope } });
       }
       if (!contact && (row.contactName || row.contactEmail)) {
         contact = await prisma.contact.create({
@@ -333,10 +334,13 @@ export const moveStage = async (
   const result = await prisma.$transaction(async (tx) => {
     const oldStage = existing.stage as string;
     const oldPosition = existing.position;
+    // Scope reorder to user's agency/location so we never touch other tenants' data
+    const tenantScope: any = user.agencyId ? { assignedTo: { agencyId: user.agencyId } } : user.locationId ? { assignedTo: { locationId: user.locationId } } : { assignedToId: user.id };
 
     // Close the gap in the source stage
     await tx.opportunity.updateMany({
       where: {
+        ...tenantScope,
         stage: oldStage as any,
         position: { gt: oldPosition },
         id: { not: id },
@@ -353,6 +357,7 @@ export const moveStage = async (
     // Open slot in the target stage
     await tx.opportunity.updateMany({
       where: {
+        ...tenantScope,
         stage: newStage as any,
         position: { gte: adjustedPosition },
         id: { not: id },

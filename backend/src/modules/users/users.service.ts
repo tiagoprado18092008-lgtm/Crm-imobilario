@@ -2,13 +2,14 @@ import bcrypt from 'bcryptjs';
 import prisma from '../../config/database';
 
 export const list = async (currentUser?: any) => {
+  if (!currentUser) return [];
   const where: any = {};
-  if (currentUser?.agencyId) {
+  if (currentUser.agencyId) {
     where.agencyId = currentUser.agencyId;
-  } else if (currentUser?.locationId) {
+  } else if (currentUser.locationId) {
     where.locationId = currentUser.locationId;
-  } else if (currentUser?.id) {
-    // fallback: só devolve o próprio utilizador se não tiver agência
+  } else {
+    // fallback: só devolve o próprio utilizador se não tiver agência/location
     where.id = currentUser.id;
   }
 

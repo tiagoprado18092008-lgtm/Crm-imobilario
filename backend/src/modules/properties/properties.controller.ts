@@ -117,7 +117,7 @@ export const deleteDocument = async (req: Request, res: Response, next: NextFunc
 
 export const getVisits = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const visits = await propertiesService.getVisits(req.params.id);
+    const visits = await propertiesService.getVisits(req.params.id, req.user);
     res.status(200).json(visits);
   } catch (err) { next(err); }
 };
@@ -131,7 +131,7 @@ export const addVisit = async (req: Request, res: Response, next: NextFunction):
 
 export const updateVisit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await propertiesService.updateVisit(req.params.id, req.params.visitId, req.body);
+    await propertiesService.updateVisit(req.params.id, req.params.visitId, req.body, req.user);
     res.status(200).json({ ok: true });
   } catch (err) { next(err); }
 };

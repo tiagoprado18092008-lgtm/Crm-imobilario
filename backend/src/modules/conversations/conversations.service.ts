@@ -233,7 +233,7 @@ export const sendMessage = async (
   subject?: string,
   senderAgencyId?: string
 ) => {
-  // Verify conversation exists
+  // Verify conversation exists AND belongs to sender's agency
   const conversation = await prisma.conversation.findUnique({
     where: { id: conversationId },
     include: {
@@ -244,6 +244,11 @@ export const sendMessage = async (
 
   if (!conversation) {
     throw Object.assign(new Error('Conversation not found'), { status: 404 });
+  }
+
+  // Tenant check: sender must belong to same agency as the conversation
+  if (senderAgencyId && conversation.location?.agencyId && conversation.location.agencyId !== senderAgencyId) {
+    throw Object.assign(new Error('Access denied'), { status: 403 });
   }
 
   // Dispatch message via appropriate channel
@@ -412,7 +417,7 @@ export const receiveInbound = async (
 
 // ─── updateStatus ─────────────────────────────────────────────────────────────
 
-export const updateStatus = async (id: string, status: string) => {
+export const updateStatus = async (id: string, status: string, currentUser?: any) => {
   const allowed = ['OPEN', 'RESOLVED', 'ARCHIVED'];
   if (!allowed.includes(status)) {
     throw Object.assign(
@@ -421,9 +426,16 @@ export const updateStatus = async (id: string, status: string) => {
     );
   }
 
-  const conversation = await prisma.conversation.findUnique({ where: { id } });
+  const conversation = await prisma.conversation.findUnique({
+    where: { id },
+    include: { location: { select: { agencyId: true } } },
+  });
   if (!conversation) {
     throw Object.assign(new Error('Conversation not found'), { status: 404 });
+  }
+
+  if (currentUser?.agencyId && conversation.location?.agencyId && conversation.location.agencyId !== currentUser.agencyId) {
+    throw Object.assign(new Error('Access denied'), { status: 403 });
   }
 
   return prisma.conversation.update({ where: { id }, data: { status } });
@@ -431,15 +443,27 @@ export const updateStatus = async (id: string, status: string) => {
 
 // ─── assign ───────────────────────────────────────────────────────────────────
 
-export const assign = async (id: string, assignedToId: string) => {
-  const conversation = await prisma.conversation.findUnique({ where: { id } });
+export const assign = async (id: string, assignedToId: string, currentUser?: any) => {
+  const conversation = await prisma.conversation.findUnique({
+    where: { id },
+    include: { location: { select: { agencyId: true } } },
+  });
   if (!conversation) {
     throw Object.assign(new Error('Conversation not found'), { status: 404 });
+  }
+
+  if (currentUser?.agencyId && conversation.location?.agencyId && conversation.location.agencyId !== currentUser.agencyId) {
+    throw Object.assign(new Error('Access denied'), { status: 403 });
   }
 
   const user = await prisma.user.findUnique({ where: { id: assignedToId } });
   if (!user) {
     throw Object.assign(new Error('User not found'), { status: 404 });
+  }
+
+  // Ensure assignee belongs to same agency
+  if (currentUser?.agencyId && user.agencyId && user.agencyId !== currentUser.agencyId) {
+    throw Object.assign(new Error('Cannot assign to user from another agency'), { status: 403 });
   }
 
   return prisma.conversation.update({ where: { id }, data: { assignedToId } });

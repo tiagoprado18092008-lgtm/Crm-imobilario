@@ -11,8 +11,19 @@ export const create = async (
     contactId: string;
     opportunityId?: string;
   },
-  userId: string
+  userId: string,
+  user?: any
 ) => {
+  // Verify contact belongs to user's tenant
+  if (user) {
+    const contactScope: any = user.agencyId ? { assignedTo: { agencyId: user.agencyId } } : user.locationId ? { assignedTo: { locationId: user.locationId } } : { assignedToId: user.id };
+    const contact = await prisma.contact.findFirst({ where: { id: dto.contactId, ...contactScope } });
+    if (!contact) {
+      const err: any = new Error('Contacto não encontrado ou acesso negado');
+      err.status = 404;
+      throw err;
+    }
+  }
   const interaction = await prisma.interaction.create({
     data: {
       type: dto.type as any,
@@ -51,22 +62,25 @@ export const list = async (filters: {
   type?: string;
   page?: number;
   limit?: number;
-  user?: any;
+  user: any;
 }) => {
-  let scope: any = {};
-  if (filters.user) {
-    const u = filters.user;
-    if (u.role === 'AGENCY_OWNER' || u.role === 'AGENCY_ADMIN') {
-      if (u.agencyId) scope = { createdBy: { agencyId: u.agencyId } };
-      else scope = { createdById: u.id };
-    } else if (u.role === 'LOCATION_ADMIN') {
-      scope = u.locationId ? { createdBy: { locationId: u.locationId } } : { createdById: u.id };
-    } else if (u.role === 'TEAM_LEADER') {
-      const subs = await prisma.user.findMany({ where: { supervisorId: u.id }, select: { id: true } });
-      scope = { createdById: { in: [u.id, ...subs.map((s: any) => s.id)] } };
-    } else {
-      scope = { createdById: u.id };
-    }
+  if (!filters.user) {
+    const err: any = new Error('Unauthorized');
+    err.status = 401;
+    throw err;
+  }
+  let scope: any;
+  const u = filters.user;
+  if (u.role === 'AGENCY_OWNER' || u.role === 'AGENCY_ADMIN') {
+    if (u.agencyId) scope = { createdBy: { agencyId: u.agencyId } };
+    else scope = { createdById: u.id };
+  } else if (u.role === 'LOCATION_ADMIN') {
+    scope = u.locationId ? { createdBy: { locationId: u.locationId } } : { createdById: u.id };
+  } else if (u.role === 'TEAM_LEADER') {
+    const subs = await prisma.user.findMany({ where: { supervisorId: u.id }, select: { id: true } });
+    scope = { createdById: { in: [u.id, ...subs.map((s: any) => s.id)] } };
+  } else {
+    scope = { createdById: u.id };
   }
   const where: any = { ...scope };
   if (filters.contactId) where.contactId = filters.contactId;
@@ -95,9 +109,24 @@ export const list = async (filters: {
   return { data: interactions, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
-export const getById = async (id: string) => {
-  const interaction = await prisma.interaction.findUnique({
-    where: { id },
+export const getById = async (id: string, user?: any) => {
+  const scope: any = {};
+  if (user) {
+    if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') {
+      if (user.agencyId) scope.createdBy = { agencyId: user.agencyId };
+      else scope.createdById = user.id;
+    } else if (user.role === 'LOCATION_ADMIN') {
+      if (user.locationId) scope.createdBy = { locationId: user.locationId };
+      else scope.createdById = user.id;
+    } else if (user.role === 'TEAM_LEADER') {
+      const subs = await prisma.user.findMany({ where: { supervisorId: user.id }, select: { id: true } });
+      scope.createdById = { in: [user.id, ...subs.map((s: any) => s.id)] };
+    } else {
+      scope.createdById = user.id;
+    }
+  }
+  const interaction = await prisma.interaction.findFirst({
+    where: { id, ...scope },
     include: {
       contact: { select: { id: true, name: true, email: true } },
       opportunity: { select: { id: true, title: true } },

@@ -276,7 +276,16 @@ export const getDocuments = async (propertyId: string) => {
 
 // ─── VISITS ──────────────────────────────────────────────────────────────────
 
-export const getVisits = async (propertyId: string) => {
+export const getVisits = async (propertyId: string, user?: any) => {
+  if (user) {
+    const propScope: any = user.agencyId ? { createdBy: { agencyId: user.agencyId } } : user.locationId ? { locationId: user.locationId } : { createdById: user.id };
+    const property = await prisma.property.findFirst({ where: { id: propertyId, ...propScope } });
+    if (!property) {
+      const err: any = new Error('Imóvel não encontrado ou acesso negado');
+      err.status = 404;
+      throw err;
+    }
+  }
   return prisma.propertyVisit.findMany({
     where: { propertyId },
     orderBy: { scheduledAt: 'desc' },
@@ -288,6 +297,24 @@ export const addVisit = async (
   dto: { contactId?: string; scheduledAt: string; notas?: string },
   user: any
 ) => {
+  // Verify property belongs to user's agency
+  const propScope: any = user.agencyId ? { createdBy: { agencyId: user.agencyId } } : user.locationId ? { locationId: user.locationId } : { createdById: user.id };
+  const property = await prisma.property.findFirst({ where: { id: propertyId, ...propScope } });
+  if (!property) {
+    const err: any = new Error('Imóvel não encontrado ou acesso negado');
+    err.status = 404;
+    throw err;
+  }
+  // Verify contact belongs to user's agency if provided
+  if (dto.contactId) {
+    const contactScope: any = user.agencyId ? { assignedTo: { agencyId: user.agencyId } } : user.locationId ? { assignedTo: { locationId: user.locationId } } : { assignedToId: user.id };
+    const contact = await prisma.contact.findFirst({ where: { id: dto.contactId, ...contactScope } });
+    if (!contact) {
+      const err: any = new Error('Contacto não encontrado ou acesso negado');
+      err.status = 404;
+      throw err;
+    }
+  }
   return prisma.propertyVisit.create({
     data: {
       propertyId,
@@ -302,8 +329,18 @@ export const addVisit = async (
 export const updateVisit = async (
   propertyId: string,
   visitId: string,
-  dto: { status?: string; interesse?: string; notas?: string }
+  dto: { status?: string; interesse?: string; notas?: string },
+  user?: any
 ) => {
+  if (user) {
+    const propScope: any = user.agencyId ? { createdBy: { agencyId: user.agencyId } } : user.locationId ? { locationId: user.locationId } : { createdById: user.id };
+    const property = await prisma.property.findFirst({ where: { id: propertyId, ...propScope } });
+    if (!property) {
+      const err: any = new Error('Imóvel não encontrado ou acesso negado');
+      err.status = 404;
+      throw err;
+    }
+  }
   return prisma.propertyVisit.updateMany({
     where: { id: visitId, propertyId },
     data: dto,

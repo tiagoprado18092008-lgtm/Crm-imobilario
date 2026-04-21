@@ -53,7 +53,7 @@ export const bulkImport = async (req: Request, res: Response, next: NextFunction
       res.status(400).json({ error: 'rows array required' });
       return;
     }
-    const result = await contactsService.bulkImport(rows, req.user.id);
+    const result = await contactsService.bulkImport(rows, req.user.id, req.user);
     res.status(200).json(result);
   } catch (err) {
     next(err);
@@ -62,7 +62,7 @@ export const bulkImport = async (req: Request, res: Response, next: NextFunction
 
 export const archive = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const contact = await contactsService.archive(req.params.id);
+    const contact = await contactsService.archive(req.params.id, req.user);
     res.status(200).json(contact);
   } catch (err) {
     next(err);

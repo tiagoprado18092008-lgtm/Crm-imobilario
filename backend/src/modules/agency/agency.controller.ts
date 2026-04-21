@@ -16,6 +16,10 @@ export const getMyAgency = async (req: Request, res: Response, next: NextFunctio
 
 export const getById = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (req.user?.agencyId !== req.params.id) {
+      res.status(403).json({ error: 'Access denied', status: 403 });
+      return;
+    }
     const agency = await agencyService.getById(req.params.id);
     res.json(agency);
   } catch (err) {
@@ -34,6 +38,10 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
 
 export const update = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (req.user?.agencyId !== req.params.id) {
+      res.status(403).json({ error: 'Access denied', status: 403 });
+      return;
+    }
     const agency = await agencyService.update(req.params.id, req.body);
     res.json(agency);
   } catch (err) {
@@ -44,8 +52,8 @@ export const update = async (req: Request, res: Response, next: NextFunction) =>
 export const listMembers = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const agencyId = req.params.id;
-    // Non-managers can only see their own agency members
-    if (!['AGENCY_OWNER', 'AGENCY_ADMIN'].includes(req.user?.role) && req.user?.agencyId !== agencyId) {
+    // Every user can ONLY see members of their own agency
+    if (req.user?.agencyId !== agencyId) {
       res.status(403).json({ error: 'Access denied', status: 403 });
       return;
     }
@@ -58,6 +66,11 @@ export const listMembers = async (req: Request, res: Response, next: NextFunctio
 
 export const assignUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Only allow assigning users to own agency
+    if (req.user?.agencyId !== req.params.id) {
+      res.status(403).json({ error: 'Access denied', status: 403 });
+      return;
+    }
     const { userId } = req.body;
     const user = await agencyService.assignUserToAgency(userId, req.params.id);
     res.json(user);
@@ -68,6 +81,11 @@ export const assignUser = async (req: Request, res: Response, next: NextFunction
 
 export const regenerateApiKey = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Only owner/admin of the same agency can regenerate its API key
+    if (req.user?.agencyId !== req.params.id) {
+      res.status(403).json({ error: 'Access denied', status: 403 });
+      return;
+    }
     const agency = await agencyService.regenerateApiKey(req.params.id);
     res.json({ apiKey: agency.apiKey });
   } catch (err) {
@@ -77,6 +95,10 @@ export const regenerateApiKey = async (req: Request, res: Response, next: NextFu
 
 export const uploadLogo = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (req.user?.agencyId !== req.params.id) {
+      res.status(403).json({ error: 'Access denied', status: 403 });
+      return;
+    }
     const file = (req as any).file;
     if (!file) { res.status(400).json({ error: 'Ficheiro obrigatório' }); return; }
     const url = `/uploads/agency/${req.params.id}/${file.filename}`;

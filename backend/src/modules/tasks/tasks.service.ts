@@ -80,6 +80,7 @@ export const create = async (dto: {
       opportunity: { select: { id: true, title: true } },
     },
   });
+  return task;
 };
 
 export const getById = async (id: string, user: any) => {

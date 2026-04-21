@@ -74,10 +74,15 @@ async function executeAction(action: AutomationAction, contact: ContactContext):
       break
     }
     case 'CREATE_TASK': {
+      const assignedToId = (contact as any).assignedToId || (contact.assignedTo as any)?.id;
+      if (!assignedToId) {
+        console.log('[Automation] Task skip — no assignedTo for contact', contact.id);
+        break;
+      }
       await prisma.task.create({
         data: {
           title: message,
-          assignedToId: contact.assignedTo ? (await prisma.user.findFirst({ where: { name: contact.assignedTo.name } }))?.id || '' : '',
+          assignedToId,
           status: 'PENDING',
           priority: 'HIGH',
           contactId: contact.id,
