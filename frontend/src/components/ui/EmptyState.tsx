@@ -20,25 +20,59 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   const renderIcon = () => {
     if (!icon) return null
-    if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null && 'render' in (icon as any))) {
+    if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null && 'render' in (icon as object))) {
       const IconComponent = icon as React.ElementType
-      return <IconComponent size={32} />
+      return <IconComponent size={36} />
     }
     return icon as React.ReactNode
   }
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '64px 24px',
+      textAlign: 'center',
+      fontFamily: 'var(--font-body)',
+    }}>
       {icon && (
-        <div className="mb-4 text-gray-300">
+        <div style={{
+          marginBottom: 16,
+          color: 'var(--border-strong)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 64,
+          height: 64,
+          borderRadius: 16,
+          background: 'var(--surface-3)',
+        }}>
           {renderIcon()}
         </div>
       )}
-      <h3 className="text-lg font-semibold text-gray-700 mb-1">{title}</h3>
+      <h3 style={{
+        fontSize: 16,
+        fontWeight: 600,
+        color: 'var(--text-primary)',
+        fontFamily: 'var(--font-display)',
+        margin: '0 0 6px',
+      }}>
+        {title}
+      </h3>
       {description && (
-        <p className="text-sm text-gray-500 max-w-sm mb-4">{description}</p>
+        <p style={{
+          fontSize: 13,
+          color: 'var(--text-muted)',
+          maxWidth: 320,
+          lineHeight: 1.5,
+          margin: '0 0 20px',
+        }}>
+          {description}
+        </p>
       )}
-      {action && <div className="mt-2">{action}</div>}
+      {action && <div style={{ marginTop: description ? 0 : 16 }}>{action}</div>}
       {actionLabel && onAction && (
         <Button onClick={onAction} variant="primary" size="sm">
           {actionLabel}

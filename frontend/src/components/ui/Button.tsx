@@ -13,32 +13,33 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, React.CSSProperties> = {
   primary: {
-    background: '#0f2553',
+    background: 'var(--accent)',
     color: '#fff',
     border: 'none',
-    boxShadow: '0 4px 14px rgba(15,37,83,0.22)',
+    boxShadow: '0 2px 8px rgba(46,107,230,0.25)',
   },
   secondary: {
-    background: '#ffffff',
-    color: '#0f2553',
-    border: '1.5px solid #dce3ef',
+    background: 'var(--surface)',
+    color: 'var(--text-primary)',
+    border: '1.5px solid var(--border)',
   },
   danger: {
-    background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+    background: 'var(--danger)',
     color: '#fff',
     border: 'none',
+    boxShadow: '0 2px 8px rgba(220,38,38,0.2)',
   },
   ghost: {
     background: 'transparent',
-    color: '#6b7a99',
+    color: 'var(--text-secondary)',
     border: '1px solid transparent',
   },
 }
 
 const sizeStyles: Record<ButtonSize, React.CSSProperties> = {
-  sm: { padding: '5px 12px', fontSize: 12 },
-  md: { padding: '8px 16px', fontSize: 13 },
-  lg: { padding: '11px 24px', fontSize: 14 },
+  sm: { padding: '5px 12px', fontSize: 12, height: 32 },
+  md: { padding: '0 16px', fontSize: 13, height: 40 },
+  lg: { padding: '0 24px', fontSize: 14, height: 44 },
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -49,29 +50,51 @@ export const Button: React.FC<ButtonProps> = ({
   children,
   className = '',
   style,
+  onMouseEnter,
+  onMouseLeave,
   ...props
 }) => {
+  const isDisabled = disabled || loading
+
+  const hoverBg: Record<ButtonVariant, string> = {
+    primary: 'var(--accent-hover)',
+    secondary: 'var(--surface-3)',
+    danger: '#B91C1C',
+    ghost: 'var(--surface-3)',
+  }
+
   return (
     <button
       {...props}
-      disabled={disabled || loading}
+      disabled={isDisabled}
+      onMouseEnter={(e) => {
+        if (!isDisabled) (e.currentTarget as HTMLButtonElement).style.background = hoverBg[variant]
+        onMouseEnter?.(e)
+      }}
+      onMouseLeave={(e) => {
+        const s = variantStyles[variant]
+        ;(e.currentTarget as HTMLButtonElement).style.background = (s.background as string) ?? ''
+        onMouseLeave?.(e)
+      }}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6,
+        fontFamily: 'var(--font-body)',
         fontWeight: 600,
         borderRadius: 8,
-        cursor: disabled || loading ? 'not-allowed' : 'pointer',
-        opacity: disabled || loading ? 0.55 : 1,
-        transition: 'opacity 150ms, transform 80ms',
+        cursor: isDisabled ? 'not-allowed' : 'pointer',
+        opacity: isDisabled ? 0.55 : 1,
+        transition: 'background 150ms, opacity 150ms, transform 80ms, box-shadow 150ms',
+        whiteSpace: 'nowrap',
         ...variantStyles[variant],
         ...sizeStyles[size],
         ...style,
       }}
       className={className}
     >
-      {loading && <Loader2 size={14} style={{ animation: 'spin 0.8s linear infinite' }} />}
+      {loading && <Loader2 size={14} style={{ animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />}
       {children}
     </button>
   )

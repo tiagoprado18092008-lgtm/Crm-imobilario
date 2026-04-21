@@ -7,22 +7,24 @@ interface BadgeProps {
   small?: boolean
   children: React.ReactNode
   className?: string
+  style?: React.CSSProperties
 }
 
 const variantStyles: Record<BadgeVariant, React.CSSProperties> = {
-  success: { background: 'rgba(34,197,94,0.15)', color: '#4ade80' },
-  warning: { background: 'rgba(245,158,11,0.15)', color: '#fbbf24' },
-  danger:  { background: 'rgba(239,68,68,0.15)',  color: '#f87171' },
-  info:    { background: 'rgba(59,130,246,0.15)', color: '#60a5fa' },
-  default: { background: 'rgba(15,37,83,0.07)', color: '#0f2553', outline: '1px solid #dce3ef' },
-  purple:  { background: 'rgba(184,150,62,0.12)', color: '#b8963e' },
+  success: { background: 'rgba(22,163,74,0.12)', color: 'var(--success)' },
+  warning: { background: 'rgba(217,119,6,0.12)',  color: 'var(--warning)' },
+  danger:  { background: 'rgba(220,38,38,0.10)',  color: 'var(--danger)' },
+  info:    { background: 'var(--accent-soft)',    color: 'var(--accent)' },
+  default: { background: 'var(--surface-3)', color: 'var(--text-secondary)', outline: '1px solid var(--border)' },
+  purple:  { background: 'rgba(124,58,237,0.10)', color: '#7C3AED' },
 }
 
 export const Badge: React.FC<BadgeProps> = ({
   variant = 'default',
   small = false,
   children,
-  className = ''
+  className = '',
+  style,
 }) => {
   return (
     <span
@@ -30,11 +32,15 @@ export const Badge: React.FC<BadgeProps> = ({
       style={{
         display: 'inline-flex',
         alignItems: 'center',
+        fontFamily: 'var(--font-body)',
         fontWeight: 600,
         borderRadius: 20,
         padding: small ? '2px 8px' : '3px 10px',
         fontSize: 11,
+        letterSpacing: '0.02em',
+        whiteSpace: 'nowrap',
         ...variantStyles[variant],
+        ...style,
       }}
     >
       {children}

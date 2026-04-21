@@ -1,8 +1,9 @@
 import { create } from 'zustand'
+import { applyTheme, getStoredTheme, setStoredTheme, resolveTheme } from '../lib/theme'
 
 interface ToastState {
   message: string
-  type: 'success' | 'error' | 'info'
+  type: 'success' | 'error' | 'info' | 'warning'
 }
 
 interface UIState {
@@ -10,7 +11,7 @@ interface UIState {
   toggleSidebar: () => void
   setSidebarOpen: (open: boolean) => void
   toast: ToastState | null
-  showToast: (message: string, type?: 'success' | 'error' | 'info') => void
+  showToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void
   clearToast: () => void
   darkMode: boolean
   toggleDarkMode: () => void
@@ -19,11 +20,9 @@ interface UIState {
   setCrmName: (name: string) => void
 }
 
-const saved = localStorage.getItem('imocrm-dark-mode')
-const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches
-const initialDark = saved !== null ? saved === 'true' : prefersDark
-
-if (initialDark) document.documentElement.classList.add('dark')
+// Bootstrap: apply stored theme immediately (script in index.html already did this,
+// this just keeps zustand state in sync with what's actually rendered)
+const initialDark = resolveTheme(getStoredTheme()) === 'dark'
 
 export const useUIStore = create<UIState>((set) => ({
   crmName: localStorage.getItem('imocrm-name') || 'CasaFlow',
@@ -35,7 +34,7 @@ export const useUIStore = create<UIState>((set) => ({
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   setSidebarOpen: (open: boolean) => set({ sidebarOpen: open }),
   toast: null,
-  showToast: (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+  showToast: (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
     set({ toast: { message, type } })
   },
   clearToast: () => set({ toast: null }),
@@ -43,22 +42,23 @@ export const useUIStore = create<UIState>((set) => ({
   toggleDarkMode: () =>
     set((state) => {
       const next = !state.darkMode
-      if (next) {
-        document.documentElement.classList.add('dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-      }
-      localStorage.setItem('imocrm-dark-mode', String(next))
+      setStoredTheme(next ? 'dark' : 'light')
       return { darkMode: next }
     }),
   setDarkMode: (dark: boolean) =>
     set(() => {
-      if (dark) {
-        document.documentElement.classList.add('dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-      }
-      localStorage.setItem('imocrm-dark-mode', String(dark))
+      setStoredTheme(dark ? 'dark' : 'light')
       return { darkMode: dark }
     }),
 }))
+
+// Keep zustand in sync if theme changes externally (e.g. system preference)
+if (typeof window !== 'undefined') {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (getStoredTheme() === 'system') {
+      applyTheme('system')
+      const isDark = resolveTheme('system') === 'dark'
+      useUIStore.setState({ darkMode: isDark })
+    }
+  })
+}
