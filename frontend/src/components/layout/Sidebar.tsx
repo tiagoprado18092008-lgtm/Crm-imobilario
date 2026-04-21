@@ -6,6 +6,7 @@ import {
   CalendarClock, ChevronRight,
   UserCircle, ChevronsUpDown, UserPlus, Briefcase,
   MessageSquare, Activity, Layers, Phone, PhoneCall,
+  Home,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../store/auth.store'
@@ -13,26 +14,13 @@ import { getInitials } from '../../utils/formatters'
 import { ROLE_LABELS } from '../../utils/constants'
 import { usePermissions } from '../../hooks/usePermissions'
 import { getUnreadCount } from '../../api/conversations.api'
-import { CasaFlowLogo, CasaFlowWordmark } from '../../assets/casaflow-logo'
 import { useUIStore } from '../../store/ui.store'
-
-/* ── Design tokens ────────────────────────────────────────────── */
-const T = {
-  navy:    '#0f2553',
-  navyMid: '#1a3a6e',
-  gold:    '#b8963e',
-  goldLt:  '#d4af5a',
-  white:   '#ffffff',
-  offWhite:'#f8f9fc',
-  border:  '#dce3ef',
-  muted:   '#6b7a99',
-}
 
 interface NavItem { to: string; icon: React.ElementType; label: string; badge?: number }
 interface NavGroup { label: string; items: NavItem[] }
 
-const COLLAPSED_W = 60
-const EXPANDED_W  = 244
+const COLLAPSED_W = 64
+const EXPANDED_W  = 220
 
 export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) => {
   const { user, logout } = useAuthStore()
@@ -72,18 +60,18 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   const handleLogout = () => { logout(); navigate('/login', { replace: true }) }
 
   const crmItems: NavItem[] = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    ...(can('contacts', 'view')      ? [{ to: '/contacts',     icon: Users,        label: 'Contactos' }]      : []),
-    ...(can('opportunities', 'view') ? [{ to: '/pipeline',     icon: Kanban,       label: 'Oportunidades' }]  : []),
-    ...(can('appointments', 'view')  ? [{ to: '/appointments', icon: CalendarClock,label: 'Agendamentos' }]   : []),
-    ...(can('properties', 'view')    ? [{ to: '/properties',   icon: Building2,    label: 'Propriedades' }]   : []),
-    ...(can('conversations', 'view') ? [{ to: '/conversations', icon: MessageSquare, label: 'Conversas', badge: convBadge }] : []),
-    { to: '/calls', icon: PhoneCall, label: 'Chamadas' },
-    { to: '/phone-numbers', icon: Phone, label: 'Números' },
+    { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
+    ...(can('contacts', 'view')      ? [{ to: '/contacts',     icon: Users,         label: 'Contactos' }]                                           : []),
+    ...(can('opportunities', 'view') ? [{ to: '/pipeline',     icon: Kanban,        label: 'Oportunidades' }]                                       : []),
+    ...(can('appointments', 'view')  ? [{ to: '/appointments', icon: CalendarClock, label: 'Agendamentos' }]                                        : []),
+    ...(can('properties', 'view')    ? [{ to: '/properties',   icon: Building2,     label: 'Propriedades' }]                                        : []),
+    ...(can('conversations', 'view') ? [{ to: '/conversations', icon: MessageSquare, label: 'Conversas', badge: convBadge }]                        : []),
+    { to: '/calls',         icon: PhoneCall, label: 'Chamadas' },
+    { to: '/phone-numbers', icon: Phone,     label: 'Números' },
   ]
 
   const gestaoItems: NavItem[] = [
-    ...(can('reports', 'view')  ? [{ to: '/reports', icon: BarChart3,   label: 'Relatórios' }]                : []),
+    ...(can('reports', 'view') ? [{ to: '/reports', icon: BarChart3, label: 'Relatórios' }] : []),
   ]
 
   const navGroups: NavGroup[] = [
@@ -96,12 +84,12 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
     navGroups.push({
       label: 'Agência',
       items: [
-        { to: '/agency',          icon: Briefcase, label: 'Gestão de Agência' },
+        { to: '/agency',           icon: Briefcase, label: 'Gestão de Agência' },
         { to: '/agency/locations', icon: Building2, label: 'Escritórios' },
-        { to: '/agency/users',    icon: Users,     label: 'Utilizadores' },
-        { to: '/agency/settings', icon: Settings,  label: 'Config. Agência' },
-        { to: '/agency/activity', icon: Activity,  label: 'Actividade' },
-        { to: '/agency/pipelines', icon: Layers,   label: 'Pipelines' },
+        { to: '/agency/users',     icon: Users,     label: 'Utilizadores' },
+        { to: '/agency/settings',  icon: Settings,  label: 'Config. Agência' },
+        { to: '/agency/activity',  icon: Activity,  label: 'Actividade' },
+        { to: '/agency/pipelines', icon: Layers,    label: 'Pipelines' },
       ],
     })
   }
@@ -118,43 +106,47 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
 
   navGroups.push({ label: 'Sistema', items: [{ to: '/settings', icon: Settings, label: 'Integrações' }] })
 
-  const labelVariants = {
-    open:   { opacity: 1, x: 0, display: 'block' },
-    closed: { opacity: 0, x: -8, transitionEnd: { display: 'none' } },
-  }
-
   return (
     <motion.aside
       animate={{ width: collapsed ? COLLAPSED_W : EXPANDED_W }}
       transition={{ type: 'tween', ease: 'easeOut', duration: 0.22 }}
-      className="flex flex-col h-full relative flex-shrink-0 overflow-hidden"
       style={{
-        background: T.white,
-        borderRight: `1.5px solid ${T.border}`,
-        boxShadow: '2px 0 16px rgba(15,37,83,0.06)',
-        fontFamily: "'DM Sans', sans-serif",
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        position: 'relative',
+        flexShrink: 0,
+        overflow: 'hidden',
+        background: 'var(--sidebar-bg)',
+        boxShadow: 'inset -1px 0 0 rgba(255,255,255,0.06)',
+        fontFamily: 'var(--font-body)',
       }}
     >
-      {/* ── Logo + Org selector ─────────────────────────────── */}
+      {/* ── Logo ──────────────────────────────────────────────── */}
       <div
         ref={orgMenuRef}
-        className="relative flex-shrink-0"
-        style={{ borderBottom: `1px solid ${T.border}`, height: 64 }}
+        style={{ position: 'relative', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,0.08)', height: 64 }}
       >
         <button
           onClick={() => !collapsed && setOrgMenuOpen(o => !o)}
-          className="w-full h-full flex items-center gap-3 px-3 transition-colors"
           style={{
+            width: '100%', height: '100%',
+            display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px',
             cursor: collapsed ? 'default' : 'pointer',
-            background: orgMenuOpen ? T.offWhite : 'none',
-            border: 'none',
+            background: 'none', border: 'none',
           }}
-          onMouseEnter={e => { if (!collapsed) e.currentTarget.style.background = T.offWhite }}
-          onMouseLeave={e => { e.currentTarget.style.background = orgMenuOpen ? T.offWhite : 'none' }}
+          onMouseEnter={e => { if (!collapsed) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
         >
-          {/* Logo */}
-          <div className="flex items-center justify-center flex-shrink-0" style={{ width: 36, height: 36 }}>
-            <CasaFlowLogo size={28} />
+          {/* CasaFlow icon */}
+          <div style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: 'var(--accent)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+            boxShadow: '0 2px 8px rgba(46,107,230,0.4)',
+          }}>
+            <Home size={16} color="#fff" />
           </div>
 
           <AnimatePresence initial={false}>
@@ -164,61 +156,71 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -8 }}
                 transition={{ duration: 0.15 }}
-                className="flex-1 min-w-0 flex items-center justify-between"
+                style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
               >
-                <div className="min-w-0">
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 0 }}>
-                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 700, color: T.navy, letterSpacing: '-0.03em', lineHeight: 1 }}>{crmName}</span>
-                  </div>
-                </div>
-                <ChevronsUpDown size={13} style={{ color: T.muted, flexShrink: 0 }} />
+                <span style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: '#fff',
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1,
+                }}>
+                  {crmName}
+                </span>
+                <ChevronsUpDown size={13} style={{ color: 'rgba(200,211,232,0.5)', flexShrink: 0 }} />
               </motion.div>
             )}
           </AnimatePresence>
         </button>
 
         {/* Org dropdown */}
-        {orgMenuOpen && !collapsed && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            className="absolute z-50 rounded-xl overflow-hidden"
-            style={{
-              top: '100%', left: 8, right: 8, marginTop: 4,
-              background: T.white,
-              border: `1px solid ${T.border}`,
-              boxShadow: '0 8px 32px rgba(15,37,83,0.12)',
-            }}
-          >
-            {isDirector ? (
-              <>
-                <OrgMenuItem to="/agency"              icon={Users}    label="Membros da agência"      onClick={() => setOrgMenuOpen(false)} />
-                <OrgMenuItem to="/agency?tab=invites"  icon={UserPlus} label="Convites"                onClick={() => setOrgMenuOpen(false)} />
-                <OrgMenuItem to="/agency?tab=settings" icon={Settings} label="Config. da agência"      onClick={() => setOrgMenuOpen(false)} />
-              </>
-            ) : (
-              <>
-                <OrgMenuItem to="/settings" icon={Settings} label="Configurações" onClick={() => setOrgMenuOpen(false)} />
-                {user?.role === 'ADMIN' && (
-                  <OrgMenuItem to="/users" icon={UserCog} label="Gestão de utilizadores" onClick={() => setOrgMenuOpen(false)} />
-                )}
-              </>
-            )}
-          </motion.div>
-        )}
+        <AnimatePresence>
+          {orgMenuOpen && !collapsed && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                position: 'absolute', zIndex: 50,
+                top: '100%', left: 8, right: 8, marginTop: 4,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                overflow: 'hidden',
+              }}
+            >
+              {isDirector ? (
+                <>
+                  <SidebarDropItem to="/agency"              icon={Users}    label="Membros da agência"  onClick={() => setOrgMenuOpen(false)} />
+                  <SidebarDropItem to="/agency?tab=invites"  icon={UserPlus} label="Convites"            onClick={() => setOrgMenuOpen(false)} />
+                  <SidebarDropItem to="/agency?tab=settings" icon={Settings} label="Config. da agência"  onClick={() => setOrgMenuOpen(false)} />
+                </>
+              ) : (
+                <>
+                  <SidebarDropItem to="/settings" icon={Settings} label="Configurações" onClick={() => setOrgMenuOpen(false)} />
+                  <SidebarDropItem to="/users"    icon={UserCog}  label="Utilizadores"   onClick={() => setOrgMenuOpen(false)} />
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* ── Toggle button ─────────────────────────────────────── */}
+      {/* ── Collapse toggle ────────────────────────────────────── */}
       <button
         onClick={() => setCollapsed(c => !c)}
-        className="absolute flex items-center justify-center rounded-full z-10"
         style={{
-          top: 42, right: -10, width: 20, height: 20,
-          background: T.white,
-          border: `1.5px solid ${T.border}`,
-          color: T.muted, cursor: 'pointer',
-          boxShadow: '0 2px 8px rgba(15,37,83,0.12)',
+          position: 'absolute', top: 44, right: -10, zIndex: 10,
+          width: 20, height: 20, borderRadius: '50%',
+          background: 'var(--surface)',
+          border: '1.5px solid var(--border)',
+          color: 'var(--text-muted)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
         }}
         title={collapsed ? 'Expandir' : 'Recolher'}
       >
@@ -228,11 +230,11 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
       </button>
 
       {/* ── Navigation ────────────────────────────────────────── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2" style={{ paddingLeft: 8, paddingRight: 8 }}>
+      <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '8px 8px' }}>
         {navGroups.map((group, gi) => (
-          <div key={group.label} style={{ marginBottom: 2 }}>
+          <div key={group.label} style={{ marginBottom: 4 }}>
             {gi > 0 && (
-              <div style={{ height: 1, background: T.border, margin: collapsed ? '6px 8px' : '2px 8px 0' }} />
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: collapsed ? '6px 8px' : '4px 4px 0' }} />
             )}
             <AnimatePresence initial={false}>
               {!collapsed && (
@@ -240,11 +242,16 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.1 }}
+                  transition={{ duration: 0.12 }}
                   style={{
-                    fontSize: 10, color: T.muted, fontWeight: 700, letterSpacing: '0.12em',
-                    textTransform: 'uppercase', padding: gi === 0 ? '6px 8px 5px' : '10px 8px 5px',
+                    fontSize: 10,
+                    color: 'rgba(200,211,232,0.5)',
+                    fontWeight: 700,
+                    letterSpacing: '1.2px',
+                    textTransform: 'uppercase',
+                    padding: gi === 0 ? '8px 8px 4px' : '10px 8px 4px',
                     whiteSpace: 'nowrap',
+                    fontFamily: 'var(--font-body)',
                   }}
                 >
                   {group.label}
@@ -257,40 +264,83 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                 <li key={to}>
                   <NavLink
                     to={to}
-                    className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
                     title={collapsed ? label : undefined}
-                    style={collapsed ? { justifyContent: 'center', paddingLeft: 0, paddingRight: 0 } : {}}
                     onClick={onNavigate}
+                    style={{ textDecoration: 'none' }}
                   >
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <Icon size={16} />
-                      {collapsed && badge ? (
-                        <span style={{
-                          position: 'absolute', top: -3, right: -3, width: 7, height: 7,
-                          borderRadius: '50%', background: '#ef4444', border: `1.5px solid ${T.white}`,
-                        }} />
-                      ) : null}
-                    </div>
+                    {({ isActive }) => (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          padding: '8px 10px',
+                          borderRadius: 8,
+                          margin: '0 0',
+                          justifyContent: collapsed ? 'center' : 'flex-start',
+                          background: isActive ? 'var(--sidebar-active-bg)' : 'transparent',
+                          color: isActive ? 'var(--sidebar-active)' : 'var(--sidebar-text)',
+                          fontFamily: 'var(--font-body)',
+                          fontSize: 13,
+                          fontWeight: isActive ? 600 : 500,
+                          cursor: 'pointer',
+                          transition: 'background 120ms, color 120ms',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          position: 'relative',
+                        }}
+                        onMouseEnter={e => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.08)'
+                            e.currentTarget.style.color = '#fff'
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (!isActive) {
+                            e.currentTarget.style.background = 'transparent'
+                            e.currentTarget.style.color = 'var(--sidebar-text)'
+                          }
+                        }}
+                      >
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                          <Icon size={16} />
+                          {collapsed && badge ? (
+                            <span style={{
+                              position: 'absolute', top: -3, right: -3,
+                              width: 7, height: 7, borderRadius: '50%',
+                              background: 'var(--danger)',
+                              border: '1.5px solid var(--sidebar-bg)',
+                            }} />
+                          ) : null}
+                        </div>
 
-                    <motion.span
-                      variants={labelVariants}
-                      animate={collapsed ? 'closed' : 'open'}
-                      transition={{ duration: 0.15 }}
-                      style={{ overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, whiteSpace: 'nowrap' }}
-                    >
-                      {label}
-                    </motion.span>
+                        <AnimatePresence initial={false}>
+                          {!collapsed && (
+                            <motion.span
+                              initial={{ opacity: 0, x: -8 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.13 }}
+                              style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                            >
+                              {label}
+                            </motion.span>
+                          )}
+                        </AnimatePresence>
 
-                    {!collapsed && badge ? (
-                      <span style={{
-                        marginLeft: 'auto', minWidth: 18, height: 18, borderRadius: 9,
-                        background: T.navy, color: T.white, fontSize: 10, fontWeight: 700,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        padding: '0 4px', flexShrink: 0,
-                      }}>
-                        {badge > 99 ? '99+' : badge}
-                      </span>
-                    ) : null}
+                        {!collapsed && badge ? (
+                          <span style={{
+                            marginLeft: 'auto', minWidth: 18, height: 18, borderRadius: 9,
+                            background: 'var(--accent)',
+                            color: '#fff', fontSize: 10, fontWeight: 700,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            padding: '0 4px', flexShrink: 0,
+                          }}>
+                            {badge > 99 ? '99+' : badge}
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
                   </NavLink>
                 </li>
               ))}
@@ -302,32 +352,29 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
       {/* ── User footer ───────────────────────────────────────── */}
       <div
         ref={userMenuRef}
-        className="relative flex-shrink-0"
-        style={{ borderTop: `1px solid ${T.border}`, padding: '10px 8px' }}
+        style={{ position: 'relative', flexShrink: 0, borderTop: '1px solid rgba(255,255,255,0.08)', padding: '10px 8px' }}
       >
         <button
           onClick={() => setUserMenuOpen(o => !o)}
-          className="w-full flex items-center gap-2.5 rounded-xl transition-all"
           style={{
+            width: '100%',
+            display: 'flex', alignItems: 'center', gap: 10,
             padding: collapsed ? '8px 0' : '8px 10px',
             justifyContent: collapsed ? 'center' : 'flex-start',
-            background: userMenuOpen ? T.offWhite : 'transparent',
-            border: `1px solid ${userMenuOpen ? T.border : 'transparent'}`,
+            background: userMenuOpen ? 'rgba(255,255,255,0.08)' : 'transparent',
+            border: 'none',
+            borderRadius: 8,
             cursor: 'pointer',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = T.offWhite; e.currentTarget.style.borderColor = T.border; }}
-          onMouseLeave={e => { e.currentTarget.style.background = userMenuOpen ? T.offWhite : 'transparent'; e.currentTarget.style.borderColor = userMenuOpen ? T.border : 'transparent'; }}
+          onMouseEnter={e => { if (!userMenuOpen) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = userMenuOpen ? 'rgba(255,255,255,0.08)' : 'transparent' }}
         >
-          {/* Avatar */}
-          <div
-            className="flex items-center justify-center rounded-full flex-shrink-0 font-bold"
-            style={{
-              width: 28, height: 28, fontSize: 10,
-              background: T.navy,
-              color: T.white,
-              letterSpacing: '0.05em',
-            }}
-          >
+          <div style={{
+            width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+            background: 'var(--accent)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', fontWeight: 700, fontSize: 11, letterSpacing: '0.05em',
+          }}>
             {getInitials(user?.name || '')}
           </div>
 
@@ -337,96 +384,94 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -8 }}
-                transition={{ duration: 0.15 }}
-                className="flex-1 min-w-0 flex items-center gap-1"
+                transition={{ duration: 0.13 }}
+                style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 4 }}
               >
-                <div className="flex-1 min-w-0 text-left">
-                  <p className="text-xs font-semibold truncate leading-tight" style={{ color: T.navy }}>{user?.name}</p>
-                  <p className="text-xs truncate leading-tight" style={{ color: T.muted, marginTop: 1 }}>
+                <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: '#fff', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>
+                    {user?.name}
+                  </p>
+                  <p style={{ fontSize: 11, color: 'var(--sidebar-text)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>
                     {ROLE_LABELS[user?.role || ''] || user?.role}
                   </p>
                 </div>
-                <ChevronsUpDown size={12} style={{ color: T.muted, flexShrink: 0 }} />
+                <ChevronsUpDown size={12} style={{ color: 'rgba(200,211,232,0.5)', flexShrink: 0 }} />
               </motion.div>
             )}
           </AnimatePresence>
         </button>
 
-        {/* User dropdown */}
-        {userMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 6 }}
-            className="absolute z-50 rounded-xl overflow-hidden"
-            style={{
-              bottom: '100%', left: 8, right: 8, marginBottom: 6,
-              background: T.white,
-              border: `1px solid ${T.border}`,
-              boxShadow: '0 8px 32px rgba(15,37,83,0.12)',
-            }}
-          >
-            {/* User info header */}
-            <div className="flex items-center gap-2.5 px-3 py-3" style={{ borderBottom: `1px solid ${T.border}` }}>
-              <div className="flex items-center justify-center rounded-full flex-shrink-0 font-bold"
-                style={{ width: 32, height: 32, fontSize: 11, background: T.navy, color: T.white }}>
-                {getInitials(user?.name || '')}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold truncate" style={{ color: T.navy }}>{user?.name}</p>
-                <p className="text-xs truncate" style={{ color: T.muted }}>{user?.email}</p>
-              </div>
-            </div>
-
-            <UserMenuItem icon={UserCircle} label="O meu perfil"   to="/profile"   onClick={() => setUserMenuOpen(false)} />
-            <UserMenuItem icon={Settings}   label="Configurações"  to="/settings"  onClick={() => setUserMenuOpen(false)} />
-
-            <div style={{ height: 1, background: T.border, margin: '2px 0' }} />
-
-            <button
-              onClick={() => { setUserMenuOpen(false); handleLogout() }}
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors"
-              style={{ color: '#c0392b', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(192,57,43,0.06)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+        {/* User dropdown (pops upward) */}
+        <AnimatePresence>
+          {userMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                position: 'absolute', zIndex: 50,
+                bottom: '100%', left: 8, right: 8, marginBottom: 6,
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                overflow: 'hidden',
+              }}
             >
-              <LogOut size={13} />
-              Sair
-            </button>
-          </motion.div>
-        )}
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                  {getInitials(user?.name || '')}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name}</p>
+                  <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
+                </div>
+              </div>
+
+              <SidebarDropItem to="/profile"  icon={UserCircle} label="O meu perfil"  onClick={() => setUserMenuOpen(false)} />
+              <SidebarDropItem to="/settings" icon={Settings}   label="Configurações" onClick={() => setUserMenuOpen(false)} />
+
+              <div style={{ height: 1, background: 'var(--border)', margin: '2px 0' }} />
+
+              <button
+                onClick={() => { setUserMenuOpen(false); handleLogout() }}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 14px', fontSize: 13,
+                  color: 'var(--danger)', background: 'none', border: 'none',
+                  cursor: 'pointer', fontFamily: 'var(--font-body)',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(220,38,38,0.06)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+              >
+                <LogOut size={14} />
+                Sair
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.aside>
   )
 }
 
-/* ── Small helper components ────────────────────────────────── */
-const T2 = { navy: '#0f2553', muted: '#6b7a99', offWhite: '#f8f9fc' }
-
-const OrgMenuItem: React.FC<{ to: string; icon: React.ElementType; label: string; onClick: () => void }> = ({ to, icon: Icon, label, onClick }) => (
+/* ── Dropdown item helper ───────────────────────────────────── */
+const SidebarDropItem: React.FC<{
+  to: string
+  icon: React.ElementType
+  label: string
+  onClick: () => void
+}> = ({ to, icon: Icon, label, onClick }) => (
   <NavLink
     to={to}
     onClick={onClick}
-    className="flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors"
-    style={{ color: T2.muted, textDecoration: 'none' }}
-    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = T2.offWhite; (e.currentTarget as HTMLAnchorElement).style.color = T2.navy; }}
-    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'none'; (e.currentTarget as HTMLAnchorElement).style.color = T2.muted; }}
+    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none', fontFamily: 'var(--font-body)' }}
+    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--surface-3)'; (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)' }}
+    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'none'; (e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)' }}
   >
-    <Icon size={13} />
-    {label}
-  </NavLink>
-)
-
-const UserMenuItem: React.FC<{ to: string; icon: React.ElementType; label: string; onClick: () => void }> = ({ to, icon: Icon, label, onClick }) => (
-  <NavLink
-    to={to}
-    onClick={onClick}
-    className="flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors"
-    style={{ color: T2.muted, textDecoration: 'none' }}
-    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = T2.offWhite; (e.currentTarget as HTMLAnchorElement).style.color = T2.navy; }}
-    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'none'; (e.currentTarget as HTMLAnchorElement).style.color = T2.muted; }}
-  >
-    <Icon size={13} />
+    <Icon size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
     {label}
   </NavLink>
 )
