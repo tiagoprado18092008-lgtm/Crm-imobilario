@@ -3,7 +3,8 @@ import prisma from '../../config/database';
 const userScope = (user: any) => {
   if (user.agencyId) return { agencyId: user.agencyId };
   if (user.locationId) return { locationId: user.locationId };
-  return {};
+  // Fallback: never return empty scope — show nothing if no agency/location
+  return { id: '__no_match__' };
 };
 
 export const list = async (user: any) => {

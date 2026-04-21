@@ -11,7 +11,10 @@ const select = {
 };
 
 const buildWhereClause = async (user: any): Promise<any> => {
-  if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') return {};
+  if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') {
+    if (user.agencyId) return { createdBy: { agencyId: user.agencyId } };
+    return { createdById: user.id };
+  }
   if (user.role === 'TEAM_LEADER') {
     const subAgents = await prisma.user.findMany({
       where: { supervisorId: user.id },

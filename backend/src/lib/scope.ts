@@ -18,7 +18,8 @@ export const buildScope = async (user: any, opts: ScopeOptions = {}): Promise<Re
       }
       return { assignedTo: { agencyId: user.agencyId } };
     }
-    return {};
+    // No agencyId — restrict to own records only (never expose everything)
+    return { assignedToId: user.id };
   }
 
   // LOCATION_ADMIN — see entire location
@@ -46,7 +47,7 @@ export const buildPropertyScope = async (user: any): Promise<Record<string, any>
     if (user.agencyId) {
       return { createdBy: { agencyId: user.agencyId } };
     }
-    return {};
+    return { createdById: user.id };
   }
   if (user.role === 'LOCATION_ADMIN') {
     return user.locationId ? { locationId: user.locationId } : {};
