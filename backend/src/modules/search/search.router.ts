@@ -25,7 +25,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const q = (req.query.q as string || '').trim();
     if (!q || q.length < 2) { res.json({ contacts: [], properties: [], opportunities: [] }); return; }
 
-    const scope = await buildScope((req as any).user);
+    const user = (req as any).user;
+    const scope = await buildScope(user);
     const search = { contains: q, mode: 'insensitive' as const };
 
     const [contacts, properties, opportunities] = await Promise.all([
