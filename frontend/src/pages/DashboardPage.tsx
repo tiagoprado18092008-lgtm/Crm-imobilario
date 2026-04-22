@@ -86,12 +86,12 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon, iconBg, ic
       style={{
         background: 'var(--surface)',
         border: '1px solid var(--border)',
-        borderRadius: 12,
-        padding: '20px 24px 16px',
+        borderRadius: 14,
+        padding: '22px 24px 18px',
         display: 'flex',
         flexDirection: 'column',
         gap: 10,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        boxShadow: '0 2px 8px rgba(15,23,40,0.06)',
         fontFamily: 'var(--font-body)',
       }}
     >
@@ -107,9 +107,9 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon, iconBg, ic
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 8 }}>
         <div>
           <div style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: 28, fontWeight: 600,
-            letterSpacing: '-0.02em', color: 'var(--text-primary)', lineHeight: 1,
+            fontFamily: 'var(--font-display)',
+            fontSize: 30, fontWeight: 700,
+            letterSpacing: '-0.03em', color: 'var(--text-primary)', lineHeight: 1,
           }}>
             {value}
           </div>
@@ -208,8 +208,8 @@ export const DashboardPage: React.FC = () => {
     <div style={{
       background: 'var(--surface)',
       border: '1px solid var(--border)',
-      borderRadius: 12,
-      boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+      borderRadius: 14,
+      boxShadow: '0 2px 8px rgba(15,23,40,0.06)',
       overflow: 'hidden',
       fontFamily: 'var(--font-body)',
       ...style,
@@ -389,7 +389,7 @@ export const DashboardPage: React.FC = () => {
                         {stage.label}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
                           {stage.count}
                         </span>
                         <span style={{ fontSize: 11, color: 'var(--text-muted)', minWidth: 28, textAlign: 'right' }}>
@@ -495,7 +495,7 @@ export const DashboardPage: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{data.total} leads</span>
                           <span style={{
-                            fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600,
+                            fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700,
                             color: barColor, minWidth: 32, textAlign: 'right',
                           }}>
                             {rate}%
