@@ -581,12 +581,53 @@ export const SettingsPage: React.FC = () => {
     setTesting(t => ({ ...t, [section]: false }))
   }
 
+  const WaLogo = () => (
+    <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="16" fill="#25d366"/>
+      <path d="M22.5 9.5C20.8 7.8 18.5 6.8 16 6.8c-5.1 0-9.2 4.1-9.2 9.2 0 1.6.4 3.2 1.2 4.6L6.8 25.2l4.7-1.2c1.3.7 2.8 1.1 4.4 1.1 5.1 0 9.2-4.1 9.2-9.2.1-2.5-.9-4.8-2.6-6.4zm-6.5 14.1c-1.4 0-2.8-.4-3.9-1.1l-.3-.2-3 .8.8-3-.2-.3c-.8-1.2-1.2-2.6-1.2-4.1 0-4.2 3.4-7.5 7.5-7.5 2 0 3.9.8 5.3 2.2 1.4 1.4 2.2 3.3 2.2 5.3.1 4.2-3.3 7.6-7.2 7.9zm4.1-5.6c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1-.2.2-.6.7-.8.9-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4c.1-.1.2-.3.3-.4.1-.1.1-.2 0-.4-.1-.1-.5-1.2-.7-1.6-.2-.4-.4-.3-.5-.3h-.4c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.1 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .2 1.4.1.4-.1 1.3-.5 1.5-1s.2-.9.1-1z" fill="white"/>
+    </svg>
+  )
+  const EmailLogo = () => (
+    <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="8" fill="#EA4335"/>
+      <path d="M6 10.5C6 9.7 6.7 9 7.5 9h17c.8 0 1.5.7 1.5 1.5v11c0 .8-.7 1.5-1.5 1.5h-17C6.7 23 6 22.3 6 21.5v-11z" fill="white"/>
+      <path d="M6 10.5l10 7 10-7" stroke="#EA4335" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  )
+  const IgLogo = () => (
+    <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+      <defs>
+        <linearGradient id="ig-grad" x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FFDC80" offset="0%"/>
+          <stop stopColor="#F56040" offset="25%"/>
+          <stop stopColor="#E1306C" offset="50%"/>
+          <stop stopColor="#833AB4" offset="75%"/>
+          <stop stopColor="#405DE6" offset="100%"/>
+        </linearGradient>
+      </defs>
+      <rect width="32" height="32" rx="8" fill="url(#ig-grad)"/>
+      <rect x="9" y="9" width="14" height="14" rx="4" stroke="white" strokeWidth="1.5" fill="none"/>
+      <circle cx="16" cy="16" r="3.5" stroke="white" strokeWidth="1.5" fill="none"/>
+      <circle cx="21" cy="11" r="1" fill="white"/>
+    </svg>
+  )
+  const TwilioLogo = () => (
+    <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="8" fill="#F22F46"/>
+      <circle cx="16" cy="16" r="6" stroke="white" strokeWidth="2" fill="none"/>
+      <circle cx="13.5" cy="13.5" r="1.5" fill="white"/>
+      <circle cx="18.5" cy="13.5" r="1.5" fill="white"/>
+      <circle cx="13.5" cy="18.5" r="1.5" fill="white"/>
+      <circle cx="18.5" cy="18.5" r="1.5" fill="white"/>
+    </svg>
+  )
+
   const tabs: { key: Tab; label: string; icon: React.ReactNode; status: string }[] = [
     { key: 'guide', label: 'Guia de Início', icon: <BookOpen size={15} style={{ color: '#f59e0b' }} />, status: 'configured' },
-    { key: 'whatsapp', label: 'WhatsApp', icon: <MessageCircle size={15} style={{ color: '#25d366' }} />, status: status.whatsapp },
-    { key: 'email', label: 'Email (SMTP)', icon: <Mail size={15} style={{ color: 'var(--accent)' }} />, status: status.email },
-    { key: 'instagram', label: 'Instagram', icon: <Instagram size={15} style={{ color: '#e1306c' }} />, status: status.instagram },
-    { key: 'phone', label: 'Telefone', icon: <Phone size={15} style={{ color: '#22c55e' }} />, status: status.phone },
+    { key: 'whatsapp', label: 'WhatsApp', icon: <WaLogo />, status: status.whatsapp },
+    { key: 'email', label: 'Email (SMTP)', icon: <EmailLogo />, status: status.email },
+    { key: 'instagram', label: 'Instagram', icon: <IgLogo />, status: status.instagram },
+    { key: 'phone', label: 'Telefone', icon: <TwilioLogo />, status: status.phone },
     { key: 'general', label: 'Geral', icon: <Settings size={15} style={{ color: 'var(--text-muted)' }} />, status: 'configured' },
   ]
 
@@ -654,228 +695,118 @@ export const SettingsPage: React.FC = () => {
           {/* WhatsApp */}
           {tab === 'whatsapp' && (
             <div className="space-y-5">
-              {/* WhatsApp QR / Baileys */}
-              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#dcfce7' }}>
-                    <MessageCircle size={20} style={{ color: '#25d366' }} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>WhatsApp via QR Code</h3>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Liga o teu WhatsApp pessoal ou de empresa sem precisar da API da Meta</p>
-                  </div>
-                </div>
-
-                {waQrStatus === 'CONNECTED' ? (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                      <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Ligado{waQrPhone ? ` — +${waQrPhone}` : ''}</span>
-                    </div>
-                    <button
-                      onClick={handleWaDisconnect}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold"
-                      style={{ border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}
-                    >
-                      <X size={13} /> Desligar
-                    </button>
-                  </div>
-                ) : waQrImage ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Abre o WhatsApp no telemóvel → Dispositivos ligados → Ligar dispositivo → Lê o QR</p>
-                    <img src={waQrImage} alt="WhatsApp QR Code" style={{ width: 220, height: 220, borderRadius: 12, border: '1px solid var(--border)' }} />
-                  </div>
-                ) : (
-                  <button
-                    onClick={handleWaConnect}
-                    disabled={waQrLoading}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-semibold"
-                    style={{ background: '#25d366', opacity: waQrLoading ? 0.7 : 1, border: 'none', cursor: waQrLoading ? 'not-allowed' : 'pointer' }}
-                  >
-                    {waQrLoading ? <Loader2 size={14} className="animate-spin" /> : <MessageCircle size={14} />}
-                    {waQrLoading ? 'A gerar QR code...' : 'Ligar com QR Code'}
-                  </button>
-                )}
-              </div>
-
-              {/* Credenciais */}
-              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-                <div className="flex items-center justify-between mb-5">
+              {/* Hero card */}
+              <div className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                {/* Header bar */}
+                <div style={{ background: 'linear-gradient(135deg, #25d366 0%, #128c5e 100%)', padding: '20px 24px' }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#dcfce7' }}>
-                      <MessageCircle size={20} style={{ color: '#25d366' }} />
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+                      <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+                        <path d="M22.5 9.5C20.8 7.8 18.5 6.8 16 6.8c-5.1 0-9.2 4.1-9.2 9.2 0 1.6.4 3.2 1.2 4.6L6.8 25.2l4.7-1.2c1.3.7 2.8 1.1 4.4 1.1 5.1 0 9.2-4.1 9.2-9.2.1-2.5-.9-4.8-2.6-6.4zm-6.5 14.1c-1.4 0-2.8-.4-3.9-1.1l-.3-.2-3 .8.8-3-.2-.3c-.8-1.2-1.2-2.6-1.2-4.1 0-4.2 3.4-7.5 7.5-7.5 2 0 3.9.8 5.3 2.2 1.4 1.4 2.2 3.3 2.2 5.3.1 4.2-3.3 7.6-7.2 7.9zm4.1-5.6c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1-.2.2-.6.7-.8.9-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4c.1-.1.2-.3.3-.4.1-.1.1-.2 0-.4-.1-.1-.5-1.2-.7-1.6-.2-.4-.4-.3-.5-.3h-.4c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.1 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .2 1.4.1.4-.1 1.3-.5 1.5-1s.2-.9.1-1z" fill="white"/>
+                      </svg>
                     </div>
                     <div>
-                      <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>WhatsApp Business API</h3>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <StatusDot status={status.whatsapp} />
-                        <StatusLabel status={status.whatsapp} />
+                      <h3 style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>WhatsApp</h3>
+                      <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: 0 }}>Liga via QR Code — sem API da Meta</p>
+                    </div>
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: waQrStatus === 'CONNECTED' ? '#fff' : 'rgba(255,255,255,0.4)' }} />
+                      <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: 600 }}>
+                        {waQrStatus === 'CONNECTED' ? 'Ligado' : waQrStatus === 'CONNECTING' ? 'A ligar...' : 'Desligado'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Body */}
+                <div style={{ padding: '24px' }}>
+                  {waQrStatus === 'CONNECTED' ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Check size={18} style={{ color: '#16a34a' }} />
+                        </div>
+                        <div>
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: '#15803d' }}>WhatsApp ligado com sucesso</p>
+                          {waQrPhone && <p style={{ margin: 0, fontSize: 12, color: '#16a34a' }}>+{waQrPhone}</p>}
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleWaDisconnect}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                      >
+                        <X size={13} /> Desligar
+                      </button>
+                    </div>
+                  ) : waQrImage ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+                      <div style={{ padding: 16, borderRadius: 16, background: '#fff', border: '1.5px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+                        <img src={waQrImage} alt="WhatsApp QR Code" style={{ width: 200, height: 200, display: 'block' }} />
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>Lê o código com o teu telemóvel</p>
+                        <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>WhatsApp → Dispositivos ligados → Ligar dispositivo</p>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Token */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                      Token de Acesso
-                      <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>— começa por EAAxx...</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showToken ? 'text' : 'password'}
-                        value={wa.whatsappToken}
-                        onChange={(e) => setWa({ ...wa, whatsappToken: e.target.value })}
-                        placeholder={status.whatsapp === 'configured' ? '••••••••••••••••••••' : 'EAAxxxxxx...'}
-                        autoComplete="new-password"
-                        className={inputClass + ' pr-10'}
-                        style={inputStyle}
-                      />
-                      <button type="button" onClick={() => setShowToken(!showToken)} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                        {showToken ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Phone Number ID */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                      Phone Number ID
-                      <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>— número no painel Meta</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={wa.phoneNumberId}
-                      onChange={(e) => setWa({ ...wa, phoneNumberId: e.target.value })}
-                      placeholder={status.whatsapp === 'configured' ? '••••••••••' : '123456789012345'}
-                      className={inputClass}
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  {/* Verify Token */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                      Verify Token
-                      <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>— palavra-passe para validar o webhook</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={wa.verifyToken}
-                      onChange={(e) => setWa({ ...wa, verifyToken: e.target.value })}
-                      placeholder="ex: casaflow_webhook_2024"
-                      className={inputClass}
-                      style={inputStyle}
-                    />
-                    <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
-                      Podes usar qualquer texto — tens de usar o mesmo valor no painel Meta ao configurar o webhook.
-                    </p>
-                  </div>
-
-                  {/* Webhook URL — para copiar */}
-                  <div className="rounded-lg p-3" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
-                    <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-secondary)' }}>URL do Webhook (para configurar na Meta)</p>
-                    <div className="flex items-center gap-2">
-                      <code className="flex-1 text-xs px-2 py-1.5 rounded" style={{ background: 'var(--surface)', color: '#25d366', fontFamily: 'monospace', border: '1px solid var(--border)', wordBreak: 'break-all' }}>
-                        {(import.meta as any).env?.VITE_API_URL?.replace('/api', '') || window.location.origin.replace('casaflow-frontend', 'casaflow-backend')}/webhook/whatsapp
-                      </code>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                        {[
+                          { icon: '📱', title: 'Sem API', desc: 'Não precisas de conta Meta Business' },
+                          { icon: '⚡', title: 'Rápido', desc: 'Liga em segundos com QR Code' },
+                          { icon: '💬', title: 'Completo', desc: 'Envia e recebe mensagens no CRM' },
+                        ].map(f => (
+                          <div key={f.title} style={{ padding: '14px', borderRadius: 12, background: 'var(--surface-3)', border: '1px solid var(--border)', textAlign: 'center' }}>
+                            <div style={{ fontSize: 22, marginBottom: 6 }}>{f.icon}</div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: 12, color: 'var(--text-primary)' }}>{f.title}</p>
+                            <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>{f.desc}</p>
+                          </div>
+                        ))}
+                      </div>
                       <button
-                        type="button"
-                        onClick={() => {
-                          const url = `${(import.meta as any).env?.VITE_API_URL?.replace('/api', '') || window.location.origin.replace('casaflow-frontend', 'casaflow-backend')}/webhook/whatsapp`
-                          navigator.clipboard.writeText(url)
-                          showToast('URL copiado!', 'success')
+                        onClick={handleWaConnect}
+                        disabled={waQrLoading}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                          padding: '13px 24px', borderRadius: 12, border: 'none', cursor: waQrLoading ? 'not-allowed' : 'pointer',
+                          background: waQrLoading ? '#86efac' : '#25d366', color: '#fff', fontSize: 14, fontWeight: 700,
+                          boxShadow: '0 4px 14px rgba(37,211,102,0.35)', transition: 'all 150ms',
+                          opacity: waQrLoading ? 0.8 : 1,
                         }}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold flex-shrink-0"
-                        style={{ background: '#25d366', color: '#fff', border: 'none', cursor: 'pointer' }}
                       >
-                        <Copy size={12} /> Copiar
+                        {waQrLoading ? <Loader2 size={16} className="animate-spin" /> : (
+                          <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+                            <path d="M22.5 9.5C20.8 7.8 18.5 6.8 16 6.8c-5.1 0-9.2 4.1-9.2 9.2 0 1.6.4 3.2 1.2 4.6L6.8 25.2l4.7-1.2c1.3.7 2.8 1.1 4.4 1.1 5.1 0 9.2-4.1 9.2-9.2.1-2.5-.9-4.8-2.6-6.4zm-6.5 14.1c-1.4 0-2.8-.4-3.9-1.1l-.3-.2-3 .8.8-3-.2-.3c-.8-1.2-1.2-2.6-1.2-4.1 0-4.2 3.4-7.5 7.5-7.5 2 0 3.9.8 5.3 2.2 1.4 1.4 2.2 3.3 2.2 5.3.1 4.2-3.3 7.6-7.2 7.9zm4.1-5.6c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1-.2.2-.6.7-.8.9-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4c.1-.1.2-.3.3-.4.1-.1.1-.2 0-.4-.1-.1-.5-1.2-.7-1.6-.2-.4-.4-.3-.5-.3h-.4c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.1 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .2 1.4.1.4-.1 1.3-.5 1.5-1s.2-.9.1-1z" fill="white"/>
+                          </svg>
+                        )}
+                        {waQrLoading ? 'A gerar QR code...' : 'Ligar com QR Code'}
                       </button>
                     </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3 pt-1">
-                    <button
-                      onClick={() => handleSave({ whatsappToken: wa.whatsappToken, phoneNumberId: wa.phoneNumberId, verifyToken: wa.verifyToken })}
-                      disabled={saving}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-semibold transition-all"
-                      style={{ background: '#0066ff', opacity: saving ? 0.7 : 1 }}
-                    >
-                      {saving && <Loader2 size={14} className="animate-spin" />}
-                      Guardar credenciais
-                    </button>
-                    <button
-                      onClick={() => handleTest('whatsapp', testWhatsApp)}
-                      disabled={!!testing['whatsapp']}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
-                      style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--surface)' }}
-                    >
-                      {testing['whatsapp'] ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                      Testar ligação
-                    </button>
-                    {saveMsg && <span className={`text-sm font-medium ${saveMsg.includes('Erro') ? 'text-red-500' : 'text-emerald-600'}`}>{saveMsg}</span>}
-                    {testResult['whatsapp'] && (
-                      <span className={`text-sm font-medium flex items-center gap-1 ${testResult['whatsapp'].success ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {testResult['whatsapp'].success ? <Check size={13} /> : <X size={13} />}
-                        {testResult['whatsapp'].message}
-                      </span>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
 
-              {/* Guia passo-a-passo */}
-              <div className="rounded-xl border p-5" style={{ background: 'var(--surface-3)', borderColor: 'var(--border)' }}>
-                <div className="flex items-center gap-2 mb-4">
-                  <Info size={15} style={{ color: 'var(--accent)' }} />
-                  <h4 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Como configurar — passo a passo</h4>
+              {/* O que acontece automaticamente */}
+              <div style={{ borderRadius: 16, border: '1px solid #bbf7d0', background: '#f0fdf4', padding: '18px 22px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Zap size={14} style={{ color: '#16a34a' }} />
+                  </div>
+                  <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#15803d' }}>O que acontece automaticamente</h4>
                 </div>
-                <ol className="space-y-3">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   {[
-                    { step: 'Acede a developers.facebook.com e cria uma app do tipo "Business"', link: 'https://developers.facebook.com' },
-                    { step: 'Dentro da app, clica em "Adicionar produto" e escolhe "WhatsApp"', link: null },
-                    { step: 'Em WhatsApp → Configuração, copia o "Token de acesso temporário" e o "Phone Number ID"', link: null },
-                    { step: 'Cola os valores nos campos acima e clica em "Guardar credenciais"', link: null },
-                    { step: 'Ainda em WhatsApp → Configuração, clica em "Configurar webhook", cola o URL acima e o Verify Token', link: null },
-                    { step: 'Subscreve os eventos: messages, message_deliveries, message_reads', link: null },
-                    { step: 'Clica em "Testar ligação" para confirmar que está tudo correto', link: null },
-                    { step: 'Para produção, gera um Token Permanente em WhatsApp → Contas do sistema', link: null },
+                    'Mensagens recebidas aparecem em tempo real nas Conversas',
+                    'Contactos criados automaticamente para números novos',
+                    'Podes responder diretamente do CRM',
+                    'Histórico completo no perfil do contacto',
                   ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      <span className="w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: '#dbeafe', color: '#1d4ed8' }}>{i + 1}</span>
-                      <span>
-                        {item.step}
-                        {item.link && (
-                          <a href={item.link} target="_blank" rel="noopener noreferrer" className="ml-1.5 inline-flex items-center gap-0.5 text-xs" style={{ color: 'var(--accent)' }}>
-                            Abrir <ExternalLink size={10} />
-                          </a>
-                        )}
-                      </span>
-                    </li>
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <Check size={13} style={{ color: '#16a34a', marginTop: 2, flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: '#166534' }}>{item}</span>
+                    </div>
                   ))}
-                </ol>
-              </div>
-
-              {/* O que acontece após configurar */}
-              <div className="rounded-xl border p-5" style={{ borderColor: '#bbf7d0', background: '#f0fdf4' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <MessageCircle size={15} style={{ color: '#16a34a' }} />
-                  <h4 className="text-sm font-semibold" style={{ color: '#15803d' }}>O que acontece automaticamente</h4>
                 </div>
-                <ul className="space-y-1.5">
-                  {[
-                    'Mensagens recebidas aparecem em tempo real na secção "Conversas"',
-                    'Se o número não existir como contacto, é criado automaticamente',
-                    'Podes responder diretamente do CRM sem sair da plataforma',
-                    'Todo o histórico de mensagens fica guardado no perfil do contacto',
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#166534' }}>
-                      <Check size={13} className="mt-0.5 flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
               </div>
             </div>
           )}
@@ -883,33 +814,51 @@ export const SettingsPage: React.FC = () => {
           {/* Email */}
           {tab === 'email' && (
             <div className="space-y-5">
-              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-                <div className="flex items-center justify-between mb-5">
+              <div className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                {/* Header bar */}
+                <div style={{ background: 'linear-gradient(135deg, #EA4335 0%, #c5221f 100%)', padding: '20px 24px' }}>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#dbeafe' }}>
-                      <Mail size={20} style={{ color: 'var(--accent)' }} />
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="2" y="4" width="20" height="16" rx="3" fill="white"/>
+                        <path d="M2 7l10 7 10-7" stroke="#EA4335" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
                     </div>
                     <div>
-                      <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Email (SMTP)</h3>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <StatusDot status={status.email} />
-                        <StatusLabel status={status.email} />
-                      </div>
+                      <h3 style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>Email (SMTP)</h3>
+                      <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: 0 }}>Gmail, Outlook ou qualquer servidor SMTP</p>
+                    </div>
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: status.email === 'configured' ? '#fff' : 'rgba(255,255,255,0.4)' }} />
+                      <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: 600 }}>
+                        {status.email === 'configured' ? 'Configurado' : 'Não configurado'}
+                      </span>
                     </div>
                   </div>
+                </div>
+
+                <div style={{ padding: '24px' }}>
+                <div className="flex items-center justify-between mb-5">
+                  <div />
                   {/* Presets */}
                   <div className="flex items-center gap-2">
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Pré-configurar:</span>
                     <button
                       onClick={() => setEmail({ ...email, ...GMAIL_PRESET })}
-                      className="text-xs px-2.5 py-1 rounded-lg font-medium"
+                      className="text-xs px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5"
                       style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--surface)' }}
-                    >Gmail</button>
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24"><path d="M22.288 5.298C21.576 4.648 20.607 4 19.2 4H4.8C3.393 4 2.424 4.648 1.712 5.298L12 13l10.288-7.702z" fill="#EA4335"/><path d="M1 6.5V18c0 1.105.895 2 2 2h18c1.105 0 2-.895 2-2V6.5L12 14.5 1 6.5z" fill="#34A853"/><path d="M1 6.5L12 14.5V4H4.8C3.393 4 2.1 5 1 6.5z" fill="#FBBC04"/><path d="M23 6.5C21.9 5 20.607 4 19.2 4H12v10.5L23 6.5z" fill="#4285F4"/></svg>
+                      Gmail
+                    </button>
                     <button
                       onClick={() => setEmail({ ...email, ...OUTLOOK_PRESET })}
-                      className="text-xs px-2.5 py-1 rounded-lg font-medium"
+                      className="text-xs px-2.5 py-1 rounded-lg font-medium flex items-center gap-1.5"
                       style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'var(--surface)' }}
-                    >Outlook</button>
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24"><rect width="24" height="24" rx="3" fill="#0078D4"/><path d="M4 6h16v12H4z" fill="#50D9FF" opacity=".3"/><path d="M4 6l8 6 8-6" stroke="white" strokeWidth="1.5" fill="none"/></svg>
+                      Outlook
+                    </button>
                   </div>
                 </div>
 
@@ -1018,6 +967,7 @@ export const SettingsPage: React.FC = () => {
                     </span>
                   )}
                 </div>
+                </div>{/* end padding wrapper */}
               </div>
             </div>
           )}
@@ -1025,19 +975,29 @@ export const SettingsPage: React.FC = () => {
           {/* Instagram */}
           {tab === 'instagram' && (
             <div className="space-y-5">
-              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#fce7f3' }}>
-                    <Instagram size={20} style={{ color: '#e1306c' }} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Instagram Messaging</h3>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <StatusDot status={status.instagram} />
-                      <StatusLabel status={status.instagram} />
+              <div className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                <div style={{ background: 'linear-gradient(135deg, #833AB4 0%, #E1306C 50%, #F77737 100%)', padding: '20px 24px' }}>
+                  <div className="flex items-center gap-3">
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="2" y="2" width="20" height="20" rx="6" stroke="white" strokeWidth="1.8" fill="none"/>
+                        <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.8" fill="none"/>
+                        <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>Instagram Messaging</h3>
+                      <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: 0 }}>Recebe e responde a mensagens diretas</p>
+                    </div>
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: status.instagram === 'configured' ? '#fff' : 'rgba(255,255,255,0.4)' }} />
+                      <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: 600 }}>
+                        {status.instagram === 'configured' ? 'Configurado' : 'Não configurado'}
+                      </span>
                     </div>
                   </div>
                 </div>
+                <div style={{ padding: '24px' }}>
 
                 <div className="mb-4 p-3 rounded-lg" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
                   <div className="flex items-start gap-2">
@@ -1097,6 +1057,7 @@ export const SettingsPage: React.FC = () => {
                     {saveMsg && <span className={`text-sm font-medium ${saveMsg.includes('Erro') ? 'text-red-500' : 'text-emerald-600'}`}>{saveMsg}</span>}
                   </div>
                 </div>
+                </div>{/* end padding wrapper */}
               </div>
 
               <div className="rounded-xl border p-5" style={{ background: 'var(--surface-3)', borderColor: 'var(--border)' }}>
@@ -1126,20 +1087,31 @@ export const SettingsPage: React.FC = () => {
           {/* Telefone (Twilio) */}
           {tab === 'phone' && (
             <div className="space-y-5">
-              <div className="rounded-xl border shadow-sm p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: '#dcfce7' }}>
-                    <Phone size={20} style={{ color: '#22c55e' }} />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Twilio</h3>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <StatusDot status={status.phone} />
-                      <StatusLabel status={status.phone} />
+              <div className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                <div style={{ background: 'linear-gradient(135deg, #F22F46 0%, #a01e2e 100%)', padding: '20px 24px' }}>
+                  <div className="flex items-center gap-3">
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="1.8" fill="none"/>
+                        <circle cx="9.5" cy="9.5" r="1.5" fill="white"/>
+                        <circle cx="14.5" cy="9.5" r="1.5" fill="white"/>
+                        <circle cx="9.5" cy="14.5" r="1.5" fill="white"/>
+                        <circle cx="14.5" cy="14.5" r="1.5" fill="white"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>Twilio</h3>
+                      <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: 0 }}>SMS, chamadas e números de telefone</p>
+                    </div>
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: status.phone === 'configured' ? '#fff' : 'rgba(255,255,255,0.4)' }} />
+                      <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: 600 }}>
+                        {status.phone === 'configured' ? 'Configurado' : 'Não configurado'}
+                      </span>
                     </div>
                   </div>
                 </div>
-
+                <div style={{ padding: '24px' }}>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
@@ -1400,6 +1372,9 @@ export const SettingsPage: React.FC = () => {
                     </tbody>
                   </table>
                 )}
+              </div>
+
+                </div>{/* end padding wrapper */}
               </div>
 
               {/* Search/Purchase Modal */}
