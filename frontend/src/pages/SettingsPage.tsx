@@ -1080,6 +1080,7 @@ export const SettingsPage: React.FC = () => {
                     <p className="text-xs font-medium" style={{ color: saveMsg.includes('✓') ? '#10b981' : '#f87171' }}>{saveMsg}</p>
                   )}
                 </div>
+                </div>{/* end padding wrapper */}
               </div>
 
               {/* Phone Numbers Management */}
@@ -1211,9 +1212,6 @@ export const SettingsPage: React.FC = () => {
                     </tbody>
                   </table>
                 )}
-              </div>
-
-                </div>{/* end padding wrapper */}
               </div>
 
               {/* Search/Purchase Modal */}
