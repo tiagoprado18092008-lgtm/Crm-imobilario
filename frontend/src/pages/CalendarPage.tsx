@@ -12,6 +12,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
 import { CustomSelect } from '../components/ui/CustomSelect'
+import { DatePickerInput } from '../components/ui/DatePickerInput'
 import { Modal } from '../components/ui/Modal'
 import { PageSpinner } from '../components/ui/Spinner'
 import { CalendarView } from '../components/calendar/CalendarView'
@@ -122,8 +123,11 @@ function TaskForm({
         </div>
       </div>
       <div>
-        <label style={labelStyle}>Data limite</label>
-        <input style={inputStyle} type="date" {...register('dueDate')} />
+        <DatePickerInput
+          label="Data limite"
+          value={watch('dueDate')}
+          onChange={v => setValue('dueDate', v, { shouldValidate: true })}
+        />
       </div>
       <div>
         <label style={labelStyle}>Responsável *</label>

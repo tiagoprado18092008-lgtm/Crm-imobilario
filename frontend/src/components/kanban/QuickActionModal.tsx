@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { MessageSquare, MessageCircle, FileText, CheckSquare, X, Loader2, CalendarDays } from 'lucide-react'
+import { DatePickerInput } from '../ui/DatePickerInput'
 import type { Opportunity } from '../../types'
 import { createInteraction } from '../../api/interactions.api'
 import { createTask } from '../../api/tasks.api'
@@ -209,16 +210,10 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
         />
         <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
           <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>Prazo</label>
-            <input
-              type="date"
+            <DatePickerInput
+              label="Prazo"
               value={taskDue}
-              onChange={e => setTaskDue(e.target.value)}
-              style={{
-                width: '100%', padding: '8px 10px', borderRadius: 8,
-                border: '1px solid #e2e8f0', fontSize: 12,
-                outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)',
-              }}
+              onChange={setTaskDue}
             />
           </div>
           <div style={{ flex: 1 }}>

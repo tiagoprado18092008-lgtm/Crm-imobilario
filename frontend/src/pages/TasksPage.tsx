@@ -12,6 +12,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
 import { CustomSelect } from '../components/ui/CustomSelect'
+import { DatePickerInput } from '../components/ui/DatePickerInput'
 import { Modal } from '../components/ui/Modal'
 import { EmptyState } from '../components/ui/EmptyState'
 import { PageSpinner } from '../components/ui/Spinner'
@@ -83,7 +84,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, defaultDate, onSuccess, onCan
       .catch(() => {})
   }, [])
 
-  const { register, handleSubmit, setValue: setFormValue, formState: { errors } } = useForm<TaskFormData>({
+  const { register, handleSubmit, watch, setValue: setFormValue, formState: { errors } } = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       title: task?.title || '',
@@ -148,7 +149,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, defaultDate, onSuccess, onCan
           options={users.map(u => ({ value: u.id, label: u.name }))}
           {...register('assignedToId')}
         />
-        <Input label="Prazo" type="date" {...register('dueDate')} />
+        <DatePickerInput
+          label="Prazo"
+          value={watch('dueDate')}
+          onChange={v => setFormValue('dueDate', v, { shouldValidate: true })}
+        />
         <div style={{ gridColumn: '1 / -1' }}>
           <Select
             label="Contacto"

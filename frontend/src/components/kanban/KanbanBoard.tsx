@@ -24,6 +24,7 @@ import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
+import { DatePickerInput } from '../ui/DatePickerInput'
 import { Badge } from '../ui/Badge'
 import { PageSpinner } from '../ui/Spinner'
 import { useUIStore } from '../../store/ui.store'
@@ -222,7 +223,11 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
         <Select label="Responsável" required error={errors.assignedToId?.message} placeholder="Selecionar responsável" options={users.map(u => ({ value: u.id, label: u.name }))} {...register('assignedToId')} />
         <Select label="Fonte" placeholder="Selecionar fonte" options={SOURCE_OPTIONS_FORM.map(s => ({ value: s, label: s }))} {...register('source')} />
         <Select label="Propriedade" placeholder="Nenhuma" options={properties.map(p => ({ value: p.id, label: p.title }))} {...register('propertyId')} />
-        <Input label="Data de Fecho Prevista" type="date" {...register('expectedCloseDate')} />
+        <DatePickerInput
+          label="Data de Fecho Prevista"
+          value={watch('expectedCloseDate')}
+          onChange={v => setFormValue('expectedCloseDate', v, { shouldValidate: true })}
+        />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Notas</label>
