@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import {
-  MessageCircle, Mail, Instagram, Settings,
+  MessageCircle, Mail, Settings,
   AlertCircle, Loader2, Eye, EyeOff, Info, Phone, Moon, Sun,
   Plus, Search, Trash2, Edit2, Check, X, Globe, Mic, MessageSquare, Calendar,
   BookOpen, Copy, ExternalLink, Zap, ChevronDown, ChevronRight,
@@ -23,7 +23,7 @@ const COUNTRIES = [
   { code: 'AU', name: 'Austrália' },
 ]
 
-type Tab = 'whatsapp' | 'email' | 'instagram' | 'general' | 'phone' | 'guide'
+type Tab = 'whatsapp' | 'email' | 'general' | 'phone' | 'guide'
 
 interface WhatsAppSettings {
   whatsappToken: string
@@ -40,16 +40,9 @@ interface EmailSettings {
   fromEmail: string
 }
 
-interface InstagramSettings {
-  accessToken: string
-  pageId: string
-  igVerifyToken: string
-}
-
 interface StatusState {
   whatsapp: 'configured' | 'demo' | 'unconfigured'
   email: 'configured' | 'demo' | 'unconfigured'
-  instagram: 'configured' | 'demo' | 'unconfigured'
   phone: 'configured' | 'demo' | 'unconfigured'
 }
 
@@ -160,24 +153,6 @@ const GuidePanel: React.FC<{ status: any; onNavigate: (tab: any) => void }> = ({
       ],
     },
     {
-      key: 'instagram',
-      label: 'Instagram Messaging',
-      color: '#e1306c',
-      bg: '#fce7f3',
-      icon: '📸',
-      steps: [
-        { text: 'Precisas de uma conta Instagram Business ligada a uma Página de Facebook.' },
-        { text: 'Acede a', link: { label: 'developers.facebook.com', href: 'https://developers.facebook.com' }, after: ' e cria uma App.' },
-        { text: 'Adiciona "Instagram Graph API" e "Messenger".' },
-        { text: 'Solicita as permissões: instagram_basic, instagram_manage_messages.' },
-        { text: 'Após aprovação da Meta, gera um token de acesso de longa duração e copia o Page ID.' },
-        { text: 'Define o Verify Token do Instagram (diferente do WhatsApp).' },
-        { text: 'No Meta, configura o Webhook URL:', webhook: '/webhook/instagram' },
-        { text: 'Subscrive ao evento: messages.' },
-        { text: 'Guarda as credenciais na aba "Instagram" ao lado.' },
-      ],
-    },
-    {
       key: 'phone',
       label: 'SMS e Chamadas (Twilio)',
       color: 'var(--accent)',
@@ -217,7 +192,6 @@ const GuidePanel: React.FC<{ status: any; onNavigate: (tab: any) => void }> = ({
           {[
             { key: 'whatsapp', label: 'WhatsApp', color: '#25d366' },
             { key: 'email', label: 'Email', color: 'var(--accent)' },
-            { key: 'instagram', label: 'Instagram', color: '#e1306c' },
             { key: 'phone', label: 'Telefone', color: 'var(--accent)' },
           ].map(c => (
             <button
@@ -332,7 +306,6 @@ export const SettingsPage: React.FC = () => {
   const [status, setStatus] = useState<StatusState>({
     whatsapp: 'demo',
     email: 'unconfigured',
-    instagram: 'unconfigured',
     phone: 'demo',
   })
 
@@ -347,7 +320,6 @@ export const SettingsPage: React.FC = () => {
   const [email, setEmail] = useState<EmailSettings>({
     smtpHost: '', smtpPort: '587', smtpUser: '', smtpPass: '', fromName: '', fromEmail: '',
   })
-  const [ig, setIg] = useState<InstagramSettings>({ accessToken: '', pageId: '', igVerifyToken: '' })
   const [twilioAccountSid, setTwilioAccountSid] = useState('')
   const [twilioAuthToken, setTwilioAuthToken] = useState('')
   const [twilioSidSaved, setTwilioSidSaved] = useState(false)
@@ -387,7 +359,6 @@ export const SettingsPage: React.FC = () => {
           smtpHost: s.smtpHost, smtpPort: s.smtpPort || '587', smtpUser: s.smtpUser || '',
           smtpPass: s.smtpPass || '', fromName: s.fromName || '', fromEmail: s.fromEmail || '',
         })
-        if (s.igAccessToken) setIg({ accessToken: s.igAccessToken, pageId: s.igPageId || '', igVerifyToken: s.igVerifyToken || '' })
         if (s.crmName) { setCrmNameLocal(s.crmName); setGlobalCrmName(s.crmName) }
         // Don't pre-fill masked values — show empty input with placeholder instead
         if (s.twilioAccountSid) { if (s.twilioAccountSid.startsWith('*')) setTwilioSidSaved(true); else setTwilioAccountSid(s.twilioAccountSid) }
@@ -401,7 +372,6 @@ export const SettingsPage: React.FC = () => {
         setStatus({
           whatsapp: st.whatsapp || 'unconfigured',
           email: st.email || 'unconfigured',
-          instagram: st.instagram || 'unconfigured',
           phone: st.phone || 'unconfigured',
         })
       } catch {
@@ -536,7 +506,6 @@ export const SettingsPage: React.FC = () => {
       setStatus({
         whatsapp: st.whatsapp || 'unconfigured',
         email: st.email || 'unconfigured',
-        instagram: st.instagram || 'unconfigured',
         phone: st.phone || 'unconfigured',
       })
       setTimeout(() => setSaveMsg(''), 3000)
@@ -594,23 +563,6 @@ export const SettingsPage: React.FC = () => {
       <path d="M6 10.5l10 7 10-7" stroke="#EA4335" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   )
-  const IgLogo = () => (
-    <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
-      <defs>
-        <linearGradient id="ig-grad" x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#FFDC80" offset="0%"/>
-          <stop stopColor="#F56040" offset="25%"/>
-          <stop stopColor="#E1306C" offset="50%"/>
-          <stop stopColor="#833AB4" offset="75%"/>
-          <stop stopColor="#405DE6" offset="100%"/>
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="8" fill="url(#ig-grad)"/>
-      <rect x="9" y="9" width="14" height="14" rx="4" stroke="white" strokeWidth="1.5" fill="none"/>
-      <circle cx="16" cy="16" r="3.5" stroke="white" strokeWidth="1.5" fill="none"/>
-      <circle cx="21" cy="11" r="1" fill="white"/>
-    </svg>
-  )
   const TwilioLogo = () => (
     <svg width="16" height="16" viewBox="0 0 32 32" fill="none">
       <rect width="32" height="32" rx="8" fill="#F22F46"/>
@@ -626,7 +578,6 @@ export const SettingsPage: React.FC = () => {
     { key: 'guide', label: 'Guia de Início', icon: <BookOpen size={15} style={{ color: '#f59e0b' }} />, status: 'configured' },
     { key: 'whatsapp', label: 'WhatsApp', icon: <WaLogo />, status: status.whatsapp },
     { key: 'email', label: 'Email (SMTP)', icon: <EmailLogo />, status: status.email },
-    { key: 'instagram', label: 'Instagram', icon: <IgLogo />, status: status.instagram },
     { key: 'phone', label: 'Telefone', icon: <TwilioLogo />, status: status.phone },
     { key: 'general', label: 'Geral', icon: <Settings size={15} style={{ color: 'var(--text-muted)' }} />, status: 'configured' },
   ]
@@ -968,118 +919,6 @@ export const SettingsPage: React.FC = () => {
                   )}
                 </div>
                 </div>{/* end padding wrapper */}
-              </div>
-            </div>
-          )}
-
-          {/* Instagram */}
-          {tab === 'instagram' && (
-            <div className="space-y-5">
-              <div className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-                <div style={{ background: 'linear-gradient(135deg, #833AB4 0%, #E1306C 50%, #F77737 100%)', padding: '20px 24px' }}>
-                  <div className="flex items-center gap-3">
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <rect x="2" y="2" width="20" height="20" rx="6" stroke="white" strokeWidth="1.8" fill="none"/>
-                        <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.8" fill="none"/>
-                        <circle cx="17.5" cy="6.5" r="1.2" fill="white"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>Instagram Messaging</h3>
-                      <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: 0 }}>Recebe e responde a mensagens diretas</p>
-                    </div>
-                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: status.instagram === 'configured' ? '#fff' : 'rgba(255,255,255,0.4)' }} />
-                      <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: 600 }}>
-                        {status.instagram === 'configured' ? 'Configurado' : 'Não configurado'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ padding: '24px' }}>
-
-                <div className="mb-4 p-3 rounded-lg" style={{ background: 'var(--surface-3)', border: '1px solid var(--border)' }}>
-                  <div className="flex items-start gap-2">
-                    <AlertCircle size={14} className="flex-shrink-0 mt-0.5" style={{ color: 'var(--text-secondary)' }} />
-                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Requer aprovação da Meta para acesso completo à Instagram Messaging API.</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Access Token</label>
-                    <input
-                      type="password"
-                      value={ig.accessToken}
-                      onChange={(e) => setIg({ ...ig, accessToken: e.target.value })}
-                      placeholder="EAAxxxxxx..."
-                      className={inputClass}
-                      style={inputStyle}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Page ID</label>
-                    <input
-                      type="text"
-                      value={ig.pageId}
-                      onChange={(e) => setIg({ ...ig, pageId: e.target.value })}
-                      placeholder="123456789"
-                      className={inputClass}
-                      style={inputStyle}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                      Verify Token
-                      <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>usado para verificar o webhook no Meta</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={ig.igVerifyToken}
-                      onChange={(e) => setIg({ ...ig, igVerifyToken: e.target.value })}
-                      placeholder="meu_ig_verify_token_secreto"
-                      className={inputClass}
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-2">
-                    <button
-                      onClick={() => handleSave({ igAccessToken: ig.accessToken, igPageId: ig.pageId, igVerifyToken: ig.igVerifyToken })}
-                      disabled={saving}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-semibold"
-                      style={{ background: '#0066ff', opacity: saving ? 0.7 : 1 }}
-                    >
-                      {saving && <Loader2 size={14} className="animate-spin" />}
-                      Guardar
-                    </button>
-                    {saveMsg && <span className={`text-sm font-medium ${saveMsg.includes('Erro') ? 'text-red-500' : 'text-emerald-600'}`}>{saveMsg}</span>}
-                  </div>
-                </div>
-                </div>{/* end padding wrapper */}
-              </div>
-
-              <div className="rounded-xl border p-5" style={{ background: 'var(--surface-3)', borderColor: 'var(--border)' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Info size={15} style={{ color: 'var(--accent)' }} />
-                  <h4 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Como obter acesso à Instagram Graph API</h4>
-                </div>
-                <ol className="space-y-2">
-                  {[
-                    'Aceda a developers.facebook.com e crie uma app',
-                    'Adicione o produto "Instagram Graph API" e "Messenger"',
-                    'Ligue a sua Página de Facebook e conta Instagram Business',
-                    'Solicite as permissões: instagram_basic, instagram_manage_messages',
-                    'Após aprovação da Meta, gere um token de acesso de longa duração',
-                    'Configure o webhook para: /api/webhooks/instagram',
-                  ].map((step, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      <span className="w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: '#dbeafe', color: '#1d4ed8' }}>{i + 1}</span>
-                      {step}
-                    </li>
-                  ))}
-                </ol>
               </div>
             </div>
           )}
