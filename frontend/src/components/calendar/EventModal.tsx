@@ -3,6 +3,8 @@ import { X, Calendar, MapPin, AlignLeft, Users, Clock } from 'lucide-react'
 import { createCalendarEvent, updateCalendarEvent } from '../../api/calendar.api'
 import { useUIStore } from '../../store/ui.store'
 import api from '../../api/client'
+import { DatePickerInput } from '../ui/DatePickerInput'
+import { DateTimePickerInput } from '../ui/DateTimePickerInput'
 
 interface EventModalProps {
   event?: any
@@ -203,16 +205,34 @@ export const EventModal: React.FC<EventModalProps> = ({
           {/* Start + End */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
             <div>
-              <label style={labelStyle}><Clock size={9} style={{ marginRight: 3 }} />Início</label>
-              <input style={inputStyle} type={form.isAllDay ? 'date' : 'datetime-local'}
-                value={form.isAllDay ? form.startAt.split('T')[0] : form.startAt}
-                onChange={e => set('startAt', e.target.value)} />
+              {form.isAllDay ? (
+                <DatePickerInput
+                  label="Início"
+                  value={form.startAt.split('T')[0]}
+                  onChange={v => set('startAt', v ? v + 'T00:00' : '')}
+                />
+              ) : (
+                <DateTimePickerInput
+                  label="Início"
+                  value={form.startAt}
+                  onChange={v => set('startAt', v)}
+                />
+              )}
             </div>
             <div>
-              <label style={labelStyle}>Fim</label>
-              <input style={inputStyle} type={form.isAllDay ? 'date' : 'datetime-local'}
-                value={form.isAllDay ? form.endAt.split('T')[0] : form.endAt}
-                onChange={e => set('endAt', e.target.value)} />
+              {form.isAllDay ? (
+                <DatePickerInput
+                  label="Fim"
+                  value={form.endAt.split('T')[0]}
+                  onChange={v => set('endAt', v ? v + 'T00:00' : '')}
+                />
+              ) : (
+                <DateTimePickerInput
+                  label="Fim"
+                  value={form.endAt}
+                  onChange={v => set('endAt', v)}
+                />
+              )}
             </div>
           </div>
 

@@ -5,6 +5,7 @@ import { getContacts } from '../../../api/contacts.api'
 import { createVisit } from '../../../api/properties.api'
 import { useUIStore } from '../../../store/ui.store'
 import type { PropertyVisit, Contact } from '../../../types'
+import { DateTimePickerInput } from '../../ui/DateTimePickerInput'
 
 interface Props {
   propertyId: string
@@ -60,12 +61,11 @@ export const VisitModal: React.FC<Props> = ({ propertyId, isOpen, onClose, onCre
           </select>
         </div>
         <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Data e hora *</label>
-          <input
-            type="datetime-local"
+          <DateTimePickerInput
+            label="Data e hora *"
             value={scheduledAt}
-            onChange={e => setScheduledAt(e.target.value)}
-            style={{ width: '100%', fontSize: 13, background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+            onChange={setScheduledAt}
+            required
           />
         </div>
         <div>

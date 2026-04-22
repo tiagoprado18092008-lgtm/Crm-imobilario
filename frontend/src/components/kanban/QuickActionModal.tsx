@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { MessageSquare, MessageCircle, FileText, CheckSquare, X, Loader2, CalendarDays } from 'lucide-react'
 import { DatePickerInput } from '../ui/DatePickerInput'
+import { DateTimePickerInput } from '../ui/DateTimePickerInput'
 import type { Opportunity } from '../../types'
 import { createInteraction } from '../../api/interactions.api'
 import { createTask } from '../../api/tasks.api'
@@ -107,14 +108,18 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
           </select>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 3 }}>Início</label>
-              <input type="datetime-local" style={inputStyle} value={startAt} onChange={e => setStartAt(e.target.value)} />
-            </div>
-            <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 3 }}>Fim</label>
-              <input type="datetime-local" style={inputStyle} value={endAt} onChange={e => setEndAt(e.target.value)} />
-            </div>
+            <DateTimePickerInput
+              label="Início"
+              value={startAt}
+              onChange={v => setStartAt(v)}
+              clearable={false}
+            />
+            <DateTimePickerInput
+              label="Fim"
+              value={endAt}
+              onChange={v => setEndAt(v)}
+              clearable={false}
+            />
           </div>
 
           <input style={inputStyle} value={location}

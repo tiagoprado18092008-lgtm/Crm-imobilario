@@ -39,14 +39,12 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     ? parse(value, 'yyyy-MM-dd', new Date())
     : undefined
 
-  // Sync month when value changes externally
   useEffect(() => {
     if (value && isValid(parse(value, 'yyyy-MM-dd', new Date()))) {
       setMonth(parse(value, 'yyyy-MM-dd', new Date()))
     }
   }, [value])
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -73,10 +71,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
     : ''
 
   return (
-    <div
-      ref={containerRef}
-      style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 4, ...style }}
-    >
+    <div ref={containerRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 4, ...style }}>
       {label && (
         <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block' }}>
           {label}
@@ -84,32 +79,25 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
         </label>
       )}
 
-      {/* Trigger */}
       <button
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setOpen(o => !o)}
         style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '9px 12px',
-          fontSize: 13,
-          borderRadius: 10,
-          border: `1.5px solid ${error ? '#f87171' : open ? 'var(--accent)' : 'var(--border)'}`,
+          width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+          padding: '9px 12px', fontSize: 13, borderRadius: 10,
+          border: `1.5px solid ${error ? '#f87171' : open ? '#2563eb' : 'var(--border)'}`,
           background: disabled ? 'var(--surface-3)' : 'var(--surface)',
           color: selected ? 'var(--text-primary)' : 'var(--text-muted)',
           cursor: disabled ? 'not-allowed' : 'pointer',
-          textAlign: 'left',
-          outline: 'none',
-          boxShadow: open ? '0 0 0 3px rgba(46,107,230,0.12)' : '0 1px 2px rgba(0,0,0,0.04)',
+          textAlign: 'left', outline: 'none',
+          boxShadow: open ? '0 0 0 3px rgba(37,99,235,0.15)' : '0 1px 2px rgba(0,0,0,0.04)',
           transition: 'border-color 150ms, box-shadow 150ms',
           opacity: disabled ? 0.6 : 1,
           fontFamily: 'var(--font-body)',
         }}
       >
-        <CalendarDays size={14} style={{ flexShrink: 0, color: open ? 'var(--accent)' : 'var(--text-muted)', transition: 'color 150ms' }} />
+        <CalendarDays size={14} style={{ flexShrink: 0, color: open ? '#2563eb' : 'var(--text-muted)', transition: 'color 150ms' }} />
         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {displayValue || placeholder}
         </span>
@@ -117,7 +105,7 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
           <span
             onClick={handleClear}
             style={{ display: 'flex', alignItems: 'center', color: 'var(--text-muted)', cursor: 'pointer', padding: 2, borderRadius: 4 }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = 'var(--danger)'}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#f87171'}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'}
           >
             <X size={13} />
@@ -125,22 +113,16 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
         )}
       </button>
 
-      {/* Dropdown calendar */}
       {open && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            left: 0,
-            zIndex: 9999,
-            background: 'var(--surface)',
-            border: '1.5px solid var(--border)',
-            borderRadius: 14,
-            boxShadow: '0 16px 48px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06)',
-            padding: '14px',
-            animation: 'dpFadeIn 130ms cubic-bezier(0.16,1,0.3,1)',
-          }}
-        >
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 9999,
+          background: '#0f1117',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 16,
+          boxShadow: '0 24px 60px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.06) inset',
+          padding: '16px',
+          animation: 'dpiFadeIn 130ms cubic-bezier(0.16,1,0.3,1)',
+        }}>
           <DayPicker
             mode="single"
             month={month}
@@ -152,109 +134,114 @@ export const DatePickerInput: React.FC<DatePickerInputProps> = ({
             components={{
               Chevron: ({ orientation }: { orientation?: string }) =>
                 orientation === 'left'
-                  ? <ChevronLeft size={14} />
-                  : <ChevronRight size={14} />,
+                  ? <ChevronLeft size={14} strokeWidth={2} />
+                  : <ChevronRight size={14} strokeWidth={2} />,
             }}
             classNames={{
-              root: 'dpk-root',
-              months: 'dpk-months',
-              month: 'dpk-month',
-              month_caption: 'dpk-month_caption',
-              caption_label: 'dpk-caption_label',
-              nav: 'dpk-nav',
-              button_previous: 'dpk-btn-nav',
-              button_next: 'dpk-btn-nav',
-              weekdays: 'dpk-weekdays',
-              weekday: 'dpk-weekday',
-              weeks: 'dpk-weeks',
-              week: 'dpk-week',
-              day: 'dpk-day',
-              day_button: 'dpk-day_button',
-              selected: 'dpk-selected',
-              today: 'dpk-today',
-              outside: 'dpk-outside',
-              disabled: 'dpk-disabled',
+              root: 'dpi-picker',
+              months: 'dpi-months',
+              month: 'dpi-month',
+              month_caption: 'dpi-month_caption',
+              caption_label: 'dpi-caption_label',
+              nav: 'dpi-nav',
+              button_previous: 'dpi-nav-btn',
+              button_next: 'dpi-nav-btn',
+              weekdays: 'dpi-weekdays',
+              weekday: 'dpi-weekday',
+              weeks: 'dpi-weeks',
+              week: 'dpi-week',
+              day: 'dpi-day',
+              day_button: 'dpi-day_button',
+              selected: 'dpi-selected',
+              today: 'dpi-today',
+              outside: 'dpi-outside',
+              disabled: 'dpi-disabled',
             }}
           />
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            <button
+              type="button"
+              onClick={() => { onChange?.(''); setOpen(false) }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#60a5fa', fontFamily: 'inherit', padding: '2px 0' }}
+            >
+              Limpar
+            </button>
+            <button
+              type="button"
+              onClick={() => { handleSelect(new Date()) }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#60a5fa', fontFamily: 'inherit', padding: '2px 0' }}
+            >
+              Hoje
+            </button>
+          </div>
         </div>
       )}
 
       {error && <p style={{ fontSize: 11, color: '#f87171', marginTop: 2 }}>{error}</p>}
 
       <style>{`
-        @keyframes dpFadeIn {
+        @keyframes dpiFadeIn {
           from { opacity: 0; transform: translateY(-6px) scale(0.98); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .dpk-months { display: flex; }
-        .dpk-month { width: 252px; }
-        .dpk-month_caption {
+        .dpi-months { display: flex; }
+        .dpi-month { width: 248px; }
+        .dpi-month_caption {
           display: flex; align-items: center; justify-content: center;
           position: relative; height: 34px; margin-bottom: 8px;
         }
-        .dpk-caption_label {
-          font-size: 13.5px; font-weight: 600;
-          color: var(--text-primary); font-family: var(--font-body);
-          text-transform: capitalize;
+        .dpi-caption_label {
+          font-size: 13.5px; font-weight: 600; color: #f1f5f9;
+          text-transform: capitalize; letter-spacing: -0.01em;
         }
-        .dpk-nav {
+        .dpi-nav {
           position: absolute; top: 0; left: 0; right: 0;
           display: flex; justify-content: space-between; align-items: center;
           height: 34px; pointer-events: none;
         }
-        .dpk-btn-nav {
+        .dpi-nav-btn {
           pointer-events: all;
           width: 28px; height: 28px; border-radius: 8px;
-          border: 1.5px solid var(--border);
-          background: var(--surface-2);
-          color: var(--text-secondary);
+          border: 1px solid rgba(255,255,255,0.1);
+          background: rgba(255,255,255,0.05);
+          color: #94a3b8;
           display: flex; align-items: center; justify-content: center;
-          cursor: pointer;
-          transition: border-color 140ms, background 140ms, color 140ms;
+          cursor: pointer; transition: all 150ms;
         }
-        .dpk-btn-nav:hover {
-          border-color: var(--accent);
-          background: var(--accent-soft);
-          color: var(--accent);
+        .dpi-nav-btn:hover {
+          background: rgba(255,255,255,0.1); color: #f1f5f9;
+          border-color: rgba(255,255,255,0.2);
         }
-        .dpk-weekdays {
-          display: grid; grid-template-columns: repeat(7, 1fr);
-          margin-bottom: 4px;
+        .dpi-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
+        .dpi-weekday {
+          text-align: center; font-size: 10px; font-weight: 600;
+          color: #475569; padding: 4px 0;
+          text-transform: uppercase; letter-spacing: 0.08em;
         }
-        .dpk-weekday {
-          text-align: center; font-size: 10px; font-weight: 700;
-          color: var(--text-muted); padding: 3px 0;
-          text-transform: uppercase; letter-spacing: 0.07em;
-          font-family: var(--font-body);
-        }
-        .dpk-weeks { display: flex; flex-direction: column; gap: 2px; }
-        .dpk-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-        .dpk-day { display: flex; align-items: center; justify-content: center; }
-        .dpk-day_button {
+        .dpi-weeks { display: flex; flex-direction: column; gap: 2px; }
+        .dpi-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .dpi-day { display: flex; align-items: center; justify-content: center; }
+        .dpi-day_button {
           width: 32px; height: 32px; border-radius: 8px;
           border: none; background: transparent;
-          color: var(--text-primary); font-size: 12.5px; font-weight: 400;
-          cursor: pointer; font-family: var(--font-body);
-          transition: background 110ms, color 110ms;
+          color: #cbd5e1; font-size: 12.5px; font-weight: 400;
+          cursor: pointer; transition: background 110ms, color 110ms;
           position: relative; display: flex; align-items: center; justify-content: center;
         }
-        .dpk-day_button:hover { background: var(--surface-3); }
-        .dpk-selected .dpk-day_button {
-          background: var(--accent) !important;
-          color: #fff !important;
-          font-weight: 700;
-          box-shadow: 0 2px 8px rgba(46,107,230,0.3);
+        .dpi-day_button:hover { background: rgba(255,255,255,0.08); color: #f1f5f9; }
+        .dpi-selected .dpi-day_button {
+          background: #2563eb !important; color: #fff !important;
+          font-weight: 700; box-shadow: 0 2px 8px rgba(37,99,235,0.4);
         }
-        .dpk-today .dpk-day_button::after {
-          content: '';
-          position: absolute; bottom: 3px; left: 50%;
+        .dpi-today .dpi-day_button::after {
+          content: ''; position: absolute; bottom: 3px; left: 50%;
           transform: translateX(-50%);
-          width: 3px; height: 3px; border-radius: 50%;
-          background: var(--accent);
+          width: 3px; height: 3px; border-radius: 50%; background: #60a5fa;
         }
-        .dpk-selected .dpk-today .dpk-day_button::after { background: #fff; }
-        .dpk-outside .dpk-day_button { color: var(--text-muted); opacity: 0.35; }
-        .dpk-disabled .dpk-day_button { opacity: 0.2; cursor: not-allowed; }
+        .dpi-selected.dpi-today .dpi-day_button::after { background: rgba(255,255,255,0.7); }
+        .dpi-outside .dpi-day_button { color: #334155; }
+        .dpi-disabled .dpi-day_button { opacity: 0.2; cursor: not-allowed; }
       `}</style>
     </div>
   )
