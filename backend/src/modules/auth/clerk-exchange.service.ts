@@ -1,6 +1,8 @@
-import { verifyToken } from '@clerk/backend';
+import { verifyToken, createClerkClient } from '@clerk/backend';
 import prisma from '../../config/database';
 import { signToken } from '../../utils/jwt';
+
+const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
 
 export const clerkExchange = async (clerkToken: string): Promise<{ token: string; user: object }> => {
   let payload: any;
@@ -29,6 +31,33 @@ export const clerkExchange = async (clerkToken: string): Promise<{ token: string
         data: { clerkUserId },
       });
     }
+  }
+
+  // Auto-provision: create CRM user from Clerk data if not found
+  if (!user && email) {
+    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+    const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || email.split('@')[0];
+
+    // Find the existing agency to attach this user to
+    const agency = await prisma.agency.findFirst();
+    if (!agency) {
+      const err: any = new Error('Agência não configurada');
+      err.status = 500;
+      throw err;
+    }
+
+    user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        clerkUserId,
+        passwordHash: '',
+        role: 'CONSULTANT',
+        agencyId: agency.id,
+        isActive: true,
+        onboardingCompleted: true,
+      },
+    });
   }
 
   if (!user) {
