@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as authService from './auth.service';
+import { clerkExchange as clerkExchangeService } from './clerk-exchange.service';
 
 export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -52,6 +53,21 @@ export const getMe = async (req: Request, res: Response, next: NextFunction): Pr
   try {
     const user = await authService.getMe(req.user.id);
     res.status(200).json(user);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const clerkExchange = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      res.status(400).json({ error: 'Token Clerk em falta', status: 400 });
+      return;
+    }
+    const clerkToken = authHeader.slice(7);
+    const result = await clerkExchangeService(clerkToken);
+    res.status(200).json(result);
   } catch (err) {
     next(err);
   }
