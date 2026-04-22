@@ -371,7 +371,7 @@ const Overlay: React.FC<{
       style={{
         background: 'var(--surface)', borderRadius: 14, width: 420, maxWidth: '95vw',
         boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-        overflow: 'hidden',
+        overflow: 'visible',
       }}
     >
       {/* Header */}
