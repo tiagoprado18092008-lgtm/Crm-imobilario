@@ -1,19 +1,9 @@
 import React, { useState } from 'react'
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  addDays, addMonths, subMonths, isSameMonth, isSameDay, isToday,
+  addDays, addMonths, subMonths, isSameMonth, isToday,
 } from 'date-fns'
-import { ChevronLeft, ChevronRight, X } from 'lucide-react'
-
-/* ── Design tokens ────────────────────────────────────────────── */
-const T = {
-  navy:    '#0f2553',
-  gold:    '#b8963e',
-  white:   '#ffffff',
-  offWhite:'#f8f9fc',
-  border:  '#dce3ef',
-  muted:   '#6b7a99',
-}
+import { ChevronLeft, ChevronRight, X, ChevronDown } from 'lucide-react'
 
 const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const MONTHS_PT = [
@@ -26,6 +16,98 @@ interface CalendarDropdownProps {
   onSelect?: (dates: Date[]) => void
   confirmLabel?: string
   onConfirm?: (dates: Date[]) => void
+}
+
+/* ── Inline mini-select (used internally for month/year) ───── */
+const MiniSelect: React.FC<{
+  value: number
+  options: { value: number; label: string }[]
+  onChange: (v: number) => void
+}> = ({ value, options, onChange }) => {
+  const [open, setOpen] = useState(false)
+  const selected = options.find(o => o.value === value)
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          padding: '5px 8px', borderRadius: 8,
+          border: `1.5px solid ${open ? 'var(--accent)' : 'var(--border)'}`,
+          background: 'var(--surface)',
+          color: 'var(--text-primary)',
+          fontSize: 13, fontWeight: 600,
+          cursor: 'pointer',
+          boxShadow: open ? '0 0 0 3px rgba(46,107,230,0.1)' : '0 1px 2px rgba(0,0,0,0.04)',
+          transition: 'border-color 150ms, box-shadow 150ms',
+          fontFamily: 'var(--font-body)',
+        }}
+      >
+        {selected?.label}
+        <ChevronDown size={12} style={{ color: 'var(--text-muted)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }} />
+      </button>
+
+      {open && (
+        <>
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
+            onClick={() => setOpen(false)}
+          />
+          <div
+            style={{
+              position: 'absolute', top: 'calc(100% + 4px)', left: 0,
+              zIndex: 9999, minWidth: 100,
+              background: 'var(--surface)',
+              border: '1.5px solid var(--border)',
+              borderRadius: 10,
+              boxShadow: '0 10px 32px rgba(0,0,0,0.12)',
+              overflow: 'hidden',
+              animation: 'selectFadeIn 120ms cubic-bezier(0.16,1,0.3,1)',
+            }}
+          >
+            <div style={{ maxHeight: 200, overflowY: 'auto', padding: '4px' }}>
+              {options.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => { onChange(opt.value); setOpen(false) }}
+                  style={{
+                    width: '100%', display: 'block',
+                    padding: '6px 10px', fontSize: 13,
+                    borderRadius: 7, border: 'none',
+                    background: opt.value === value ? 'var(--accent-soft)' : 'transparent',
+                    color: opt.value === value ? 'var(--accent)' : 'var(--text-primary)',
+                    fontWeight: opt.value === value ? 600 : 400,
+                    cursor: 'pointer', textAlign: 'left',
+                    fontFamily: 'var(--font-body)',
+                    transition: 'background 100ms',
+                  }}
+                  onMouseEnter={e => {
+                    if (opt.value !== value)
+                      (e.currentTarget as HTMLElement).style.background = 'var(--surface-3)'
+                  }}
+                  onMouseLeave={e => {
+                    if (opt.value !== value)
+                      (e.currentTarget as HTMLElement).style.background = 'transparent'
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+      <style>{`
+        @keyframes selectFadeIn {
+          from { opacity: 0; transform: translateY(-5px) scale(0.98); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+    </div>
+  )
 }
 
 export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
@@ -58,7 +140,6 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
     onSelect?.(next)
   }
 
-  // Build calendar grid
   const monthStart = startOfMonth(viewDate)
   const monthEnd   = endOfMonth(viewDate)
   const gridStart  = startOfWeek(monthStart)
@@ -70,59 +151,72 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
 
   const years = Array.from({ length: 50 }, (_, i) => viewDate.getFullYear() - 25 + i)
 
-  const selectStyle: React.CSSProperties = {
-    padding: '7px 10px', borderRadius: 8, border: `1.5px solid ${T.border}`,
-    background: T.white, color: T.navy, fontSize: 13, fontFamily: "'DM Sans', sans-serif",
-    outline: 'none', cursor: 'pointer', flex: 1,
-  }
-
   return (
     <div style={{
-      background: T.white, border: `1px solid ${T.border}`, borderRadius: 16,
-      padding: 20, boxShadow: '0 8px 32px rgba(15,37,83,0.10)',
-      fontFamily: "'DM Sans', sans-serif", width: 320,
+      background: 'var(--surface)',
+      border: '1.5px solid var(--border)',
+      borderRadius: 16,
+      padding: 20,
+      boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+      fontFamily: 'var(--font-body)',
+      width: 320,
     }}>
-      {/* Month / Year selectors */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-        <select
-          value={viewDate.getFullYear()}
-          onChange={e => setViewDate(new Date(Number(e.target.value), viewDate.getMonth(), 1))}
-          style={selectStyle}
-        >
-          {years.map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
-        <select
-          value={viewDate.getMonth()}
-          onChange={e => setViewDate(new Date(viewDate.getFullYear(), Number(e.target.value), 1))}
-          style={selectStyle}
-        >
-          {MONTHS_PT.map((m, i) => <option key={i} value={i}>{m}</option>)}
-        </select>
-      </div>
-
-      {/* Navigation */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      {/* Header: month nav + selectors */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <button
           onClick={() => setViewDate(subMonths(viewDate, 1))}
-          style={{ background: T.offWhite, border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 8px', cursor: 'pointer', color: T.navy, display: 'flex' }}
+          style={{
+            width: 30, height: 30, borderRadius: 8,
+            background: 'var(--surface-2)',
+            border: '1.5px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: 'var(--text-secondary)',
+            transition: 'border-color 150ms',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
         >
           <ChevronLeft size={14} />
         </button>
-        <span style={{ fontSize: 13, color: T.navy, fontWeight: 600 }}>
-          {MONTHS_PT[viewDate.getMonth()]} {viewDate.getFullYear()}
-        </span>
+
+        <div style={{ display: 'flex', gap: 6 }}>
+          <MiniSelect
+            value={viewDate.getMonth()}
+            options={MONTHS_PT.map((m, i) => ({ value: i, label: m }))}
+            onChange={m => setViewDate(new Date(viewDate.getFullYear(), m, 1))}
+          />
+          <MiniSelect
+            value={viewDate.getFullYear()}
+            options={years.map(y => ({ value: y, label: String(y) }))}
+            onChange={y => setViewDate(new Date(y, viewDate.getMonth(), 1))}
+          />
+        </div>
+
         <button
           onClick={() => setViewDate(addMonths(viewDate, 1))}
-          style={{ background: T.offWhite, border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 8px', cursor: 'pointer', color: T.navy, display: 'flex' }}
+          style={{
+            width: 30, height: 30, borderRadius: 8,
+            background: 'var(--surface-2)',
+            border: '1.5px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', color: 'var(--text-secondary)',
+            transition: 'border-color 150ms',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
         >
           <ChevronRight size={14} />
         </button>
       </div>
 
       {/* Weekday headers */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 6 }}>
         {WEEKDAYS.map(d => (
-          <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 700, color: T.muted, padding: '4px 0', letterSpacing: '0.05em' }}>
+          <div key={d} style={{
+            textAlign: 'center', fontSize: 10, fontWeight: 700,
+            color: 'var(--text-muted)', padding: '4px 0', letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+          }}>
             {d}
           </div>
         ))}
@@ -141,18 +235,22 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
               key={key}
               onClick={() => toggleDate(day)}
               style={{
-                width: '100%', aspectRatio: '1', borderRadius: 8, border: 'none',
-                background: isSelected ? T.navy : 'transparent',
-                color: isSelected ? T.white : isCurrentMonth ? T.navy : T.muted,
+                width: '100%', aspectRatio: '1', borderRadius: 9, border: 'none',
+                background: isSelected ? 'var(--accent)' : 'transparent',
+                color: isSelected ? '#fff' : isCurrentMonth ? 'var(--text-primary)' : 'var(--text-muted)',
                 fontSize: 12, fontWeight: isSelected || isTodayDay ? 700 : 400,
                 cursor: 'pointer',
-                outline: isTodayDay && !isSelected ? `2px solid ${T.gold}` : 'none',
-                outlineOffset: -1,
-                transition: 'background 120ms',
-                opacity: isCurrentMonth ? 1 : 0.4,
+                outline: isTodayDay && !isSelected ? '2px solid var(--accent)' : 'none',
+                outlineOffset: -2,
+                transition: 'background 120ms, color 120ms',
+                opacity: isCurrentMonth ? 1 : 0.35,
               }}
-              onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = T.offWhite }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = isSelected ? T.navy : 'transparent' }}
+              onMouseEnter={e => {
+                if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-3)'
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.background = isSelected ? 'var(--accent)' : 'transparent'
+              }}
             >
               {day.getDate()}
             </button>
@@ -162,7 +260,11 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
 
       {/* Selected badges */}
       {selected.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: 6,
+          marginTop: 14, paddingTop: 14,
+          borderTop: '1px solid var(--border)',
+        }}>
           {selected
             .sort((a, b) => a.getTime() - b.getTime())
             .map(d => (
@@ -170,14 +272,20 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
                 key={d.toISOString()}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
-                  background: 'rgba(15,37,83,0.07)', color: T.navy, borderRadius: 20,
-                  padding: '3px 10px', fontSize: 11, fontWeight: 600, border: `1px solid ${T.border}`,
+                  background: 'var(--accent-soft)', color: 'var(--accent)',
+                  borderRadius: 20, padding: '3px 10px',
+                  fontSize: 11, fontWeight: 600,
+                  border: '1px solid rgba(46,107,230,0.2)',
                 }}
               >
                 {format(d, 'dd MMM yyyy')}
                 <button
                   onClick={() => removeDate(d)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: T.muted, display: 'flex' }}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: 0, color: 'var(--accent)', display: 'flex',
+                    opacity: 0.7,
+                  }}
                 >
                   <X size={11} />
                 </button>
@@ -193,11 +301,14 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
           disabled={selected.length === 0}
           style={{
             marginTop: 16, width: '100%', padding: '10px 16px', borderRadius: 10,
-            background: selected.length > 0 ? T.navy : T.offWhite,
-            color: selected.length > 0 ? T.white : T.muted,
-            border: 'none', cursor: selected.length > 0 ? 'pointer' : 'default',
-            fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+            background: selected.length > 0 ? 'var(--accent)' : 'var(--surface-3)',
+            color: selected.length > 0 ? '#fff' : 'var(--text-muted)',
+            border: 'none',
+            cursor: selected.length > 0 ? 'pointer' : 'default',
+            fontSize: 13, fontWeight: 600,
+            fontFamily: 'var(--font-body)',
             transition: 'background 160ms',
+            boxShadow: selected.length > 0 ? '0 2px 8px rgba(46,107,230,0.25)' : 'none',
           }}
         >
           {confirmLabel}

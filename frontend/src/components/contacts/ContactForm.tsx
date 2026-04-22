@@ -289,28 +289,26 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-            <div>
-              <label style={labelStyle}>Tipo de Imóvel Pretendido</label>
-              <select {...register('interest_type')} style={inputStyle}>
-                <option value="">Selecionar...</option>
-                <option value="APARTMENT">Apartamento</option>
-                <option value="HOUSE">Moradia</option>
-                <option value="COMMERCIAL">Comercial</option>
-                <option value="LAND">Terreno</option>
-                <option value="GARAGE">Garagem</option>
-                <option value="WAREHOUSE">Armazém</option>
-                <option value="FARM">Quinta</option>
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Urgência / Timeline</label>
-              <select {...register('timeline')} style={inputStyle}>
-                <option value="">Selecionar...</option>
-                {Object.entries(TIMELINE_OPTIONS).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Tipo de Imóvel Pretendido"
+              placeholder="Selecionar..."
+              options={[
+                { value: 'APARTMENT', label: 'Apartamento' },
+                { value: 'HOUSE',     label: 'Moradia' },
+                { value: 'COMMERCIAL',label: 'Comercial' },
+                { value: 'LAND',      label: 'Terreno' },
+                { value: 'GARAGE',    label: 'Garagem' },
+                { value: 'WAREHOUSE', label: 'Armazém' },
+                { value: 'FARM',      label: 'Quinta' },
+              ]}
+              {...register('interest_type')}
+            />
+            <Select
+              label="Urgência / Timeline"
+              placeholder="Selecionar..."
+              options={Object.entries(TIMELINE_OPTIONS).map(([v, l]) => ({ value: v, label: l }))}
+              {...register('timeline')}
+            />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <ToggleField
@@ -361,15 +359,12 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
                 />
               </div>
             </div>
-            <div>
-              <label style={labelStyle}>Razão da Venda</label>
-              <select {...register('sale_reason')} style={inputStyle}>
-                <option value="">Selecionar...</option>
-                {SALE_REASON_OPTIONS.map((r) => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Razão da Venda"
+              placeholder="Selecionar..."
+              options={SALE_REASON_OPTIONS.map(r => ({ value: r, label: r }))}
+              {...register('sale_reason')}
+            />
             <ToggleField
               label="Necessita de comprar além de vender?"
               checked={buyingAlso}

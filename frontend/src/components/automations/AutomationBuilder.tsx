@@ -53,6 +53,7 @@ import {
   OPERATOR_LABELS,
 } from '../../types/automation'
 import { createAutomationV2, updateAutomationV2 } from '../../api/automations.api'
+import { CustomSelect } from '../ui/CustomSelect'
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
 
@@ -153,13 +154,12 @@ function ConditionRow({
         onChange={e => onChange({ ...cond, field: e.target.value })}
         style={{ ...inputStyle, flex: 1 }}
       />
-      <select
+      <CustomSelect
         value={cond.operator}
-        onChange={e => onChange({ ...cond, operator: e.target.value as any })}
-        style={selectStyle}
-      >
-        {operators.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-      </select>
+        onChange={v => onChange({ ...cond, operator: v as any })}
+        options={operators.map(([k, v]) => ({ value: k, label: v }))}
+        size="sm"
+      />
       {!['is_empty', 'is_not_empty'].includes(cond.operator) && (
         <input
           placeholder="valor"
@@ -235,9 +235,12 @@ function StepEditor({ step, onChange }: { step: Step; onChange: (s: Step) => voi
           </>}
           {s.actionType === 'send_webhook' && <>
             <input placeholder="URL" value={s.config.url || ''} onChange={e => onChange({ ...s, config: { ...s.config, url: e.target.value } })} style={inputStyle} />
-            <select value={s.config.method || 'POST'} onChange={e => onChange({ ...s, config: { ...s.config, method: e.target.value } })} style={selectStyle}>
-              {['POST', 'GET', 'PUT', 'PATCH'].map(m => <option key={m}>{m}</option>)}
-            </select>
+            <CustomSelect
+              value={s.config.method || 'POST'}
+              onChange={v => onChange({ ...s, config: { ...s.config, method: v } })}
+              options={['POST', 'GET', 'PUT', 'PATCH'].map(m => ({ value: m, label: m }))}
+              size="sm"
+            />
             <textarea placeholder="Body (JSON)..." value={s.config.webhookBody || ''} onChange={e => onChange({ ...s, config: { ...s.config, webhookBody: e.target.value } })} style={{ ...inputStyle, minHeight: 60, resize: 'vertical' }} />
           </>}
           {s.actionType === 'notify_user' && <>
@@ -288,9 +291,12 @@ function StepEditor({ step, onChange }: { step: Step; onChange: (s: Step) => voi
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 10 }}>
         <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Aguardar</span>
         <input type="number" min={1} value={s.duration} onChange={e => onChange({ ...s, duration: parseInt(e.target.value) || 1 })} style={{ ...inputStyle, width: 70 }} />
-        <select value={s.unit} onChange={e => onChange({ ...s, unit: e.target.value as DelayUnit })} style={selectStyle}>
-          {(Object.entries(DELAY_UNIT_LABELS) as [DelayUnit, string][]).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
+        <CustomSelect
+          value={s.unit}
+          onChange={v => onChange({ ...s, unit: v as DelayUnit })}
+          options={(Object.entries(DELAY_UNIT_LABELS) as [DelayUnit, string][]).map(([k, v]) => ({ value: k, label: v }))}
+          size="sm"
+        />
       </div>
     )
   }
@@ -301,17 +307,24 @@ function StepEditor({ step, onChange }: { step: Step; onChange: (s: Step) => voi
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', minWidth: 70 }}>Aguardar:</span>
-          <select value={s.event} onChange={e => onChange({ ...s, event: e.target.value as any })} style={{ ...selectStyle, flex: 1 }}>
-            {(Object.entries(WAIT_EVENT_LABELS) as [string, string][]).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
+          <div style={{ flex: 1 }}>
+            <CustomSelect
+              value={s.event}
+              onChange={v => onChange({ ...s, event: v as any })}
+              options={(Object.entries(WAIT_EVENT_LABELS) as [string, string][]).map(([k, v]) => ({ value: k, label: v }))}
+              size="sm"
+            />
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', minWidth: 70 }}>Timeout:</span>
           <input type="number" min={1} value={s.timeoutDays || ''} placeholder="dias" onChange={e => onChange({ ...s, timeoutDays: parseInt(e.target.value) || undefined })} style={{ ...inputStyle, width: 70 }} />
-          <select value={s.onTimeout} onChange={e => onChange({ ...s, onTimeout: e.target.value as any })} style={selectStyle}>
-            <option value="continue">Continuar</option>
-            <option value="stop">Parar</option>
-          </select>
+          <CustomSelect
+            value={s.onTimeout}
+            onChange={v => onChange({ ...s, onTimeout: v as any })}
+            options={[{ value: 'continue', label: 'Continuar' }, { value: 'stop', label: 'Parar' }]}
+            size="sm"
+          />
         </div>
       </div>
     )

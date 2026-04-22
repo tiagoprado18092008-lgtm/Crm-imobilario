@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useId } from 'react'
 import { Check, ChevronDown, Search } from 'lucide-react'
 
 export interface SelectOption {
@@ -37,6 +37,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   className = '',
   size = 'md',
 }) => {
+  const uid = useId()
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -75,11 +76,15 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   const py = size === 'sm' ? '6px' : '9px'
   const px = size === 'sm' ? '10px' : '12px'
   const fs = size === 'sm' ? 12 : 13
+  const br = size === 'sm' ? 9 : 10
 
   return (
     <div className={`flex flex-col gap-1 ${className}`} ref={containerRef} style={{ position: 'relative' }}>
       {label && (
-        <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block' }}>
+        <label
+          htmlFor={uid}
+          style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', display: 'block' }}
+        >
           {label}
           {required && <span style={{ color: '#f87171', marginLeft: 4 }}>*</span>}
         </label>
@@ -87,6 +92,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
       {/* Trigger */}
       <button
+        id={uid}
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setOpen(o => !o)}
@@ -97,16 +103,17 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           gap: 8,
           padding: `${py} ${px}`,
           fontSize: fs,
-          borderRadius: 8,
-          border: `1px solid ${error ? '#f87171' : open ? '#c9a84c' : 'var(--input-border)'}`,
-          background: disabled ? 'var(--surface-3)' : 'var(--surface-2)',
+          borderRadius: br,
+          border: `1.5px solid ${error ? '#f87171' : open ? 'var(--accent)' : 'var(--border)'}`,
+          background: disabled ? 'var(--surface-3)' : 'var(--surface)',
           color: selected ? 'var(--text-primary)' : 'var(--text-muted)',
           cursor: disabled ? 'not-allowed' : 'pointer',
           textAlign: 'left',
           outline: 'none',
-          boxShadow: open ? '0 0 0 3px rgba(201,168,76,0.15)' : 'none',
+          boxShadow: open ? '0 0 0 3px rgba(46,107,230,0.12)' : '0 1px 2px rgba(0,0,0,0.04)',
           transition: 'border-color 150ms, box-shadow 150ms',
           opacity: disabled ? 0.6 : 1,
+          fontFamily: 'var(--font-body)',
         }}
       >
         {selected?.icon && (
@@ -134,21 +141,26 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         <div
           style={{
             position: 'absolute',
-            top: 'calc(100% + 6px)',
+            top: 'calc(100% + 5px)',
             left: 0,
             right: 0,
             zIndex: 9999,
             background: 'var(--surface)',
-            border: '1px solid var(--border)',
+            border: '1.5px solid var(--border)',
             borderRadius: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07)',
             overflow: 'hidden',
-            animation: 'selectFadeIn 120ms ease',
+            animation: 'selectFadeIn 130ms cubic-bezier(0.16,1,0.3,1)',
           }}
         >
           {searchable && (
-            <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px', borderRadius: 8, background: 'var(--surface-3)', border: '1px solid var(--input-border)' }}>
+            <div style={{ padding: '8px 8px 4px' }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 10px', borderRadius: 8,
+                background: 'var(--surface-2)',
+                border: '1.5px solid var(--border)',
+              }}>
                 <Search size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                 <input
                   ref={searchRef}
@@ -159,13 +171,14 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                   style={{
                     border: 'none', background: 'none', outline: 'none',
                     fontSize: 12, color: 'var(--text-primary)', width: '100%',
+                    fontFamily: 'var(--font-body)',
                   }}
                 />
               </div>
             </div>
           )}
 
-          <div style={{ maxHeight: 240, overflowY: 'auto', padding: '4px 0' }}>
+          <div style={{ maxHeight: 228, overflowY: 'auto', padding: '4px' }}>
             {filtered.length === 0 && (
               <div style={{ padding: '10px 14px', fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
                 Sem resultados
@@ -184,34 +197,51 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
-                    padding: '8px 12px',
+                    padding: '8px 10px',
                     fontSize: fs,
+                    borderRadius: 8,
                     border: 'none',
-                    background: isSelected ? 'rgba(201,168,76,0.1)' : 'transparent',
-                    color: opt.disabled ? 'var(--text-muted)' : isSelected ? '#c9a84c' : 'var(--text-primary)',
+                    background: isSelected ? 'var(--accent-soft)' : 'transparent',
+                    color: opt.disabled
+                      ? 'var(--text-muted)'
+                      : isSelected
+                      ? 'var(--accent)'
+                      : 'var(--text-primary)',
                     cursor: opt.disabled ? 'not-allowed' : 'pointer',
                     textAlign: 'left',
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: isSelected ? 600 : 400,
                     transition: 'background 100ms',
                     opacity: opt.disabled ? 0.5 : 1,
                   }}
                   onMouseEnter={e => {
-                    if (!isSelected && !opt.disabled) (e.currentTarget as HTMLElement).style.background = 'var(--surface-3)'
+                    if (!isSelected && !opt.disabled)
+                      (e.currentTarget as HTMLElement).style.background = 'var(--surface-3)'
                   }}
                   onMouseLeave={e => {
-                    if (!isSelected) (e.currentTarget as HTMLElement).style.background = isSelected ? 'rgba(201,168,76,0.1)' : 'transparent'
+                    if (!isSelected)
+                      (e.currentTarget as HTMLElement).style.background = isSelected ? 'var(--accent-soft)' : 'transparent'
                   }}
                 >
-                  {opt.icon && <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>{opt.icon}</span>}
+                  {opt.icon && (
+                    <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>{opt.icon}</span>
+                  )}
                   {opt.color && (
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: opt.color, flexShrink: 0 }} />
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opt.label}</div>
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {opt.label}
+                    </div>
                     {opt.description && (
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>{opt.description}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>
+                        {opt.description}
+                      </div>
                     )}
                   </div>
-                  {isSelected && <Check size={13} style={{ flexShrink: 0, color: '#c9a84c' }} />}
+                  {isSelected && (
+                    <Check size={13} style={{ flexShrink: 0, color: 'var(--accent)' }} />
+                  )}
                 </button>
               )
             })}
@@ -223,8 +253,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
       <style>{`
         @keyframes selectFadeIn {
-          from { opacity: 0; transform: translateY(-4px); }
-          to   { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>
     </div>

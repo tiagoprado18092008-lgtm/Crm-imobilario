@@ -10,6 +10,7 @@ import { useUIStore } from '../store/ui.store'
 import { usePermissions } from '../hooks/usePermissions'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
+import { CustomSelect } from '../components/ui/CustomSelect'
 import type { Contact } from '../types'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -1242,20 +1243,18 @@ export const AppointmentsPage: React.FC = () => {
 
             {/* Month + Year dropdowns */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <select
-                value={calMonth}
-                onChange={e => setCalMonth(Number(e.target.value))}
-                style={{ ...inputStyle, width: 'auto', padding: '4px 8px', fontSize: 13, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize' }}
-              >
-                {MONTHS_PT.map((m, i) => <option key={i} value={i}>{m}</option>)}
-              </select>
-              <select
-                value={calYear}
-                onChange={e => setCalYear(Number(e.target.value))}
-                style={{ ...inputStyle, width: 'auto', padding: '4px 8px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-              >
-                {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
+              <CustomSelect
+                value={String(calMonth)}
+                onChange={v => setCalMonth(Number(v))}
+                options={MONTHS_PT.map((m, i) => ({ value: String(i), label: m }))}
+                size="sm"
+              />
+              <CustomSelect
+                value={String(calYear)}
+                onChange={v => setCalYear(Number(v))}
+                options={yearOptions.map(y => ({ value: String(y), label: String(y) }))}
+                size="sm"
+              />
             </div>
 
             <button
@@ -1369,18 +1368,18 @@ export const AppointmentsPage: React.FC = () => {
             />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              <label style={labelStyle}>Tipo</label>
-              <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} style={inputStyle}>
-                {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Estado</label>
-              <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))} style={inputStyle}>
-                {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select>
-            </div>
+            <CustomSelect
+              label="Tipo"
+              value={form.type}
+              onChange={v => setForm(f => ({ ...f, type: v }))}
+              options={Object.entries(TYPE_LABELS).map(([k, v]) => ({ value: k, label: v }))}
+            />
+            <CustomSelect
+              label="Estado"
+              value={form.status}
+              onChange={v => setForm(f => ({ ...f, status: v }))}
+              options={Object.entries(STATUS_LABELS).map(([k, v]) => ({ value: k, label: v }))}
+            />
             <div>
               <label style={labelStyle}>Início *</label>
               <input
@@ -1433,13 +1432,14 @@ export const AppointmentsPage: React.FC = () => {
               </a>
             )}
           </div>
-          <div>
-            <label style={labelStyle}>Contacto</label>
-            <select value={form.contactId} onChange={e => setForm(f => ({ ...f, contactId: e.target.value }))} style={inputStyle}>
-              <option value="">Nenhum</option>
-              {contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
+          <CustomSelect
+            label="Contacto"
+            value={form.contactId}
+            onChange={v => setForm(f => ({ ...f, contactId: v }))}
+            placeholder="Nenhum"
+            searchable
+            options={contacts.map(c => ({ value: c.id, label: c.name }))}
+          />
           <div>
             <label style={labelStyle}>Descrição</label>
             <textarea
