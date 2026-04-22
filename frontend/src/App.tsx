@@ -4,9 +4,7 @@ import { useAuthStore } from './store/auth.store'
 import { useUIStore } from './store/ui.store'
 import { AppShell } from './components/layout/AppShell'
 import { ProtectedRoute } from './components/layout/ProtectedRoute'
-import { LoginPage } from './pages/LoginPage'
 import { ClerkLoginPage } from './pages/ClerkLoginPage'
-import { RegisterPage } from './pages/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ContactsPage } from './pages/ContactsPage'
 import { ContactDetailPage } from './pages/ContactDetailPage'
@@ -54,7 +52,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<ClerkLoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/register" element={<Navigate to="/login" replace />} />
       <Route path="/invite/:token" element={<InviteAcceptPage />} />
       <Route path="/403" element={<ForbiddenPage />} />
 
