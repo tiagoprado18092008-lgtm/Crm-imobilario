@@ -16,11 +16,16 @@ interface DateTimePickerInputProps {
   style?: React.CSSProperties
 }
 
-// Time slots: 08:00 to 20:00 in 1h increments
 const TIME_SLOTS = Array.from({ length: 13 }, (_, i) => {
   const h = i + 8
   return `${String(h).padStart(2, '0')}:00`
 })
+
+const MONTHS_EN = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
+]
+const YEARS = Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - 5 + i)
 
 function parseLocalDT(v: string): Date | undefined {
   if (!v) return undefined
@@ -50,12 +55,10 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   const selected = parseLocalDT(value || '')
   const [month, setMonth] = useState<Date>(selected || new Date())
 
-  // Selected time as "HH:mm"
   const selectedTime = selected
     ? `${String(selected.getHours()).padStart(2, '0')}:${String(selected.getMinutes()).padStart(2, '0')}`
     : ''
 
-  // Sync month when external value changes
   useEffect(() => {
     const d = parseLocalDT(value || '')
     if (d) setMonth(d)
@@ -73,7 +76,6 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
 
   const handleDaySelect = (day: Date | undefined) => {
     if (!day) return
-    // Preserve time if already selected
     const h = selected ? selected.getHours() : 9
     const m = selected ? selected.getMinutes() : 0
     const newDate = new Date(day)
@@ -92,6 +94,13 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation()
     onChange?.('')
+  }
+
+  const goToPrev = () => {
+    const d = new Date(month); d.setMonth(d.getMonth() - 1); setMonth(d)
+  }
+  const goToNext = () => {
+    const d = new Date(month); d.setMonth(d.getMonth() + 1); setMonth(d)
   }
 
   const displayValue = selected
@@ -159,30 +168,51 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
           animation: 'dtpFadeIn 130ms cubic-bezier(0.16,1,0.3,1)',
         }}>
           {/* Calendar side */}
-          <div>
+          <div style={{ width: 258 }}>
+            {/* Year / Month selectors */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <select
+                className="dtp-select"
+                value={month.getFullYear()}
+                onChange={e => { const d = new Date(month); d.setFullYear(Number(e.target.value)); setMonth(d) }}
+              >
+                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+              <select
+                className="dtp-select"
+                value={month.getMonth()}
+                onChange={e => { const d = new Date(month); d.setMonth(Number(e.target.value)); setMonth(d) }}
+              >
+                {MONTHS_EN.map((m, i) => <option key={m} value={i}>{m}</option>)}
+              </select>
+            </div>
+
+            {/* Month header with navigation */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, padding: '0 2px' }}>
+              <button className="dtp-nav-btn" onClick={goToPrev}><ChevronLeft size={13} strokeWidth={2} /></button>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9', letterSpacing: '-0.01em' }}>
+                {format(month, 'MMMM yyyy', { locale: pt }).replace(/^\w/, c => c.toUpperCase())}
+              </span>
+              <button className="dtp-nav-btn" onClick={goToNext}><ChevronRight size={13} strokeWidth={2} /></button>
+            </div>
+
             <DayPicker
               mode="single"
               month={month}
               onMonthChange={setMonth}
               selected={selected}
               onSelect={handleDaySelect}
-              locale={pt}
               showOutsideDays
-              components={{
-                Chevron: ({ orientation }: { orientation?: string }) =>
-                  orientation === 'left'
-                    ? <ChevronLeft size={14} strokeWidth={2} />
-                    : <ChevronRight size={14} strokeWidth={2} />,
-              }}
+              components={{ Chevron: () => null }}
               classNames={{
                 root: 'dtp-picker',
                 months: 'dtp-months',
                 month: 'dtp-month',
-                month_caption: 'dtp-month_caption',
-                caption_label: 'dtp-caption_label',
-                nav: 'dtp-nav',
-                button_previous: 'dtp-nav-btn',
-                button_next: 'dtp-nav-btn',
+                month_caption: 'dtp-hidden',
+                caption_label: 'dtp-hidden',
+                nav: 'dtp-hidden',
+                button_previous: 'dtp-hidden',
+                button_next: 'dtp-hidden',
                 weekdays: 'dtp-weekdays',
                 weekday: 'dtp-weekday',
                 weeks: 'dtp-weeks',
@@ -202,7 +232,7 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
             <p style={{ fontSize: 11, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>
               Hora
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 240, overflowY: 'auto', paddingRight: 2 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 260, overflowY: 'auto', paddingRight: 2 }}>
               {TIME_SLOTS.map(t => (
                 <button
                   key={t}
@@ -234,7 +264,6 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
               ))}
             </div>
 
-            {/* Custom time input */}
             <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
               <input
                 type="time"
@@ -259,58 +288,52 @@ export const DateTimePickerInput: React.FC<DateTimePickerInputProps> = ({
           from { opacity: 0; transform: translateY(-6px) scale(0.98); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .dtp-months { display: flex; }
-        .dtp-month { width: 232px; }
-        .dtp-month_caption {
-          display: flex; align-items: center; justify-content: center;
-          position: relative; height: 34px; margin-bottom: 8px;
+        .dtp-select {
+          flex: 1; padding: 6px 10px; border-radius: 8px;
+          border: 1px solid rgba(255,255,255,0.12);
+          background: rgba(255,255,255,0.06);
+          color: #e2e8f0; font-size: 12px; font-weight: 500;
+          cursor: pointer; outline: none; appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+          background-repeat: no-repeat; background-position: right 8px center; padding-right: 26px;
+          font-family: inherit; transition: border-color 120ms;
         }
-        .dtp-caption_label {
-          font-size: 13px; font-weight: 600; color: #f1f5f9;
-          text-transform: capitalize; letter-spacing: -0.01em;
-        }
-        .dtp-nav {
-          position: absolute; top: 0; left: 0; right: 0;
-          display: flex; justify-content: space-between; align-items: center;
-          height: 34px; pointer-events: none;
-        }
+        .dtp-select:focus { border-color: rgba(255,255,255,0.25); }
+        .dtp-select option { background: #1e2535; color: #e2e8f0; }
         .dtp-nav-btn {
-          pointer-events: all;
           width: 26px; height: 26px; border-radius: 7px;
           border: 1px solid rgba(255,255,255,0.1);
-          background: rgba(255,255,255,0.05);
-          color: #94a3b8;
+          background: rgba(255,255,255,0.05); color: #94a3b8;
           display: flex; align-items: center; justify-content: center;
           cursor: pointer; transition: all 150ms;
         }
         .dtp-nav-btn:hover { background: rgba(255,255,255,0.1); color: #f1f5f9; }
+        .dtp-hidden { display: none !important; }
+        .dtp-months { display: flex; }
+        .dtp-month { width: 258px; }
         .dtp-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
         .dtp-weekday {
-          text-align: center; font-size: 9.5px; font-weight: 600;
-          color: #475569; padding: 4px 0;
-          text-transform: uppercase; letter-spacing: 0.07em;
+          text-align: center; font-size: 10px; font-weight: 600;
+          color: #64748b; padding: 4px 0;
         }
         .dtp-weeks { display: flex; flex-direction: column; gap: 2px; }
         .dtp-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
         .dtp-day { display: flex; align-items: center; justify-content: center; }
         .dtp-day_button {
-          width: 30px; height: 30px; border-radius: 7px;
+          width: 32px; height: 32px; border-radius: 50%;
           border: none; background: transparent;
           color: #cbd5e1; font-size: 12px; font-weight: 400;
           cursor: pointer; transition: background 110ms, color 110ms;
           position: relative; display: flex; align-items: center; justify-content: center;
         }
-        .dtp-day_button:hover { background: rgba(255,255,255,0.08); color: #f1f5f9; }
+        .dtp-day_button:hover { background: rgba(255,255,255,0.09); color: #f1f5f9; }
         .dtp-selected .dtp-day_button {
-          background: #2563eb !important; color: #fff !important;
-          font-weight: 700; box-shadow: 0 2px 8px rgba(37,99,235,0.4);
+          background: #2563eb !important; color: #fff !important; font-weight: 600;
         }
-        .dtp-today .dtp-day_button::after {
-          content: ''; position: absolute; bottom: 3px; left: 50%;
-          transform: translateX(-50%);
-          width: 3px; height: 3px; border-radius: 50%; background: #60a5fa;
+        .dtp-today .dtp-day_button {
+          border: 1px solid rgba(255,255,255,0.25); color: #f1f5f9;
         }
-        .dtp-selected.dtp-today .dtp-day_button::after { background: rgba(255,255,255,0.7); }
+        .dtp-selected.dtp-today .dtp-day_button { border-color: #2563eb; }
         .dtp-outside .dtp-day_button { color: #334155; }
         .dtp-disabled .dtp-day_button { opacity: 0.2; cursor: not-allowed; }
       `}</style>

@@ -11,10 +11,17 @@ interface CalendarDropdownProps {
   onConfirm?: (dates: Date[]) => void
 }
 
+const MONTHS = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
+]
+
+const YEARS = Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - 5 + i)
+
 export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
   mode = 'multiple',
   onSelect,
-  confirmLabel = 'Confirmar',
+  confirmLabel = 'Confirm',
   onConfirm,
 }) => {
   const [selected, setSelected] = useState<Date[]>([])
@@ -41,31 +48,78 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
     onSelect?.(next)
   }
 
+  const goToPrev = () => {
+    const d = new Date(month)
+    d.setMonth(d.getMonth() - 1)
+    setMonth(d)
+  }
+
+  const goToNext = () => {
+    const d = new Date(month)
+    d.setMonth(d.getMonth() + 1)
+    setMonth(d)
+  }
+
+  const setYear = (y: number) => {
+    const d = new Date(month)
+    d.setFullYear(y)
+    setMonth(d)
+  }
+
+  const setMonthIndex = (m: number) => {
+    const d = new Date(month)
+    d.setMonth(m)
+    setMonth(d)
+  }
+
   return (
     <div className="cd-root">
+      {/* Year / Month selectors */}
+      <div className="cd-selectors">
+        <select
+          className="cd-select"
+          value={month.getFullYear()}
+          onChange={e => setYear(Number(e.target.value))}
+        >
+          {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+        <select
+          className="cd-select"
+          value={month.getMonth()}
+          onChange={e => setMonthIndex(Number(e.target.value))}
+        >
+          {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
+        </select>
+      </div>
+
+      {/* Month header with navigation */}
+      <div className="cd-month_header">
+        <button className="cd-nav-btn" onClick={goToPrev}><ChevronLeft size={14} strokeWidth={2} /></button>
+        <span className="cd-caption_label">
+          {format(month, 'MMMM yyyy', { locale: pt }).replace(/^\w/, c => c.toUpperCase())}
+        </span>
+        <button className="cd-nav-btn" onClick={goToNext}><ChevronRight size={14} strokeWidth={2} /></button>
+      </div>
+
       <DayPicker
         mode="multiple"
         month={month}
         onMonthChange={setMonth}
         selected={selected}
         onDayClick={handleDayClick}
-        locale={pt}
         showOutsideDays
         components={{
-          Chevron: ({ orientation }) =>
-            orientation === 'left'
-              ? <ChevronLeft size={14} strokeWidth={2} />
-              : <ChevronRight size={14} strokeWidth={2} />,
+          Chevron: () => null,
         }}
         classNames={{
           root: 'cd-picker',
           months: 'cd-months',
           month: 'cd-month',
-          month_caption: 'cd-month_caption',
-          caption_label: 'cd-caption_label',
-          nav: 'cd-nav',
-          button_previous: 'cd-nav-btn',
-          button_next: 'cd-nav-btn',
+          month_caption: 'cd-month_caption_hidden',
+          caption_label: 'cd-caption_hidden',
+          nav: 'cd-nav_hidden',
+          button_previous: 'cd-nav_hidden',
+          button_next: 'cd-nav_hidden',
           weekdays: 'cd-weekdays',
           weekday: 'cd-weekday',
           weeks: 'cd-weeks',
@@ -79,20 +133,25 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
         }}
       />
 
-      {selected.length > 0 && (
-        <div className="cd-badges">
-          {selected
-            .sort((a, b) => a.getTime() - b.getTime())
-            .map(d => (
-              <span key={d.toISOString()} className="cd-badge">
-                {format(d, 'dd MMM', { locale: pt })}
-                <button onClick={() => removeDate(d)} className="cd-badge-remove">
-                  <X size={10} />
-                </button>
-              </span>
-            ))}
-        </div>
-      )}
+      {/* Footer */}
+      <div className="cd-footer">
+        {selected.length === 0 ? (
+          <span className="cd-no-dates">No dates selected</span>
+        ) : (
+          <div className="cd-badges">
+            {selected
+              .sort((a, b) => a.getTime() - b.getTime())
+              .map(d => (
+                <span key={d.toISOString()} className="cd-badge">
+                  {format(d, 'dd MMM', { locale: pt })}
+                  <button onClick={() => removeDate(d)} className="cd-badge-remove">
+                    <X size={10} />
+                  </button>
+                </span>
+              ))}
+          </div>
+        )}
+      </div>
 
       {onConfirm && (
         <button
@@ -109,30 +168,44 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
           background: #0f1117;
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 16px;
-          padding: 18px;
+          padding: 16px 16px 14px;
           box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.06) inset;
           font-family: var(--font-body, system-ui);
-          width: 280px;
+          width: 290px;
           user-select: none;
         }
-        .cd-months { display: flex; }
-        .cd-month { width: 100%; }
-        .cd-month_caption {
-          display: flex; align-items: center; justify-content: center;
-          position: relative; height: 36px; margin-bottom: 8px;
+
+        /* Year / Month selects */
+        .cd-selectors {
+          display: flex; gap: 8px; margin-bottom: 12px;
+        }
+        .cd-select {
+          flex: 1; padding: 6px 10px; border-radius: 8px;
+          border: 1px solid rgba(255,255,255,0.12);
+          background: rgba(255,255,255,0.06);
+          color: #e2e8f0; font-size: 13px; font-weight: 500;
+          cursor: pointer; outline: none;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 8px center;
+          padding-right: 26px;
+          font-family: inherit;
+          transition: border-color 120ms;
+        }
+        .cd-select:focus { border-color: rgba(255,255,255,0.25); }
+        .cd-select option { background: #1e2535; color: #e2e8f0; }
+
+        /* Month header */
+        .cd-month_header {
+          display: flex; align-items: center; justify-content: space-between;
+          margin-bottom: 10px; padding: 0 2px;
         }
         .cd-caption_label {
-          font-size: 14px; font-weight: 600;
-          color: #f1f5f9;
-          text-transform: capitalize; letter-spacing: -0.01em;
-        }
-        .cd-nav {
-          position: absolute; top: 0; left: 0; right: 0;
-          display: flex; justify-content: space-between; align-items: center;
-          height: 36px; pointer-events: none;
+          font-size: 14px; font-weight: 600; color: #f1f5f9;
+          letter-spacing: -0.01em;
         }
         .cd-nav-btn {
-          pointer-events: all;
           width: 28px; height: 28px; border-radius: 8px;
           border: 1px solid rgba(255,255,255,0.1);
           background: rgba(255,255,255,0.05);
@@ -142,52 +215,61 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
           transition: all 150ms;
         }
         .cd-nav-btn:hover {
-          background: rgba(255,255,255,0.1);
-          color: #f1f5f9;
+          background: rgba(255,255,255,0.1); color: #f1f5f9;
           border-color: rgba(255,255,255,0.2);
         }
+
+        /* DayPicker overrides — hide internal header/nav */
+        .cd-month_caption_hidden { display: none !important; }
+        .cd-caption_hidden { display: none !important; }
+        .cd-nav_hidden { display: none !important; }
+
+        .cd-months { display: flex; }
+        .cd-month { width: 100%; }
         .cd-weekdays {
           display: grid; grid-template-columns: repeat(7, 1fr);
-          margin-bottom: 6px;
+          margin-bottom: 4px;
         }
         .cd-weekday {
-          text-align: center; font-size: 10px; font-weight: 600;
-          color: #475569; padding: 4px 0;
-          text-transform: uppercase; letter-spacing: 0.08em;
+          text-align: center; font-size: 11px; font-weight: 600;
+          color: #64748b; padding: 4px 0;
         }
         .cd-weeks { display: flex; flex-direction: column; gap: 2px; }
         .cd-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
         .cd-day { display: flex; align-items: center; justify-content: center; }
         .cd-day_button {
-          width: 34px; height: 34px; border-radius: 8px;
+          width: 34px; height: 34px; border-radius: 50%;
           border: none; background: transparent;
           color: #cbd5e1; font-size: 13px; font-weight: 400;
           cursor: pointer;
           transition: background 110ms, color 110ms;
           position: relative; display: flex; align-items: center; justify-content: center;
         }
-        .cd-day_button:hover { background: rgba(255,255,255,0.08); color: #f1f5f9; }
+        .cd-day_button:hover { background: rgba(255,255,255,0.09); color: #f1f5f9; }
         .cd-selected .cd-day_button {
           background: #2563eb !important;
           color: #fff !important;
           font-weight: 600;
-          box-shadow: 0 2px 8px rgba(37,99,235,0.4);
         }
-        .cd-today .cd-day_button::after {
-          content: '';
-          position: absolute; bottom: 4px; left: 50%;
-          transform: translateX(-50%);
-          width: 3px; height: 3px; border-radius: 50%;
-          background: #60a5fa;
+        .cd-today .cd-day_button {
+          border: 1px solid rgba(255,255,255,0.25);
+          color: #f1f5f9;
         }
-        .cd-selected.cd-today .cd-day_button::after { background: rgba(255,255,255,0.7); }
+        .cd-selected.cd-today .cd-day_button { border-color: #2563eb; }
         .cd-outside .cd-day_button { color: #334155; }
         .cd-disabled .cd-day_button { opacity: 0.2; cursor: not-allowed; }
 
+        /* Footer */
+        .cd-footer {
+          margin-top: 12px; padding-top: 12px;
+          border-top: 1px solid rgba(255,255,255,0.07);
+          min-height: 28px;
+        }
+        .cd-no-dates {
+          font-size: 12px; color: #475569;
+        }
         .cd-badges {
           display: flex; flex-wrap: wrap; gap: 5px;
-          margin-top: 14px; padding-top: 14px;
-          border-top: 1px solid rgba(255,255,255,0.07);
         }
         .cd-badge {
           display: inline-flex; align-items: center; gap: 5px;
@@ -204,17 +286,17 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
         .cd-badge-remove:hover { opacity: 1; }
 
         .cd-confirm {
-          margin-top: 14px; width: 100%; padding: 10px;
+          margin-top: 12px; width: 100%; padding: 10px;
           border-radius: 10px; border: none;
-          background: rgba(255,255,255,0.06);
-          color: #475569; font-size: 13px; font-weight: 600;
+          background: rgba(255,255,255,0.08);
+          color: #64748b; font-size: 13px; font-weight: 600;
           cursor: default; transition: all 150ms;
           font-family: inherit;
         }
         .cd-confirm--active {
           background: #2563eb; color: #fff;
           cursor: pointer;
-          box-shadow: 0 2px 12px rgba(37,99,235,0.4);
+          box-shadow: 0 2px 12px rgba(37,99,235,0.35);
         }
         .cd-confirm--active:hover { background: #1d4ed8; }
       `}</style>
