@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@azure/msal-node": "^5.1.2",
+    "@clerk/backend": "^3.2.14",
     "@hapi/boom": "^10.0.1",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@prisma/client": "^5.0.0",
