@@ -6,8 +6,8 @@ import {
   CalendarClock, ChevronRight,
   UserCircle, ChevronsUpDown, UserPlus, Briefcase,
   MessageSquare, Activity, Layers, Phone, PhoneCall,
-  Home,
 } from 'lucide-react'
+import { CasaFlowLogo } from '../../assets/casaflow-logo'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../store/auth.store'
 import { getInitials } from '../../utils/formatters'
@@ -141,12 +141,13 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
         >
           <div style={{
             width: 34, height: 34, borderRadius: 10,
-            background: 'var(--accent)',
+            background: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
-            boxShadow: '0 2px 10px rgba(46,107,230,0.45)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+            overflow: 'hidden',
           }}>
-            <Home size={16} color="#fff" />
+            <CasaFlowLogo size={26} />
           </div>
 
           <AnimatePresence initial={false}>
