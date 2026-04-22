@@ -1,15 +1,8 @@
 import React, { useState } from 'react'
-import {
-  format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  addDays, addMonths, subMonths, isSameMonth, isToday,
-} from 'date-fns'
-import { ChevronLeft, ChevronRight, X, ChevronDown } from 'lucide-react'
-
-const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-const MONTHS_PT = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
-]
+import { DayPicker } from 'react-day-picker'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { format } from 'date-fns'
+import { pt } from 'date-fns/locale'
 
 interface CalendarDropdownProps {
   mode?: 'single' | 'multiple'
@@ -18,108 +11,16 @@ interface CalendarDropdownProps {
   onConfirm?: (dates: Date[]) => void
 }
 
-/* ── Inline mini-select (used internally for month/year) ───── */
-const MiniSelect: React.FC<{
-  value: number
-  options: { value: number; label: string }[]
-  onChange: (v: number) => void
-}> = ({ value, options, onChange }) => {
-  const [open, setOpen] = useState(false)
-  const selected = options.find(o => o.value === value)
-
-  return (
-    <div style={{ position: 'relative' }}>
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 4,
-          padding: '5px 8px', borderRadius: 8,
-          border: `1.5px solid ${open ? 'var(--accent)' : 'var(--border)'}`,
-          background: 'var(--surface)',
-          color: 'var(--text-primary)',
-          fontSize: 13, fontWeight: 600,
-          cursor: 'pointer',
-          boxShadow: open ? '0 0 0 3px rgba(46,107,230,0.1)' : '0 1px 2px rgba(0,0,0,0.04)',
-          transition: 'border-color 150ms, box-shadow 150ms',
-          fontFamily: 'var(--font-body)',
-        }}
-      >
-        {selected?.label}
-        <ChevronDown size={12} style={{ color: 'var(--text-muted)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }} />
-      </button>
-
-      {open && (
-        <>
-          <div
-            style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
-            onClick={() => setOpen(false)}
-          />
-          <div
-            style={{
-              position: 'absolute', top: 'calc(100% + 4px)', left: 0,
-              zIndex: 9999, minWidth: 100,
-              background: 'var(--surface)',
-              border: '1.5px solid var(--border)',
-              borderRadius: 10,
-              boxShadow: '0 10px 32px rgba(0,0,0,0.12)',
-              overflow: 'hidden',
-              animation: 'selectFadeIn 120ms cubic-bezier(0.16,1,0.3,1)',
-            }}
-          >
-            <div style={{ maxHeight: 200, overflowY: 'auto', padding: '4px' }}>
-              {options.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => { onChange(opt.value); setOpen(false) }}
-                  style={{
-                    width: '100%', display: 'block',
-                    padding: '6px 10px', fontSize: 13,
-                    borderRadius: 7, border: 'none',
-                    background: opt.value === value ? 'var(--accent-soft)' : 'transparent',
-                    color: opt.value === value ? 'var(--accent)' : 'var(--text-primary)',
-                    fontWeight: opt.value === value ? 600 : 400,
-                    cursor: 'pointer', textAlign: 'left',
-                    fontFamily: 'var(--font-body)',
-                    transition: 'background 100ms',
-                  }}
-                  onMouseEnter={e => {
-                    if (opt.value !== value)
-                      (e.currentTarget as HTMLElement).style.background = 'var(--surface-3)'
-                  }}
-                  onMouseLeave={e => {
-                    if (opt.value !== value)
-                      (e.currentTarget as HTMLElement).style.background = 'transparent'
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-      <style>{`
-        @keyframes selectFadeIn {
-          from { opacity: 0; transform: translateY(-5px) scale(0.98); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-      `}</style>
-    </div>
-  )
-}
-
 export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
   mode = 'multiple',
   onSelect,
   confirmLabel = 'Confirmar',
   onConfirm,
 }) => {
-  const [viewDate, setViewDate] = useState(new Date())
   const [selected, setSelected] = useState<Date[]>([])
+  const [month, setMonth] = useState(new Date())
 
-  const toggleDate = (day: Date) => {
+  const handleDayClick = (day: Date) => {
     let next: Date[]
     if (mode === 'single') {
       next = [day]
@@ -140,129 +41,60 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
     onSelect?.(next)
   }
 
-  const monthStart = startOfMonth(viewDate)
-  const monthEnd   = endOfMonth(viewDate)
-  const gridStart  = startOfWeek(monthStart)
-  const gridEnd    = endOfWeek(monthEnd)
-
-  const days: Date[] = []
-  let cur = gridStart
-  while (cur <= gridEnd) { days.push(cur); cur = addDays(cur, 1) }
-
-  const years = Array.from({ length: 50 }, (_, i) => viewDate.getFullYear() - 25 + i)
+  const selectedSet = new Set(selected.map(d => format(d, 'yyyy-MM-dd')))
 
   return (
     <div style={{
       background: 'var(--surface)',
       border: '1.5px solid var(--border)',
       borderRadius: 16,
-      padding: 20,
+      padding: '16px',
       boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
       fontFamily: 'var(--font-body)',
-      width: 320,
+      width: 300,
+      userSelect: 'none',
     }}>
-      {/* Header: month nav + selectors */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <button
-          onClick={() => setViewDate(subMonths(viewDate, 1))}
-          style={{
-            width: 30, height: 30, borderRadius: 8,
-            background: 'var(--surface-2)',
-            border: '1.5px solid var(--border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: 'var(--text-secondary)',
-            transition: 'border-color 150ms',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-        >
-          <ChevronLeft size={14} />
-        </button>
-
-        <div style={{ display: 'flex', gap: 6 }}>
-          <MiniSelect
-            value={viewDate.getMonth()}
-            options={MONTHS_PT.map((m, i) => ({ value: i, label: m }))}
-            onChange={m => setViewDate(new Date(viewDate.getFullYear(), m, 1))}
-          />
-          <MiniSelect
-            value={viewDate.getFullYear()}
-            options={years.map(y => ({ value: y, label: String(y) }))}
-            onChange={y => setViewDate(new Date(y, viewDate.getMonth(), 1))}
-          />
-        </div>
-
-        <button
-          onClick={() => setViewDate(addMonths(viewDate, 1))}
-          style={{
-            width: 30, height: 30, borderRadius: 8,
-            background: 'var(--surface-2)',
-            border: '1.5px solid var(--border)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: 'var(--text-secondary)',
-            transition: 'border-color 150ms',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
-          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-        >
-          <ChevronRight size={14} />
-        </button>
-      </div>
-
-      {/* Weekday headers */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 6 }}>
-        {WEEKDAYS.map(d => (
-          <div key={d} style={{
-            textAlign: 'center', fontSize: 10, fontWeight: 700,
-            color: 'var(--text-muted)', padding: '4px 0', letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-          }}>
-            {d}
-          </div>
-        ))}
-      </div>
-
-      {/* Day grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-        {days.map(day => {
-          const key = format(day, 'yyyy-MM-dd')
-          const isSelected = selected.some(d => format(d, 'yyyy-MM-dd') === key)
-          const isCurrentMonth = isSameMonth(day, viewDate)
-          const isTodayDay = isToday(day)
-
-          return (
-            <button
-              key={key}
-              onClick={() => toggleDate(day)}
-              style={{
-                width: '100%', aspectRatio: '1', borderRadius: 9, border: 'none',
-                background: isSelected ? 'var(--accent)' : 'transparent',
-                color: isSelected ? '#fff' : isCurrentMonth ? 'var(--text-primary)' : 'var(--text-muted)',
-                fontSize: 12, fontWeight: isSelected || isTodayDay ? 700 : 400,
-                cursor: 'pointer',
-                outline: isTodayDay && !isSelected ? '2px solid var(--accent)' : 'none',
-                outlineOffset: -2,
-                transition: 'background 120ms, color 120ms',
-                opacity: isCurrentMonth ? 1 : 0.35,
-              }}
-              onMouseEnter={e => {
-                if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-3)'
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.background = isSelected ? 'var(--accent)' : 'transparent'
-              }}
-            >
-              {day.getDate()}
-            </button>
-          )
-        })}
-      </div>
+      <DayPicker
+        mode="multiple"
+        month={month}
+        onMonthChange={setMonth}
+        selected={selected}
+        onDayClick={handleDayClick}
+        locale={pt}
+        showOutsideDays
+        components={{
+          Chevron: ({ orientation }) =>
+            orientation === 'left'
+              ? <ChevronLeft size={15} />
+              : <ChevronRight size={15} />,
+        }}
+        classNames={{
+          root: 'rdp-root',
+          months: 'rdp-months',
+          month: 'rdp-month',
+          month_caption: 'rdp-month_caption',
+          caption_label: 'rdp-caption_label',
+          nav: 'rdp-nav',
+          button_previous: 'rdp-button_previous',
+          button_next: 'rdp-button_next',
+          weekdays: 'rdp-weekdays',
+          weekday: 'rdp-weekday',
+          weeks: 'rdp-weeks',
+          week: 'rdp-week',
+          day: 'rdp-day',
+          day_button: 'rdp-day_button',
+          selected: 'rdp-selected',
+          today: 'rdp-today',
+          outside: 'rdp-outside',
+          disabled: 'rdp-disabled',
+        }}
+      />
 
       {/* Selected badges */}
       {selected.length > 0 && (
         <div style={{
           display: 'flex', flexWrap: 'wrap', gap: 6,
-          marginTop: 14, paddingTop: 14,
+          marginTop: 12, paddingTop: 12,
           borderTop: '1px solid var(--border)',
         }}>
           {selected
@@ -275,17 +107,13 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
                   background: 'var(--accent-soft)', color: 'var(--accent)',
                   borderRadius: 20, padding: '3px 10px',
                   fontSize: 11, fontWeight: 600,
-                  border: '1px solid rgba(46,107,230,0.2)',
+                  border: '1px solid rgba(46,107,230,0.18)',
                 }}
               >
-                {format(d, 'dd MMM yyyy')}
+                {format(d, 'dd MMM yyyy', { locale: pt })}
                 <button
                   onClick={() => removeDate(d)}
-                  style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    padding: 0, color: 'var(--accent)', display: 'flex',
-                    opacity: 0.7,
-                  }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--accent)', display: 'flex', opacity: 0.7 }}
                 >
                   <X size={11} />
                 </button>
@@ -300,13 +128,11 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
           onClick={() => onConfirm(selected)}
           disabled={selected.length === 0}
           style={{
-            marginTop: 16, width: '100%', padding: '10px 16px', borderRadius: 10,
+            marginTop: 12, width: '100%', padding: '10px 16px', borderRadius: 10,
             background: selected.length > 0 ? 'var(--accent)' : 'var(--surface-3)',
             color: selected.length > 0 ? '#fff' : 'var(--text-muted)',
-            border: 'none',
-            cursor: selected.length > 0 ? 'pointer' : 'default',
-            fontSize: 13, fontWeight: 600,
-            fontFamily: 'var(--font-body)',
+            border: 'none', cursor: selected.length > 0 ? 'pointer' : 'default',
+            fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
             transition: 'background 160ms',
             boxShadow: selected.length > 0 ? '0 2px 8px rgba(46,107,230,0.25)' : 'none',
           }}
@@ -314,6 +140,130 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = ({
           {confirmLabel}
         </button>
       )}
+
+      <style>{`
+        .rdp-root { --rdp-accent: var(--accent); }
+        .rdp-months { display: flex; }
+        .rdp-month { width: 100%; }
+        .rdp-month_caption {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          height: 36px;
+          margin-bottom: 6px;
+        }
+        .rdp-caption_label {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--text-primary);
+          font-family: var(--font-body);
+          text-transform: capitalize;
+        }
+        .rdp-nav {
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          height: 36px;
+          pointer-events: none;
+        }
+        .rdp-button_previous,
+        .rdp-button_next {
+          pointer-events: all;
+          width: 30px; height: 30px;
+          border-radius: 8px;
+          border: 1.5px solid var(--border);
+          background: var(--surface-2);
+          color: var(--text-secondary);
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer;
+          transition: border-color 140ms, background 140ms;
+        }
+        .rdp-button_previous:hover,
+        .rdp-button_next:hover {
+          border-color: var(--accent);
+          background: var(--accent-soft);
+          color: var(--accent);
+        }
+        .rdp-weekdays {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          margin-bottom: 4px;
+        }
+        .rdp-weekday {
+          text-align: center;
+          font-size: 10.5px;
+          font-weight: 700;
+          color: var(--text-muted);
+          padding: 4px 0;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          font-family: var(--font-body);
+        }
+        .rdp-weeks {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        .rdp-week {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          gap: 2px;
+        }
+        .rdp-day {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .rdp-day_button {
+          width: 34px; height: 34px;
+          border-radius: 9px;
+          border: none;
+          background: transparent;
+          color: var(--text-primary);
+          font-size: 12.5px;
+          font-weight: 400;
+          cursor: pointer;
+          font-family: var(--font-body);
+          transition: background 120ms, color 120ms;
+          position: relative;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .rdp-day_button:hover {
+          background: var(--surface-3);
+        }
+        .rdp-selected .rdp-day_button {
+          background: var(--accent) !important;
+          color: #fff !important;
+          font-weight: 600;
+        }
+        .rdp-today .rdp-day_button:not(.rdp-selected .rdp-day_button) {
+          font-weight: 700;
+        }
+        .rdp-today .rdp-day_button::after {
+          content: '';
+          position: absolute;
+          bottom: 4px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 4px; height: 4px;
+          border-radius: 50%;
+          background: var(--accent);
+        }
+        .rdp-selected .rdp-today .rdp-day_button::after {
+          background: #fff;
+        }
+        .rdp-outside .rdp-day_button {
+          color: var(--text-muted);
+          opacity: 0.4;
+        }
+        .rdp-disabled .rdp-day_button {
+          opacity: 0.25;
+          cursor: not-allowed;
+        }
+      `}</style>
     </div>
   )
 }
