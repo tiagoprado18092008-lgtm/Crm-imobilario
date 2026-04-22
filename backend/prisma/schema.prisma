@@ -148,6 +148,7 @@ model User {
   email        String  @unique
   passwordHash String?
   googleId     String? @unique
+  clerkUserId  String? @unique
   role         UserRole @default(CONSULTANT)
   phone        String?
   avatarUrl    String?
