@@ -4,6 +4,7 @@ import {
   Bell, LogOut, User, Menu, Settings, ChevronDown,
   CheckSquare, Clock, AlertCircle, X, Moon, Sun,
 } from 'lucide-react'
+import { useClerk } from '@clerk/clerk-react'
 import { useAuthStore } from '../../store/auth.store'
 import { useUIStore } from '../../store/ui.store'
 import { getInitials } from '../../utils/formatters'
@@ -39,6 +40,7 @@ export const TopBar: React.FC = () => {
   const { toggleSidebar, darkMode, toggleDarkMode } = useUIStore()
   const location = useLocation()
   const navigate = useNavigate()
+  const { signOut } = useClerk()
 
   const segments = location.pathname.split('/').filter(Boolean)
   const baseRoute = '/' + (segments[0] || '')
@@ -75,7 +77,10 @@ export const TopBar: React.FC = () => {
     }
   }
 
-  const handleLogout = () => { logout(); navigate('/login', { replace: true }) }
+  const handleLogout = () => {
+    logout()
+    signOut({ redirectUrl: '/login' })
+  }
 
   const urgentTasks = tasks.filter(t => t.dueDate && isPast(parseISO(t.dueDate)))
   const todayTasks  = tasks.filter(t => t.dueDate && isToday(parseISO(t.dueDate)))
