@@ -13,6 +13,7 @@ interface AuthState {
   startImpersonation: (target: User) => void
   stopImpersonation: () => void
   setCurrentLocation: (loc: Location | null) => void
+  clerkExchange: (clerkToken: string) => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -27,6 +28,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.removeItem('crm_impersonating')
     localStorage.removeItem('crm_location')
     set({ user, token, impersonating: null, currentLocation: null })
+  },
+  clerkExchange: async (clerkToken: string) => {
+    const res = await fetch(`${import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api'}/auth/clerk-exchange`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${clerkToken}`,
+      },
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || 'Erro de autenticação');
+    }
+    const { token, user } = await res.json();
+    localStorage.setItem('crm_token', token);
+    localStorage.setItem('crm_user', JSON.stringify(user));
+    set({ user, token, hydrated: true, impersonating: null, currentLocation: null });
   },
   logout: () => {
     localStorage.removeItem('crm_token')
