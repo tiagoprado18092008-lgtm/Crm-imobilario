@@ -352,10 +352,17 @@ export const receiveInbound = async (
         where: { OR: phoneVariants.flatMap(v => [{ phone: v }, { whatsapp: v }]) },
       });
       if (!contact) {
-        console.log(`[Inbound] Ignored message from unknown number: ${externalId}`);
-        return null;
+        // Allow reply if there's already an outbound conversation with this number
+        const existingConversation = await prisma.conversation.findFirst({
+          where: { channel, externalId: { in: phoneVariants } },
+        });
+        if (!existingConversation) {
+          console.log(`[Inbound] Ignored message from unknown number: ${externalId}`);
+          return null;
+        }
+      } else {
+        resolvedContactId = contact.id;
       }
-      resolvedContactId = contact.id;
     }
   } catch { /* non-critical */ }
 
