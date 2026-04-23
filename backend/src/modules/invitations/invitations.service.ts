@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { UserRole } from '@prisma/client';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
@@ -44,7 +45,7 @@ export const create = async (email: string, role: string, invitedById: string, l
         name: '',
         email,
         passwordHash: '',
-        role: role as any,
+        role: role as UserRole,
         isActive: false,
         onboardingCompleted: false,
         ...(resolvedAgencyId ? { agencyId: resolvedAgencyId } : {}),
@@ -110,10 +111,11 @@ export const verify = async (token: string) => {
 
 export const revoke = async (id: string) => {
   const invitation = await prisma.invitation.findUnique({ where: { id } });
-  if (invitation) {
-    await prisma.user.deleteMany({
-      where: { email: invitation.email, clerkUserId: null, isActive: false },
-    });
+  if (!invitation) {
+    throw Object.assign(new Error('Convite não encontrado'), { status: 404 });
   }
+  await prisma.user.deleteMany({
+    where: { email: invitation.email, clerkUserId: null, isActive: false },
+  });
   return prisma.invitation.delete({ where: { id } });
 };
