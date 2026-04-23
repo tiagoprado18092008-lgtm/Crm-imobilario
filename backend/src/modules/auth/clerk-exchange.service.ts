@@ -23,7 +23,14 @@ export const clerkExchange = async (clerkToken: string): Promise<{ token: string
 
   if (!user) {
     // Fetch Clerk user to get email
-    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+    let clerkUser: Awaited<ReturnType<typeof clerkClient.users.getUser>>;
+    try {
+      clerkUser = await clerkClient.users.getUser(clerkUserId);
+    } catch {
+      const err: any = new Error('Erro ao verificar identidade. Tente novamente.');
+      err.status = 503;
+      throw err;
+    }
     const email: string | undefined = clerkUser.emailAddresses?.[0]?.emailAddress;
 
     if (email) {
@@ -47,6 +54,11 @@ export const clerkExchange = async (clerkToken: string): Promise<{ token: string
           data: { usedAt: new Date() },
         });
       }
+    }
+
+    // If the user found by email already has a different clerkUserId, deny access
+    if (user && user.clerkUserId !== null && user.clerkUserId !== clerkUserId) {
+      user = null as any;
     }
   }
 
