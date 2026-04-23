@@ -40,8 +40,8 @@ export async function initWhatsApp(agencyId: string): Promise<void> {
   console.log(`[WA:${agencyId}] Starting initWhatsApp...`)
 
   await prisma.whatsAppSession.upsert({
-    where: { id: agencyId },
-    create: { id: agencyId, creds: '{}', status: 'CONNECTING' },
+    where: { agencyId },
+    create: { agencyId, creds: '{}', status: 'CONNECTING' },
     update: { status: 'CONNECTING' },
   })
 
@@ -87,8 +87,8 @@ export async function initWhatsApp(agencyId: string): Promise<void> {
         const jid = sock?.user?.id || ''
         s.phone = jid.split(':')[0].replace('@s.whatsapp.net', '') || null
         await prisma.whatsAppSession.upsert({
-          where: { id: agencyId },
-          create: { id: agencyId, creds: '{}', status: 'CONNECTED', phone: s.phone },
+          where: { agencyId },
+          create: { agencyId, creds: '{}', status: 'CONNECTED', phone: s.phone },
           update: { status: 'CONNECTED', phone: s.phone },
         })
         eventBus.emit(`whatsapp_connected:${agencyId}`, { phone: s.phone })
@@ -105,7 +105,7 @@ export async function initWhatsApp(agencyId: string): Promise<void> {
         s.status = 'DISCONNECTED'
         s.sock = null
         await prisma.whatsAppSession.updateMany({
-          where: { id: agencyId },
+          where: { agencyId },
           data: { status: 'DISCONNECTED' },
         })
         if (!isLoggedOut && !isConflict) {
@@ -183,7 +183,7 @@ export async function disconnectWhatsApp(agencyId: string): Promise<void> {
   s.status = 'DISCONNECTED'
   s.phone = null
   await prisma.whatsAppSession.updateMany({
-    where: { id: agencyId },
+    where: { agencyId },
     data: { status: 'DISCONNECTED', phone: null, creds: '{}', keys: null },
   })
 }
@@ -192,10 +192,11 @@ export async function disconnectWhatsApp(agencyId: string): Promise<void> {
 export async function restoreAllSessions(): Promise<void> {
   const rows = await prisma.whatsAppSession.findMany({
     where: { status: 'CONNECTED' },
+    select: { agencyId: true },
   })
   for (const row of rows) {
-    console.log(`[WA] Restoring session for agency: ${row.id}`)
-    await initWhatsApp(row.id).catch(e => console.error(`[WA] Restore error for ${row.id}:`, e))
+    console.log(`[WA] Restoring session for agency: ${row.agencyId}`)
+    await initWhatsApp(row.agencyId).catch(e => console.error(`[WA] Restore error for ${row.agencyId}:`, e))
     // Wait 3s between sessions to avoid memory spike on startup
     await new Promise(r => setTimeout(r, 3000))
   }

@@ -27,7 +27,7 @@ function writeKeysToFile(agencyId: string, data: Record<string, any>) {
 
 export async function usePrismaAuthState(agencyId: string) {
   const loadCreds = async () => {
-    const row = await prisma.whatsAppSession.findUnique({ where: { id: agencyId } })
+    const row = await prisma.whatsAppSession.findUnique({ where: { agencyId } })
     if (row?.creds && row.creds !== '{}') {
       try { return JSON.parse(row.creds, BufferJSON.reviver) } catch {}
     }
@@ -41,8 +41,8 @@ export async function usePrismaAuthState(agencyId: string) {
     Object.assign(creds, updatedCreds)
     try {
       await prisma.whatsAppSession.upsert({
-        where: { id: agencyId },
-        create: { id: agencyId, creds: JSON.stringify(creds, BufferJSON.replacer), status: 'CONNECTING' },
+        where: { agencyId },
+        create: { agencyId, creds: JSON.stringify(creds, BufferJSON.replacer), status: 'CONNECTING' },
         update: { creds: JSON.stringify(creds, BufferJSON.replacer) },
       })
     } catch (err) {

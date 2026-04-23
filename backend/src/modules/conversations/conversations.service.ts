@@ -166,8 +166,8 @@ export const createOrFind = async (
 export const findOrReopenForInbound = async (
   channel: string,
   externalId: string,
-  contactId?: string,
-  locationId?: string
+  contactId: string | undefined,
+  locationId: string
 ) => {
   const canonical = normalizeExternalId(externalId);
   const digits = canonical.replace(/\D/g, '');
@@ -182,7 +182,7 @@ export const findOrReopenForInbound = async (
       where: {
         channel,
         externalId: { in: variants },
-        ...(locationId ? { locationId } : {}),
+        locationId,
       },
       orderBy: { lastMessageAt: 'desc' },
     });
@@ -203,12 +203,7 @@ export const findOrReopenForInbound = async (
       return existing;
     }
 
-    let resolvedLocationId = locationId || null;
-    if (!resolvedLocationId) {
-      const firstLocation = await tx.location.findFirst({ select: { id: true } });
-      resolvedLocationId = firstLocation?.id || null;
-    }
-    console.log(`[Inbound] Created new conversation for ${canonical} (channel: ${channel})`);
+    console.log(`[Inbound] Created new conversation for ${canonical} (channel: ${channel}, location: ${locationId})`);
     return tx.conversation.create({
       data: {
         channel,
@@ -216,7 +211,7 @@ export const findOrReopenForInbound = async (
         status: 'OPEN',
         isRead: false,
         contactId: contactId || null,
-        locationId: resolvedLocationId,
+        locationId,
         lastMessageAt: new Date(),
       },
     });
@@ -327,18 +322,21 @@ export const receiveInbound = async (
   metadata?: string,
   agencyId?: string
 ) => {
-  // Resolve locationId from agencyId
-  let resolvedLocationId: string | null = null;
-  if (agencyId) {
-    const loc = await prisma.location.findFirst({ where: { agencyId }, select: { id: true } });
-    resolvedLocationId = loc?.id || null;
-  }
-  if (!resolvedLocationId) {
-    const loc = await prisma.location.findFirst({ select: { id: true } });
-    resolvedLocationId = loc?.id || null;
+  // Multi-tenant integrations (like per-agency WhatsApp sockets) MUST supply agencyId.
+  // Without it, we cannot safely route the message — dropping it prevents cross-tenant leaks.
+  if (!agencyId) {
+    console.warn(`[Inbound] Ignored ${channel} message — no agencyId supplied (externalId=${externalId})`);
+    return null;
   }
 
-  // Only process messages from existing contacts — unknown numbers are ignored
+  const loc = await prisma.location.findFirst({ where: { agencyId }, select: { id: true } });
+  const resolvedLocationId: string | null = loc?.id || null;
+  if (!resolvedLocationId) {
+    console.warn(`[Inbound] Ignored ${channel} message — agency ${agencyId} has no locations`);
+    return null;
+  }
+
+  // Only process messages from existing contacts of THIS agency — unknown numbers ignored
   let resolvedContactId: string | undefined;
   try {
     if (channel === 'WHATSAPP' || channel === 'SMS') {
@@ -349,15 +347,25 @@ export const receiveInbound = async (
       if (withoutPT) phoneVariants.push(withoutPT, `+${withoutPT}`)
 
       const contact = await prisma.contact.findFirst({
-        where: { OR: phoneVariants.flatMap(v => [{ phone: v }, { whatsapp: v }]) },
+        where: {
+          AND: [
+            { OR: phoneVariants.flatMap(v => [{ phone: v }, { whatsapp: v }]) },
+            { location: { agencyId } },
+          ],
+        },
       });
       if (!contact) {
         // Allow reply if there's already an outbound conversation with this number
+        // on a location owned by this agency.
         const existingConversation = await prisma.conversation.findFirst({
-          where: { channel, externalId: { in: phoneVariants } },
+          where: {
+            channel,
+            externalId: { in: phoneVariants },
+            location: { agencyId },
+          },
         });
         if (!existingConversation) {
-          console.log(`[Inbound] Ignored message from unknown number: ${externalId}`);
+          console.log(`[Inbound] Ignored message from unknown number: ${externalId} (agency=${agencyId})`);
           return null;
         }
       } else {
@@ -366,7 +374,7 @@ export const receiveInbound = async (
     }
   } catch { /* non-critical */ }
 
-  const conversation = await findOrReopenForInbound(channel, externalId, resolvedContactId, resolvedLocationId || undefined);
+  const conversation = await findOrReopenForInbound(channel, externalId, resolvedContactId, resolvedLocationId);
 
   const message = await prisma.message.create({
     data: {
