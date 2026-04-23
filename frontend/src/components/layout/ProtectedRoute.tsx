@@ -17,6 +17,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   const { can } = usePermissions()
   const { isSignedIn, isLoaded: clerkLoaded } = useAuth()
 
+  // Wait for both Clerk and local store to be ready
   if (!hydrated || !clerkLoaded) {
     return (
       <div className="flex items-center justify-center h-screen" style={{ background: '#f0f2f8' }}>
@@ -26,11 +27,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     )
   }
 
+  // Clerk signed out — clear CRM store and redirect to login
   if (!isSignedIn) {
     if (token || user) logout()
     return <Navigate to="/login" replace />
   }
 
+  // Clerk signed in but no CRM token yet — redirect to login to trigger exchange
   if (!token || !user) {
     return <Navigate to="/login" replace />
   }
@@ -39,7 +42,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     return <Navigate to="/dashboard" replace />
   }
 
-  // Granular permission check
   if (module && action && !can(module, action)) {
     return <Navigate to="/403" replace />
   }
