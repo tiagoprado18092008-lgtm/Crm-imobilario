@@ -18,58 +18,46 @@ export const clerkExchange = async (clerkToken: string): Promise<{ token: string
 
   const clerkUserId: string = payload.sub;
 
-  // Try lookup by clerkUserId first
+  // Try lookup by clerkUserId first (returning users)
   let user = await prisma.user.findUnique({ where: { clerkUserId } });
 
-  // Fetch full Clerk user to get email (JWT payload may not include it)
-  const clerkUser = await clerkClient.users.getUser(clerkUserId);
-  const email: string | undefined = clerkUser.emailAddresses?.[0]?.emailAddress;
+  if (!user) {
+    // Fetch Clerk user to get email
+    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+    const email: string | undefined = clerkUser.emailAddresses?.[0]?.emailAddress;
 
-  if (!user && email) {
-    user = await prisma.user.findUnique({ where: { email } });
-    if (user) {
-      // First-time Clerk login: save clerkUserId for future lookups
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: { clerkUserId },
-      });
+    if (email) {
+      user = await prisma.user.findUnique({ where: { email } });
+
+      if (user && user.clerkUserId === null) {
+        // First-time Clerk login for an invited user — associate clerkUserId, activate, sync name
+        const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || email.split('@')[0];
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            clerkUserId,
+            isActive: true,
+            name: name || user.name || email.split('@')[0],
+          },
+        });
+
+        // Mark the invitation as used
+        await prisma.invitation.updateMany({
+          where: { email, usedAt: null },
+          data: { usedAt: new Date() },
+        });
+      }
     }
-  }
-
-  // Auto-provision: create CRM user from Clerk data if not found
-  if (!user && email) {
-    const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || email.split('@')[0];
-
-    // Find the existing agency to attach this user to
-    const agency = await prisma.agency.findFirst();
-    if (!agency) {
-      const err: any = new Error('Agência não configurada');
-      err.status = 500;
-      throw err;
-    }
-
-    user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        clerkUserId,
-        passwordHash: '',
-        role: 'CONSULTANT',
-        agencyId: agency.id,
-        isActive: true,
-        onboardingCompleted: true,
-      },
-    });
   }
 
   if (!user) {
-    const err: any = new Error('Utilizador não encontrado no CRM');
+    const err: any = new Error('Sem acesso. Contacte o administrador da agência.');
     err.status = 401;
     throw err;
   }
 
   if (!user.isActive) {
-    const err: any = new Error('Conta desativada');
+    const err: any = new Error('Conta desativada. Contacte o administrador.');
     err.status = 401;
     throw err;
   }
