@@ -15,7 +15,7 @@ const getTransporter = () => {
 export const create = async (email: string, role: string, invitedById: string, locationId?: string, permissions?: any, agencyId?: string) => {
   // Check if email already registered
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) throw Object.assign(new Error('Email já registado'), { status: 409 });
+  if (existing) throw Object.assign(new Error('Email já registado na plataforma'), { status: 409 });
 
   // Invalidate previous pending invitations for same email
   await prisma.invitation.updateMany({
@@ -23,17 +23,43 @@ export const create = async (email: string, role: string, invitedById: string, l
     data: { expiresAt: new Date() }, // expire them
   });
 
+  // Resolve agencyId and locationId from params or from the inviter
+  let resolvedAgencyId = agencyId;
+  let resolvedLocationId = locationId;
+  if (!resolvedAgencyId || !resolvedLocationId) {
+    const inviter = await prisma.user.findUnique({ where: { id: invitedById } });
+    if (inviter) {
+      if (!resolvedAgencyId && inviter.agencyId) resolvedAgencyId = inviter.agencyId;
+      if (!resolvedLocationId && inviter.locationId) resolvedLocationId = inviter.locationId;
+    }
+  }
+
   const token = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-  const invitation = await prisma.invitation.create({
-    data: {
-      email, role, token, invitedById, expiresAt,
-      ...(locationId ? { locationId } : {}),
-      ...(agencyId ? { agencyId } : {}),
-      ...(permissions ? { permissions } : {}),
-    },
-  });
+  // Atomically create the inactive placeholder User and the Invitation
+  const [, invitation] = await prisma.$transaction([
+    prisma.user.create({
+      data: {
+        name: '',
+        email,
+        passwordHash: '',
+        role: role as any,
+        isActive: false,
+        onboardingCompleted: false,
+        ...(resolvedAgencyId ? { agencyId: resolvedAgencyId } : {}),
+        ...(resolvedLocationId ? { locationId: resolvedLocationId } : {}),
+      },
+    }),
+    prisma.invitation.create({
+      data: {
+        email, role, token, invitedById, expiresAt,
+        ...(resolvedLocationId ? { locationId: resolvedLocationId } : {}),
+        ...(resolvedAgencyId ? { agencyId: resolvedAgencyId } : {}),
+        ...(permissions ? { permissions } : {}),
+      },
+    }),
+  ]);
 
   // Send invite email
   const inviteUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/invite/${token}`;
@@ -83,5 +109,11 @@ export const verify = async (token: string) => {
 };
 
 export const revoke = async (id: string) => {
+  const invitation = await prisma.invitation.findUnique({ where: { id } });
+  if (invitation) {
+    await prisma.user.deleteMany({
+      where: { email: invitation.email, clerkUserId: null, isActive: false },
+    });
+  }
   return prisma.invitation.delete({ where: { id } });
 };
