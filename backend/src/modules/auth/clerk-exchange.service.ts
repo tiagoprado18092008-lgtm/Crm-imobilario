@@ -17,10 +17,13 @@ export const clerkExchange = async (clerkToken: string): Promise<{ token: string
   }
 
   const clerkUserId: string = payload.sub;
-  const email: string | undefined = payload.email;
 
-  // Try lookup by clerkUserId first, then fall back to email
+  // Try lookup by clerkUserId first
   let user = await prisma.user.findUnique({ where: { clerkUserId } });
+
+  // Fetch full Clerk user to get email (JWT payload may not include it)
+  const clerkUser = await clerkClient.users.getUser(clerkUserId);
+  const email: string | undefined = clerkUser.emailAddresses?.[0]?.emailAddress;
 
   if (!user && email) {
     user = await prisma.user.findUnique({ where: { email } });
@@ -35,7 +38,6 @@ export const clerkExchange = async (clerkToken: string): Promise<{ token: string
 
   // Auto-provision: create CRM user from Clerk data if not found
   if (!user && email) {
-    const clerkUser = await clerkClient.users.getUser(clerkUserId);
     const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || email.split('@')[0];
 
     // Find the existing agency to attach this user to

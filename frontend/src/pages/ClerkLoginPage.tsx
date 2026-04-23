@@ -1,24 +1,33 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { SignIn, useAuth, useSession } from '@clerk/clerk-react'
+import { SignIn, useAuth, useSession, useClerk } from '@clerk/clerk-react'
 import { useAuthStore } from '../store/auth.store'
+
+const Spinner = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f0f2f8' }}>
+    <div style={{
+      width: 32, height: 32, borderRadius: '50%',
+      border: '4px solid #6366f1', borderTopColor: 'transparent',
+      animation: 'spin 0.7s linear infinite'
+    }} />
+    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+  </div>
+)
 
 export const ClerkLoginPage: React.FC = () => {
   const { isSignedIn, isLoaded } = useAuth()
   const { session } = useSession()
-  const { clerkExchange, token, hydrated } = useAuthStore()
+  const { signOut } = useClerk()
+  const { clerkExchange, token, hydrated, logout } = useAuthStore()
   const navigate = useNavigate()
   const exchanging = useRef(false)
+  const [exchangeFailed, setExchangeFailed] = useState(false)
 
   useEffect(() => {
-    // Wait for everything to be ready
     if (!isLoaded || !hydrated) return
-    // Already have CRM token — go to dashboard
     if (isSignedIn && token) { navigate('/dashboard', { replace: true }); return }
-    // Not signed into Clerk — show login form (do nothing)
     if (!isSignedIn || !session) return
-    // Signed into Clerk but no CRM token — exchange
-    if (exchanging.current) return
+    if (exchanging.current || exchangeFailed) return
     exchanging.current = true
 
     session.getToken().then(async (clerkToken) => {
@@ -28,38 +37,19 @@ export const ClerkLoginPage: React.FC = () => {
         navigate('/dashboard', { replace: true })
       } catch (err) {
         console.error('Clerk exchange failed:', err)
+        // Sign out of Clerk so user can retry with correct account
+        logout()
+        await signOut()
         exchanging.current = false
+        setExchangeFailed(true)
       }
     })
-  }, [isLoaded, hydrated, isSignedIn, session, token, clerkExchange, navigate])
+  }, [isLoaded, hydrated, isSignedIn, session, token, clerkExchange, navigate, exchangeFailed, logout, signOut])
 
-  // Show spinner while Clerk or store is loading
-  if (!isLoaded || !hydrated) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f0f2f8' }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: '50%',
-          border: '4px solid #6366f1', borderTopColor: 'transparent',
-          animation: 'spin 0.7s linear infinite'
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    )
-  }
+  if (!isLoaded || !hydrated) return <Spinner />
 
-  // Clerk signed in but waiting for exchange — show spinner
-  if (isSignedIn && !token) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f0f2f8' }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: '50%',
-          border: '4px solid #6366f1', borderTopColor: 'transparent',
-          animation: 'spin 0.7s linear infinite'
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    )
-  }
+  // Signed into Clerk, waiting for exchange
+  if (isSignedIn && !token && !exchangeFailed) return <Spinner />
 
   return (
     <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f0f2f8' }}>
