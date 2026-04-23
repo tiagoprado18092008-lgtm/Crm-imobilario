@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/auth.store'
 import { PageSpinner } from '../../components/ui/Spinner'
 import { ROLE_LABELS } from '../../utils/constants'
 import { getInitials, formatDate, isImageAvatar } from '../../utils/formatters'
+import { CustomSelect } from '../../components/ui/CustomSelect'
 
 interface Member { id: string; name: string; email: string; role: string; isActive: boolean; avatarUrl?: string; createdAt: string }
 interface Invitation { id: string; email: string; role: string; usedAt: string | null; expiresAt: string }
@@ -189,9 +190,11 @@ export const TeamPage: React.FC = () => {
               </div>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7a99', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Função</label>
-                <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #dce3ef', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff' }}>
-                  {INVITE_ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
+                <CustomSelect
+                  value={inviteRole}
+                  onChange={v => setInviteRole(v)}
+                  options={INVITE_ROLES}
+                />
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button type="button" onClick={() => setInviteOpen(false)} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid #dce3ef', background: '#fff', color: '#6b7a99', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>

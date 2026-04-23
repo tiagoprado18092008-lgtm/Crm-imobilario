@@ -10,6 +10,7 @@ import { getCommSettings, updateCommSettings, getCommStatus, triggerTwilioSetup,
 import { getWhatsAppStatus, connectWhatsApp, disconnectWhatsApp as disconnectWA } from '../api/whatsapp.api'
 import { listNumbers, searchNumbers, purchaseNumber, releaseNumber, updateNumber } from '../api/phone-numbers.api'
 import { useUIStore } from '../store/ui.store'
+import { CustomSelect } from '../components/ui/CustomSelect'
 
 const COUNTRIES = [
   { code: 'PT', name: 'Portugal' },
@@ -1250,28 +1251,25 @@ export const SettingsPage: React.FC = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text-muted)' }}>País</label>
-                          <select
+                          <CustomSelect
                             value={numberSearchCountry}
-                            onChange={e => setNumberSearchCountry(e.target.value)}
-                            className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
-                            style={{ border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)' }}
-                          >
-                            {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.name} ({c.code})</option>)}
-                          </select>
+                            onChange={v => setNumberSearchCountry(v)}
+                            options={COUNTRIES.map(c => ({ value: c.code, label: `${c.name} (${c.code})` }))}
+                            searchable
+                          />
                         </div>
                         <div>
                           <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text-muted)' }}>Tipo</label>
-                          <select
+                          <CustomSelect
                             value={numberSearchType}
-                            onChange={e => setNumberSearchType(e.target.value)}
-                            className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
-                            style={{ border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)' }}
-                          >
-                            <option value="">Auto (recomendado)</option>
-                            <option value="local">Local</option>
-                            <option value="mobile">Mobile</option>
-                            <option value="tollFree">Gratuito</option>
-                          </select>
+                            onChange={v => setNumberSearchType(v)}
+                            options={[
+                              { value: '', label: 'Auto (recomendado)' },
+                              { value: 'local', label: 'Local' },
+                              { value: 'mobile', label: 'Mobile' },
+                              { value: 'tollFree', label: 'Gratuito' },
+                            ]}
+                          />
                         </div>
                       </div>
                       <button

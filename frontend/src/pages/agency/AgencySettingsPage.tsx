@@ -3,6 +3,7 @@ import { Copy, RefreshCw } from 'lucide-react'
 import { getMyAgency, updateAgency, uploadAgencyLogo, regenerateApiKey } from '../../api/agency.api'
 import { useUIStore } from '../../store/ui.store'
 import { PageSpinner } from '../../components/ui/Spinner'
+import { CustomSelect } from '../../components/ui/CustomSelect'
 
 const NICHES = [
   'Agência imobiliária', 'Consultoria imobiliária', 'Gestão de propriedades',
@@ -206,16 +207,20 @@ export const AgencySettingsPage: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
             <div>
               <label style={label}>Nicho de negócio</label>
-              <select style={{ ...input, appearance: 'none', backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath fill=\'%236b7280\' d=\'M6 8L1 3h10z\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: 32 }} value={form.niche} onChange={set('niche')}>
-                <option value="">Seleccionar...</option>
-                {NICHES.map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
+              <CustomSelect
+                value={form.niche}
+                onChange={v => setForm(f => ({ ...f, niche: v }))}
+                placeholder="Seleccionar..."
+                options={NICHES.map(n => ({ value: n, label: n }))}
+              />
             </div>
             <div>
               <label style={label}>Moeda da Empresa <span style={{ fontWeight: 400, color: '#9ca3af', fontSize: 12 }}>ⓘ</span></label>
-              <select style={{ ...input, appearance: 'none', backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath fill=\'%236b7280\' d=\'M6 8L1 3h10z\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: 32 }} value={form.currency} onChange={set('currency')}>
-                {CURRENCIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
+              <CustomSelect
+                value={form.currency}
+                onChange={v => setForm(f => ({ ...f, currency: v }))}
+                options={CURRENCIES.map(c => ({ value: c.value, label: c.label }))}
+              />
             </div>
           </div>
 
