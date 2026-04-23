@@ -211,7 +211,7 @@ export const ContactsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table / Cards */}
       {loading ? <PageSpinner /> : contacts.length === 0 ? (
         <EmptyState
           title={hasFilters ? 'Sem resultados' : 'Nenhum contacto encontrado'}
@@ -220,7 +220,84 @@ export const ContactsPage: React.FC = () => {
           onAction={() => { setEditContact(undefined); setShowModal(true) }}
         />
       ) : (
-        <div style={{
+        <>
+        {/* ── Mobile cards (hidden on sm+) ── */}
+        <div className="sm:hidden" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {contacts.map(contact => {
+            const st = STATUS_STYLE[contact.status] ?? STATUS_STYLE.NEW
+            const tp = TYPE_STYLE[contact.type] ?? TYPE_STYLE.BUYER
+            const color = avatarColor(contact.name)
+            return (
+              <div
+                key={contact.id}
+                onClick={() => navigate(`/contacts/${contact.id}`)}
+                style={{
+                  background: 'var(--surface)', borderRadius: 12,
+                  border: '1px solid var(--border)', padding: '12px 14px',
+                  display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                }}
+              >
+                <div style={{
+                  width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                  background: color, color: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 700,
+                }}>
+                  {getInitials(contact.name)}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-primary)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {contact.name}
+                  </p>
+                  {contact.phone && (
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <PhoneIcon size={10} /> {contact.phone}
+                    </p>
+                  )}
+                  {contact.email && !contact.phone && (
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {contact.email}
+                    </p>
+                  )}
+                  <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+                    <Pill bg={tp.bg} color={tp.color} label={tp.label} />
+                    <Pill bg={st.bg} color={st.color} label={st.label} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                  <button
+                    onClick={() => { setEditContact(contact); setShowModal(true) }}
+                    style={{ padding: 8, borderRadius: 8, border: 'none', background: 'var(--surface-2)', cursor: 'pointer', color: 'var(--text-muted)', minHeight: 36, minWidth: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Edit size={14} />
+                  </button>
+                  <button
+                    onClick={() => setDeleteId(contact.id)}
+                    style={{ padding: 8, borderRadius: 8, border: 'none', background: 'var(--surface-2)', cursor: 'pointer', color: 'var(--danger)', minHeight: 36, minWidth: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+          {/* Pagination mobile */}
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '8px 0' }}>
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.4 : 1, fontSize: 13, color: 'var(--text-primary)' }}>
+                ← Anterior
+              </button>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{page} / {totalPages}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: page === totalPages ? 'not-allowed' : 'pointer', opacity: page === totalPages ? 0.4 : 1, fontSize: 13, color: 'var(--text-primary)' }}>
+                Próxima →
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* ── Desktop table (hidden on mobile) ── */}
+        <div className="hidden sm:block" style={{
           borderRadius: 12, overflow: 'hidden',
           border: '1px solid var(--border)',
           background: 'var(--surface)',
@@ -402,6 +479,7 @@ export const ContactsPage: React.FC = () => {
             )}
           </div>
         </div>
+        </>
       )}
 
       {/* Create / Edit Modal */}

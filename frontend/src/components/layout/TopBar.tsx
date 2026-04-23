@@ -173,7 +173,7 @@ export const TopBar: React.FC = () => {
 
           {notifOpen && (
             <div style={{
-              position: 'absolute', right: 0, top: 44, width: 340, zIndex: 50,
+              position: 'fixed', right: 8, top: 60, width: 'min(340px, calc(100vw - 16px))', zIndex: 50,
               background: 'var(--surface)',
               borderRadius: 14, border: '1px solid var(--border)',
               boxShadow: '0 16px 48px rgba(0,0,0,0.12)',
@@ -323,7 +323,7 @@ export const TopBar: React.FC = () => {
 
           {dropdownOpen && (
             <div style={{
-              position: 'absolute', right: 0, top: 'calc(100% + 8px)', width: 230, zIndex: 50,
+              position: 'fixed', right: 8, top: 60, width: 'min(230px, calc(100vw - 16px))', zIndex: 50,
               background: 'var(--surface)',
               borderRadius: 14, border: '1px solid var(--border)',
               boxShadow: '0 16px 48px rgba(0,0,0,0.12)',

@@ -1367,7 +1367,7 @@ export const AppointmentsPage: React.FC = () => {
               onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none' }}
             />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12 }}>
             <CustomSelect
               label="Tipo"
               value={form.type}

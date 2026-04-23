@@ -268,7 +268,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
       {contactType === 'BUYER' && (
         <div style={sectionStyle}>
           <p style={sectionTitleStyle}>Perfil de Compra</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12, marginBottom: 12 }}>
             <div>
               <label style={labelStyle}>Budget Mínimo (€)</label>
               <input
@@ -288,7 +288,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
               />
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12, marginBottom: 16 }}>
             <Select
               label="Tipo de Imóvel Pretendido"
               placeholder="Selecionar..."
@@ -339,7 +339,7 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
                 style={inputStyle}
               />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12 }}>
               <div>
                 <label style={labelStyle}>Asking Price (€)</label>
                 <input

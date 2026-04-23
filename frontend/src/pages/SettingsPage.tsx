@@ -189,7 +189,7 @@ const GuidePanel: React.FC<{ status: any; onNavigate: (tab: any) => void }> = ({
         </div>
 
         {/* Status overview */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {[
             { key: 'whatsapp', label: 'WhatsApp', color: '#25d366' },
             { key: 'email', label: 'Email', color: 'var(--accent)' },
@@ -702,7 +702,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                      <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 12 }}>
                         {[
                           { icon: '📱', title: 'Sem API', desc: 'Não precisas de conta Meta Business' },
                           { icon: '⚡', title: 'Rápido', desc: 'Liga em segundos com QR Code' },
@@ -746,7 +746,7 @@ export const SettingsPage: React.FC = () => {
                   </div>
                   <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#15803d' }}>O que acontece automaticamente</h4>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 8 }}>
                   {[
                     'Mensagens recebidas aparecem em tempo real nas Conversas',
                     'Contactos criados automaticamente para números novos',
@@ -814,7 +814,7 @@ export const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>SMTP Host</label>
                     <input
@@ -1248,7 +1248,7 @@ export const SettingsPage: React.FC = () => {
                       <div className="rounded-xl p-3 text-xs" style={{ background: 'rgba(46,107,230,0.08)', color: 'var(--accent)', border: '1px solid rgba(46,107,230,0.2)' }}>
                         💡 Para Portugal, o Twilio raramente disponibiliza números. Recomendamos <strong>Reino Unido (GB)</strong> ou <strong>Estados Unidos (US)</strong>.
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text-muted)' }}>País</label>
                           <CustomSelect
@@ -1406,7 +1406,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
 
                 {/* Theme preview cards */}
-                <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                   {[
                     { label: 'Modo Claro', dark: false, preview: { bg: '#f0f2f8', card: '#ffffff', text: '#0f172a', sub: '#64748b' } },
                     { label: 'Modo Escuro', dark: true, preview: { bg: '#0f172a', card: '#1e293b', text: '#f1f5f9', sub: '#94a3b8' } },

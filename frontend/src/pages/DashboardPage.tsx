@@ -235,7 +235,7 @@ export const DashboardPage: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* Row 1 — 4 primary KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      <div className="grid grid-cols-2 sm:grid-cols-4" style={{ gap: 14 }}>
         <KpiCard
           title="Contactos"
           value={summary?.totalContacts ?? 0}
@@ -279,7 +279,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Row 2 — 3 secondary KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 14 }}>
         <KpiCard
           title="Oportunidades Abertas"
           value={summary?.openOpportunities ?? 0}
@@ -305,7 +305,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Row 3 — Tasks + Pipeline funnel */}
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 14 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-[3fr_2fr]" style={{ gap: 14 }}>
         {sectionCard(
           <>
             {cardHeader(
@@ -415,7 +415,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* Row 4 — Appointments + Source conversion */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 14 }}>
         {sectionCard(
           <>
             {cardHeader(

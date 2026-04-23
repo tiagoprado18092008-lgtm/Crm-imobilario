@@ -281,7 +281,67 @@ export const PropertiesPage: React.FC = () => {
           onAction={() => { setEditProp(undefined); setShowModal(true) }}
         />
       ) : (
-        <div style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+        <>
+        {/* ── Mobile cards ── */}
+        <div className="sm:hidden" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {filtered.map(prop => (
+            <div
+              key={prop.id}
+              onClick={() => navigate(`/properties/${prop.id}`)}
+              style={{
+                background: 'var(--surface)', borderRadius: 12,
+                border: '1px solid var(--border)', padding: '12px 14px',
+                display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              }}
+            >
+              <div style={{
+                width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                background: 'var(--accent-soft)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Building2 size={18} style={{ color: 'var(--accent)' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {prop.title}
+                </p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {prop.address}
+                </p>
+                <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Badge variant={statusVariant[prop.status]} small>{PROPERTY_STATUS_LABELS[prop.status]}</Badge>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{formatCurrency(prop.price)}</span>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{PROPERTY_TYPE_LABELS[prop.type]}</span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                <button
+                  onClick={() => { setEditProp(prop); setShowModal(true) }}
+                  style={{ padding: 8, borderRadius: 8, border: 'none', background: 'var(--surface-2)', cursor: 'pointer', color: 'var(--text-muted)', minHeight: 36, minWidth: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Edit size={14} />
+                </button>
+                <button
+                  onClick={() => setDeleteId(prop.id)}
+                  style={{ padding: 8, borderRadius: 8, border: 'none', background: 'var(--surface-2)', cursor: 'pointer', color: 'var(--danger)', minHeight: 36, minWidth: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '8px 0' }}>
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.4 : 1, fontSize: 13, color: 'var(--text-primary)' }}>← Anterior</button>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{page} / {totalPages}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: page === totalPages ? 'not-allowed' : 'pointer', opacity: page === totalPages ? 0.4 : 1, fontSize: 13, color: 'var(--text-primary)' }}>Próxima →</button>
+            </div>
+          )}
+        </div>
+
+        {/* ── Desktop table ── */}
+        <div className="hidden sm:block" style={{ background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -367,6 +427,7 @@ export const PropertiesPage: React.FC = () => {
             </div>
           )}
         </div>
+        </>
       )}
 
       <Modal

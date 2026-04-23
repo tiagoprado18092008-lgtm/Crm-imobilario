@@ -286,7 +286,7 @@ export const ProfilePage: React.FC = () => {
           <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Aparência</h3>
           <div>
             <label className="block text-xs font-semibold mb-3 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Tema</label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
                 { id: 'light', label: 'Modo Claro', bg: '#f8fafc', border: '#e2e8f0', active: !darkMode },
                 { id: 'dark', label: 'Modo Escuro', bg: '#0a0f1e', border: '#1e293b', active: darkMode },

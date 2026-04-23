@@ -50,7 +50,7 @@ export const AppShell: React.FC = () => {
         <TopBar />
         <main
           className={`flex-1 overflow-y-auto${impersonating ? ' pt-10' : ''}`}
-          style={{ padding: '24px 28px' }}
+          style={{ padding: 'clamp(12px, 4vw, 28px)' }}
         >
           <ErrorBoundary inline>
             <Outlet />

@@ -9,6 +9,7 @@ import type { User } from '../types'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
+import { CustomSelect } from '../components/ui/CustomSelect'
 import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
 import { PageSpinner } from '../components/ui/Spinner'
@@ -93,7 +94,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, supervisors, onSuccess, onCan
 
   return (
     <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="col-span-2">
           <Input label="Nome" required error={errors.name?.message} {...register('name')} />
         </div>
@@ -335,13 +336,12 @@ export const UsersPage: React.FC = () => {
                 </div>
                 <div style={{ width: 160 }}>
                   <label className="block text-xs font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>Função</label>
-                  <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}
-                    className="w-full rounded-xl px-3 py-2.5 text-sm focus:outline-none"
-                    style={{ border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)' }}>
-                    {Object.entries(ROLE_LABELS).filter(([k]) => k !== 'ADMIN').map(([v, l]) => (
-                      <option key={v} value={v}>{l}</option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    value={inviteRole}
+                    onChange={v => setInviteRole(v)}
+                    options={Object.entries(ROLE_LABELS).filter(([k]) => k !== 'ADMIN').map(([v, l]) => ({ value: v, label: l }))}
+                    size="sm"
+                  />
                 </div>
               </div>
               <button onClick={handleInvite} disabled={inviting || !inviteEmail}
