@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles, module, action }) => {
-  const { token, user, hydrated } = useAuthStore()
+  const { token, user, hydrated, logout } = useAuthStore()
   const { can } = usePermissions()
   const { isSignedIn, isLoaded: clerkLoaded } = useAuth()
 
@@ -27,6 +27,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   }
 
   if (!isSignedIn) {
+    if (token || user) logout()
     return <Navigate to="/login" replace />
   }
 

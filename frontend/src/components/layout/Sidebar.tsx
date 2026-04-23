@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { CasaFlowLogo } from '../../assets/casaflow-logo'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useClerk } from '@clerk/clerk-react'
 import { useAuthStore } from '../../store/auth.store'
 import { getInitials } from '../../utils/formatters'
 import { ROLE_LABELS } from '../../utils/constants'
@@ -26,6 +27,7 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   const { user, logout } = useAuthStore()
   const { crmName } = useUIStore()
   const navigate = useNavigate()
+  const { signOut } = useClerk()
   const { can, isAgencyAdmin, isLocationAdmin } = usePermissions()
   const isAgencyManager = isAgencyAdmin
   const isDirector = isAgencyManager
@@ -57,7 +59,7 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const handleLogout = () => { logout(); navigate('/login', { replace: true }) }
+  const handleLogout = () => { logout(); signOut({ redirectUrl: '/login' }) }
 
   const crmItems: NavItem[] = [
     { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
