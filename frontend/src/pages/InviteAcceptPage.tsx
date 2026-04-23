@@ -76,6 +76,7 @@ export const InviteAcceptPage: React.FC = () => {
       <SignUp
         routing="hash"
         initialValues={{ emailAddress: email }}
+        afterSignUpUrl="/login"
       />
     </main>
   )

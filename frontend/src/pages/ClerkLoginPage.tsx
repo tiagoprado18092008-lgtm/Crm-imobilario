@@ -21,12 +21,21 @@ export const ClerkLoginPage: React.FC = () => {
   const { clerkExchange, token, hydrated, logout } = useAuthStore()
   const navigate = useNavigate()
   const exchanging = useRef(false)
+  const lastSessionId = useRef<string | null>(null)
   const [exchangeFailed, setExchangeFailed] = useState(false)
 
   useEffect(() => {
     if (!isLoaded || !hydrated) return
     if (isSignedIn && token) { navigate('/dashboard', { replace: true }); return }
     if (!isSignedIn || !session) return
+
+    // Reset failed state if the session changed (user signed in with a different account)
+    if (lastSessionId.current !== session.id) {
+      lastSessionId.current = session.id
+      exchanging.current = false
+      setExchangeFailed(false)
+    }
+
     if (exchanging.current || exchangeFailed) return
     exchanging.current = true
 
