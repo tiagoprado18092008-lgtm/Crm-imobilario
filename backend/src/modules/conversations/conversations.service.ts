@@ -338,49 +338,24 @@ export const receiveInbound = async (
     resolvedLocationId = loc?.id || null;
   }
 
-  // Auto-create or find a contact matching the sender, using profileName if available
+  // Only process messages from existing contacts — unknown numbers are ignored
   let resolvedContactId: string | undefined;
   try {
-    const meta = metadata ? JSON.parse(metadata) : {};
-    const profileName: string | undefined = meta.profileName;
-
     if (channel === 'WHATSAPP' || channel === 'SMS') {
-      // Build all number variants to match regardless of formatting
       const digits = externalId.replace(/\D/g, '')
       const withPlus = `+${digits}`
       const withoutPT = digits.startsWith('351') && digits.length === 12 ? digits.slice(3) : null
       const phoneVariants: string[] = [digits, withPlus, externalId]
       if (withoutPT) phoneVariants.push(withoutPT, `+${withoutPT}`)
-      const phone = withPlus
 
-      let contact = await prisma.contact.findFirst({
+      const contact = await prisma.contact.findFirst({
         where: { OR: phoneVariants.flatMap(v => [{ phone: v }, { whatsapp: v }]) },
       });
       if (!contact) {
-        // Create a new contact automatically — use profileName or fall back to phone number
-        const contactName = profileName || phone;
-        const defaultUser = await prisma.user.findFirst({
-          where: resolvedLocationId
-            ? { locationId: resolvedLocationId }
-            : { role: { in: ['AGENCY_OWNER', 'AGENCY_ADMIN'] } },
-          orderBy: { createdAt: 'asc' },
-          select: { id: true },
-        });
-        if (defaultUser) {
-          contact = await prisma.contact.create({
-            data: {
-              name: contactName,
-              phone,
-              whatsapp: phone,
-              source: 'WHATSAPP_INBOUND',
-              locationId: resolvedLocationId,
-              assignedToId: defaultUser.id,
-            },
-          });
-          console.log(`[Inbound] Auto-created contact: ${contactName} (${phone})`);
-        }
+        console.log(`[Inbound] Ignored message from unknown number: ${externalId}`);
+        return null;
       }
-      if (contact) resolvedContactId = contact.id;
+      resolvedContactId = contact.id;
     }
   } catch { /* non-critical */ }
 
