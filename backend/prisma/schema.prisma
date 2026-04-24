@@ -61,7 +61,7 @@ model Agency {
   pipelines     Pipeline[]
   opportunities Opportunity[]
   appointmentCalendars AppointmentCalendar[]
-  whatsappSession WhatsAppSession?
+  whatsappSessions WhatsAppSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -183,6 +183,7 @@ model User {
   calendarIntegrations  CalendarIntegration[]
   calendarEvents        CalendarEvent[]
   calendarSlots         CalendarSlot[]
+  whatsappSessions      WhatsAppSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -828,11 +829,15 @@ model PipelineStage {
 
 model WhatsAppSession {
   id        String   @id @default(cuid())
-  agencyId  String   @unique
+  agencyId  String
   agency    Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   creds     String   @db.Text
   keys      String?  @db.Text
   status    String   @default("DISCONNECTED")
   phone     String?
   updatedAt DateTime @updatedAt
+
+  @@unique([agencyId, userId])
 }
