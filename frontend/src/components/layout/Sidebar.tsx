@@ -69,7 +69,6 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
     ...(can('properties', 'view')    ? [{ to: '/properties',    icon: Building2,     label: 'Propriedades' }]                              : []),
     ...(can('conversations', 'view') ? [{ to: '/conversations', icon: MessageSquare, label: 'Conversas', badge: convBadge }]               : []),
     { to: '/calls',         icon: PhoneCall, label: 'Chamadas' },
-    { to: '/phone-numbers', icon: Phone,     label: 'Números' },
   ]
 
   const gestaoItems: NavItem[] = [
@@ -106,7 +105,7 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
     })
   }
 
-  navGroups.push({ label: 'Sistema', items: [{ to: '/settings', icon: Settings, label: 'Integrações' }] })
+  navGroups.push({ label: 'Sistema', items: [{ to: '/settings', icon: Settings, label: 'Definições' }] })
 
   return (
     <motion.aside

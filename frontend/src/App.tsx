@@ -87,7 +87,7 @@ function App() {
         <Route path="automations" element={<AutomationsPage />} />
         <Route path="snapshots" element={<SnapshotsPage />} />
         <Route path="conversations" element={<ConversationsPage />} />
-        <Route path="phone-numbers" element={<PhoneNumbersPage />} />
+        <Route path="phone-numbers" element={<Navigate to="/settings" replace />} />
         <Route path="calls" element={<CallsPage />} />
         <Route path="appointments" element={<AppointmentsPage />} />
         <Route path="campaigns" element={<CampaignsPage />} />
