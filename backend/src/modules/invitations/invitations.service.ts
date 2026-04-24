@@ -62,23 +62,28 @@ export const create = async (email: string, role: string, invitedById: string, l
     }),
   ]);
 
-  // Send invite email
-  const inviteUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/invite/${token}`;
+  // CLIENT_URL may be a comma-separated list (e.g. for CORS); use only the last entry as the public app URL
+  const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').split(',').pop()!.trim();
+  const inviteUrl = `${clientUrl}/invite/${token}`;
   const transporter = getTransporter();
   if (transporter) {
-    await transporter.sendMail({
-      from: `"${process.env.FROM_NAME || 'CasaFlow'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
-      to: email,
-      subject: 'Convite para o CasaFlow',
-      html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
-          <h2 style="color:#6366f1">Bem-vindo ao CasaFlow</h2>
-          <p>Foi convidado para se juntar à plataforma.</p>
-          <a href="${inviteUrl}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#6366f1;color:white;border-radius:8px;text-decoration:none;font-weight:600">Aceitar convite</a>
-          <p style="color:#94a3b8;font-size:12px">Este convite expira em 7 dias. Se não pediu este convite, ignore este email.</p>
-        </div>
-      `,
-    });
+    try {
+      await transporter.sendMail({
+        from: `"${process.env.FROM_NAME || 'CasaFlow'}" <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`,
+        to: email,
+        subject: 'Convite para o CasaFlow',
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+            <h2 style="color:#6366f1">Bem-vindo ao CasaFlow</h2>
+            <p>Foi convidado para se juntar à plataforma.</p>
+            <a href="${inviteUrl}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#6366f1;color:white;border-radius:8px;text-decoration:none;font-weight:600">Aceitar convite</a>
+            <p style="color:#94a3b8;font-size:12px">Este convite expira em 7 dias. Se não pediu este convite, ignore este email.</p>
+          </div>
+        `,
+      });
+    } catch (emailErr) {
+      console.error(`[Invite] Falha ao enviar email para ${email}:`, emailErr);
+    }
   } else {
     console.log(`[Invite] Link para ${email}: ${inviteUrl}`);
   }
