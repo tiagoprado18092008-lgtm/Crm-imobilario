@@ -40,7 +40,7 @@ export async function initWhatsApp(agencyId: string): Promise<void> {
   console.log(`[WA:${agencyId}] Starting initWhatsApp...`)
 
   await prisma.whatsAppSession.upsert({
-    where: { agencyId },
+    where: { agencyId_userId: { agencyId, userId: null as any } },
     create: { agencyId, creds: '{}', status: 'CONNECTING' },
     update: { status: 'CONNECTING' },
   })
@@ -87,7 +87,7 @@ export async function initWhatsApp(agencyId: string): Promise<void> {
         const jid = sock?.user?.id || ''
         s.phone = jid.split(':')[0].replace('@s.whatsapp.net', '') || null
         await prisma.whatsAppSession.upsert({
-          where: { agencyId },
+          where: { agencyId_userId: { agencyId, userId: null as any } },
           create: { agencyId, creds: '{}', status: 'CONNECTED', phone: s.phone },
           update: { status: 'CONNECTED', phone: s.phone },
         })

@@ -3,13 +3,14 @@ import fs from 'fs'
 import path from 'path'
 import prisma from '../../config/database'
 
-function keysFile(agencyId: string) {
-  return path.join('/tmp', `wa-keys-${agencyId}.json`)
+function keysFile(sessionKey: string) {
+  const safe = sessionKey.replace(':', '_')
+  return path.join('/tmp', `wa-keys-${safe}.json`)
 }
 
-function readKeysFromFile(agencyId: string): Record<string, any> {
+function readKeysFromFile(sessionKey: string): Record<string, any> {
   try {
-    const file = keysFile(agencyId)
+    const file = keysFile(sessionKey)
     if (fs.existsSync(file)) {
       return JSON.parse(fs.readFileSync(file, 'utf-8'), BufferJSON.reviver)
     }
@@ -17,17 +18,26 @@ function readKeysFromFile(agencyId: string): Record<string, any> {
   return {}
 }
 
-function writeKeysToFile(agencyId: string, data: Record<string, any>) {
+function writeKeysToFile(sessionKey: string, data: Record<string, any>) {
   try {
-    fs.writeFileSync(keysFile(agencyId), JSON.stringify(data, BufferJSON.replacer))
+    fs.writeFileSync(keysFile(sessionKey), JSON.stringify(data, BufferJSON.replacer))
   } catch (e) {
     console.error('[WA] Failed to write keys file:', e)
   }
 }
 
-export async function usePrismaAuthState(agencyId: string) {
+function parseSessionKey(sessionKey: string): { agencyId: string; userId: string | null } {
+  const parts = sessionKey.split(':')
+  return { agencyId: parts[0], userId: parts[1] || null }
+}
+
+export async function usePrismaAuthState(sessionKey: string) {
+  const { agencyId, userId } = parseSessionKey(sessionKey)
+
   const loadCreds = async () => {
-    const row = await prisma.whatsAppSession.findUnique({ where: { agencyId } })
+    const row = await prisma.whatsAppSession.findUnique({
+      where: { agencyId_userId: { agencyId, userId: userId as any } },
+    })
     if (row?.creds && row.creds !== '{}') {
       try { return JSON.parse(row.creds, BufferJSON.reviver) } catch {}
     }
@@ -35,14 +45,14 @@ export async function usePrismaAuthState(agencyId: string) {
   }
 
   const creds = await loadCreds()
-  let keysData = readKeysFromFile(agencyId)
+  let keysData = readKeysFromFile(sessionKey)
 
   const saveCreds = async (updatedCreds: any) => {
     Object.assign(creds, updatedCreds)
     try {
       await prisma.whatsAppSession.upsert({
-        where: { agencyId },
-        create: { agencyId, creds: JSON.stringify(creds, BufferJSON.replacer), status: 'CONNECTING' },
+        where: { agencyId_userId: { agencyId, userId: userId as any } },
+        create: { agencyId, userId, creds: JSON.stringify(creds, BufferJSON.replacer), status: 'CONNECTING' },
         update: { creds: JSON.stringify(creds, BufferJSON.replacer) },
       })
     } catch (err) {
@@ -50,28 +60,34 @@ export async function usePrismaAuthState(agencyId: string) {
     }
   }
 
-  const keys = {
-    get: async (type: string, ids: string[]) => {
-      const data: Record<string, any> = {}
-      for (const id of ids) {
-        const val = keysData[`${type}-${id}`]
-        if (val !== undefined) data[id] = val
-      }
-      return data
-    },
-    set: async (data: Record<string, Record<string, any>>) => {
-      for (const type in data) {
-        for (const id in data[type]) {
-          if (data[type][id] != null) {
-            keysData[`${type}-${id}`] = data[type][id]
-          } else {
-            delete keysData[`${type}-${id}`]
-          }
-        }
-      }
-      writeKeysToFile(agencyId, keysData)
-    },
+  const saveKeys = (data: Record<string, any>) => {
+    Object.assign(keysData, data)
+    writeKeysToFile(sessionKey, keysData)
   }
 
-  return { state: { creds, keys }, saveCreds }
+  return {
+    state: {
+      creds,
+      keys: {
+        get: (type: string, ids: string[]) => {
+          const result: Record<string, any> = {}
+          for (const id of ids) {
+            const val = keysData[`${type}-${id}`]
+            if (val) result[id] = val
+          }
+          return result
+        },
+        set: (data: Record<string, Record<string, any>>) => {
+          const flat: Record<string, any> = {}
+          for (const [type, entries] of Object.entries(data)) {
+            for (const [id, val] of Object.entries(entries || {})) {
+              flat[`${type}-${id}`] = val
+            }
+          }
+          saveKeys(flat)
+        },
+      },
+    },
+    saveCreds,
+  }
 }
