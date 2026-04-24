@@ -994,19 +994,19 @@ export const SettingsPage: React.FC = () => {
                   <div className="pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
                     <div>
                       <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                        URL Pública do Servidor
+                        URL Pública do Servidor (Backend)
                         <span className="ml-2 text-xs" style={{ color: 'var(--text-muted)', fontWeight: 400 }}>Em desenvolvimento usa ngrok</span>
                       </label>
                       <input
                         type="text"
                         value={publicUrl}
                         onChange={(e) => setPublicUrl(e.target.value)}
-                        placeholder="https://meucrm.com"
+                        placeholder="https://casaflow-backend-production.up.railway.app"
                         className={inputClass}
                         style={inputStyle}
                       />
                       <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                        Necessária para configurar os webhooks do Twilio. Ao guardar, os números comprados são atualizados automaticamente.
+                        URL do <strong>backend</strong> (não do frontend). Necessária para configurar os webhooks do Twilio. Ao guardar, os números comprados são atualizados automaticamente.
                       </p>
                     </div>
                   </div>

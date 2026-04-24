@@ -491,23 +491,34 @@ app.post('/webhook/twilio/voicemail-complete', async (req, res) => {
 });
 
 // TwiML for outbound calls (browser SDK)
-app.post('/webhook/twilio/voice', (req, res) => {
+app.post('/webhook/twilio/voice', async (req, res) => {
+  const to = req.body.To || ''
+  // Resolve callerId: prefer the number associated with this agency/user, fall back to env
+  let callerId = process.env.TWILIO_PHONE_NUMBER || ''
+  if (!callerId) {
+    const pn = await prisma.phoneNumber.findFirst({ where: { status: 'ACTIVE' } })
+    if (pn) callerId = pn.number
+  }
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial callerId="${process.env.TWILIO_PHONE_NUMBER || ''}">
-    <Number>${req.body.To || ''}</Number>
+  <Dial callerId="${callerId}">
+    <Number>${to}</Number>
   </Dial>
 </Response>`
   res.type('text/xml').send(twiml)
 })
 
 // TwiML for browser client calls
-app.post('/webhook/twilio/client', (req, res) => {
+app.post('/webhook/twilio/client', async (req, res) => {
   const to = req.body.To
-  const from = req.body.From || process.env.TWILIO_PHONE_NUMBER || ''
+  let callerId = req.body.From || process.env.TWILIO_PHONE_NUMBER || ''
+  if (!callerId) {
+    const pn = await prisma.phoneNumber.findFirst({ where: { status: 'ACTIVE' } })
+    if (pn) callerId = pn.number
+  }
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial callerId="${from}">
+  <Dial callerId="${callerId}">
     ${to?.startsWith('client:') ? `<Client>${to.replace('client:', '')}</Client>` : `<Number>${to}</Number>`}
   </Dial>
 </Response>`
