@@ -167,7 +167,8 @@ export const findOrReopenForInbound = async (
   channel: string,
   externalId: string,
   contactId: string | undefined,
-  locationId: string
+  locationId: string,
+  assignedToId?: string,
 ) => {
   const canonical = normalizeExternalId(externalId);
   const digits = canonical.replace(/\D/g, '');
@@ -197,6 +198,7 @@ export const findOrReopenForInbound = async (
             status: 'OPEN',
             externalId: canonical,
             ...(contactId && !existing.contactId ? { contactId } : {}),
+            ...(assignedToId && !existing.assignedToId ? { assignedToId } : {}),
           },
         });
       }
@@ -213,6 +215,7 @@ export const findOrReopenForInbound = async (
         contactId: contactId || null,
         locationId,
         lastMessageAt: new Date(),
+        ...(assignedToId ? { assignedToId } : {}),
       },
     });
   }, { isolationLevel: 'Serializable' });
@@ -320,7 +323,8 @@ export const receiveInbound = async (
   externalId: string,
   content: string,
   metadata?: string,
-  agencyId?: string
+  agencyId?: string,
+  assignedToId?: string,
 ) => {
   // Multi-tenant integrations (like per-agency WhatsApp sockets) MUST supply agencyId.
   // Without it, we cannot safely route the message — dropping it prevents cross-tenant leaks.
@@ -374,7 +378,7 @@ export const receiveInbound = async (
     }
   } catch { /* non-critical */ }
 
-  const conversation = await findOrReopenForInbound(channel, externalId, resolvedContactId, resolvedLocationId);
+  const conversation = await findOrReopenForInbound(channel, externalId, resolvedContactId, resolvedLocationId, assignedToId);
 
   const message = await prisma.message.create({
     data: {
