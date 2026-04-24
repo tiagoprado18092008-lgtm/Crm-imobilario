@@ -8,6 +8,7 @@ import { getCallToken, initiateCall as apiInitiateCall } from '../../api/calls.a
 import { listNumbers } from '../../api/phone-numbers.api'
 import { useUIStore } from '../../store/ui.store'
 import { useCallStore } from '../../store/call.store'
+import { CustomSelect } from '../ui/CustomSelect'
 
 type SoftPhoneState = 'idle' | 'connecting' | 'ringing' | 'in-call' | 'error'
 
@@ -100,10 +101,13 @@ export const SoftPhone: React.FC = () => {
         call.on('cancel', () => endCall())
       })
 
-      await device.register()
+      // Store device ref first so it's available even if register takes time
       deviceRef.current = device
+      await device.register()
     } catch (err) {
       console.error('[Twilio] Init error', err)
+      deviceRef.current = null
+      setConfigured(false)
     }
   }
 
@@ -150,10 +154,12 @@ export const SoftPhone: React.FC = () => {
       if (n) fromNumberValue = n.number
     }
 
-    try {
-      if (configured && deviceRef.current) {
+    // Browser SDK path: the SDK handles the call itself; we just log it
+    if (configured && deviceRef.current) {
+      try {
         const params: Record<string, string> = { To: dialNumber }
         if (fromNumberValue) params.From = fromNumberValue
+
         const call = await deviceRef.current.connect({ params })
         callRef.current = call
 
@@ -167,28 +173,39 @@ export const SoftPhone: React.FC = () => {
           console.error('[Twilio Call Error]', err)
           setPhoneState('error')
           setLoading(false)
-          showToast('Erro na chamada', 'error')
+          const msg = err?.message || err?.description || 'Erro na chamada'
+          showToast(msg, 'error')
         })
 
-        await apiInitiateCall({
+        // Log the interaction (don't start a second Twilio call)
+        apiInitiateCall({
           to: dialNumber,
           contactId: prefillContactId || undefined,
           fromNumberId: fromNumberId || undefined,
-        })
-      } else {
-        // Demo mode
-        await apiInitiateCall({
-          to: dialNumber,
-          contactId: prefillContactId || undefined,
-          fromNumberId: fromNumberId || undefined,
-        })
-        setTimeout(() => {
-          setPhoneState('in-call')
-          startTimer()
-          setLoading(false)
-          showToast(`Chamada registada para ${dialNumber}`, 'info')
-        }, 1500)
+          browserCall: true,
+          callSid: (call as any)?.parameters?.CallSid,
+        }).catch((e) => console.warn('[Call log] failed', e))
+      } catch (err: any) {
+        console.error('[Browser Call Error]', err)
+        setPhoneState('error')
+        setLoading(false)
+        const msg = err?.message || 'Não foi possível iniciar a chamada pelo browser'
+        showToast(msg, 'error')
       }
+      return
+    }
+
+    // Demo / REST fallback — backend initiates via Twilio REST
+    try {
+      await apiInitiateCall({
+        to: dialNumber,
+        contactId: prefillContactId || undefined,
+        fromNumberId: fromNumberId || undefined,
+      })
+      setPhoneState('in-call')
+      startTimer()
+      setLoading(false)
+      showToast(`Chamada registada para ${dialNumber}`, 'info')
     } catch (err: any) {
       console.error('[Call Error]', err)
       setPhoneState('error')
@@ -284,6 +301,7 @@ export const SoftPhone: React.FC = () => {
               </span>
             </div>
             <button
+              type="button"
               onClick={() => setExpanded(false)}
               style={{
                 color: '#475569',
@@ -345,6 +363,7 @@ export const SoftPhone: React.FC = () => {
               </span>
               {dialNumber && (
                 <button
+                  type="button"
                   onClick={handleDelete}
                   style={{
                     background: 'none',
@@ -363,23 +382,16 @@ export const SoftPhone: React.FC = () => {
           {/* Caller-ID picker */}
           {phoneState === 'idle' && myNumbers.length > 0 && (
             <div style={{ padding: '0 16px 8px' }}>
-              <select
+              <CustomSelect
                 value={fromNumberId || ''}
-                onChange={(e) => setFromNumberId(e.target.value || null)}
-                style={{
-                  width: '100%', padding: '8px 10px', borderRadius: 8,
-                  background: '#0f172a', border: '1px solid #334155',
-                  color: '#e2e8f0', fontSize: 12,
-                }}
-              >
-                <option value="">A partir de (default)</option>
-                {myNumbers.map((n) => (
-                  <option key={n.id} value={n.id}>
-                    {n.friendlyName || n.number} ({n.number})
-                    {n.source === 'EXTERNAL_VERIFIED' ? ' · Pessoal' : ''}
-                  </option>
-                ))}
-              </select>
+                onChange={v => setFromNumberId(v || null)}
+                placeholder="A partir de (default)"
+                options={myNumbers.map((n) => ({
+                  value: n.id,
+                  label: `${n.friendlyName || n.number} (${n.number})${n.source === 'EXTERNAL_VERIFIED' ? ' · Pessoal' : ''}`,
+                }))}
+                size="sm"
+              />
               {prefillContactId && (
                 <p style={{ color: '#64748b', fontSize: 10, margin: '6px 0 0', textAlign: 'center' }}>
                   Chamada será associada ao contacto selecionado
@@ -395,6 +407,7 @@ export const SoftPhone: React.FC = () => {
                 <div key={ri} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                   {row.map((key) => (
                     <button
+                      type="button"
                       key={key}
                       onClick={() => handleDial(key)}
                       style={{
@@ -424,6 +437,7 @@ export const SoftPhone: React.FC = () => {
           <div style={{ padding: '0 16px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
             {phoneState === 'idle' || phoneState === 'error' ? (
               <button
+                type="button"
                 onClick={handleCall}
                 disabled={!dialNumber || loading}
                 style={{
@@ -455,6 +469,7 @@ export const SoftPhone: React.FC = () => {
             ) : phoneState === 'ringing' ? (
               <div style={{ display: 'flex', gap: 10 }}>
                 <button
+                  type="button"
                   onClick={handleAnswer}
                   style={{
                     flex: 1,
@@ -475,6 +490,7 @@ export const SoftPhone: React.FC = () => {
                   <Phone size={18} /> Atender
                 </button>
                 <button
+                  type="button"
                   onClick={handleReject}
                   style={{
                     flex: 1,
@@ -500,6 +516,7 @@ export const SoftPhone: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button
+                    type="button"
                     onClick={toggleMute}
                     style={{
                       flex: 1,
@@ -521,6 +538,7 @@ export const SoftPhone: React.FC = () => {
                     {muted ? 'Sem som' : 'Microfone'}
                   </button>
                   <button
+                    type="button"
                     onClick={() => setSpeakerOff(!speakerOff)}
                     style={{
                       flex: 1,
@@ -543,6 +561,7 @@ export const SoftPhone: React.FC = () => {
                   </button>
                 </div>
                 <button
+                  type="button"
                   onClick={handleHangup}
                   style={{
                     width: '100%',
@@ -571,6 +590,7 @@ export const SoftPhone: React.FC = () => {
 
       {/* Toggle button */}
       <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
         style={{
           width: 56,

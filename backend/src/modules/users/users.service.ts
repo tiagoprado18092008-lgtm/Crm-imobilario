@@ -13,6 +13,13 @@ export const list = async (currentUser?: any) => {
     where.id = currentUser.id;
   }
 
+  // Exclude invitation placeholders (users created on invite, not yet onboarded).
+  // These appear under the "Convites" tab, not "Membros".
+  where.OR = [
+    { clerkUserId: { not: null } },
+    { passwordHash: { not: '' } },
+  ];
+
   const users = await prisma.user.findMany({
     where,
     select: {

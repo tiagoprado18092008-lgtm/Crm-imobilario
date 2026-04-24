@@ -17,6 +17,8 @@ export async function initiateCall(opts: {
   opportunityId?: string
   userId: string
   fromNumberId?: string
+  browserCall?: boolean
+  callSid?: string
 }): Promise<any> {
   let fromNumber: string | undefined = undefined
   if (opts.fromNumberId) {
@@ -32,7 +34,14 @@ export async function initiateCall(opts: {
     fromNumber = pn.number
   }
 
-  const result = await makeOutboundCall(opts.to, fromNumber)
+  // If this is a browser-initiated call, the browser SDK already started it.
+  // Just log the interaction — don't start a second Twilio REST call.
+  let result: { sid: string; status: string }
+  if (opts.browserCall) {
+    result = { sid: opts.callSid || `browser_${Date.now()}`, status: 'initiated' }
+  } else {
+    result = await makeOutboundCall(opts.to, fromNumber)
+  }
 
   // Resolve contactId if not provided
   let contactId = opts.contactId

@@ -7,8 +7,9 @@ import { useAuthStore } from '../../store/auth.store'
 import { PageSpinner } from '../../components/ui/Spinner'
 import { ROLE_LABELS } from '../../utils/constants'
 import { getInitials, formatDate, isImageAvatar } from '../../utils/formatters'
+import { CustomSelect } from '../../components/ui/CustomSelect'
 
-interface User { id: string; name: string; email: string; role: string; isActive: boolean; createdAt: string; avatarUrl?: string }
+interface User { id: string; name: string; email: string; role: string; createdAt: string; avatarUrl?: string }
 interface Invitation { id: string; email: string; role: string; usedAt: string | null; expiresAt: string; createdAt: string }
 
 const INVITE_ROLES = [
@@ -123,7 +124,6 @@ export const AgencyUsersPage: React.FC = () => {
                   <th style={thStyle}>Membro</th>
                   <th style={thStyle}>Email</th>
                   <th style={thStyle}>Função</th>
-                  <th style={thStyle}>Estado</th>
                   <th style={thStyle}>Desde</th>
                 </tr></thead>
                 <tbody>
@@ -148,11 +148,6 @@ export const AgencyUsersPage: React.FC = () => {
                       <td style={tdStyle}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: ROLE_COLOR[m.role] || '#6b7a99', background: `${ROLE_COLOR[m.role]}15` || '#f1f5f9', padding: '3px 8px', borderRadius: 6 }}>
                           <Shield size={10} />{ROLE_LABELS[m.role] || m.role}
-                        </span>
-                      </td>
-                      <td style={tdStyle}>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: m.isActive ? '#22c55e' : '#ef4444' }}>
-                          {m.isActive ? '● Activo' : '● Inactivo'}
                         </span>
                       </td>
                       <td style={{ ...tdStyle, color: '#6b7a99' }}>{formatDate(m.createdAt)}</td>
@@ -218,9 +213,11 @@ export const AgencyUsersPage: React.FC = () => {
               </div>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7a99', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Função</label>
-                <select value={inviteRole} onChange={e => setInviteRole(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #dce3ef', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff' }}>
-                  {INVITE_ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
+                <CustomSelect
+                  value={inviteRole}
+                  onChange={v => setInviteRole(v)}
+                  options={INVITE_ROLES}
+                />
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
                 <button type="button" onClick={() => setInviteOpen(false)} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid #dce3ef', background: '#fff', color: '#6b7a99', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>

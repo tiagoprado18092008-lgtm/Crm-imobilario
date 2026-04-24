@@ -3,10 +3,10 @@ import AccessToken = require('twilio/lib/jwt/AccessToken')
 import VoiceGrant = AccessToken.VoiceGrant
 
 export function isTwilioConfigured(): boolean {
+  // Phone number is optional — we can look one up from the DB when needed
   return !!(
     process.env.TWILIO_ACCOUNT_SID &&
-    process.env.TWILIO_AUTH_TOKEN &&
-    process.env.TWILIO_PHONE_NUMBER
+    process.env.TWILIO_AUTH_TOKEN
   )
 }
 
