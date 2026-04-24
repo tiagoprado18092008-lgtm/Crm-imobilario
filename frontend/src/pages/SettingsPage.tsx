@@ -7,9 +7,13 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getCommSettings, updateCommSettings, getCommStatus, triggerTwilioSetup, testWhatsApp, testEmail, testTwilio } from '../api/settings.api'
-import { getWhatsAppStatus, connectWhatsApp, disconnectWhatsApp as disconnectWA } from '../api/whatsapp.api'
+import {
+  getMyWhatsAppStatus, connectMyWhatsApp, disconnectMyWhatsApp,
+  getAgencyWhatsAppStatus, connectAgencyWhatsApp, disconnectAgencyWhatsApp,
+} from '../api/whatsapp.api'
 import { listNumbers, searchNumbers, purchaseNumber, releaseNumber, updateNumber } from '../api/phone-numbers.api'
 import { useUIStore } from '../store/ui.store'
+import { useAuthStore } from '../store/auth.store'
 import { CustomSelect } from '../components/ui/CustomSelect'
 
 const COUNTRIES = [
@@ -291,6 +295,8 @@ const GuidePanel: React.FC<{ status: any; onNavigate: (tab: any) => void }> = ({
 
 export const SettingsPage: React.FC = () => {
   const { darkMode, setDarkMode, setCrmName: setGlobalCrmName, showToast } = useUIStore()
+  const { user } = useAuthStore()
+  const isAdminOrOwner = user?.role === 'AGENCY_OWNER' || user?.role === 'AGENCY_ADMIN'
   const [tab, setTab] = useState<Tab>(() => {
     const p = new URLSearchParams(window.location.search).get('tab')
     return (p as Tab) || 'whatsapp'
@@ -312,12 +318,18 @@ export const SettingsPage: React.FC = () => {
 
   const [wa, setWa] = useState<WhatsAppSettings>({ whatsappToken: '', phoneNumberId: '', verifyToken: '' })
 
-  // WhatsApp QR / Baileys state
+  // WhatsApp QR / Baileys state — agência
   const [waQrStatus, setWaQrStatus] = useState<'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'>('DISCONNECTED')
   const [waQrPhone, setWaQrPhone] = useState<string | null>(null)
   const [waQrImage, setWaQrImage] = useState<string | null>(null)
   const [waQrLoading, setWaQrLoading] = useState(false)
   const waSSERef = useRef<EventSource | null>(null)
+  // WhatsApp QR / Baileys state — pessoal
+  const [myWaStatus, setMyWaStatus] = useState<'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'>('DISCONNECTED')
+  const [myWaPhone, setMyWaPhone] = useState<string | null>(null)
+  const [myWaQrImage, setMyWaQrImage] = useState<string | null>(null)
+  const [myWaLoading, setMyWaLoading] = useState(false)
+  const myWaSSERef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [email, setEmail] = useState<EmailSettings>({
     smtpHost: '', smtpPort: '587', smtpUser: '', smtpPass: '', fromName: '', fromEmail: '',
   })
@@ -396,7 +408,11 @@ export const SettingsPage: React.FC = () => {
   }, [tab, fetchPhoneNumbers])
 
   useEffect(() => {
-    getWhatsAppStatus().then(r => {
+    getMyWhatsAppStatus().then(r => {
+      setMyWaStatus(r.data.status as any)
+      setMyWaPhone(r.data.phone)
+    }).catch(() => {})
+    getAgencyWhatsAppStatus().then(r => {
       setWaQrStatus(r.data.status as any)
       setWaQrPhone(r.data.phone)
     }).catch(() => {})
@@ -408,7 +424,7 @@ export const SettingsPage: React.FC = () => {
     const interval = setInterval(async () => {
       attempts++
       try {
-        const r = await getWhatsAppStatus()
+        const r = await getAgencyWhatsAppStatus()
         const { status, phone, qr } = r.data as any
         if (qr && status !== 'CONNECTED') {
           setWaQrImage(qr)
@@ -437,7 +453,7 @@ export const SettingsPage: React.FC = () => {
     setWaQrLoading(true)
     setWaQrImage(null)
     try {
-      await connectWhatsApp()
+      await connectAgencyWhatsApp()
       startWaPolling()
     } catch (err: any) {
       setWaQrLoading(false)
@@ -447,10 +463,61 @@ export const SettingsPage: React.FC = () => {
 
   const handleWaDisconnect = async () => {
     if (waSSERef.current) { clearInterval(waSSERef.current as any); waSSERef.current = null }
-    await disconnectWA()
+    await disconnectAgencyWhatsApp()
     setWaQrStatus('DISCONNECTED')
     setWaQrPhone(null)
     setWaQrImage(null)
+  }
+
+  const startMyWaPolling = () => {
+    if (myWaSSERef.current) clearInterval(myWaSSERef.current)
+    let attempts = 0
+    const interval = setInterval(async () => {
+      attempts++
+      try {
+        const r = await getMyWhatsAppStatus()
+        const { status, phone, qr } = r.data as any
+        if (qr && status !== 'CONNECTED') {
+          setMyWaQrImage(qr)
+          setMyWaStatus('CONNECTING')
+          setMyWaLoading(false)
+        }
+        if (status === 'CONNECTED') {
+          setMyWaQrImage(null)
+          setMyWaStatus('CONNECTED')
+          setMyWaPhone(phone)
+          setMyWaLoading(false)
+          clearInterval(interval)
+          myWaSSERef.current = null
+        }
+      } catch {}
+      if (attempts >= 20) {
+        clearInterval(interval)
+        myWaSSERef.current = null
+        setMyWaLoading(false)
+      }
+    }, 3000)
+    myWaSSERef.current = interval
+  }
+
+  const handleMyWaConnect = async () => {
+    setMyWaLoading(true)
+    setMyWaQrImage(null)
+    try {
+      await connectMyWhatsApp()
+      startMyWaPolling()
+    } catch (err: any) {
+      setMyWaLoading(false)
+      showToast(err?.response?.data?.error || 'Erro ao ligar WhatsApp pessoal', 'error')
+    }
+  }
+
+  const handleMyWaDisconnect = async () => {
+    if (myWaSSERef.current) { clearInterval(myWaSSERef.current); myWaSSERef.current = null }
+    await disconnectMyWhatsApp()
+    setMyWaStatus('DISCONNECTED')
+    setMyWaPhone(null)
+    setMyWaQrImage(null)
   }
 
   const handleNumberSearch = async () => {
@@ -647,53 +714,48 @@ export const SettingsPage: React.FC = () => {
           {/* WhatsApp */}
           {tab === 'whatsapp' && (
             <div className="space-y-5">
-              {/* Hero card */}
+
+              {/* ── Card: O meu WhatsApp (pessoal) ── */}
               <div className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-                {/* Header bar */}
                 <div style={{ background: 'linear-gradient(135deg, #25d366 0%, #128c5e 100%)', padding: '20px 24px' }}>
                   <div className="flex items-center gap-3">
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
                         <path d="M22.5 9.5C20.8 7.8 18.5 6.8 16 6.8c-5.1 0-9.2 4.1-9.2 9.2 0 1.6.4 3.2 1.2 4.6L6.8 25.2l4.7-1.2c1.3.7 2.8 1.1 4.4 1.1 5.1 0 9.2-4.1 9.2-9.2.1-2.5-.9-4.8-2.6-6.4zm-6.5 14.1c-1.4 0-2.8-.4-3.9-1.1l-.3-.2-3 .8.8-3-.2-.3c-.8-1.2-1.2-2.6-1.2-4.1 0-4.2 3.4-7.5 7.5-7.5 2 0 3.9.8 5.3 2.2 1.4 1.4 2.2 3.3 2.2 5.3.1 4.2-3.3 7.6-7.2 7.9zm4.1-5.6c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1-.2.2-.6.7-.8.9-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4c.1-.1.2-.3.3-.4.1-.1.1-.2 0-.4-.1-.1-.5-1.2-.7-1.6-.2-.4-.4-.3-.5-.3h-.4c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.1 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .2 1.4.1.4-.1 1.3-.5 1.5-1s.2-.9.1-1z" fill="white"/>
                       </svg>
                     </div>
                     <div>
-                      <h3 style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>WhatsApp</h3>
-                      <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: 0 }}>Liga via QR Code — sem API da Meta</p>
+                      <h3 style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>O meu WhatsApp</h3>
+                      <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: 0 }}>Número pessoal — as conversas ficam atribuídas a si</p>
                     </div>
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: waQrStatus === 'CONNECTED' ? '#fff' : 'rgba(255,255,255,0.4)' }} />
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: myWaStatus === 'CONNECTED' ? '#fff' : 'rgba(255,255,255,0.4)' }} />
                       <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: 600 }}>
-                        {waQrStatus === 'CONNECTED' ? 'Ligado' : waQrStatus === 'CONNECTING' ? 'A ligar...' : 'Desligado'}
+                        {myWaStatus === 'CONNECTED' ? 'Ligado' : myWaStatus === 'CONNECTING' ? 'A ligar...' : 'Desligado'}
                       </span>
                     </div>
                   </div>
                 </div>
-
-                {/* Body */}
                 <div style={{ padding: '24px' }}>
-                  {waQrStatus === 'CONNECTED' ? (
+                  {myWaStatus === 'CONNECTED' ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Check size={18} style={{ color: '#16a34a' }} />
                         </div>
                         <div>
-                          <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: '#15803d' }}>WhatsApp ligado com sucesso</p>
-                          {waQrPhone && <p style={{ margin: 0, fontSize: 12, color: '#16a34a' }}>+{waQrPhone}</p>}
+                          <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: '#15803d' }}>WhatsApp pessoal ligado</p>
+                          {myWaPhone && <p style={{ margin: 0, fontSize: 12, color: '#16a34a' }}>+{myWaPhone}</p>}
                         </div>
                       </div>
-                      <button
-                        onClick={handleWaDisconnect}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-                      >
+                      <button onClick={handleMyWaDisconnect} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                         <X size={13} /> Desligar
                       </button>
                     </div>
-                  ) : waQrImage ? (
+                  ) : myWaQrImage ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
                       <div style={{ padding: 16, borderRadius: 16, background: '#fff', border: '1.5px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-                        <img src={waQrImage} alt="WhatsApp QR Code" style={{ width: 200, height: 200, display: 'block' }} />
+                        <img src={myWaQrImage} alt="WhatsApp QR Code pessoal" style={{ width: 200, height: 200, display: 'block' }} />
                       </div>
                       <div style={{ textAlign: 'center' }}>
                         <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>Lê o código com o teu telemóvel</p>
@@ -701,42 +763,109 @@ export const SettingsPage: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                      <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 12 }}>
-                        {[
-                          { icon: '📱', title: 'Sem API', desc: 'Não precisas de conta Meta Business' },
-                          { icon: '⚡', title: 'Rápido', desc: 'Liga em segundos com QR Code' },
-                          { icon: '💬', title: 'Completo', desc: 'Envia e recebe mensagens no CRM' },
-                        ].map(f => (
-                          <div key={f.title} style={{ padding: '14px', borderRadius: 12, background: 'var(--surface-3)', border: '1px solid var(--border)', textAlign: 'center' }}>
-                            <div style={{ fontSize: 22, marginBottom: 6 }}>{f.icon}</div>
-                            <p style={{ margin: 0, fontWeight: 700, fontSize: 12, color: 'var(--text-primary)' }}>{f.title}</p>
-                            <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>{f.desc}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <button
-                        onClick={handleWaConnect}
-                        disabled={waQrLoading}
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                          padding: '13px 24px', borderRadius: 12, border: 'none', cursor: waQrLoading ? 'not-allowed' : 'pointer',
-                          background: waQrLoading ? '#86efac' : '#25d366', color: '#fff', fontSize: 14, fontWeight: 700,
-                          boxShadow: '0 4px 14px rgba(37,211,102,0.35)', transition: 'all 150ms',
-                          opacity: waQrLoading ? 0.8 : 1,
-                        }}
-                      >
-                        {waQrLoading ? <Loader2 size={16} className="animate-spin" /> : (
-                          <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-                            <path d="M22.5 9.5C20.8 7.8 18.5 6.8 16 6.8c-5.1 0-9.2 4.1-9.2 9.2 0 1.6.4 3.2 1.2 4.6L6.8 25.2l4.7-1.2c1.3.7 2.8 1.1 4.4 1.1 5.1 0 9.2-4.1 9.2-9.2.1-2.5-.9-4.8-2.6-6.4zm-6.5 14.1c-1.4 0-2.8-.4-3.9-1.1l-.3-.2-3 .8.8-3-.2-.3c-.8-1.2-1.2-2.6-1.2-4.1 0-4.2 3.4-7.5 7.5-7.5 2 0 3.9.8 5.3 2.2 1.4 1.4 2.2 3.3 2.2 5.3.1 4.2-3.3 7.6-7.2 7.9zm4.1-5.6c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1-.2.2-.6.7-.8.9-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4c.1-.1.2-.3.3-.4.1-.1.1-.2 0-.4-.1-.1-.5-1.2-.7-1.6-.2-.4-.4-.3-.5-.3h-.4c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.1 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .2 1.4.1.4-.1 1.3-.5 1.5-1s.2-.9.1-1z" fill="white"/>
-                          </svg>
-                        )}
-                        {waQrLoading ? 'A gerar QR code...' : 'Ligar com QR Code'}
-                      </button>
-                    </div>
+                    <button
+                      onClick={handleMyWaConnect}
+                      disabled={myWaLoading}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px 24px', borderRadius: 12, border: 'none', cursor: myWaLoading ? 'not-allowed' : 'pointer', background: myWaLoading ? '#86efac' : '#25d366', color: '#fff', fontSize: 14, fontWeight: 700, boxShadow: '0 4px 14px rgba(37,211,102,0.35)', opacity: myWaLoading ? 0.8 : 1, width: '100%' }}
+                    >
+                      {myWaLoading ? <Loader2 size={16} className="animate-spin" /> : null}
+                      {myWaLoading ? 'A gerar QR code...' : 'Ligar o meu WhatsApp'}
+                    </button>
                   )}
                 </div>
               </div>
+
+              {/* ── Card: WhatsApp da Agência (apenas admin/gestor) ── */}
+              {isAdminOrOwner && (
+                <div className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                  <div style={{ background: 'linear-gradient(135deg, #1a6b42 0%, #0d4028 100%)', padding: '20px 24px' }}>
+                    <div className="flex items-center gap-3">
+                      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+                        <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+                          <path d="M22.5 9.5C20.8 7.8 18.5 6.8 16 6.8c-5.1 0-9.2 4.1-9.2 9.2 0 1.6.4 3.2 1.2 4.6L6.8 25.2l4.7-1.2c1.3.7 2.8 1.1 4.4 1.1 5.1 0 9.2-4.1 9.2-9.2.1-2.5-.9-4.8-2.6-6.4zm-6.5 14.1c-1.4 0-2.8-.4-3.9-1.1l-.3-.2-3 .8.8-3-.2-.3c-.8-1.2-1.2-2.6-1.2-4.1 0-4.2 3.4-7.5 7.5-7.5 2 0 3.9.8 5.3 2.2 1.4 1.4 2.2 3.3 2.2 5.3.1 4.2-3.3 7.6-7.2 7.9zm4.1-5.6c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1-.2.2-.6.7-.8.9-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4c.1-.1.2-.3.3-.4.1-.1.1-.2 0-.4-.1-.1-.5-1.2-.7-1.6-.2-.4-.4-.3-.5-.3h-.4c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.1 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .2 1.4.1.4-.1 1.3-.5 1.5-1s.2-.9.1-1z" fill="white"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>WhatsApp da Agência</h3>
+                        <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, margin: 0 }}>Número partilhado — mensagens atribuídas ao consultor responsável</p>
+                      </div>
+                      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: waQrStatus === 'CONNECTED' ? '#fff' : 'rgba(255,255,255,0.4)' }} />
+                        <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12, fontWeight: 600 }}>
+                          {waQrStatus === 'CONNECTED' ? 'Ligado' : waQrStatus === 'CONNECTING' ? 'A ligar...' : 'Desligado'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Body */}
+                  <div style={{ padding: '24px' }}>
+                    {waQrStatus === 'CONNECTED' ? (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderRadius: 12, background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Check size={18} style={{ color: '#16a34a' }} />
+                          </div>
+                          <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: '#15803d' }}>WhatsApp ligado com sucesso</p>
+                            {waQrPhone && <p style={{ margin: 0, fontSize: 12, color: '#16a34a' }}>+{waQrPhone}</p>}
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleWaDisconnect}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid #fca5a5', background: '#fff', color: '#dc2626', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+                        >
+                          <X size={13} /> Desligar
+                        </button>
+                      </div>
+                    ) : waQrImage ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+                        <div style={{ padding: 16, borderRadius: 16, background: '#fff', border: '1.5px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+                          <img src={waQrImage} alt="WhatsApp QR Code" style={{ width: 200, height: 200, display: 'block' }} />
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: 'var(--text-primary)' }}>Lê o código com o teu telemóvel</p>
+                          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>WhatsApp → Dispositivos ligados → Ligar dispositivo</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: 12 }}>
+                          {[
+                            { icon: '📱', title: 'Sem API', desc: 'Não precisas de conta Meta Business' },
+                            { icon: '⚡', title: 'Rápido', desc: 'Liga em segundos com QR Code' },
+                            { icon: '💬', title: 'Completo', desc: 'Envia e recebe mensagens no CRM' },
+                          ].map(f => (
+                            <div key={f.title} style={{ padding: '14px', borderRadius: 12, background: 'var(--surface-3)', border: '1px solid var(--border)', textAlign: 'center' }}>
+                              <div style={{ fontSize: 22, marginBottom: 6 }}>{f.icon}</div>
+                              <p style={{ margin: 0, fontWeight: 700, fontSize: 12, color: 'var(--text-primary)' }}>{f.title}</p>
+                              <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--text-muted)' }}>{f.desc}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          onClick={handleWaConnect}
+                          disabled={waQrLoading}
+                          style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                            padding: '13px 24px', borderRadius: 12, border: 'none', cursor: waQrLoading ? 'not-allowed' : 'pointer',
+                            background: waQrLoading ? '#86efac' : '#25d366', color: '#fff', fontSize: 14, fontWeight: 700,
+                            boxShadow: '0 4px 14px rgba(37,211,102,0.35)', transition: 'all 150ms',
+                            opacity: waQrLoading ? 0.8 : 1,
+                          }}
+                        >
+                          {waQrLoading ? <Loader2 size={16} className="animate-spin" /> : (
+                            <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+                              <path d="M22.5 9.5C20.8 7.8 18.5 6.8 16 6.8c-5.1 0-9.2 4.1-9.2 9.2 0 1.6.4 3.2 1.2 4.6L6.8 25.2l4.7-1.2c1.3.7 2.8 1.1 4.4 1.1 5.1 0 9.2-4.1 9.2-9.2.1-2.5-.9-4.8-2.6-6.4zm-6.5 14.1c-1.4 0-2.8-.4-3.9-1.1l-.3-.2-3 .8.8-3-.2-.3c-.8-1.2-1.2-2.6-1.2-4.1 0-4.2 3.4-7.5 7.5-7.5 2 0 3.9.8 5.3 2.2 1.4 1.4 2.2 3.3 2.2 5.3.1 4.2-3.3 7.6-7.2 7.9zm4.1-5.6c-.2-.1-1.3-.6-1.5-.7-.2-.1-.3-.1-.5.1-.2.2-.6.7-.8.9-.1.1-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.4c.1-.1.2-.3.3-.4.1-.1.1-.2 0-.4-.1-.1-.5-1.2-.7-1.6-.2-.4-.4-.3-.5-.3h-.4c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9 0 1.1.8 2.2.9 2.4.1.1 1.6 2.5 3.9 3.5.5.2 1 .4 1.3.5.5.2 1 .2 1.4.1.4-.1 1.3-.5 1.5-1s.2-.9.1-1z" fill="white"/>
+                            </svg>
+                          )}
+                          {waQrLoading ? 'A gerar QR code...' : 'Ligar com QR Code'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* O que acontece automaticamente */}
               <div style={{ borderRadius: 16, border: '1px solid #bbf7d0', background: '#f0fdf4', padding: '18px 22px' }}>
