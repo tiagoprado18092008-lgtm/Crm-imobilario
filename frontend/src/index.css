@@ -38,7 +38,7 @@
   --sidebar-active-bg: #2E6BE6;
 
   /* ── Typography ──────────────────────────────────────────── */
-  --font-display: 'DM Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Open Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
   --font-body:    'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
   --font-mono:    'DM Mono', 'SF Mono', ui-monospace, Menlo, monospace;
 
