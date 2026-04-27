@@ -284,36 +284,36 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                           minHeight: 44,
                           borderRadius: 8,
                           justifyContent: collapsed ? 'center' : 'flex-start',
-                          background: isActive ? 'rgba(46,107,230,0.18)' : 'transparent',
-                          color: isActive ? '#fff' : 'rgba(200,211,232,0.72)',
+                          background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                          color: isActive ? '#fff' : 'rgba(200,211,232,0.62)',
                           fontFamily: 'var(--font-body)',
                           fontSize: 13,
-                          fontWeight: isActive ? 600 : 500,
+                          fontWeight: isActive ? 600 : 400,
                           cursor: 'pointer',
-                          transition: 'background 120ms, color 120ms',
+                          transition: 'background 180ms ease, color 180ms ease',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           position: 'relative',
                         }}
                         onMouseEnter={e => {
                           if (!isActive) {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.07)'
-                            e.currentTarget.style.color = '#fff'
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
+                            e.currentTarget.style.color = 'rgba(200,211,232,0.9)'
                           }
                         }}
                         onMouseLeave={e => {
                           if (!isActive) {
                             e.currentTarget.style.background = 'transparent'
-                            e.currentTarget.style.color = 'rgba(200,211,232,0.72)'
+                            e.currentTarget.style.color = 'rgba(200,211,232,0.62)'
                           }
                         }}
                       >
-                        {/* Active indicator bar */}
+                        {/* Active indicator dot */}
                         {isActive && !collapsed && (
                           <div style={{
-                            position: 'absolute', left: 0, top: '18%', bottom: '18%',
-                            width: 3, borderRadius: 3,
-                            background: 'var(--accent)',
+                            position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+                            width: 2, height: 14, borderRadius: 2,
+                            background: 'rgba(255,255,255,0.35)',
                           }} />
                         )}
 
