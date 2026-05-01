@@ -156,19 +156,23 @@ export const bulkImport = async (
   const VALID_STAGES = ['LEAD_IN','QUALIFYING','VISIT_SCHEDULED','VISIT_DONE','PROPOSAL_SENT','NEGOTIATION','CPCV_SIGNED','FINANCING','ESCRITURA_SCHEDULED','CLOSED_WON','CLOSED_LOST'];
   const BATCH_SIZE = 500;
 
-  // Filter valid rows upfront
+  // Filter rows with a title
   const validRows = rows.filter(r => r.title && r.title.trim().length >= 2);
   results.skipped += rows.length - validRows.length;
 
-  // Build contact lookup maps to avoid N+1 queries
-  const emailsToLookup = [...new Set(validRows.map(r => r.contactEmail).filter(Boolean) as string[])];
-  const namesToLookup = [...new Set(validRows.map(r => r.contactName).filter(Boolean) as string[])];
+  if (validRows.length === 0) return results;
 
   const agencyFilter: any = user.agencyId
     ? { assignedTo: { agencyId: user.agencyId } }
     : user.locationId
     ? { assignedTo: { locationId: user.locationId } }
     : { assignedToId: user.id };
+
+  // Pre-fetch existing contacts by email and name to avoid duplicates
+  const emailsToLookup = [...new Set(validRows.map(r => r.contactEmail).filter(Boolean) as string[])];
+  const namesToLookup = [...new Set(
+    validRows.map(r => r.contactName || r.contactEmail || r.title.trim()).filter(Boolean) as string[]
+  )];
 
   const [existingByEmail, existingByName] = await Promise.all([
     emailsToLookup.length > 0
@@ -179,77 +183,68 @@ export const bulkImport = async (
       : [],
   ]);
 
-  const emailMap = new Map(existingByEmail.map((c: any) => [c.email?.toLowerCase(), c.id]));
-  const nameMap = new Map(existingByName.map((c: any) => [c.name?.toLowerCase(), c.id]));
+  // contactId lookup: email takes priority, then name
+  const emailToId = new Map(existingByEmail.map((c: any) => [c.email?.toLowerCase(), c.id]));
+  const nameToId = new Map(existingByName.map((c: any) => [c.name?.toLowerCase(), c.id]));
 
-  // Collect contacts that need to be created
-  const contactsToCreate: Array<{ name: string; email?: string; rowIndices: number[] }> = [];
-  const contactKeyMap = new Map<string, string>(); // key -> contactId (filled after batch create)
+  // Resolve or queue contact creation for each row
+  const resolvedContactIds: Array<string | '__create__'> = [];
+  const toCreate = new Map<string, { name: string; email?: string }>(); // dedup key -> data
 
-  const rowContactKeys: Array<string | null> = [];
-
-  for (let i = 0; i < validRows.length; i++) {
-    const row = validRows[i];
+  for (const row of validRows) {
     const emailKey = row.contactEmail?.toLowerCase();
-    const nameKey = row.contactName?.toLowerCase();
+    const contactName = row.contactName || row.title.trim();
+    const nameKey = contactName.toLowerCase();
 
-    if (emailKey && emailMap.has(emailKey)) {
-      rowContactKeys.push(`email:${emailKey}`);
-      contactKeyMap.set(`email:${emailKey}`, emailMap.get(emailKey)!);
-    } else if (nameKey && nameMap.has(nameKey)) {
-      rowContactKeys.push(`name:${nameKey}`);
-      contactKeyMap.set(`name:${nameKey}`, nameMap.get(nameKey)!);
-    } else if (row.contactName || row.contactEmail) {
-      const key = emailKey ? `email:${emailKey}` : `name:${nameKey}`;
-      rowContactKeys.push(key);
-      if (!contactKeyMap.has(key)) {
-        contactKeyMap.set(key, '__pending__');
-        contactsToCreate.push({ name: row.contactName || row.contactEmail!, email: row.contactEmail, rowIndices: [] });
-      }
+    if (emailKey && emailToId.has(emailKey)) {
+      resolvedContactIds.push(emailToId.get(emailKey)!);
+    } else if (nameToId.has(nameKey)) {
+      resolvedContactIds.push(nameToId.get(nameKey)!);
     } else {
-      rowContactKeys.push(null);
+      // Will create — deduplicate by key
+      const createKey = emailKey || nameKey;
+      if (!toCreate.has(createKey)) {
+        toCreate.set(createKey, { name: contactName, email: row.contactEmail });
+      }
+      resolvedContactIds.push('__create__:' + createKey);
     }
   }
 
-  // Batch create missing contacts
-  if (contactsToCreate.length > 0) {
-    for (let i = 0; i < contactsToCreate.length; i += BATCH_SIZE) {
-      const batch = contactsToCreate.slice(i, i + BATCH_SIZE);
-      const created = await Promise.all(batch.map(c =>
-        prisma.contact.create({
-          data: { name: c.name, email: c.email || undefined, type: 'BUYER', status: 'NEW', assignedToId: user.id },
-          select: { id: true, email: true, name: true },
-        })
-      ));
-      created.forEach((c: any, idx: number) => {
-        const orig = batch[idx];
-        const key = orig.email ? `email:${orig.email.toLowerCase()}` : `name:${orig.name.toLowerCase()}`;
-        contactKeyMap.set(key, c.id);
-      });
-    }
+  // Batch-create missing contacts
+  const createdMap = new Map<string, string>(); // createKey -> contactId
+  const toCreateEntries = [...toCreate.entries()];
+  for (let i = 0; i < toCreateEntries.length; i += BATCH_SIZE) {
+    const batch = toCreateEntries.slice(i, i + BATCH_SIZE);
+    const created = await Promise.all(batch.map(([, data]) =>
+      prisma.contact.create({
+        data: { name: data.name, email: data.email || undefined, type: 'BUYER', status: 'NEW', assignedToId: user.id },
+        select: { id: true },
+      })
+    ));
+    batch.forEach(([key], idx) => createdMap.set(key, created[idx].id));
   }
 
-  // Stage position counters (avoid per-row DB query)
+  // Stage position counters
   const stagePositions = new Map<string, number>();
-  const stageMaxes = await prisma.opportunity.groupBy({
-    by: ['stage'],
-    _max: { position: true },
-  });
+  const stageMaxes = await prisma.opportunity.groupBy({ by: ['stage'], _max: { position: true } });
   for (const s of stageMaxes) {
     stagePositions.set(s.stage, (s._max.position ?? -1) + 1);
   }
 
-  // Build opportunity records and batch insert
+  // Build opportunity records
   const oppsToCreate: any[] = [];
   for (let i = 0; i < validRows.length; i++) {
     const row = validRows[i];
-    const key = rowContactKeys[i];
-    const contactId = key ? contactKeyMap.get(key) : null;
+    let contactId: string | undefined;
 
-    if (!contactId || contactId === '__pending__') {
-      results.skipped++;
-      continue;
+    const ref = resolvedContactIds[i];
+    if (ref.startsWith('__create__:')) {
+      contactId = createdMap.get(ref.replace('__create__:', ''));
+    } else {
+      contactId = ref;
     }
+
+    if (!contactId) { results.skipped++; continue; }
 
     const stage = VALID_STAGES.includes(row.stage?.toUpperCase() ?? '') ? row.stage!.toUpperCase() : 'LEAD_IN';
     const pos = stagePositions.get(stage) ?? 0;
