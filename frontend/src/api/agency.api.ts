@@ -29,4 +29,4 @@ export const assignUserToAgency = (agencyId: string, userId: string) =>
   api.post(`/agency/${agencyId}/members`, { userId })
 
 export const removeAgencyMember = (agencyId: string, userId: string) =>
-  api.delete(`/agencies/${agencyId}/members/${userId}`)
+  api.delete(`/agency/${agencyId}/members/${userId}`)
