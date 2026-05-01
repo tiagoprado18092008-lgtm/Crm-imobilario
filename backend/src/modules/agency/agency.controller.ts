@@ -93,6 +93,21 @@ export const regenerateApiKey = async (req: Request, res: Response, next: NextFu
   }
 };
 
+export const removeMember = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const agencyId = req.params.id;
+    const userId = req.params.userId;
+    if (req.user?.agencyId !== agencyId) {
+      res.status(403).json({ error: 'Access denied', status: 403 });
+      return;
+    }
+    const result = await agencyService.removeMember(agencyId, userId, req.user.id);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const uploadLogo = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (req.user?.agencyId !== req.params.id) {

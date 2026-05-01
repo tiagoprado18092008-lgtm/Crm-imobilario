@@ -52,6 +52,9 @@ router.get('/:id/members', agencyController.listMembers);
 // Assign a user to agency — managers only
 router.post('/:id/members', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN'), agencyController.assignUser);
 
+// Remove a member from agency — owner only
+router.delete('/:id/members/:userId', requireRole('AGENCY_OWNER'), agencyController.removeMember);
+
 // Impersonation
 router.post('/impersonate/:userId', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN'), async (req, res) => {
   const { userId } = req.params;

@@ -69,3 +69,21 @@ export const assignUserToAgency = async (userId: string, agencyId: string) => {
     select: { id: true, name: true, email: true, role: true, agencyId: true },
   });
 };
+
+export const removeMember = async (agencyId: string, userId: string, requesterId: string) => {
+  if (userId === requesterId) {
+    throw Object.assign(new Error('Não pode remover-se a si próprio'), { status: 400 });
+  }
+  const target = await prisma.user.findUnique({ where: { id: userId } });
+  if (!target || target.agencyId !== agencyId) {
+    throw Object.assign(new Error('Utilizador não encontrado nesta agência'), { status: 404 });
+  }
+  if (target.role === 'AGENCY_OWNER') {
+    throw Object.assign(new Error('Não é possível remover o proprietário da agência'), { status: 403 });
+  }
+  return prisma.user.update({
+    where: { id: userId },
+    data: { agencyId: null, isActive: false },
+    select: { id: true, name: true, email: true },
+  });
+};
