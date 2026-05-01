@@ -3,11 +3,12 @@ import { useSearchParams } from 'react-router-dom'
 import { Users, UserPlus, Settings, Mail, Trash2, Send, Building2, CheckCircle, Clock, XCircle, Shield, Save, Globe, Phone, MapPin, Image, Upload, X } from 'lucide-react'
 import { useAuthStore } from '../store/auth.store'
 import { useUIStore } from '../store/ui.store'
-import { listAgencyMembers, getMyAgency, updateAgency } from '../api/agency.api'
+import { listAgencyMembers, getMyAgency, updateAgency, removeAgencyMember } from '../api/agency.api'
 import { createInvitation, listInvitations, revokeInvitation } from '../api/invitations.api'
 import { PageSpinner } from '../components/ui/Spinner'
 import { formatDate, getInitials } from '../utils/formatters'
 import { ROLE_LABELS } from '../utils/constants'
+import { CustomSelect } from '../components/ui/CustomSelect'
 import type { User } from '../types'
 
 /* ── Agency settings form types ─────────────────────────────── */
@@ -313,6 +314,23 @@ export const AgencyPage: React.FC = () => {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState('CONSULTANT')
   const [inviteSending, setInviteSending] = useState(false)
+  const [removingId, setRemovingId] = useState<string | null>(null)
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null)
+
+  const handleRemoveMember = async (memberId: string) => {
+    if (!user?.agencyId) return
+    setRemovingId(memberId)
+    try {
+      await removeAgencyMember(user.agencyId, memberId)
+      showToast('Membro removido da agência.', 'success')
+      setMembers(prev => prev.filter(m => m.id !== memberId))
+    } catch (err: any) {
+      showToast(err?.response?.data?.error || 'Erro ao remover membro.', 'error')
+    } finally {
+      setRemovingId(null)
+      setConfirmRemoveId(null)
+    }
+  }
 
   const switchTab = (t: Tab) => {
     setTab(t)
@@ -392,7 +410,7 @@ export const AgencyPage: React.FC = () => {
           </div>
         </div>
 
-        {tab === 'invites' && (
+        {(tab === 'members' || tab === 'invites') && (
           <button
             onClick={() => setInviteOpen(true)}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, background: 'var(--accent)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
@@ -448,6 +466,7 @@ export const AgencyPage: React.FC = () => {
                       <th style={thStyle}>Email</th>
                       <th style={thStyle}>Função</th>
                       <th style={thStyle}>Desde</th>
+                      {user?.role === 'AGENCY_OWNER' && <th style={{ ...thStyle, textAlign: 'right' }}></th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -476,6 +495,37 @@ export const AgencyPage: React.FC = () => {
                           </span>
                         </td>
                         <td style={{ ...tdStyle, color: '#6b7a99' }}>{formatDate(member.createdAt)}</td>
+                        {user?.role === 'AGENCY_OWNER' && (
+                          <td style={{ ...tdStyle, textAlign: 'right' }}>
+                            {member.id !== user.id && member.role !== 'AGENCY_OWNER' && (
+                              confirmRemoveId === member.id ? (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                  <span style={{ fontSize: 12, color: '#ef4444', fontWeight: 600 }}>Tem a certeza?</span>
+                                  <button
+                                    onClick={() => handleRemoveMember(member.id)}
+                                    disabled={removingId === member.id}
+                                    style={{ padding: '4px 10px', borderRadius: 7, border: 'none', background: '#ef4444', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                                  >
+                                    {removingId === member.id ? '...' : 'Sim'}
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmRemoveId(null)}
+                                    style={{ padding: '4px 10px', borderRadius: 7, border: '1px solid #e5e9f2', background: '#fff', color: '#6b7a99', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
+                                  >
+                                    Não
+                                  </button>
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => setConfirmRemoveId(member.id)}
+                                  style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 7, border: '1px solid #fee2e2', background: '#fff', color: '#ef4444', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
+                                >
+                                  <Trash2 size={11} /> Expulsar
+                                </button>
+                              )
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -490,12 +540,6 @@ export const AgencyPage: React.FC = () => {
               <div style={{ textAlign: 'center', padding: 48, color: '#6b7a99' }}>
                 <Mail size={36} style={{ opacity: 0.3, marginBottom: 10 }} />
                 <p>Ainda não enviou nenhum convite.</p>
-                <button
-                  onClick={() => setInviteOpen(true)}
-                  style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, background: 'var(--accent)', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  <UserPlus size={14} /> Convidar membro
-                </button>
               </div>
             ) : (
               <div style={{ background: '#fff', border: '1px solid #e5e9f2', borderRadius: 14, overflow: 'hidden' }}>
@@ -614,14 +658,12 @@ export const AgencyPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label style={{ fontSize: 11, fontWeight: 600, color: '#6b7a99', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Função</label>
-                <select
+                <CustomSelect
+                  label="Função"
                   value={inviteRole}
-                  onChange={e => setInviteRole(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #dce3ef', fontSize: 13, outline: 'none', fontFamily: 'inherit', background: '#fff' }}
-                >
-                  {INVITE_ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
+                  onChange={v => setInviteRole(v)}
+                  options={INVITE_ROLES}
+                />
               </div>
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
                 <button type="button" onClick={() => setInviteOpen(false)} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid #dce3ef', background: '#fff', color: '#6b7a99', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
