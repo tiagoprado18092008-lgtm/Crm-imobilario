@@ -1,30 +1,5 @@
 import { initAuthCreds, BufferJSON } from '@whiskeysockets/baileys'
-import fs from 'fs'
-import path from 'path'
 import prisma from '../../config/database'
-
-function keysFile(sessionKey: string) {
-  const safe = sessionKey.replace(':', '_')
-  return path.join('/tmp', `wa-keys-${safe}.json`)
-}
-
-function readKeysFromFile(sessionKey: string): Record<string, any> {
-  try {
-    const file = keysFile(sessionKey)
-    if (fs.existsSync(file)) {
-      return JSON.parse(fs.readFileSync(file, 'utf-8'), BufferJSON.reviver)
-    }
-  } catch {}
-  return {}
-}
-
-function writeKeysToFile(sessionKey: string, data: Record<string, any>) {
-  try {
-    fs.writeFileSync(keysFile(sessionKey), JSON.stringify(data, BufferJSON.replacer))
-  } catch (e) {
-    console.error('[WA] Failed to write keys file:', e)
-  }
-}
 
 function parseSessionKey(sessionKey: string): { agencyId: string; userId: string | null } {
   const parts = sessionKey.split(':')
@@ -34,18 +9,26 @@ function parseSessionKey(sessionKey: string): { agencyId: string; userId: string
 export async function usePrismaAuthState(sessionKey: string) {
   const { agencyId, userId } = parseSessionKey(sessionKey)
 
-  const loadCreds = async () => {
-    const row = await prisma.whatsAppSession.findUnique({
+  const loadRow = async () => {
+    return prisma.whatsAppSession.findUnique({
       where: { agencyId_userId: { agencyId, userId: userId as any } },
     })
-    if (row?.creds && row.creds !== '{}') {
-      try { return JSON.parse(row.creds, BufferJSON.reviver) } catch {}
-    }
-    return initAuthCreds()
   }
 
-  const creds = await loadCreds()
-  let keysData = readKeysFromFile(sessionKey)
+  const row = await loadRow()
+  let creds: any
+  try {
+    creds = row?.creds && row.creds !== '{}' ? JSON.parse(row.creds, BufferJSON.reviver) : initAuthCreds()
+  } catch {
+    creds = initAuthCreds()
+  }
+
+  let keysData: Record<string, any> = {}
+  try {
+    keysData = row?.keys ? JSON.parse(row.keys as string, BufferJSON.reviver) : {}
+  } catch {
+    keysData = {}
+  }
 
   const saveCreds = async (updatedCreds: any) => {
     Object.assign(creds, updatedCreds)
@@ -60,9 +43,17 @@ export async function usePrismaAuthState(sessionKey: string) {
     }
   }
 
-  const saveKeys = (data: Record<string, any>) => {
+  const saveKeys = async (data: Record<string, any>) => {
     Object.assign(keysData, data)
-    writeKeysToFile(sessionKey, keysData)
+    try {
+      await prisma.whatsAppSession.upsert({
+        where: { agencyId_userId: { agencyId, userId: userId as any } },
+        create: { agencyId, userId, creds: JSON.stringify(creds, BufferJSON.replacer), keys: JSON.stringify(keysData, BufferJSON.replacer), status: 'CONNECTING' },
+        update: { keys: JSON.stringify(keysData, BufferJSON.replacer) },
+      })
+    } catch (err) {
+      console.error('[WA] Failed to save keys:', err)
+    }
   }
 
   return {
@@ -84,7 +75,7 @@ export async function usePrismaAuthState(sessionKey: string) {
               flat[`${type}-${id}`] = val
             }
           }
-          saveKeys(flat)
+          saveKeys(flat).catch(e => console.error('[WA] saveKeys error:', e))
         },
       },
     },

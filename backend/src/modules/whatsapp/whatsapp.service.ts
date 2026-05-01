@@ -44,11 +44,24 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
   s.qr = null
   console.log(`[WA:${sessionKey}] Starting initWhatsApp...`)
 
-  await prisma.whatsAppSession.upsert({
+  // Check if previous session had no keys (e.g. after server restart) — clear creds to force new QR
+  const existingRow = await prisma.whatsAppSession.findUnique({
     where: { agencyId_userId: { agencyId, userId: userId ?? null } } as any,
-    create: { agencyId, userId: userId ?? null, creds: '{}', status: 'CONNECTING' },
-    update: { status: 'CONNECTING' },
+    select: { keys: true, creds: true },
   })
+  const hasValidState = existingRow?.creds && existingRow.creds !== '{}' && existingRow.keys
+  if (!hasValidState && existingRow) {
+    await prisma.whatsAppSession.update({
+      where: { agencyId_userId: { agencyId, userId: userId ?? null } } as any,
+      data: { creds: '{}', keys: null, status: 'CONNECTING' },
+    })
+  } else {
+    await prisma.whatsAppSession.upsert({
+      where: { agencyId_userId: { agencyId, userId: userId ?? null } } as any,
+      create: { agencyId, userId: userId ?? null, creds: '{}', status: 'CONNECTING' },
+      update: { status: 'CONNECTING' },
+    })
+  }
 
   try {
     const { state, saveCreds } = await usePrismaAuthState(sessionKey)
@@ -107,10 +120,18 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
         s.qr = null
         s.status = 'DISCONNECTED'
         s.sock = null
-        await prisma.whatsAppSession.updateMany({
-          where: { agencyId, userId: userId ?? null },
-          data: { status: 'DISCONNECTED' },
-        })
+        if (isLoggedOut) {
+          // Clear stored credentials so next connect generates a fresh QR
+          await prisma.whatsAppSession.updateMany({
+            where: { agencyId, userId: userId ?? null },
+            data: { status: 'DISCONNECTED', creds: '{}', keys: null, phone: null },
+          })
+        } else {
+          await prisma.whatsAppSession.updateMany({
+            where: { agencyId, userId: userId ?? null },
+            data: { status: 'DISCONNECTED' },
+          })
+        }
         if (!isLoggedOut && !isConflict) {
           if (s.reconnectTimer) clearTimeout(s.reconnectTimer)
           s.reconnectTimer = setTimeout(() => initWhatsApp(agencyId, userId), 5000)
