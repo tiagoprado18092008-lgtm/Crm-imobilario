@@ -154,51 +154,124 @@ export const bulkImport = async (
 ) => {
   const results = { created: 0, skipped: 0, errors: [] as string[] };
   const VALID_STAGES = ['LEAD_IN','QUALIFYING','VISIT_SCHEDULED','VISIT_DONE','PROPOSAL_SENT','NEGOTIATION','CPCV_SIGNED','FINANCING','ESCRITURA_SCHEDULED','CLOSED_WON','CLOSED_LOST'];
+  const BATCH_SIZE = 500;
 
-  for (const row of rows) {
-    if (!row.title || row.title.trim().length < 2) { results.skipped++; continue; }
-    try {
-      // Find or create contact — scoped to user's agency
-      let contact: any = null;
-      const contactScope: any = user.agencyId ? { assignedTo: { agencyId: user.agencyId } } : user.locationId ? { assignedTo: { locationId: user.locationId } } : { assignedToId: user.id };
-      if (row.contactEmail) {
-        contact = await prisma.contact.findFirst({ where: { email: row.contactEmail, ...contactScope } });
-      }
-      if (!contact && row.contactName) {
-        contact = await prisma.contact.findFirst({ where: { name: { contains: row.contactName }, ...contactScope } });
-      }
-      if (!contact && (row.contactName || row.contactEmail)) {
-        contact = await prisma.contact.create({
-          data: {
-            name: row.contactName || row.contactEmail!,
-            email: row.contactEmail || undefined,
-            type: 'BUYER',
-            status: 'NEW',
-            assignedToId: user.id,
-          },
-        });
-      }
-      if (!contact) { results.skipped++; continue; }
+  // Filter valid rows upfront
+  const validRows = rows.filter(r => r.title && r.title.trim().length >= 2);
+  results.skipped += rows.length - validRows.length;
 
-      const stage = VALID_STAGES.includes(row.stage?.toUpperCase() ?? '') ? row.stage!.toUpperCase() : 'LEAD_IN';
-      const lastInStage = await prisma.opportunity.findFirst({ where: { stage: stage as any }, orderBy: { position: 'desc' }, select: { position: true } });
-      const position = lastInStage ? lastInStage.position + 1 : 0;
+  // Build contact lookup maps to avoid N+1 queries
+  const emailsToLookup = [...new Set(validRows.map(r => r.contactEmail).filter(Boolean) as string[])];
+  const namesToLookup = [...new Set(validRows.map(r => r.contactName).filter(Boolean) as string[])];
 
-      await prisma.opportunity.create({
-        data: {
-          title: row.title.trim(),
-          stage: stage as any,
-          value: row.value || undefined,
-          source: row.source || undefined,
-          notes: row.notes || undefined,
-          position,
-          contactId: contact.id,
-          assignedToId: user.id,
-        },
+  const agencyFilter: any = user.agencyId ? { agencyId: user.agencyId } : user.locationId ? { locationId: user.locationId } : { assignedToId: user.id };
+
+  const [existingByEmail, existingByName] = await Promise.all([
+    emailsToLookup.length > 0
+      ? prisma.contact.findMany({ where: { email: { in: emailsToLookup }, ...agencyFilter }, select: { id: true, email: true, name: true } })
+      : [],
+    namesToLookup.length > 0
+      ? prisma.contact.findMany({ where: { name: { in: namesToLookup }, ...agencyFilter }, select: { id: true, email: true, name: true } })
+      : [],
+  ]);
+
+  const emailMap = new Map(existingByEmail.map((c: any) => [c.email?.toLowerCase(), c.id]));
+  const nameMap = new Map(existingByName.map((c: any) => [c.name?.toLowerCase(), c.id]));
+
+  // Collect contacts that need to be created
+  const contactsToCreate: Array<{ name: string; email?: string; rowIndices: number[] }> = [];
+  const contactKeyMap = new Map<string, string>(); // key -> contactId (filled after batch create)
+
+  const rowContactKeys: Array<string | null> = [];
+
+  for (let i = 0; i < validRows.length; i++) {
+    const row = validRows[i];
+    const emailKey = row.contactEmail?.toLowerCase();
+    const nameKey = row.contactName?.toLowerCase();
+
+    if (emailKey && emailMap.has(emailKey)) {
+      rowContactKeys.push(`email:${emailKey}`);
+      contactKeyMap.set(`email:${emailKey}`, emailMap.get(emailKey)!);
+    } else if (nameKey && nameMap.has(nameKey)) {
+      rowContactKeys.push(`name:${nameKey}`);
+      contactKeyMap.set(`name:${nameKey}`, nameMap.get(nameKey)!);
+    } else if (row.contactName || row.contactEmail) {
+      const key = emailKey ? `email:${emailKey}` : `name:${nameKey}`;
+      rowContactKeys.push(key);
+      if (!contactKeyMap.has(key)) {
+        contactKeyMap.set(key, '__pending__');
+        contactsToCreate.push({ name: row.contactName || row.contactEmail!, email: row.contactEmail, rowIndices: [] });
+      }
+    } else {
+      rowContactKeys.push(null);
+    }
+  }
+
+  // Batch create missing contacts
+  if (contactsToCreate.length > 0) {
+    for (let i = 0; i < contactsToCreate.length; i += BATCH_SIZE) {
+      const batch = contactsToCreate.slice(i, i + BATCH_SIZE);
+      const created = await Promise.all(batch.map(c =>
+        prisma.contact.create({
+          data: { name: c.name, email: c.email || undefined, type: 'BUYER', status: 'NEW', assignedToId: user.id },
+          select: { id: true, email: true, name: true },
+        })
+      ));
+      created.forEach((c: any, idx: number) => {
+        const orig = batch[idx];
+        const key = orig.email ? `email:${orig.email.toLowerCase()}` : `name:${orig.name.toLowerCase()}`;
+        contactKeyMap.set(key, c.id);
       });
-      results.created++;
+    }
+  }
+
+  // Stage position counters (avoid per-row DB query)
+  const stagePositions = new Map<string, number>();
+  const stageMaxes = await prisma.opportunity.groupBy({
+    by: ['stage'],
+    _max: { position: true },
+  });
+  for (const s of stageMaxes) {
+    stagePositions.set(s.stage, (s._max.position ?? -1) + 1);
+  }
+
+  // Build opportunity records and batch insert
+  const oppsToCreate: any[] = [];
+  for (let i = 0; i < validRows.length; i++) {
+    const row = validRows[i];
+    const key = rowContactKeys[i];
+    const contactId = key ? contactKeyMap.get(key) : null;
+
+    if (!contactId || contactId === '__pending__') {
+      results.skipped++;
+      continue;
+    }
+
+    const stage = VALID_STAGES.includes(row.stage?.toUpperCase() ?? '') ? row.stage!.toUpperCase() : 'LEAD_IN';
+    const pos = stagePositions.get(stage) ?? 0;
+    stagePositions.set(stage, pos + 1);
+
+    oppsToCreate.push({
+      title: row.title.trim(),
+      stage: stage as any,
+      value: row.value || undefined,
+      source: row.source || undefined,
+      notes: row.notes || undefined,
+      position: pos,
+      contactId,
+      assignedToId: user.id,
+    });
+  }
+
+  // Insert in batches of 500
+  for (let i = 0; i < oppsToCreate.length; i += BATCH_SIZE) {
+    const batch = oppsToCreate.slice(i, i + BATCH_SIZE);
+    try {
+      await prisma.opportunity.createMany({ data: batch, skipDuplicates: false });
+      results.created += batch.length;
     } catch (e: any) {
-      results.errors.push(`${row.title}: ${e.message}`);
+      results.errors.push(`Lote ${Math.floor(i / BATCH_SIZE) + 1}: ${e.message}`);
+      results.skipped += batch.length;
     }
   }
 

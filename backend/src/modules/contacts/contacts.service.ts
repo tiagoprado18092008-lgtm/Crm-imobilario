@@ -172,36 +172,50 @@ export const bulkImport = async (
   user?: any
 ) => {
   const results = { created: 0, skipped: 0, errors: [] as string[] };
-  const agencyScope: any = user?.agencyId ? { assignedTo: { agencyId: user.agencyId } } : user?.locationId ? { assignedTo: { locationId: user.locationId } } : { assignedToId: userId };
+  const BATCH_SIZE = 500;
+  const agencyFilter: any = user?.agencyId ? { agencyId: user.agencyId } : user?.locationId ? { locationId: user.locationId } : { assignedToId: userId };
 
-  for (const row of rows) {
-    if (!row.name || row.name.trim().length < 2) {
+  // Filter rows with valid names
+  const validRows = rows.filter(r => r.name && r.name.trim().length >= 2);
+  results.skipped += rows.length - validRows.length;
+
+  // Pre-fetch existing emails in bulk to avoid N+1 duplicate checks
+  const emailsToCheck = [...new Set(validRows.map(r => r.email).filter(Boolean) as string[])];
+  const existingEmails = emailsToCheck.length > 0
+    ? await prisma.contact.findMany({ where: { email: { in: emailsToCheck }, ...agencyFilter }, select: { email: true } })
+    : [];
+  const existingEmailSet = new Set(existingEmails.map((c: any) => c.email?.toLowerCase()));
+
+  // Build records to create, skipping duplicates
+  const toCreate: any[] = [];
+  for (const row of validRows) {
+    if (row.email && existingEmailSet.has(row.email.toLowerCase())) {
       results.skipped++;
       continue;
     }
+    toCreate.push({
+      name: row.name.trim(),
+      email: row.email || undefined,
+      phone: row.phone || undefined,
+      whatsapp: row.whatsapp || undefined,
+      type: (['BUYER','OWNER','PARTNER'].includes(row.type?.toUpperCase() ?? '') ? row.type!.toUpperCase() : 'BUYER') as any,
+      status: (['NEW','QUALIFIED','CONTACTED','INACTIVE'].includes(row.status?.toUpperCase() ?? '') ? row.status!.toUpperCase() : 'NEW') as any,
+      source: row.source || undefined,
+      notes: row.notes || undefined,
+      city: row.city || undefined,
+      assignedToId: userId,
+    });
+  }
+
+  // Insert in batches
+  for (let i = 0; i < toCreate.length; i += BATCH_SIZE) {
+    const batch = toCreate.slice(i, i + BATCH_SIZE);
     try {
-      // Skip if email already exists within agency
-      if (row.email) {
-        const existing = await prisma.contact.findFirst({ where: { email: row.email, ...agencyScope } });
-        if (existing) { results.skipped++; continue; }
-      }
-      await prisma.contact.create({
-        data: {
-          name: row.name.trim(),
-          email: row.email || undefined,
-          phone: row.phone || undefined,
-          whatsapp: row.whatsapp || undefined,
-          type: (['BUYER','OWNER','PARTNER'].includes(row.type?.toUpperCase() ?? '') ? row.type!.toUpperCase() : 'BUYER') as any,
-          status: (['NEW','QUALIFIED','CONTACTED','INACTIVE'].includes(row.status?.toUpperCase() ?? '') ? row.status!.toUpperCase() : 'NEW') as any,
-          source: row.source || undefined,
-          notes: row.notes || undefined,
-          city: row.city || undefined,
-          assignedToId: userId,
-        },
-      });
-      results.created++;
+      const res = await prisma.contact.createMany({ data: batch, skipDuplicates: true });
+      results.created += res.count;
     } catch (e: any) {
-      results.errors.push(`${row.name}: ${e.message}`);
+      results.errors.push(`Lote ${Math.floor(i / BATCH_SIZE) + 1}: ${e.message}`);
+      results.skipped += batch.length;
     }
   }
 

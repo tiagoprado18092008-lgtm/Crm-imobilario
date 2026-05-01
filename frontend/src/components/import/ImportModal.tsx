@@ -38,6 +38,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onSucce
   const [rows, setRows] = useState<any[]>([])
   const [headers, setHeaders] = useState<string[]>([])
   const [importing, setImporting] = useState(false)
+  const [importProgress, setImportProgress] = useState(0)
   const [result, setResult] = useState<{ created: number; skipped: number; errors: string[] } | null>(null)
   const [fileName, setFileName] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -113,15 +114,26 @@ export const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onSucce
 
   const handleImport = async () => {
     setImporting(true)
+    setImportProgress(0)
+    const BATCH_SIZE = 2000
+    const endpoint = type === 'contacts' ? '/contacts/import' : '/opportunities/import'
+    const mapped = rows.map(r => mapRow(r, headers)).filter(r =>
+      type === 'contacts' ? r.name : r.title
+    )
+    const total = mapped.length
+    const aggregate = { created: 0, skipped: 0, errors: [] as string[] }
     try {
-      const mapped = rows.map(r => mapRow(r, headers)).filter(r =>
-        type === 'contacts' ? r.name : r.title
-      )
-      const endpoint = type === 'contacts' ? '/contacts/import' : '/opportunities/import'
-      const res = await api.post(endpoint, { rows: mapped })
-      setResult(res.data)
+      for (let i = 0; i < mapped.length; i += BATCH_SIZE) {
+        const batch = mapped.slice(i, i + BATCH_SIZE)
+        const res = await api.post(endpoint, { rows: batch })
+        aggregate.created += res.data.created ?? 0
+        aggregate.skipped += res.data.skipped ?? 0
+        aggregate.errors.push(...(res.data.errors ?? []))
+        setImportProgress(Math.round(((i + batch.length) / total) * 100))
+      }
+      setResult(aggregate)
       setStep('result')
-      if (res.data.created > 0) onSuccess()
+      if (aggregate.created > 0) onSuccess()
     } catch {
       showToast('Erro ao importar', 'error')
     } finally {
@@ -275,13 +287,20 @@ export const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onSucce
               }}>
                 Voltar
               </button>
-              <button onClick={handleImport} disabled={importing} style={{
-                padding: '9px 24px', borderRadius: 8, border: 'none',
-                background: 'var(--accent)', color: '#fff', cursor: importing ? 'not-allowed' : 'pointer',
-                fontSize: 13, fontWeight: 600, opacity: importing ? 0.7 : 1,
-              }}>
-                {importing ? 'A importar...' : `Importar ${rows.length} registos`}
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, alignItems: 'flex-end' }}>
+                {importing && (
+                  <div style={{ width: 200, background: 'var(--border)', borderRadius: 4, height: 4, overflow: 'hidden' }}>
+                    <div style={{ width: `${importProgress}%`, height: '100%', background: 'var(--accent)', transition: 'width 300ms' }} />
+                  </div>
+                )}
+                <button onClick={handleImport} disabled={importing} style={{
+                  padding: '9px 24px', borderRadius: 8, border: 'none',
+                  background: 'var(--accent)', color: '#fff', cursor: importing ? 'not-allowed' : 'pointer',
+                  fontSize: 13, fontWeight: 600, opacity: importing ? 0.7 : 1,
+                }}>
+                  {importing ? `A importar... ${importProgress}%` : `Importar ${rows.length} registos`}
+                </button>
+              </div>
             </div>
           </div>
         )}
