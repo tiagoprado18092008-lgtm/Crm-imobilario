@@ -164,7 +164,11 @@ export const bulkImport = async (
   const emailsToLookup = [...new Set(validRows.map(r => r.contactEmail).filter(Boolean) as string[])];
   const namesToLookup = [...new Set(validRows.map(r => r.contactName).filter(Boolean) as string[])];
 
-  const agencyFilter: any = user.agencyId ? { agencyId: user.agencyId } : user.locationId ? { locationId: user.locationId } : { assignedToId: user.id };
+  const agencyFilter: any = user.agencyId
+    ? { assignedTo: { agencyId: user.agencyId } }
+    : user.locationId
+    ? { assignedTo: { locationId: user.locationId } }
+    : { assignedToId: user.id };
 
   const [existingByEmail, existingByName] = await Promise.all([
     emailsToLookup.length > 0

@@ -173,7 +173,11 @@ export const bulkImport = async (
 ) => {
   const results = { created: 0, skipped: 0, errors: [] as string[] };
   const BATCH_SIZE = 500;
-  const agencyFilter: any = user?.agencyId ? { agencyId: user.agencyId } : user?.locationId ? { locationId: user.locationId } : { assignedToId: userId };
+  const agencyFilter: any = user?.agencyId
+    ? { assignedTo: { agencyId: user.agencyId } }
+    : user?.locationId
+    ? { assignedTo: { locationId: user.locationId } }
+    : { assignedToId: userId };
 
   // Filter rows with valid names
   const validRows = rows.filter(r => r.name && r.name.trim().length >= 2);
