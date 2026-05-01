@@ -10,19 +10,27 @@ const getTransporter = () => {
     port: parseInt(process.env.SMTP_PORT || '587'),
     secure: false,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 10000,
   });
 };
 
 export const create = async (email: string, role: string, invitedById: string, locationId?: string, permissions?: any, agencyId?: string) => {
-  // Check if email already registered
+  // Check if email already registered as an active user (ignore inactive invitation placeholders)
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) throw Object.assign(new Error('Email já registado na plataforma'), { status: 409 });
+  if (existing && existing.isActive) throw Object.assign(new Error('Email já registado na plataforma'), { status: 409 });
 
   // Invalidate previous pending invitations for same email
   await prisma.invitation.updateMany({
     where: { email, usedAt: null, expiresAt: { gt: new Date() } },
     data: { expiresAt: new Date() }, // expire them
   });
+
+  // Remove stale inactive placeholder for this email so we can create a fresh one
+  if (existing && !existing.isActive) {
+    await prisma.user.delete({ where: { id: existing.id } });
+  }
 
   // Resolve agencyId and locationId from params or from the inviter
   let resolvedAgencyId = agencyId;
