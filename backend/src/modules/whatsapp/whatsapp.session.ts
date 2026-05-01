@@ -9,29 +9,37 @@ function parseSessionKey(sessionKey: string): { agencyId: string; userId: string
 export async function usePrismaAuthState(sessionKey: string) {
   const { agencyId, userId } = parseSessionKey(sessionKey)
 
-  const loadRow = async () => {
-    return prisma.whatsAppSession.findUnique({
-      where: { agencyId_userId: { agencyId, userId: userId as any } },
-    })
-  }
+  const row = await prisma.whatsAppSession.findFirst({
+    where: { agencyId, userId: userId ?? null },
+  })
 
-  const row = await loadRow()
+  // Only reuse creds if both creds AND keys are present (complete session state)
+  // If keys are missing, starting with stale creds causes a 401 with no QR generated
+  const hasCreds = row?.creds && row.creds !== '{}'
+  const hasKeys = row?.keys && row.keys !== '{}'
+  const canRestore = hasCreds && hasKeys
+
   let creds: any
-  try {
-    creds = row?.creds && row.creds !== '{}' ? JSON.parse(row.creds, BufferJSON.reviver) : initAuthCreds()
-  } catch {
+  if (canRestore) {
+    try {
+      creds = JSON.parse(row!.creds, BufferJSON.reviver)
+    } catch {
+      creds = initAuthCreds()
+    }
+  } else {
     creds = initAuthCreds()
   }
 
   let keysData: Record<string, any> = {}
-  try {
-    keysData = row?.keys ? JSON.parse(row.keys as string, BufferJSON.reviver) : {}
-  } catch {
-    keysData = {}
+  if (canRestore && row?.keys) {
+    try {
+      keysData = JSON.parse(row.keys as string, BufferJSON.reviver)
+    } catch {
+      keysData = {}
+    }
   }
 
-  const saveCreds = async (updatedCreds: any) => {
-    Object.assign(creds, updatedCreds)
+  const saveCreds = async () => {
     try {
       await prisma.whatsAppSession.upsert({
         where: { agencyId_userId: { agencyId, userId: userId as any } },

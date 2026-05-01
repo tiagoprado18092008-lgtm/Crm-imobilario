@@ -12,6 +12,8 @@ interface SessionState {
   phone: string | null
   qr: string | null
   reconnectTimer: ReturnType<typeof setTimeout> | null
+  agencyId: string
+  userId: string | null
 }
 
 const sessions = new Map<string, SessionState>()
@@ -20,21 +22,33 @@ function toKey(agencyId: string, userId?: string | null): string {
   return userId ? `${agencyId}:${userId}` : agencyId
 }
 
-function getSession(sessionKey: string): SessionState {
-  if (!sessions.has(sessionKey)) {
-    sessions.set(sessionKey, { sock: null, status: 'DISCONNECTED', phone: null, qr: null, reconnectTimer: null })
+function getSession(agencyId: string, userId?: string | null): SessionState {
+  const key = toKey(agencyId, userId)
+  if (!sessions.has(key)) {
+    sessions.set(key, { sock: null, status: 'DISCONNECTED', phone: null, qr: null, reconnectTimer: null, agencyId, userId: userId ?? null })
   }
-  return sessions.get(sessionKey)!
+  return sessions.get(key)!
 }
 
 export function getStatus(agencyId: string, userId?: string | null) {
-  const s = getSession(toKey(agencyId, userId))
+  const s = getSession(agencyId, userId)
   return { status: s.status, phone: s.phone, qr: s.qr }
+}
+
+async function clearCredsInDb(agencyId: string, userId: string | null) {
+  try {
+    await prisma.whatsAppSession.updateMany({
+      where: { agencyId, userId: userId ?? null },
+      data: { creds: '{}', keys: null, status: 'DISCONNECTED', phone: null },
+    })
+  } catch {}
 }
 
 export async function initWhatsApp(agencyId: string, userId?: string | null): Promise<void> {
   const sessionKey = toKey(agencyId, userId)
-  const s = getSession(sessionKey)
+  const s = getSession(agencyId, userId)
+
+  // If socket already active, don't restart
   if (s.sock) {
     console.log(`[WA:${sessionKey}] Already initialised`)
     return
@@ -44,28 +58,9 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
   s.qr = null
   console.log(`[WA:${sessionKey}] Starting initWhatsApp...`)
 
-  // Check if previous session had no keys (e.g. after server restart) — clear creds to force new QR
-  const existingRow = await prisma.whatsAppSession.findUnique({
-    where: { agencyId_userId: { agencyId, userId: userId ?? null } } as any,
-    select: { keys: true, creds: true },
-  })
-  const hasValidState = existingRow?.creds && existingRow.creds !== '{}' && existingRow.keys
-  if (!hasValidState && existingRow) {
-    await prisma.whatsAppSession.update({
-      where: { agencyId_userId: { agencyId, userId: userId ?? null } } as any,
-      data: { creds: '{}', keys: null, status: 'CONNECTING' },
-    })
-  } else {
-    await prisma.whatsAppSession.upsert({
-      where: { agencyId_userId: { agencyId, userId: userId ?? null } } as any,
-      create: { agencyId, userId: userId ?? null, creds: '{}', status: 'CONNECTING' },
-      update: { status: 'CONNECTING' },
-    })
-  }
-
   try {
     const { state, saveCreds } = await usePrismaAuthState(sessionKey)
-    console.log(`[WA:${sessionKey}] Auth state loaded`)
+    console.log(`[WA:${sessionKey}] Auth state loaded, has me.id: ${!!state.creds.me?.id}`)
 
     let version: [number, number, number] = [2, 3000, 1035194821]
     try {
@@ -92,7 +87,9 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
       if (qr) {
         try {
           s.qr = await QRCode.toDataURL(qr)
-          eventBus.emit(`whatsapp_qr:${sessionKey}`, { qr: s.qr })
+          s.status = 'CONNECTING'
+          console.log(`[WA:${sessionKey}] QR generated`)
+          eventBus.emit(`whatsapp_qr:${sessionKey}`, { qr: s.qr, sessionKey })
         } catch (e) {
           console.error(`[WA:${sessionKey}] QR encode error:`, e)
         }
@@ -103,36 +100,42 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
         s.status = 'CONNECTED'
         const jid = sock?.user?.id || ''
         s.phone = jid.split(':')[0].replace('@s.whatsapp.net', '') || null
-        await prisma.whatsAppSession.upsert({
-          where: { agencyId_userId: { agencyId, userId: userId ?? null } } as any,
-          create: { agencyId, userId: userId ?? null, creds: '{}', status: 'CONNECTED', phone: s.phone },
-          update: { status: 'CONNECTED', phone: s.phone },
-        })
-        eventBus.emit(`whatsapp_connected:${sessionKey}`, { phone: s.phone })
         console.log(`[WA:${sessionKey}] Connected as`, s.phone)
+        try {
+          await prisma.whatsAppSession.upsert({
+            where: { agencyId_userId: { agencyId, userId: userId ?? null } } as any,
+            create: { agencyId, userId: userId ?? null, creds: '{}', status: 'CONNECTED', phone: s.phone },
+            update: { status: 'CONNECTED', phone: s.phone },
+          })
+        } catch {}
+        eventBus.emit(`whatsapp_connected:${sessionKey}`, { phone: s.phone, sessionKey })
       }
 
       if (connection === 'close') {
         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode
         const isLoggedOut = statusCode === DisconnectReason.loggedOut
+        const isUnauthorized = statusCode === 401
         const isConflict = statusCode === DisconnectReason.connectionReplaced || statusCode === 440
-        console.log(`[WA:${sessionKey}] Closed, statusCode:`, statusCode)
+        console.log(`[WA:${sessionKey}] Closed, statusCode: ${statusCode}, isLoggedOut: ${isLoggedOut}, isUnauthorized: ${isUnauthorized}`)
+
         s.qr = null
         s.status = 'DISCONNECTED'
         s.sock = null
-        if (isLoggedOut) {
-          // Clear stored credentials so next connect generates a fresh QR
-          await prisma.whatsAppSession.updateMany({
-            where: { agencyId, userId: userId ?? null },
-            data: { status: 'DISCONNECTED', creds: '{}', keys: null, phone: null },
-          })
+
+        if (isLoggedOut || isUnauthorized) {
+          // Session expired/rejected by WhatsApp — clear creds so next connect generates fresh QR
+          console.log(`[WA:${sessionKey}] Clearing creds due to ${isLoggedOut ? 'logout' : '401'}`)
+          await clearCredsInDb(agencyId, userId ?? null)
         } else {
-          await prisma.whatsAppSession.updateMany({
-            where: { agencyId, userId: userId ?? null },
-            data: { status: 'DISCONNECTED' },
-          })
+          try {
+            await prisma.whatsAppSession.updateMany({
+              where: { agencyId, userId: userId ?? null },
+              data: { status: 'DISCONNECTED' },
+            })
+          } catch {}
         }
-        if (!isLoggedOut && !isConflict) {
+
+        if (!isLoggedOut && !isUnauthorized && !isConflict) {
           if (s.reconnectTimer) clearTimeout(s.reconnectTimer)
           s.reconnectTimer = setTimeout(() => initWhatsApp(agencyId, userId), 5000)
         }
@@ -150,6 +153,7 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
     console.error(`[WA:${sessionKey}] initWhatsApp error:`, err)
     s.status = 'DISCONNECTED'
     s.sock = null
+    await clearCredsInDb(agencyId, userId ?? null)
   }
 }
 
@@ -169,6 +173,9 @@ async function handleIncoming(msg: any, agencyId: string, userId: string | null)
     let assignedToId: string | undefined
 
     if (userId) {
+      // Personal session — always assign to the owner of the session
+      const u = await prisma.user.findUnique({ where: { id: userId }, select: { agencyId: true } })
+      if (!u || u.agencyId !== agencyId) return  // Security: session owner must belong to this agency
       assignedToId = userId
     } else {
       const digits = phone.replace(/\D/g, '')
@@ -215,7 +222,7 @@ async function handleIncoming(msg: any, agencyId: string, userId: string | null)
 }
 
 export async function sendViaBaileys(agencyId: string, to: string, text: string, userId?: string | null): Promise<boolean> {
-  const s = getSession(toKey(agencyId, userId))
+  const s = getSession(agencyId, userId)
   if (!s.sock || s.status !== 'CONNECTED') return false
   try {
     let digits = to.replace(/\D/g, '')
@@ -231,19 +238,17 @@ export async function sendViaBaileys(agencyId: string, to: string, text: string,
 
 export async function disconnectWhatsApp(agencyId: string, userId?: string | null): Promise<void> {
   const sessionKey = toKey(agencyId, userId)
-  const s = getSession(sessionKey)
-  if (s.reconnectTimer) clearTimeout(s.reconnectTimer)
-  s.reconnectTimer = null
+  const s = getSession(agencyId, userId)
+  if (s.reconnectTimer) { clearTimeout(s.reconnectTimer); s.reconnectTimer = null }
   if (s.sock) {
     try { await s.sock.logout() } catch {}
     s.sock = null
   }
   s.status = 'DISCONNECTED'
+  s.qr = null
   s.phone = null
-  await prisma.whatsAppSession.updateMany({
-    where: { agencyId, userId: userId ?? null },
-    data: { status: 'DISCONNECTED', phone: null, creds: '{}', keys: null },
-  })
+  await clearCredsInDb(agencyId, userId ?? null)
+  console.log(`[WA:${sessionKey}] Disconnected and creds cleared`)
 }
 
 export async function restoreAllSessions(): Promise<void> {

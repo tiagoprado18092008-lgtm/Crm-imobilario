@@ -1,6 +1,8 @@
 import { Request, Response } from 'express'
 import { getStatus, initWhatsApp, disconnectWhatsApp } from './whatsapp.service'
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function resolveAgencyId(req: Request, res: Response): string | null {
   const agencyId = (req.user as any)?.agencyId
   if (!agencyId || typeof agencyId !== 'string') {
@@ -10,8 +12,8 @@ function resolveAgencyId(req: Request, res: Response): string | null {
   return agencyId
 }
 
-function resolveUserId(req: Request): string | null {
-  return (req.user as any)?.id || null
+function resolveUserId(req: Request): string {
+  return (req.user as any)?.id
 }
 
 function isAdminOrOwner(req: Request): boolean {
@@ -20,6 +22,8 @@ function isAdminOrOwner(req: Request): boolean {
 }
 
 // ─── Sessão pessoal (qualquer utilizador autenticado) ─────────────────────────
+// Each user's session is isolated: key = agencyId:userId
+// A user can only access their own personal session (enforced by using req.user.id)
 
 export const meStatus = async (req: Request, res: Response) => {
   const agencyId = resolveAgencyId(req, res)
@@ -35,6 +39,7 @@ export const meConnect = async (req: Request, res: Response) => {
   const current = getStatus(agencyId, userId)
   if (current.status === 'CONNECTED') return res.json({ ok: true, already: true })
   if (current.status === 'CONNECTING' && current.qr) return res.json({ ok: true })
+  // Always start/restart if no active socket (covers server restarts with stale DB state)
   initWhatsApp(agencyId, userId).catch((e) => console.error('[WA] meConnect error:', e))
   res.json({ ok: true })
 }
@@ -48,6 +53,8 @@ export const meDisconnect = async (req: Request, res: Response) => {
 }
 
 // ─── Sessão da agência (apenas AGENCY_OWNER / AGENCY_ADMIN) ──────────────────
+// Agency session key = agencyId (no userId), shared across all agency users
+// Only admins/owners can connect/disconnect the agency session
 
 export const agencyStatus = async (req: Request, res: Response) => {
   const agencyId = resolveAgencyId(req, res)
@@ -64,6 +71,7 @@ export const agencyConnect = async (req: Request, res: Response) => {
   const current = getStatus(agencyId, null)
   if (current.status === 'CONNECTED') return res.json({ ok: true, already: true })
   if (current.status === 'CONNECTING' && current.qr) return res.json({ ok: true })
+  // Always start/restart if no active socket (covers server restarts with stale DB state)
   initWhatsApp(agencyId, null).catch((e) => console.error('[WA] agencyConnect error:', e))
   res.json({ ok: true })
 }
@@ -78,7 +86,7 @@ export const agencyDisconnect = async (req: Request, res: Response) => {
   res.json({ ok: true })
 }
 
-// ─── Aliases legacy (mantêm compatibilidade com frontend existente) ───────────
+// ─── Aliases legacy ───────────────────────────────────────────────────────────
 
 export const status = agencyStatus
 export const connect = agencyConnect
