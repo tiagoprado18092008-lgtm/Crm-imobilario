@@ -262,6 +262,8 @@ export const bulkImport = async (
     });
   }
 
+  console.log(`[bulkImport] validRows=${validRows.length} oppsToCreate=${oppsToCreate.length} toCreate=${toCreateEntries.length} createdMap=${createdMap.size}`);
+
   // Insert in batches of 500
   for (let i = 0; i < oppsToCreate.length; i += BATCH_SIZE) {
     const batch = oppsToCreate.slice(i, i + BATCH_SIZE);
@@ -269,8 +271,17 @@ export const bulkImport = async (
       await prisma.opportunity.createMany({ data: batch, skipDuplicates: false });
       results.created += batch.length;
     } catch (e: any) {
-      results.errors.push(`Lote ${Math.floor(i / BATCH_SIZE) + 1}: ${e.message}`);
-      results.skipped += batch.length;
+      console.error(`[bulkImport] createMany error:`, e.message);
+      // Fallback: try one by one to identify the bad row
+      for (const opp of batch) {
+        try {
+          await prisma.opportunity.create({ data: opp });
+          results.created++;
+        } catch (e2: any) {
+          results.errors.push(`"${opp.title}": ${e2.message}`);
+          results.skipped++;
+        }
+      }
     }
   }
 
