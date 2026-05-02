@@ -1,10 +1,18 @@
-import makeWASocket, { DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys'
+import makeWASocket, {
+  DisconnectReason,
+  fetchLatestBaileysVersion,
+  fetchLatestWaWebVersion,
+  makeCacheableSignalKeyStore,
+} from '@whiskeysockets/baileys'
 import { Boom } from '@hapi/boom'
 import QRCode from 'qrcode'
+import P from 'pino'
 import { usePrismaAuthState } from './whatsapp.session'
 import { eventBus } from '../../utils/event-bus'
 import { receiveInbound } from '../conversations/conversations.service'
 import prisma from '../../config/database'
+
+const waLogger = P({ level: 'silent' })
 
 interface SessionState {
   sock: ReturnType<typeof makeWASocket> | null
@@ -64,18 +72,34 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
 
     let version: [number, number, number] = [2, 3000, 1035194821]
     try {
-      const v = await fetchLatestBaileysVersion()
+      // Try WhatsApp servers first (always fresh, avoids stale cached version)
+      const v = await fetchLatestWaWebVersion({})
       version = v.version
+      console.log(`[WA:${sessionKey}] Using WA web version: ${version.join('.')}`)
     } catch {
-      console.log(`[WA:${sessionKey}] Using fallback version`)
+      try {
+        const v = await fetchLatestBaileysVersion()
+        version = v.version
+        console.log(`[WA:${sessionKey}] Using Baileys cached version: ${version.join('.')}`)
+      } catch {
+        console.log(`[WA:${sessionKey}] Using hardcoded fallback version: ${version.join('.')}`)
+      }
     }
 
     const sock = makeWASocket({
       version,
-      auth: state,
+      logger: waLogger,
+      auth: {
+        creds: state.creds,
+        keys: makeCacheableSignalKeyStore(state.keys, waLogger),
+      },
       printQRInTerminal: false,
       browser: ['CasaFlow CRM', 'Chrome', '1.0.0'],
-      connectTimeoutMs: 30000,
+      connectTimeoutMs: 60000,
+      qrTimeout: 60000,
+      generateHighQualityLinkPreview: false,
+      markOnlineOnConnect: false,
+      getMessage: async () => undefined,
     })
     s.sock = sock
 
