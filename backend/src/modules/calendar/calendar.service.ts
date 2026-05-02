@@ -19,7 +19,16 @@ export const getStatus = async (userId: string) => {
   return integrations;
 };
 
+const requireGoogleEnv = () => {
+  const missing = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REDIRECT_URI']
+    .filter((k) => !process.env[k]);
+  if (missing.length) {
+    throw new Error(`Google OAuth misconfigured — missing env: ${missing.join(', ')}`);
+  }
+};
+
 export const getGoogleAuthUrl = (userId: string) => {
+  requireGoogleEnv();
   const oauth2 = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -38,7 +47,15 @@ export const getGoogleAuthUrl = (userId: string) => {
 };
 
 export const handleGoogleCallback = async (code: string, state: string) => {
-  const { userId } = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
+  requireGoogleEnv();
+
+  let userId: string;
+  try {
+    ({ userId } = JSON.parse(Buffer.from(state, 'base64').toString('utf8')));
+  } catch {
+    throw new Error('Invalid OAuth state');
+  }
+  if (!userId) throw new Error('Missing userId in OAuth state');
 
   const oauth2 = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
@@ -49,36 +66,57 @@ export const handleGoogleCallback = async (code: string, state: string) => {
   const { tokens } = await oauth2.getToken(code);
   oauth2.setCredentials(tokens);
 
+  if (!tokens.access_token) {
+    throw new Error('Google did not return an access_token');
+  }
+
   // Get email
   const oauth2api = google.oauth2({ version: 'v2', auth: oauth2 });
   const { data: userInfo } = await oauth2api.userinfo.get();
+  if (!userInfo.email) {
+    throw new Error('Google did not return user email');
+  }
 
   // Google only sends refresh_token on first auth — preserve existing if not returned
   const existing = await prisma.calendarIntegration.findFirst({
     where: { userId, provider: 'google' },
     select: { refreshToken: true },
   });
-  const refreshTokenEncrypted = tokens.refresh_token
-    ? encrypt(tokens.refresh_token)
-    : (existing?.refreshToken ?? encrypt(''));
+  let refreshTokenEncrypted: string;
+  if (tokens.refresh_token) {
+    refreshTokenEncrypted = encrypt(tokens.refresh_token);
+  } else if (existing?.refreshToken) {
+    refreshTokenEncrypted = existing.refreshToken;
+  } else {
+    // No refresh token from Google AND no existing one — token can't be refreshed later.
+    // Force re-consent flow rather than persisting a useless integration.
+    throw new Error(
+      'Google did not return a refresh_token. Revoke app access at https://myaccount.google.com/permissions and try again.'
+    );
+  }
+
+  // expiry_date is usually present, but fall back to access_token's typical 1h lifetime
+  const tokenExpiresAt = tokens.expiry_date
+    ? new Date(tokens.expiry_date)
+    : new Date(Date.now() + 60 * 60 * 1000);
 
   await prisma.calendarIntegration.upsert({
     where: { userId_provider: { userId, provider: 'google' } },
     update: {
-      email: userInfo.email!,
-      accessToken: encrypt(tokens.access_token!),
+      email: userInfo.email,
+      accessToken: encrypt(tokens.access_token),
       refreshToken: refreshTokenEncrypted,
-      tokenExpiresAt: new Date(tokens.expiry_date!),
+      tokenExpiresAt,
       isActive: true,
       syncToken: null,
     },
     create: {
       userId,
       provider: 'google',
-      email: userInfo.email!,
-      accessToken: encrypt(tokens.access_token!),
+      email: userInfo.email,
+      accessToken: encrypt(tokens.access_token),
       refreshToken: refreshTokenEncrypted,
-      tokenExpiresAt: new Date(tokens.expiry_date!),
+      tokenExpiresAt,
     },
   });
 

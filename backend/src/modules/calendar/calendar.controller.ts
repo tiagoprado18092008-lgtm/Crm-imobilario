@@ -34,11 +34,22 @@ export const googleAuth = (req: Request, res: Response) => {
 
 export const googleCallback = async (req: Request, res: Response) => {
   try {
-    const { code, state } = req.query as { code: string; state: string };
+    const { code, state, error: oauthError } = req.query as { code?: string; state?: string; error?: string };
+    if (oauthError) {
+      console.error('[GoogleOAuth] Provider returned error:', oauthError);
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/calendar/settings?error=google`);
+    }
+    if (!code || !state) {
+      console.error('[GoogleOAuth] Missing code or state in callback', { hasCode: !!code, hasState: !!state });
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/calendar/settings?error=google`);
+    }
     await calendarService.handleGoogleCallback(code, state);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/calendar/settings?connected=google`);
   } catch (err: any) {
+    console.error('[GoogleOAuth] Callback failed:', err?.response?.data || err?.message || err);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/calendar/settings?error=google`);
   }
@@ -56,11 +67,22 @@ export const outlookAuth = (req: Request, res: Response) => {
 
 export const outlookCallback = async (req: Request, res: Response) => {
   try {
-    const { code, state } = req.query as { code: string; state: string };
+    const { code, state, error: oauthError } = req.query as { code?: string; state?: string; error?: string };
+    if (oauthError) {
+      console.error('[OutlookOAuth] Provider returned error:', oauthError);
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/calendar/settings?error=outlook`);
+    }
+    if (!code || !state) {
+      console.error('[OutlookOAuth] Missing code or state in callback', { hasCode: !!code, hasState: !!state });
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/calendar/settings?error=outlook`);
+    }
     await calendarService.handleOutlookCallback(code, state);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/calendar/settings?connected=outlook`);
   } catch (err: any) {
+    console.error('[OutlookOAuth] Callback failed:', err?.response?.data || err?.message || err);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/calendar/settings?error=outlook`);
   }
