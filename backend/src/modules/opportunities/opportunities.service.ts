@@ -259,6 +259,8 @@ export const bulkImport = async (
       position: pos,
       contactId,
       assignedToId: user.id,
+      agencyId: user.agencyId || undefined,
+      locationId: user.locationId || undefined,
     });
   }
 
