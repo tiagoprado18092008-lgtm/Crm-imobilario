@@ -20,6 +20,7 @@ interface SessionState {
   phone: string | null
   qr: string | null
   reconnectTimer: ReturnType<typeof setTimeout> | null
+  qrWatchdog: ReturnType<typeof setTimeout> | null
   agencyId: string
   userId: string | null
 }
@@ -33,7 +34,7 @@ function toKey(agencyId: string, userId?: string | null): string {
 function getSession(agencyId: string, userId?: string | null): SessionState {
   const key = toKey(agencyId, userId)
   if (!sessions.has(key)) {
-    sessions.set(key, { sock: null, status: 'DISCONNECTED', phone: null, qr: null, reconnectTimer: null, agencyId, userId: userId ?? null })
+    sessions.set(key, { sock: null, status: 'DISCONNECTED', phone: null, qr: null, reconnectTimer: null, qrWatchdog: null, agencyId, userId: userId ?? null })
   }
   return sessions.get(key)!
 }
@@ -70,20 +71,32 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
     const { state, saveCreds } = await usePrismaAuthState(sessionKey)
     console.log(`[WA:${sessionKey}] Auth state loaded, has me.id: ${!!state.creds.me?.id}`)
 
-    let version: [number, number, number] = [2, 3000, 1035194821]
+    // Recent known-good WA Web version (Nov 2025). Try to fetch fresh in parallel
+    // with a short timeout — if the fetch hangs (Railway egress to web.whatsapp.com),
+    // we still create the socket promptly with this version.
+    let version: [number, number, number] = [2, 3000, 1038669233]
     try {
-      // Try WhatsApp servers first (always fresh, avoids stale cached version)
-      const v = await fetchLatestWaWebVersion({})
-      version = v.version
-      console.log(`[WA:${sessionKey}] Using WA web version: ${version.join('.')}`)
-    } catch {
-      try {
-        const v = await fetchLatestBaileysVersion()
+      const v = await Promise.race<{ version: [number, number, number] } | null>([
+        fetchLatestWaWebVersion({ timeout: 5000 }).catch(() => null),
+        new Promise(r => setTimeout(() => r(null), 5000)),
+      ])
+      if (v?.version) {
         version = v.version
-        console.log(`[WA:${sessionKey}] Using Baileys cached version: ${version.join('.')}`)
-      } catch {
-        console.log(`[WA:${sessionKey}] Using hardcoded fallback version: ${version.join('.')}`)
+        console.log(`[WA:${sessionKey}] Using WA web version: ${version.join('.')}`)
+      } else {
+        const v2 = await Promise.race<{ version: [number, number, number] } | null>([
+          fetchLatestBaileysVersion().catch(() => null),
+          new Promise(r => setTimeout(() => r(null), 5000)),
+        ])
+        if (v2?.version) {
+          version = v2.version
+          console.log(`[WA:${sessionKey}] Using Baileys cached version: ${version.join('.')}`)
+        } else {
+          console.log(`[WA:${sessionKey}] Using known-good fallback version: ${version.join('.')}`)
+        }
       }
+    } catch {
+      console.log(`[WA:${sessionKey}] Using known-good fallback version: ${version.join('.')}`)
     }
 
     const sock = makeWASocket({
@@ -103,6 +116,21 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
     })
     s.sock = sock
 
+    // Watchdog: if no QR nor connection-open within 30s, force a reset so the
+    // UI doesn't get stuck on "A gerar QR code..." forever (handshake limbo).
+    if (s.qrWatchdog) clearTimeout(s.qrWatchdog)
+    s.qrWatchdog = setTimeout(() => {
+      if (!s.qr && s.status !== 'CONNECTED') {
+        console.warn(`[WA:${sessionKey}] Watchdog: no QR after 30s, forcing reset`)
+        try { sock.end?.(undefined) } catch {}
+        s.sock = null
+        s.status = 'DISCONNECTED'
+        // Auto-retry once after watchdog trips
+        if (s.reconnectTimer) clearTimeout(s.reconnectTimer)
+        s.reconnectTimer = setTimeout(() => initWhatsApp(agencyId, userId), 2000)
+      }
+    }, 30000)
+
     sock.ev.on('creds.update', saveCreds)
 
     sock.ev.on('connection.update', async (update) => {
@@ -112,6 +140,7 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
         try {
           s.qr = await QRCode.toDataURL(qr)
           s.status = 'CONNECTING'
+          if (s.qrWatchdog) { clearTimeout(s.qrWatchdog); s.qrWatchdog = null }
           console.log(`[WA:${sessionKey}] QR generated`)
           eventBus.emit(`whatsapp_qr:${sessionKey}`, { qr: s.qr, sessionKey })
         } catch (e) {
@@ -122,6 +151,7 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
       if (connection === 'open') {
         s.qr = null
         s.status = 'CONNECTED'
+        if (s.qrWatchdog) { clearTimeout(s.qrWatchdog); s.qrWatchdog = null }
         const jid = sock?.user?.id || ''
         s.phone = jid.split(':')[0].replace('@s.whatsapp.net', '') || null
         console.log(`[WA:${sessionKey}] Connected as`, s.phone)
@@ -145,6 +175,7 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
         s.qr = null
         s.status = 'DISCONNECTED'
         s.sock = null
+        if (s.qrWatchdog) { clearTimeout(s.qrWatchdog); s.qrWatchdog = null }
 
         if (isLoggedOut || isUnauthorized) {
           // Session expired/rejected by WhatsApp — clear creds so next connect generates fresh QR
@@ -264,6 +295,7 @@ export async function disconnectWhatsApp(agencyId: string, userId?: string | nul
   const sessionKey = toKey(agencyId, userId)
   const s = getSession(agencyId, userId)
   if (s.reconnectTimer) { clearTimeout(s.reconnectTimer); s.reconnectTimer = null }
+  if (s.qrWatchdog) { clearTimeout(s.qrWatchdog); s.qrWatchdog = null }
   if (s.sock) {
     // Don't await logout — if WhatsApp doesn't ack, await hangs for ~30s blocking the next connect
     try {

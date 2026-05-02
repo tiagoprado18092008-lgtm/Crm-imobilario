@@ -39,9 +39,16 @@ export const meConnect = async (req: Request, res: Response) => {
   const current = getStatus(agencyId, userId)
   if (current.status === 'CONNECTED') return res.json({ ok: true, already: true })
   if (current.status === 'CONNECTING' && current.qr) return res.json({ ok: true })
-  // Clear stale creds so Baileys always generates a fresh QR (avoids silent 401 with no QR)
-  await disconnectWhatsApp(agencyId, userId)
-  initWhatsApp(agencyId, userId).catch((e) => console.error('[WA] meConnect error:', e))
+  // Clear stale creds so Baileys always generates a fresh QR (avoids silent 401 with no QR).
+  // Run disconnect+init in background — respond immediately so the UI starts polling.
+  ;(async () => {
+    try {
+      await disconnectWhatsApp(agencyId, userId)
+      await initWhatsApp(agencyId, userId)
+    } catch (e) {
+      console.error('[WA] meConnect bg error:', e)
+    }
+  })()
   res.json({ ok: true })
 }
 
@@ -72,9 +79,16 @@ export const agencyConnect = async (req: Request, res: Response) => {
   const current = getStatus(agencyId, null)
   if (current.status === 'CONNECTED') return res.json({ ok: true, already: true })
   if (current.status === 'CONNECTING' && current.qr) return res.json({ ok: true })
-  // Clear stale creds so Baileys always generates a fresh QR (avoids silent 401 with no QR)
-  await disconnectWhatsApp(agencyId, null)
-  initWhatsApp(agencyId, null).catch((e) => console.error('[WA] agencyConnect error:', e))
+  // Clear stale creds so Baileys always generates a fresh QR (avoids silent 401 with no QR).
+  // Run disconnect+init in background — respond immediately so the UI starts polling.
+  ;(async () => {
+    try {
+      await disconnectWhatsApp(agencyId, null)
+      await initWhatsApp(agencyId, null)
+    } catch (e) {
+      console.error('[WA] agencyConnect bg error:', e)
+    }
+  })()
   res.json({ ok: true })
 }
 
