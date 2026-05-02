@@ -49,7 +49,10 @@ export const googleCallback = async (req: Request, res: Response) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/calendar/settings?connected=google`);
   } catch (err: any) {
-    console.error('[GoogleOAuth] Callback failed:', err?.response?.data || err?.message || err);
+    console.error('[GoogleOAuth] Callback failed — message:', err?.message);
+    console.error('[GoogleOAuth] Callback failed — stack:', err?.stack);
+    console.error('[GoogleOAuth] Callback failed — response data:', JSON.stringify(err?.response?.data));
+    console.error('[GoogleOAuth] Callback failed — full:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/calendar/settings?error=google`);
   }
