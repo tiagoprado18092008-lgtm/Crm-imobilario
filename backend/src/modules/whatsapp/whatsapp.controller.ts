@@ -29,6 +29,9 @@ export const meStatus = async (req: Request, res: Response) => {
   const agencyId = resolveAgencyId(req, res)
   if (!agencyId) return
   const userId = resolveUserId(req)
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+  res.set('Pragma', 'no-cache')
+  res.set('Expires', '0')
   res.json(getStatus(agencyId, userId))
 }
 
@@ -67,6 +70,9 @@ export const meDisconnect = async (req: Request, res: Response) => {
 export const agencyStatus = async (req: Request, res: Response) => {
   const agencyId = resolveAgencyId(req, res)
   if (!agencyId) return
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+  res.set('Pragma', 'no-cache')
+  res.set('Expires', '0')
   res.json(getStatus(agencyId, null))
 }
 
