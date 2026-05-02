@@ -265,7 +265,15 @@ export async function disconnectWhatsApp(agencyId: string, userId?: string | nul
   const s = getSession(agencyId, userId)
   if (s.reconnectTimer) { clearTimeout(s.reconnectTimer); s.reconnectTimer = null }
   if (s.sock) {
-    try { await s.sock.logout() } catch {}
+    // Don't await logout — if WhatsApp doesn't ack, await hangs for ~30s blocking the next connect
+    try {
+      const sock = s.sock
+      Promise.race([
+        sock.logout().catch(() => {}),
+        new Promise(r => setTimeout(r, 2000)),
+      ]).catch(() => {})
+      try { sock.end?.(undefined) } catch {}
+    } catch {}
     s.sock = null
   }
   s.status = 'DISCONNECTED'
