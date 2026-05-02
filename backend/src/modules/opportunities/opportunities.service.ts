@@ -231,6 +231,21 @@ export const bulkImport = async (
     stagePositions.set(s.stage, (s._max.position ?? -1) + 1);
   }
 
+  // Find default pipeline + first stage so imported opps appear in the kanban
+  let defaultPipelineId: string | undefined;
+  let firstStageId: string | undefined;
+  if (user.agencyId) {
+    const pipeline = await prisma.pipeline.findFirst({
+      where: { agencyId: user.agencyId },
+      orderBy: { position: 'asc' },
+      include: { stages: { orderBy: { position: 'asc' }, take: 1 } },
+    });
+    if (pipeline) {
+      defaultPipelineId = pipeline.id;
+      firstStageId = pipeline.stages[0]?.id;
+    }
+  }
+
   // Build opportunity records
   const oppsToCreate: any[] = [];
   for (let i = 0; i < validRows.length; i++) {
@@ -253,6 +268,8 @@ export const bulkImport = async (
     oppsToCreate.push({
       title: row.title.trim(),
       stage: stage as any,
+      stageId: firstStageId || undefined,
+      pipelineId: defaultPipelineId || undefined,
       value: row.value || undefined,
       source: row.source || undefined,
       notes: row.notes || undefined,
