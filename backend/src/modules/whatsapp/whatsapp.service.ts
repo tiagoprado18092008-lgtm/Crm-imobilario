@@ -71,10 +71,12 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
     const { state, saveCreds } = await usePrismaAuthState(sessionKey)
     console.log(`[WA:${sessionKey}] Auth state loaded, has me.id: ${!!state.creds.me?.id}`)
 
-    // Recent known-good WA Web version (Nov 2025). Try to fetch fresh in parallel
+    // Recent known-good WA Web version (May 2026). Try to fetch fresh in parallel
     // with a short timeout — if the fetch hangs (Railway egress to web.whatsapp.com),
     // we still create the socket promptly with this version.
-    let version: [number, number, number] = [2, 3000, 1038669233]
+    // ⚠️ WhatsApp rejects the QR as "invalid" when the client version is too old —
+    // bump this manually if QRs start being rejected after a long time without redeploys.
+    let version: [number, number, number] = [2, 3000, 1023223821]
     try {
       const v = await Promise.race<{ version: [number, number, number] } | null>([
         fetchLatestWaWebVersion({ timeout: 5000 }).catch(() => null),

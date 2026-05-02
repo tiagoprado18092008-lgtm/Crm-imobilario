@@ -425,6 +425,8 @@ export const SettingsPage: React.FC = () => {
   const startWaPolling = () => {
     if (waSSERef.current) { clearInterval(waSSERef.current as any); waSSERef.current = null }
     let attempts = 0
+    // Poll every 2s and keep going for ~5 min so rotated QRs (Baileys rotates every ~60s)
+    // are picked up while the user fetches their phone. Stops on CONNECTED or timeout.
     const interval = setInterval(async () => {
       attempts++
       try {
@@ -444,12 +446,12 @@ export const SettingsPage: React.FC = () => {
           waSSERef.current = null
         }
       } catch {}
-      if (attempts >= 40) { // 40 * 3s = 120s timeout
+      if (attempts >= 150) { // 150 * 2s = 300s timeout
         clearInterval(interval)
         waSSERef.current = null
         setWaQrLoading(false)
       }
-    }, 3000)
+    }, 2000)
     waSSERef.current = interval as any
   }
 
@@ -495,12 +497,12 @@ export const SettingsPage: React.FC = () => {
           myWaSSERef.current = null
         }
       } catch {}
-      if (attempts >= 40) {
+      if (attempts >= 150) { // 150 * 2s = 300s timeout
         clearInterval(interval)
         myWaSSERef.current = null
         setMyWaLoading(false)
       }
-    }, 3000)
+    }, 2000)
     myWaSSERef.current = interval as any
   }
 
