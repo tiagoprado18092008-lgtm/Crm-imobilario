@@ -570,10 +570,33 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`   Environment: ${process.env.NODE_ENV ?? 'development'}`);
   });
 
+  // Repair WhatsAppSession schema if production drifted (db push silently failed
+  // to add `userId`, breaking QR generation with "column ... does not exist").
+  // Idempotent — no-op on a healthy DB.
+  const fixWhatsAppSchema = async () => {
+    const stmts = [
+      `ALTER TABLE "WhatsAppSession" ADD COLUMN IF NOT EXISTS "agencyId" TEXT`,
+      `UPDATE "WhatsAppSession" SET "agencyId" = "id" WHERE "agencyId" IS NULL`,
+      `DELETE FROM "WhatsAppSession" WHERE "agencyId" NOT IN (SELECT "id" FROM "Agency")`,
+      `ALTER TABLE "WhatsAppSession" ADD COLUMN IF NOT EXISTS "userId" TEXT`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "WhatsAppSession_agencyId_userId_key" ON "WhatsAppSession"("agencyId", "userId")`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS "WhatsAppSession_agencyId_shared_key" ON "WhatsAppSession"("agencyId") WHERE "userId" IS NULL`,
+    ];
+    for (const sql of stmts) {
+      try {
+        await prisma.$executeRawUnsafe(sql);
+        console.log('[WA-fix] OK:', sql.slice(0, 80));
+      } catch (e: any) {
+        console.error('[WA-fix] FAIL:', sql.slice(0, 80), '|', e?.message || e);
+      }
+    }
+  };
+
   // Load persisted settings from DB before starting background services.
   // Done outside the listen callback so async errors are properly catchable.
   loadSettingsFromDB()
     .then(async () => {
+      await fixWhatsAppSchema();
       await ensureDefaultPipelines();
       startImapPolling();
       registerEventListeners();
