@@ -575,10 +575,16 @@ if (process.env.NODE_ENV !== 'test') {
   // Idempotent — no-op on a healthy DB.
   const fixWhatsAppSchema = async () => {
     const stmts = [
+      // Add missing columns (idempotent)
       `ALTER TABLE "WhatsAppSession" ADD COLUMN IF NOT EXISTS "agencyId" TEXT`,
       `UPDATE "WhatsAppSession" SET "agencyId" = "id" WHERE "agencyId" IS NULL`,
       `DELETE FROM "WhatsAppSession" WHERE "agencyId" NOT IN (SELECT "id" FROM "Agency")`,
       `ALTER TABLE "WhatsAppSession" ADD COLUMN IF NOT EXISTS "userId" TEXT`,
+      // Drop the old single-column unique index on agencyId — it blocks having both
+      // an agency session (userId=NULL) and per-user sessions in the same agency,
+      // and causes "Unique constraint failed on ['agencyId']" on every create/update.
+      `DROP INDEX IF EXISTS "WhatsAppSession_agencyId_key"`,
+      // Add the correct composite + partial unique indexes
       `CREATE UNIQUE INDEX IF NOT EXISTS "WhatsAppSession_agencyId_userId_key" ON "WhatsAppSession"("agencyId", "userId")`,
       `CREATE UNIQUE INDEX IF NOT EXISTS "WhatsAppSession_agencyId_shared_key" ON "WhatsAppSession"("agencyId") WHERE "userId" IS NULL`,
     ];
