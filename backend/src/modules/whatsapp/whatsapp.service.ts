@@ -158,11 +158,15 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
         s.phone = jid.split(':')[0].replace('@s.whatsapp.net', '') || null
         console.log(`[WA:${sessionKey}] Connected as`, s.phone)
         try {
-          await prisma.whatsAppSession.upsert({
-            where: { agencyId_userId: { agencyId, userId: userId ?? null } } as any,
-            create: { agencyId, userId: userId ?? null, creds: '{}', status: 'CONNECTED', phone: s.phone },
-            update: { status: 'CONNECTED', phone: s.phone },
+          const updated = await prisma.whatsAppSession.updateMany({
+            where: { agencyId, userId: userId ?? null },
+            data: { status: 'CONNECTED', phone: s.phone },
           })
+          if (updated.count === 0) {
+            await prisma.whatsAppSession.create({
+              data: { agencyId, userId: userId ?? null, creds: '{}', status: 'CONNECTED', phone: s.phone },
+            })
+          }
         } catch {}
         eventBus.emit(`whatsapp_connected:${sessionKey}`, { phone: s.phone, sessionKey })
       }

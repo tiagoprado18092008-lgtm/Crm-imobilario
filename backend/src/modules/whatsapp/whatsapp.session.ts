@@ -39,13 +39,24 @@ export async function usePrismaAuthState(sessionKey: string) {
     }
   }
 
+  // Prisma cannot upsert on a composite unique that includes a nullable column
+  // (userId=null) via the generated `agencyId_userId` compound key — it throws
+  // "Argument 'userId' must not be null". Use updateMany+create instead.
+  const upsertSession = async (data: Record<string, any>) => {
+    const updated = await prisma.whatsAppSession.updateMany({
+      where: { agencyId, userId: userId ?? null },
+      data,
+    })
+    if (updated.count === 0) {
+      await prisma.whatsAppSession.create({
+        data: { agencyId, userId: userId ?? null, creds: JSON.stringify(creds, BufferJSON.replacer), status: 'CONNECTING', ...data },
+      })
+    }
+  }
+
   const saveCreds = async () => {
     try {
-      await prisma.whatsAppSession.upsert({
-        where: { agencyId_userId: { agencyId, userId: userId as any } },
-        create: { agencyId, userId, creds: JSON.stringify(creds, BufferJSON.replacer), status: 'CONNECTING' },
-        update: { creds: JSON.stringify(creds, BufferJSON.replacer) },
-      })
+      await upsertSession({ creds: JSON.stringify(creds, BufferJSON.replacer) })
     } catch (err) {
       console.error('[WA] Failed to save creds:', err)
     }
@@ -54,11 +65,7 @@ export async function usePrismaAuthState(sessionKey: string) {
   const saveKeys = async (data: Record<string, any>) => {
     Object.assign(keysData, data)
     try {
-      await prisma.whatsAppSession.upsert({
-        where: { agencyId_userId: { agencyId, userId: userId as any } },
-        create: { agencyId, userId, creds: JSON.stringify(creds, BufferJSON.replacer), keys: JSON.stringify(keysData, BufferJSON.replacer), status: 'CONNECTING' },
-        update: { keys: JSON.stringify(keysData, BufferJSON.replacer) },
-      })
+      await upsertSession({ keys: JSON.stringify(keysData, BufferJSON.replacer) })
     } catch (err) {
       console.error('[WA] Failed to save keys:', err)
     }
