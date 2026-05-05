@@ -17,12 +17,21 @@ export async function usePrismaAuthState(sessionKey: string) {
   // If keys are missing, starting with stale creds causes a 401 with no QR generated
   const hasCreds = row?.creds && row.creds !== '{}'
   const hasKeys = row?.keys && row.keys !== '{}'
-  const canRestore = hasCreds && hasKeys
 
   let creds: any
-  if (canRestore) {
+  let canRestore = false
+  if (hasCreds && hasKeys) {
     try {
-      creds = JSON.parse(row!.creds, BufferJSON.reviver)
+      const parsed = JSON.parse(row!.creds, BufferJSON.reviver)
+      // Baileys requires me.id to restore a session without QR.
+      // Without it, it treats this as a fresh connection and generates a QR
+      // even if the keys are valid — so we only restore when me.id is present.
+      if (parsed?.me?.id) {
+        creds = parsed
+        canRestore = true
+      } else {
+        creds = initAuthCreds()
+      }
     } catch {
       creds = initAuthCreds()
     }

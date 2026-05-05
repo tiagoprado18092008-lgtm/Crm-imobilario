@@ -157,6 +157,9 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
         const jid = sock?.user?.id || ''
         s.phone = jid.split(':')[0].replace('@s.whatsapp.net', '') || null
         console.log(`[WA:${sessionKey}] Connected as`, s.phone)
+        // Force-save creds now so me.id is persisted — without this, a 515
+        // restart loses me.id and the next reconnect generates a QR unnecessarily
+        await saveCreds().catch(() => {})
         try {
           const updated = await prisma.whatsAppSession.updateMany({
             where: { agencyId, userId: userId ?? null },
@@ -196,9 +199,12 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
           } catch {}
         }
 
+        const isRestartRequired = statusCode === DisconnectReason.restartRequired
         if (!isLoggedOut && !isUnauthorized && !isConflict) {
+          const delay = isRestartRequired ? 1000 : 5000
+          console.log(`[WA:${sessionKey}] Reconnecting in ${delay}ms (restartRequired: ${isRestartRequired})`)
           if (s.reconnectTimer) clearTimeout(s.reconnectTimer)
-          s.reconnectTimer = setTimeout(() => initWhatsApp(agencyId, userId), 5000)
+          s.reconnectTimer = setTimeout(() => initWhatsApp(agencyId, userId), delay)
         }
       }
     })
