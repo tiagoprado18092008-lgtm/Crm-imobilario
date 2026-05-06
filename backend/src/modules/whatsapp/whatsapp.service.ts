@@ -23,6 +23,14 @@ interface SessionState {
   qrWatchdog: ReturnType<typeof setTimeout> | null
   agencyId: string
   userId: string | null
+  // Per-session lock so concurrent meConnect / restoreAllSessions / reconnect-timer
+  // calls can't tear each other down mid-pairing. Any path that wants to create a
+  // new socket awaits this promise first; the in-flight init replaces it.
+  initPromise: Promise<void> | null
+  // Set to true once Baileys reports a pairing event (creds.update with me.id).
+  // While this is true, disconnectWhatsApp must NOT clear DB creds — the pairing
+  // is mid-flight and clearing would force the user to scan the QR again.
+  pairingInProgress: boolean
 }
 
 const sessions = new Map<string, SessionState>()
@@ -34,7 +42,7 @@ function toKey(agencyId: string, userId?: string | null): string {
 function getSession(agencyId: string, userId?: string | null): SessionState {
   const key = toKey(agencyId, userId)
   if (!sessions.has(key)) {
-    sessions.set(key, { sock: null, status: 'DISCONNECTED', phone: null, qr: null, reconnectTimer: null, qrWatchdog: null, agencyId, userId: userId ?? null })
+    sessions.set(key, { sock: null, status: 'DISCONNECTED', phone: null, qr: null, reconnectTimer: null, qrWatchdog: null, agencyId, userId: userId ?? null, initPromise: null, pairingInProgress: false })
   }
   return sessions.get(key)!
 }
@@ -54,6 +62,17 @@ async function clearCredsInDb(agencyId: string, userId: string | null) {
 }
 
 export async function initWhatsApp(agencyId: string, userId?: string | null): Promise<void> {
+  const s = getSession(agencyId, userId)
+  // Reuse the in-flight init if there is one — prevents double-clicks, polling,
+  // or a reconnect-timer racing with meConnect from spawning two sockets that
+  // tear each other down mid-pairing.
+  if (s.initPromise) return s.initPromise
+  const p = doInitWhatsApp(agencyId, userId).finally(() => { s.initPromise = null })
+  s.initPromise = p
+  return p
+}
+
+async function doInitWhatsApp(agencyId: string, userId?: string | null): Promise<void> {
   const sessionKey = toKey(agencyId, userId)
   const s = getSession(agencyId, userId)
 
@@ -122,6 +141,9 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
     // UI doesn't get stuck on "A gerar QR code..." forever (handshake limbo).
     if (s.qrWatchdog) clearTimeout(s.qrWatchdog)
     s.qrWatchdog = setTimeout(() => {
+      // Don't kill an in-flight pairing — me.id has been seen, the handshake is
+      // just taking longer than usual.
+      if (s.pairingInProgress) return
       if (!s.qr && s.status !== 'CONNECTED') {
         console.warn(`[WA:${sessionKey}] Watchdog: no QR after 30s, forcing reset`)
         try { sock.end?.(undefined) } catch {}
@@ -136,6 +158,10 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
     sock.ev.on('creds.update', async () => {
       const meId = state.creds.me?.id
       console.log(`[WA:${sessionKey}] creds.update fired (me.id: ${meId || 'null'}, registered: ${state.creds.registered})`)
+      // Once me.id appears, the user has scanned the QR — guard the session
+      // against accidental clears until the pairing completes (or the user
+      // explicitly disconnects).
+      if (meId) s.pairingInProgress = true
       await saveCreds()
     })
 
@@ -157,6 +183,7 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
       if (connection === 'open') {
         s.qr = null
         s.status = 'CONNECTED'
+        s.pairingInProgress = false
         if (s.qrWatchdog) { clearTimeout(s.qrWatchdog); s.qrWatchdog = null }
         const jid = sock?.user?.id || ''
         s.phone = jid.split(':')[0].replace('@s.whatsapp.net', '') || null
@@ -207,6 +234,7 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
         if (isLoggedOut || isUnauthorized || isVersionRejected) {
           const reason = isLoggedOut ? 'logout' : isUnauthorized ? '401' : '405-version-rejected'
           console.log(`[WA:${sessionKey}] Clearing creds due to ${reason}`)
+          s.pairingInProgress = false
           await clearCredsInDb(agencyId, userId ?? null)
         } else {
           try {
@@ -238,6 +266,7 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
     console.error(`[WA:${sessionKey}] initWhatsApp error:`, err)
     s.status = 'DISCONNECTED'
     s.sock = null
+    s.pairingInProgress = false
     await clearCredsInDb(agencyId, userId ?? null)
   }
 }
@@ -321,9 +350,16 @@ export async function sendViaBaileys(agencyId: string, to: string, text: string,
   }
 }
 
-export async function disconnectWhatsApp(agencyId: string, userId?: string | null): Promise<void> {
+export async function disconnectWhatsApp(agencyId: string, userId?: string | null, opts: { force?: boolean } = {}): Promise<void> {
   const sessionKey = toKey(agencyId, userId)
   const s = getSession(agencyId, userId)
+  // If a pairing is mid-flight (user has just scanned the QR but Baileys hasn't
+  // finished the handshake yet) refuse to clear creds unless the caller forced it.
+  // Otherwise an accidental meConnect re-entry would reset everything to a fresh QR.
+  if (s.pairingInProgress && !opts.force) {
+    console.log(`[WA:${sessionKey}] disconnectWhatsApp skipped — pairing in progress`)
+    return
+  }
   if (s.reconnectTimer) { clearTimeout(s.reconnectTimer); s.reconnectTimer = null }
   if (s.qrWatchdog) { clearTimeout(s.qrWatchdog); s.qrWatchdog = null }
   if (s.sock) {
@@ -341,6 +377,7 @@ export async function disconnectWhatsApp(agencyId: string, userId?: string | nul
   s.status = 'DISCONNECTED'
   s.qr = null
   s.phone = null
+  s.pairingInProgress = false
   await clearCredsInDb(agencyId, userId ?? null)
   console.log(`[WA:${sessionKey}] Disconnected and creds cleared`)
 }

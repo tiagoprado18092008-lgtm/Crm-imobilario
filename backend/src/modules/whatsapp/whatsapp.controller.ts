@@ -41,12 +41,12 @@ export const meConnect = async (req: Request, res: Response) => {
   const userId = resolveUserId(req)
   const current = getStatus(agencyId, userId)
   if (current.status === 'CONNECTED') return res.json({ ok: true, already: true })
-  if (current.status === 'CONNECTING' && current.qr) return res.json({ ok: true })
-  // Clear stale creds so Baileys always generates a fresh QR (avoids silent 401 with no QR).
-  // Run disconnect+init in background — respond immediately so the UI starts polling.
+  if (current.status === 'CONNECTING') return res.json({ ok: true })
+  // initWhatsApp is now idempotent (per-session lock); just kick it off in the
+  // background and let the UI poll. Don't disconnect first — that would clear
+  // any in-flight pairing if the user double-clicks.
   ;(async () => {
     try {
-      await disconnectWhatsApp(agencyId, userId)
       await initWhatsApp(agencyId, userId)
     } catch (e) {
       console.error('[WA] meConnect bg error:', e)
@@ -59,7 +59,7 @@ export const meDisconnect = async (req: Request, res: Response) => {
   const agencyId = resolveAgencyId(req, res)
   if (!agencyId) return
   const userId = resolveUserId(req)
-  await disconnectWhatsApp(agencyId, userId)
+  await disconnectWhatsApp(agencyId, userId, { force: true })
   res.json({ ok: true })
 }
 
@@ -84,12 +84,9 @@ export const agencyConnect = async (req: Request, res: Response) => {
   }
   const current = getStatus(agencyId, null)
   if (current.status === 'CONNECTED') return res.json({ ok: true, already: true })
-  if (current.status === 'CONNECTING' && current.qr) return res.json({ ok: true })
-  // Clear stale creds so Baileys always generates a fresh QR (avoids silent 401 with no QR).
-  // Run disconnect+init in background — respond immediately so the UI starts polling.
+  if (current.status === 'CONNECTING') return res.json({ ok: true })
   ;(async () => {
     try {
-      await disconnectWhatsApp(agencyId, null)
       await initWhatsApp(agencyId, null)
     } catch (e) {
       console.error('[WA] agencyConnect bg error:', e)
@@ -104,7 +101,7 @@ export const agencyDisconnect = async (req: Request, res: Response) => {
   if (!isAdminOrOwner(req)) {
     return res.status(403).json({ error: 'Apenas administradores podem desligar o WhatsApp da agência' })
   }
-  await disconnectWhatsApp(agencyId, null)
+  await disconnectWhatsApp(agencyId, null, { force: true })
   res.json({ ok: true })
 }
 
