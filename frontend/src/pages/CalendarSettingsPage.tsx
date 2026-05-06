@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Settings, RefreshCw, Link, Unlink, Clock } from 'lucide-react'
+import { CustomSelect } from '../components/ui/CustomSelect'
 import {
   getCalendarStatus,
   syncCalendar,
@@ -49,12 +50,24 @@ export const CalendarSettingsPage: React.FC = () => {
   useEffect(() => {
     const connected = searchParams.get('connected')
     const error = searchParams.get('error')
+    const reason = searchParams.get('reason')
     if (connected) {
       showToast(`${connected === 'google' ? 'Google' : 'Outlook'} Calendar ligado com sucesso!`, 'success')
       loadStatus()
     }
     if (error) {
-      showToast(`Erro ao ligar ${error === 'google' ? 'Google' : 'Outlook'} Calendar`, 'error')
+      const provider = error === 'google' ? 'Google' : 'Outlook'
+      let msg = `Erro ao ligar ${provider} Calendar`
+      if (reason === 'invalid_client') {
+        msg += ' — credenciais OAuth inválidas. Verificar GOOGLE_CLIENT_ID/SECRET no servidor.'
+      } else if (reason === 'redirect_uri_mismatch') {
+        msg += ' — redirect URI não corresponde ao registado na Google Cloud Console.'
+      } else if (reason === 'access_denied') {
+        msg += ' — acesso recusado pelo utilizador.'
+      } else if (reason) {
+        msg += ` — ${decodeURIComponent(reason)}`
+      }
+      showToast(msg, 'error')
     }
   }, [searchParams])
 
@@ -346,19 +359,21 @@ export const CalendarSettingsPage: React.FC = () => {
                   Notificação X minutos antes
                 </p>
               </div>
-              <select value={notifReminder}
-                onChange={e => {
-                  setNotifReminder(e.target.value)
-                  localStorage.setItem('cal_notif_reminder', e.target.value)
+              <CustomSelect
+                value={notifReminder}
+                onChange={v => {
+                  setNotifReminder(v)
+                  localStorage.setItem('cal_notif_reminder', v)
                 }}
-                style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border-color)',
-                  background: 'var(--bg-input)', color: 'var(--text-primary)', fontSize: 12 }}>
-                <option value="0">Desligado</option>
-                <option value="10">10 minutos</option>
-                <option value="30">30 minutos</option>
-                <option value="60">1 hora</option>
-                <option value="1440">1 dia</option>
-              </select>
+                options={[
+                  { value: '0', label: 'Desligado' },
+                  { value: '10', label: '10 minutos' },
+                  { value: '30', label: '30 minutos' },
+                  { value: '60', label: '1 hora' },
+                  { value: '1440', label: '1 dia' },
+                ]}
+                size="sm"
+              />
             </div>
           </div>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>

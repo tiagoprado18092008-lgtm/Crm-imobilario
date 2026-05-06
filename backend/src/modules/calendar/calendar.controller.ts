@@ -49,12 +49,14 @@ export const googleCallback = async (req: Request, res: Response) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/calendar/settings?connected=google`);
   } catch (err: any) {
+    const googleErr = err?.response?.data?.error || err?.message || 'unknown';
+    console.error('[GoogleOAuth] Callback failed — google error:', googleErr);
     console.error('[GoogleOAuth] Callback failed — message:', err?.message);
     console.error('[GoogleOAuth] Callback failed — stack:', err?.stack);
     console.error('[GoogleOAuth] Callback failed — response data:', JSON.stringify(err?.response?.data));
-    console.error('[GoogleOAuth] Callback failed — full:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/calendar/settings?error=google`);
+    const reason = encodeURIComponent(String(googleErr).slice(0, 120));
+    res.redirect(`${frontendUrl}/calendar/settings?error=google&reason=${reason}`);
   }
 };
 
@@ -85,9 +87,11 @@ export const outlookCallback = async (req: Request, res: Response) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${frontendUrl}/calendar/settings?connected=outlook`);
   } catch (err: any) {
+    const msErr = err?.response?.data?.error || err?.message || 'unknown';
     console.error('[OutlookOAuth] Callback failed:', err?.response?.data || err?.message || err);
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/calendar/settings?error=outlook`);
+    const reason = encodeURIComponent(String(msErr).slice(0, 120));
+    res.redirect(`${frontendUrl}/calendar/settings?error=outlook&reason=${reason}`);
   }
 };
 

@@ -2,6 +2,17 @@ import { google } from 'googleapis';
 import prisma from '../../config/database';
 import { encrypt, decrypt } from '../../lib/encryption';
 
+// Resolve the backend's public URL for webhook callbacks.
+// Priority: BACKEND_URL → PUBLIC_URL → derive from FRONTEND_URL (replace :5173 with :3000 for local dev).
+const getBackendPublicUrl = (): string | null => {
+  if (process.env.BACKEND_URL) return process.env.BACKEND_URL.replace(/\/$/, '');
+  if (process.env.PUBLIC_URL) return process.env.PUBLIC_URL.replace(/\/$/, '');
+  if (process.env.FRONTEND_URL?.includes(':5173')) {
+    return process.env.FRONTEND_URL.replace(':5173', ':3000').replace(/\/$/, '');
+  }
+  return null;
+};
+
 // ─── Google ─────────────────────────────────────────────────────────────────
 
 async function getGoogleClient(userId: string) {
@@ -297,12 +308,18 @@ export async function setupGoogleWebhook(userId: string) {
     const channelId = `crm-${userId}-${Date.now()}`;
     const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
+    const backendUrl = getBackendPublicUrl();
+    if (!backendUrl) {
+      console.warn(`[CalendarSync] setupGoogleWebhook skipped for ${userId}: BACKEND_URL/PUBLIC_URL not set`);
+      return;
+    }
+
     const res = await calendar.events.watch({
       calendarId: 'primary',
       requestBody: {
         id: channelId,
         type: 'web_hook',
-        address: `${process.env.FRONTEND_URL?.replace('5173', '3000')}/api/webhooks/google-calendar`,
+        address: `${backendUrl}/api/webhooks/google-calendar`,
         expiration: expiry.getTime().toString(),
       },
     });
@@ -561,7 +578,12 @@ export async function setupOutlookWebhook(userId: string) {
     const { headers, integration } = await getOutlookHeaders(userId);
     const expiry = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days max
 
-    const notificationUrl = `${process.env.FRONTEND_URL?.replace('5173', '3000')}/api/webhooks/outlook-calendar`;
+    const backendUrl = getBackendPublicUrl();
+    if (!backendUrl) {
+      console.warn(`[CalendarSync] setupOutlookWebhook skipped for ${userId}: BACKEND_URL/PUBLIC_URL not set`);
+      return;
+    }
+    const notificationUrl = `${backendUrl}/api/webhooks/outlook-calendar`;
 
     const body = {
       changeType: 'created,updated,deleted',
