@@ -71,6 +71,11 @@ export async function usePrismaAuthState(sessionKey: string) {
     }
   }
 
+  // Track in-flight key writes so callers (e.g. the close handler) can flush
+  // them before reconnecting — Baileys' keys.set API is sync, so the writes
+  // must be fire-and-forget, but we need a way to wait for them to settle.
+  let pendingKeyWrites: Promise<unknown> = Promise.resolve()
+
   const saveKeys = async (data: Record<string, any>) => {
     Object.assign(keysData, data)
     try {
@@ -79,6 +84,8 @@ export async function usePrismaAuthState(sessionKey: string) {
       console.error('[WA] Failed to save keys:', err)
     }
   }
+
+  const flushPendingWrites = () => pendingKeyWrites
 
   return {
     state: {
@@ -99,10 +106,12 @@ export async function usePrismaAuthState(sessionKey: string) {
               flat[`${type}-${id}`] = val
             }
           }
-          saveKeys(flat).catch(e => console.error('[WA] saveKeys error:', e))
+          const p = saveKeys(flat).catch(e => console.error('[WA] saveKeys error:', e))
+          pendingKeyWrites = pendingKeyWrites.then(() => p)
         },
       },
     },
     saveCreds,
+    flushPendingWrites,
   }
 }

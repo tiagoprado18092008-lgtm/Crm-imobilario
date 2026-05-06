@@ -68,7 +68,7 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
   console.log(`[WA:${sessionKey}] Starting initWhatsApp...`)
 
   try {
-    const { state, saveCreds } = await usePrismaAuthState(sessionKey)
+    const { state, saveCreds, flushPendingWrites } = await usePrismaAuthState(sessionKey)
     console.log(`[WA:${sessionKey}] Auth state loaded, has me.id: ${!!state.creds.me?.id}`)
 
     // ⚠️ WhatsApp rejects the connection with statusCode 405 if the client version
@@ -133,7 +133,11 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
       }
     }, 30000)
 
-    sock.ev.on('creds.update', saveCreds)
+    sock.ev.on('creds.update', async () => {
+      const meId = state.creds.me?.id
+      console.log(`[WA:${sessionKey}] creds.update fired (me.id: ${meId || 'null'}, registered: ${state.creds.registered})`)
+      await saveCreds()
+    })
 
     sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update
@@ -183,7 +187,17 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
         // the version is wrong on every retry. Stop the loop and clear creds so
         // the user gets a fresh QR after the next deploy with an updated version.
         const isVersionRejected = statusCode === 405
-        console.log(`[WA:${sessionKey}] Closed, statusCode: ${statusCode}, isLoggedOut: ${isLoggedOut}, isUnauthorized: ${isUnauthorized}, isVersionRejected: ${isVersionRejected}`)
+        const meIdInMem = state.creds.me?.id
+        console.log(`[WA:${sessionKey}] Closed, statusCode: ${statusCode}, isLoggedOut: ${isLoggedOut}, isUnauthorized: ${isUnauthorized}, isVersionRejected: ${isVersionRejected}, me.id (in-mem): ${meIdInMem || 'null'}`)
+
+        // 515 = restartRequired: this fires immediately after a successful QR pairing.
+        // The Baileys creds.update event may still be in flight when we hit this branch,
+        // so persist the in-memory creds AND flush any pending key writes NOW to
+        // guarantee the session survives the reconnect.
+        if (meIdInMem) {
+          try { await saveCreds() } catch (e) { console.error(`[WA:${sessionKey}] saveCreds on close failed:`, e) }
+          try { await flushPendingWrites() } catch (e) { console.error(`[WA:${sessionKey}] flushPendingWrites failed:`, e) }
+        }
 
         s.qr = null
         s.status = 'DISCONNECTED'
