@@ -71,28 +71,28 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
     const { state, saveCreds } = await usePrismaAuthState(sessionKey)
     console.log(`[WA:${sessionKey}] Auth state loaded, has me.id: ${!!state.creds.me?.id}`)
 
-    // Recent known-good WA Web version (May 2026). Try to fetch fresh in parallel
-    // with a short timeout — if the fetch hangs (Railway egress to web.whatsapp.com),
-    // we still create the socket promptly with this version.
-    // ⚠️ WhatsApp rejects the QR as "invalid" when the client version is too old —
-    // bump this manually if QRs start being rejected after a long time without redeploys.
-    let version: [number, number, number] = [2, 3000, 1023223821]
+    // ⚠️ WhatsApp rejects the connection with statusCode 405 if the client version
+    // is too old. Always prefer fetchLatestBaileysVersion (GitHub) — it's reliable
+    // and returns a version Baileys is known to handshake with successfully.
+    // The hardcoded fallback below MUST be kept up to date; bump it whenever the
+    // server starts seeing 405 close codes.
+    let version: [number, number, number] = [2, 3000, 1035194821]
     try {
       const v = await Promise.race<{ version: [number, number, number] } | null>([
-        fetchLatestWaWebVersion({ timeout: 5000 }).catch(() => null),
+        fetchLatestBaileysVersion().catch(() => null),
         new Promise(r => setTimeout(() => r(null), 5000)),
       ])
       if (v?.version) {
         version = v.version
-        console.log(`[WA:${sessionKey}] Using WA web version: ${version.join('.')}`)
+        console.log(`[WA:${sessionKey}] Using Baileys version: ${version.join('.')}`)
       } else {
         const v2 = await Promise.race<{ version: [number, number, number] } | null>([
-          fetchLatestBaileysVersion().catch(() => null),
+          fetchLatestWaWebVersion({ timeout: 5000 }).catch(() => null),
           new Promise(r => setTimeout(() => r(null), 5000)),
         ])
         if (v2?.version) {
           version = v2.version
-          console.log(`[WA:${sessionKey}] Using Baileys cached version: ${version.join('.')}`)
+          console.log(`[WA:${sessionKey}] Using WA web version: ${version.join('.')}`)
         } else {
           console.log(`[WA:${sessionKey}] Using known-good fallback version: ${version.join('.')}`)
         }
@@ -179,16 +179,20 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
         const isLoggedOut = statusCode === DisconnectReason.loggedOut
         const isUnauthorized = statusCode === 401
         const isConflict = statusCode === DisconnectReason.connectionReplaced || statusCode === 440
-        console.log(`[WA:${sessionKey}] Closed, statusCode: ${statusCode}, isLoggedOut: ${isLoggedOut}, isUnauthorized: ${isUnauthorized}`)
+        // 405 = WhatsApp rejected the client version. Reconnecting won't help —
+        // the version is wrong on every retry. Stop the loop and clear creds so
+        // the user gets a fresh QR after the next deploy with an updated version.
+        const isVersionRejected = statusCode === 405
+        console.log(`[WA:${sessionKey}] Closed, statusCode: ${statusCode}, isLoggedOut: ${isLoggedOut}, isUnauthorized: ${isUnauthorized}, isVersionRejected: ${isVersionRejected}`)
 
         s.qr = null
         s.status = 'DISCONNECTED'
         s.sock = null
         if (s.qrWatchdog) { clearTimeout(s.qrWatchdog); s.qrWatchdog = null }
 
-        if (isLoggedOut || isUnauthorized) {
-          // Session expired/rejected by WhatsApp — clear creds so next connect generates fresh QR
-          console.log(`[WA:${sessionKey}] Clearing creds due to ${isLoggedOut ? 'logout' : '401'}`)
+        if (isLoggedOut || isUnauthorized || isVersionRejected) {
+          const reason = isLoggedOut ? 'logout' : isUnauthorized ? '401' : '405-version-rejected'
+          console.log(`[WA:${sessionKey}] Clearing creds due to ${reason}`)
           await clearCredsInDb(agencyId, userId ?? null)
         } else {
           try {
@@ -200,7 +204,7 @@ export async function initWhatsApp(agencyId: string, userId?: string | null): Pr
         }
 
         const isRestartRequired = statusCode === DisconnectReason.restartRequired
-        if (!isLoggedOut && !isUnauthorized && !isConflict) {
+        if (!isLoggedOut && !isUnauthorized && !isConflict && !isVersionRejected) {
           const delay = isRestartRequired ? 1000 : 5000
           console.log(`[WA:${sessionKey}] Reconnecting in ${delay}ms (restartRequired: ${isRestartRequired})`)
           if (s.reconnectTimer) clearTimeout(s.reconnectTimer)
