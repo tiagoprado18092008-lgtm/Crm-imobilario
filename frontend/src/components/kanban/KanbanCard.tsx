@@ -152,6 +152,32 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
               </span>
             </div>
 
+            {/* Phone row */}
+            {opportunity.contact?.phone && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  marginBottom: 4,
+                }}
+              >
+                <Phone size={11} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--text-secondary)',
+                    fontWeight: 500,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {opportunity.contact.phone}
+                </span>
+              </div>
+            )}
+
             {/* Contact name badge */}
             {opportunity.contact?.name && (
               <div style={{ marginBottom: 8 }}>
