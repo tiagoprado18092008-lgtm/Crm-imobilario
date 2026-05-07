@@ -122,7 +122,7 @@ export const create = async (
       opp_commission,
     },
     include: {
-      contact: { select: { id: true, name: true, email: true } },
+      contact: { select: { id: true, name: true, email: true, phone: true } },
       property: { select: { id: true, title: true, price: true } },
       assignedTo: { select: { id: true, name: true } },
     },
@@ -395,7 +395,7 @@ export const update = async (
       opp_commission,
     },
     include: {
-      contact: { select: { id: true, name: true, email: true } },
+      contact: { select: { id: true, name: true, email: true, phone: true } },
       property: { select: { id: true, title: true, price: true } },
       assignedTo: { select: { id: true, name: true } },
     },
@@ -472,7 +472,7 @@ export const moveStage = async (
       where: { id },
       data: { stage: newStage as any, position: adjustedPosition, stageId: newStageId || null },
       include: {
-        contact: { select: { id: true, name: true, email: true } },
+        contact: { select: { id: true, name: true, email: true, phone: true } },
         property: { select: { id: true, title: true, price: true } },
         assignedTo: { select: { id: true, name: true } },
       },
