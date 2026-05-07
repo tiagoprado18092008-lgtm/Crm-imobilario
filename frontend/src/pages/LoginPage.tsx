@@ -7,6 +7,7 @@ import { useAuthStore } from '../store/auth.store'
 import { CasaFlowLogo } from '../assets/casaflow-logo'
 
 // Module-level: survives component unmount/remount cycles caused by redirects
+// v2: fixed loop where useRef was lost on unmount
 const _processedSessions = new Set<string>()
 let _isExchanging = false
 
