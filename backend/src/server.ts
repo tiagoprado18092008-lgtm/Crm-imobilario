@@ -226,7 +226,7 @@ app.get('/setup-prod', async (_req, res) => {
     // Ensure agency exists
     let agency = await prisma.agency.findFirst();
     if (!agency) {
-      agency = await prisma.agency.create({ data: { name: 'AlphaScale AI' } });
+      agency = await prisma.agency.create({ data: { name: 'AlphaScale AI', slug: 'alphascale-ai-' + Date.now() } });
     }
 
     // Ensure geral@alphascaleai.com exists as SUPER_ADMIN
