@@ -13,6 +13,9 @@ export function createTransporter(): nodemailer.Transporter | null {
     secure: process.env.SMTP_PORT === '465',
     auth: { user, pass },
     tls: { rejectUnauthorized: false },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
 }
 

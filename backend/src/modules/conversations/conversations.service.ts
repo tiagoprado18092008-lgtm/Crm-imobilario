@@ -262,12 +262,17 @@ export const sendMessage = async (
   if (channel === 'WHATSAPP') {
     sendResult = await sendWhatsAppMessage(destination, content, agencyId, userId);
   } else if (channel === 'EMAIL') {
-    sendResult = await sendEmail({
-      to: destination,
-      subject: subject || '(sem assunto)',
-      html: `<p>${content.replace(/\n/g, '<br>')}</p>`,
-      text: content,
-    });
+    const emailTo = conversation.contact?.email || '';
+    if (!emailTo) {
+      sendResult = { success: false, error: 'Contacto sem endereço de e-mail' };
+    } else {
+      sendResult = await sendEmail({
+        to: emailTo,
+        subject: subject || '(sem assunto)',
+        html: `<p>${content.replace(/\n/g, '<br>')}</p>`,
+        text: content,
+      });
+    }
   } else if (channel === 'INSTAGRAM') {
     sendResult = await sendInstagramDM(destination, content);
   } else if (channel === 'SMS') {
