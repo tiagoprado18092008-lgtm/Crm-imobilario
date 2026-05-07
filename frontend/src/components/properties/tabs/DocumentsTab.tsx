@@ -4,6 +4,7 @@ import type { PropertyDocument } from '../../../types'
 import { uploadDocument, deleteDocument } from '../../../api/properties.api'
 import { useUIStore } from '../../../store/ui.store'
 import { formatDate } from '../../../utils/formatters'
+import { CustomSelect } from '../../ui/CustomSelect'
 
 const TIPOS = ['Caderneta Predial', 'Certidão de Teor', 'Licença de Habitabilidade', 'Certificado Energético', 'Planta', 'Contrato', 'Outro']
 
@@ -59,14 +60,13 @@ export const DocumentsTab: React.FC<Props> = ({ propertyId, documents, onChange 
     <div>
       {/* Upload zone */}
       <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
-        <select
+        <CustomSelect
           value={uploadTipo}
-          onChange={e => setUploadTipo(e.target.value)}
-          style={{ fontSize: 13, background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '6px 10px', color: 'var(--text-primary)' }}
-        >
-          <option value="">Tipo de documento</option>
-          {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
-        </select>
+          onChange={v => setUploadTipo(v)}
+          placeholder="Tipo de documento"
+          options={TIPOS.map(t => ({ value: t, label: t }))}
+          size="sm"
+        />
         <button
           onClick={() => inputRef.current?.click()}
           disabled={uploading}

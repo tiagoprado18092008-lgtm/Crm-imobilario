@@ -12,21 +12,21 @@ export async function usePrismaAuthState(sessionKey: string) {
   const row = await prisma.whatsAppSession.findFirst({
     where: { agencyId, userId: userId ?? null },
   })
+  console.log(`[WA:${sessionKey}] DB state: hasCreds=${!!(row?.creds && row.creds !== '{}')}, hasKeys=${!!(row?.keys && row.keys !== '{}')}${row?.creds && row.creds !== '{}' ? `, meId=${(() => { try { return JSON.parse(row!.creds)?.me?.id || 'null' } catch { return 'parse-err' } })()}` : ''}`)
 
-  // Only reuse creds if both creds AND keys are present (complete session state)
-  // If keys are missing, starting with stale creds causes a 401 with no QR generated
   const hasCreds = row?.creds && row.creds !== '{}'
   const hasKeys = row?.keys && row.keys !== '{}'
 
   let creds: any
   let canRestore = false
-  if (hasCreds && hasKeys) {
+  if (hasCreds) {
     try {
       const parsed = JSON.parse(row!.creds, BufferJSON.reviver)
-      // Accept creds if me.id is present, regardless of registered flag.
-      // After a QR scan, Baileys fires a 515 restart before registered=true is set,
-      // so creds will have me.id but registered=false during that reconnect window.
-      // Discarding them causes a new QR to be shown instead of completing the handshake.
+      // Restore creds whenever me.id is present — this covers two cases:
+      // 1. Fully paired session (registered=true, keys present) — normal restore
+      // 2. Mid-pairing after QR scan: Baileys fires 515 before keys.set runs,
+      //    so keys may not be in DB yet. Restoring creds lets the reconnect
+      //    complete the handshake instead of generating a new QR.
       if (parsed?.me?.id) {
         creds = parsed
         canRestore = true

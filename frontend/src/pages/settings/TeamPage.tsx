@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { Users, UserPlus, Send, Trash2 } from 'lucide-react'
 import { getUsers } from '../../api/users.api'
 import { getMyAgency, listAgencyMembers } from '../../api/agency.api'
-import { createInvitation, listInvitations, revokeInvitation } from '../../api/invitations.api'
+import { createInvitation, listInvitations, revokeInvitation, resendInvitation } from '../../api/invitations.api'
+import { deactivateMember } from '../../api/team.api'
 import { useUIStore } from '../../store/ui.store'
 import { useAuthStore } from '../../store/auth.store'
 import { PageSpinner } from '../../components/ui/Spinner'
@@ -78,6 +79,26 @@ export const TeamPage: React.FC = () => {
     } catch { showToast('Erro.', 'error') }
   }
 
+  const handleResend = async (id: string) => {
+    try {
+      await resendInvitation(id)
+      showToast('Convite reenviado.', 'success')
+    } catch (err: any) {
+      showToast(err?.response?.data?.error || 'Erro ao reenviar convite.', 'error')
+    }
+  }
+
+  const handleDeactivate = async (id: string) => {
+    if (!confirm('Tem a certeza que quer desativar este membro?')) return
+    try {
+      await deactivateMember(id)
+      showToast('Membro desativado.', 'success')
+      setMembers(p => p.map(m => m.id === id ? { ...m, isActive: false } : m))
+    } catch (err: any) {
+      showToast(err?.response?.data?.error || 'Erro ao desativar membro.', 'error')
+    }
+  }
+
   const pending = invitations.filter(i => !i.usedAt && new Date(i.expiresAt) >= new Date())
 
   const thStyle: React.CSSProperties = { padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6b7a99', borderBottom: '1px solid #e5e9f2' }
@@ -117,6 +138,7 @@ export const TeamPage: React.FC = () => {
                   <th style={thStyle}>Função</th>
                   <th style={thStyle}>Estado</th>
                   <th style={thStyle}>Desde</th>
+                  <th style={{ ...thStyle, textAlign: 'right' }}></th>
                 </tr></thead>
                 <tbody>
                   {members.map(m => (
@@ -143,6 +165,13 @@ export const TeamPage: React.FC = () => {
                       <td style={tdStyle}><span style={{ fontSize: 12, fontWeight: 600, color: ROLE_COLOR[m.role] || '#6b7a99' }}>{ROLE_LABELS[m.role] || m.role}</span></td>
                       <td style={tdStyle}><span style={{ fontSize: 12, fontWeight: 600, color: m.isActive ? '#22c55e' : '#ef4444' }}>{m.isActive ? '● Activo' : '● Inactivo'}</span></td>
                       <td style={{ ...tdStyle, color: '#6b7a99' }}>{formatDate(m.createdAt)}</td>
+                      <td style={{ ...tdStyle, textAlign: 'right' }}>
+                        {m.isActive && m.id !== user?.id && ['AGENCY_OWNER', 'AGENCY_ADMIN'].includes(user?.role || '') && (
+                          <button onClick={() => handleDeactivate(m.id)} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #fee2e2', background: '#fff', color: '#ef4444', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            Desativar
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -166,9 +195,14 @@ export const TeamPage: React.FC = () => {
                       <td style={tdStyle}><span style={{ fontSize: 12, color: '#f59e0b', fontWeight: 600 }}>{ROLE_LABELS[inv.role] || inv.role}</span></td>
                       <td style={{ ...tdStyle, color: '#6b7a99' }}>{formatDate(inv.expiresAt)}</td>
                       <td style={{ ...tdStyle, textAlign: 'right' }}>
-                        <button onClick={() => handleRevoke(inv.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 7, border: '1px solid #fee2e2', background: '#fff', color: '#ef4444', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-                          <Trash2 size={11} /> Revogar
-                        </button>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          <button onClick={() => handleResend(inv.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 7, border: '1px solid #dce3ef', background: '#fff', color: '#6b7a99', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            <Send size={11} /> Reenviar
+                          </button>
+                          <button onClick={() => handleRevoke(inv.id)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 7, border: '1px solid #fee2e2', background: '#fff', color: '#ef4444', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            <Trash2 size={11} /> Revogar
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

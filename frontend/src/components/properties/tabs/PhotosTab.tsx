@@ -6,6 +6,7 @@ import { X, Upload } from 'lucide-react'
 import type { PropertyPhoto } from '../../../types'
 import { uploadPhoto, deletePhoto, reorderPhotos, updatePhoto } from '../../../api/properties.api'
 import { useUIStore } from '../../../store/ui.store'
+import { CustomSelect } from '../../ui/CustomSelect'
 
 const CATEGORIAS = ['Exterior', 'Sala', 'Cozinha', 'Quarto', 'Casa de banho', 'Outro']
 
@@ -38,15 +39,15 @@ const SortablePhoto: React.FC<SortablePhotoProps> = ({ photo, onDelete, onCatego
       >
         <X size={12} />
       </button>
-      <select
-        value={photo.categoria ?? ''}
-        onChange={e => onCategoriaChange(photo.id, e.target.value)}
-        onClick={e => e.stopPropagation()}
-        style={{ position: 'absolute', bottom: 4, left: 4, right: 4, fontSize: 11, background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 4px' }}
-      >
-        <option value="">Categoria...</option>
-        {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
-      </select>
+      <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', bottom: 4, left: 4, right: 4 }}>
+        <CustomSelect
+          value={photo.categoria ?? ''}
+          onChange={v => onCategoriaChange(photo.id, v)}
+          placeholder="Categoria..."
+          options={CATEGORIAS.map(c => ({ value: c, label: c }))}
+          size="sm"
+        />
+      </div>
     </div>
   )
 }

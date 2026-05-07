@@ -4,7 +4,11 @@ import { useAuthStore } from './store/auth.store'
 import { useUIStore } from './store/ui.store'
 import { AppShell } from './components/layout/AppShell'
 import { ProtectedRoute } from './components/layout/ProtectedRoute'
-import { ClerkLoginPage } from './pages/ClerkLoginPage'
+import { LoginPage } from './pages/LoginPage'
+import { RoleGuard } from './components/auth/RoleGuard'
+import { SuperAdminLayout } from './pages/super-admin/SuperAdminLayout'
+import { SuperAdminAgenciesPage } from './pages/super-admin/SuperAdminAgenciesPage'
+import { SuperAdminAgencyDetailPage } from './pages/super-admin/SuperAdminAgencyDetailPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ContactsPage } from './pages/ContactsPage'
 import { ContactDetailPage } from './pages/ContactDetailPage'
@@ -51,7 +55,7 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={<ClerkLoginPage />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<Navigate to="/login" replace />} />
       <Route path="/invite/:token" element={<InviteAcceptPage />} />
       <Route path="/403" element={<ForbiddenPage />} />
@@ -125,6 +129,21 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="settings" element={<SettingsPage />} />
+      </Route>
+
+      <Route
+        path="/super-admin"
+        element={
+          <ProtectedRoute>
+            <RoleGuard roles={['SUPER_ADMIN']}>
+              <SuperAdminLayout />
+            </RoleGuard>
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="/super-admin/agencies" replace />} />
+        <Route path="agencies" element={<SuperAdminAgenciesPage />} />
+        <Route path="agencies/:id" element={<SuperAdminAgencyDetailPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

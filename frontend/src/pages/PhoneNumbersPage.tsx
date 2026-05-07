@@ -3,6 +3,7 @@ import { Phone, Plus, Search, Trash2, Edit2, Check, X, Globe, Mic, MessageSquare
 import { listNumbers, searchNumbers, purchaseNumber, releaseNumber, updateNumber, createPaymentIntent, autoProvisionTwilio, verifyPersonalNumber, confirmPersonalNumber, updateRouting } from '../api/phone-numbers.api'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
+import { CustomSelect } from '../components/ui/CustomSelect'
 
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
@@ -1183,21 +1184,25 @@ export const PhoneNumbersPage: React.FC = () => {
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
                     País
                   </label>
-                  <select value={country} onChange={e => setCountry(e.target.value)} style={inputStyle}>
-                    {COUNTRIES.map(c => (
-                      <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    value={country}
+                    onChange={v => setCountry(v)}
+                    options={COUNTRIES.map(c => ({ value: c.code, label: `${c.name} (${c.code})` }))}
+                  />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
                     Tipo
                   </label>
-                  <select value={numType} onChange={e => setNumType(e.target.value)} style={inputStyle}>
-                    <option value="local">Local</option>
-                    <option value="mobile">Mobile</option>
-                    <option value="tollFree">Toll-Free</option>
-                  </select>
+                  <CustomSelect
+                    value={numType}
+                    onChange={v => setNumType(v)}
+                    options={[
+                      { value: 'local', label: 'Local' },
+                      { value: 'mobile', label: 'Mobile' },
+                      { value: 'tollFree', label: 'Toll-Free' },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>

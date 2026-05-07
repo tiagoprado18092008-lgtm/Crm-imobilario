@@ -10,6 +10,7 @@ datasource db {
 }
 
 enum UserRole {
+  SUPER_ADMIN
   AGENCY_OWNER
   AGENCY_ADMIN
   LOCATION_ADMIN
@@ -632,6 +633,7 @@ model Invitation {
   id          String    @id @default(cuid())
   email       String
   role        String    @default("CONSULTANT")
+  type        String    @default("CONSULTANT")
   token       String    @unique
   invitedById String
   expiresAt   DateTime

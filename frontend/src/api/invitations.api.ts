@@ -14,3 +14,6 @@ export const revokeInvitation = (id: string) =>
 
 export const verifyInvitationToken = (token: string) =>
   axios.get(`${BASE}/invitations/verify/${token}`)
+
+export const resendInvitation = (id: string) =>
+  api.post(`/invitations/${id}/resend`)

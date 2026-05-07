@@ -2,51 +2,17 @@ import { Request, Response, NextFunction } from 'express';
 import * as authService from './auth.service';
 import { clerkExchange as clerkExchangeService } from './clerk-exchange.service';
 
-export const register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { name, email, password, phone, agency, invitationToken, role } = req.body;
-    console.log('[REGISTER] body recebido:', { name, email, role, agency, phone, invitationToken });
-    if (!name || !email || !password) {
-      res.status(400).json({ error: 'Nome, email e password são obrigatórios', status: 400 });
-      return;
-    }
-    if (password.length < 6) {
-      res.status(400).json({ error: 'Password deve ter pelo menos 6 caracteres', status: 400 });
-      return;
-    }
-    const result = await authService.register(name, email, password, phone, agency, invitationToken, role);
-    res.status(201).json(result);
-  } catch (err) {
-    next(err);
-  }
+// Legacy endpoints — disabled. Auth is now handled exclusively through Clerk.
+export const register = (_req: Request, res: Response): void => {
+  res.status(410).json({ error: 'Registration via password is no longer supported. Use the invite system.', status: 410 });
 };
 
-export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      res.status(400).json({ error: 'Email e password são obrigatórios', status: 400 });
-      return;
-    }
-    const result = await authService.login(email, password);
-    res.status(200).json(result);
-  } catch (err) {
-    next(err);
-  }
+export const login = (_req: Request, res: Response): void => {
+  res.status(410).json({ error: 'Password login is no longer supported. Use Clerk authentication.', status: 410 });
 };
 
-export const googleAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { idToken } = req.body;
-    if (!idToken) {
-      res.status(400).json({ error: 'Token Google em falta', status: 400 });
-      return;
-    }
-    const result = await authService.googleAuth(idToken);
-    res.status(200).json(result);
-  } catch (err) {
-    next(err);
-  }
+export const googleAuth = (_req: Request, res: Response): void => {
+  res.status(410).json({ error: 'Google login via this endpoint is no longer supported. Use Clerk authentication.', status: 410 });
 };
 
 export const getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

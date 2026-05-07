@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 
 // Role constants — single source of truth
 export const ROLES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
   AGENCY_OWNER: 'AGENCY_OWNER',
   AGENCY_ADMIN: 'AGENCY_ADMIN',
   LOCATION_ADMIN: 'LOCATION_ADMIN',
@@ -61,6 +62,11 @@ export const withPermission = (module: string, action: string) => {
       return;
     }
     const user = req.user;
+    // SUPER_ADMIN bypasses all permission checks
+    if (user.role === ROLES.SUPER_ADMIN) {
+      next();
+      return;
+    }
     // AGENCY_OWNER and AGENCY_ADMIN always pass
     if (user.role === ROLES.AGENCY_OWNER || user.role === ROLES.AGENCY_ADMIN) {
       next();

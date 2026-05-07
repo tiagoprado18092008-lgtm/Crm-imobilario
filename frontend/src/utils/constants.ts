@@ -69,6 +69,7 @@ export const PIPELINE_STAGES: { value: string; label: string; color: string }[] 
 ]
 
 export const ROLE_LABELS: Record<string, string> = {
+  SUPER_ADMIN: 'Super Admin',
   ADMIN: 'Administrador',
   AGENCY_OWNER: 'Diretor de Agência',
   AGENCY_DIRECTOR: 'Diretor de Agência',

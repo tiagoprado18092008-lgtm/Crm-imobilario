@@ -1,4 +1,4 @@
-export type Role = 'AGENCY_OWNER' | 'AGENCY_ADMIN' | 'TEAM_LEADER' | 'CONSULTANT' | 'LOCATION_ADMIN' | 'USER'
+export type Role = 'SUPER_ADMIN' | 'AGENCY_OWNER' | 'AGENCY_ADMIN' | 'TEAM_LEADER' | 'CONSULTANT' | 'LOCATION_ADMIN' | 'USER'
 export type PermissionMap = Record<string, string[]>
 export type ContactType = 'BUYER' | 'OWNER' | 'PARTNER'
 export type ContactStatus = 'NEW' | 'QUALIFIED' | 'CONTACTED' | 'INACTIVE'

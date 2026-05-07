@@ -19,6 +19,7 @@ import { getUsers } from '../api/users.api'
 import { TemplatesModal } from '../components/conversations/TemplatesModal'
 import { useCallStore } from '../store/call.store'
 import { useAuthStore } from '../store/auth.store'
+import { CustomSelect } from '../components/ui/CustomSelect'
 import type { Contact, Conversation, Message, User as UserType } from '../types'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -433,13 +434,17 @@ const ContactInfoPanel: React.FC<{ contact: Contact; conversation: Conversation;
         {/* assigned */}
         <div style={{ padding: '0 16px 12px', borderBottom: '1px solid var(--border)' }}>
           <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Responsável</p>
-          <select value={conversation.assignedToId || ''} onChange={async e => {
-            await assignConversation(conversation.id, e.target.value)
-            onConvUpdate({ ...conversation, assignedToId: e.target.value })
-          }} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1px solid var(--input-border)', background: 'var(--surface-2)', color: 'var(--text-primary)', fontSize: 12, outline: 'none' }}>
-            <option value="">Sem responsável</option>
-            {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-          </select>
+          <CustomSelect
+            value={conversation.assignedToId || ''}
+            onChange={async v => {
+              await assignConversation(conversation.id, v)
+              onConvUpdate({ ...conversation, assignedToId: v })
+            }}
+            placeholder="Sem responsável"
+            options={users.map(u => ({ value: u.id, label: u.name }))}
+            searchable
+            size="sm"
+          />
         </div>
 
         {/* tags */}

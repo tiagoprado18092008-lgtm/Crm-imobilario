@@ -3,10 +3,18 @@ import * as invitationsService from './invitations.service';
 
 export const create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { email, role, locationId, permissions } = req.body;
+    const { email, role, locationId, permissions, agencyId, type } = req.body;
     if (!email) { res.status(400).json({ error: 'Email obrigatório' }); return; }
-    const inv = await invitationsService.create(email, role || 'CONSULTANT', req.user.id, locationId, permissions, req.user.agencyId);
+    const resolvedAgencyId = agencyId || req.user.agencyId;
+    const inv = await invitationsService.create(email, role || 'CONSULTANT', req.user.id, locationId, permissions, resolvedAgencyId, type);
     res.status(201).json(inv);
+  } catch (err) { next(err); }
+};
+
+export const resend = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const inv = await invitationsService.resend(req.params.id);
+    res.json(inv);
   } catch (err) { next(err); }
 };
 

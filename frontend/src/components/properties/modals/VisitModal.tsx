@@ -6,6 +6,7 @@ import { createVisit } from '../../../api/properties.api'
 import { useUIStore } from '../../../store/ui.store'
 import type { PropertyVisit, Contact } from '../../../types'
 import { DateTimePickerInput } from '../../ui/DateTimePickerInput'
+import { CustomSelect } from '../../ui/CustomSelect'
 
 interface Props {
   propertyId: string
@@ -50,15 +51,14 @@ export const VisitModal: React.FC<Props> = ({ propertyId, isOpen, onClose, onCre
     <Modal isOpen={isOpen} onClose={onClose} title="Agendar Visita" size="sm">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Cliente</label>
-          <select
+          <CustomSelect
+            label="Cliente"
             value={contactId}
-            onChange={e => setContactId(e.target.value)}
-            style={{ width: '100%', fontSize: 13, background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 8, padding: '8px 10px', color: 'var(--text-primary)' }}
-          >
-            <option value="">— Seleccionar cliente —</option>
-            {contacts.map(c => <option key={c.id} value={c.id}>{c.name}{c.phone ? ` · ${c.phone}` : ''}</option>)}
-          </select>
+            onChange={v => setContactId(v)}
+            placeholder="— Seleccionar cliente —"
+            options={contacts.map(c => ({ value: c.id, label: c.name + (c.phone ? ` · ${c.phone}` : '') }))}
+            searchable
+          />
         </div>
         <div>
           <DateTimePickerInput

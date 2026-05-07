@@ -5,6 +5,7 @@ import { useUIStore } from '../../store/ui.store'
 import api from '../../api/client'
 import { DatePickerInput } from '../ui/DatePickerInput'
 import { DateTimePickerInput } from '../ui/DateTimePickerInput'
+import { CustomSelect } from '../ui/CustomSelect'
 
 interface EventModalProps {
   event?: any
@@ -177,9 +178,11 @@ export const EventModal: React.FC<EventModalProps> = ({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, marginBottom: 14 }}>
             <div>
               <label style={labelStyle}>Tipo</label>
-              <select style={inputStyle} value={form.eventType} onChange={e => set('eventType', e.target.value)}>
-                {EVENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
+              <CustomSelect
+                value={form.eventType}
+                onChange={v => set('eventType', v)}
+                options={EVENT_TYPES}
+              />
             </div>
             <div>
               <label style={labelStyle}>Cor</label>
@@ -239,9 +242,11 @@ export const EventModal: React.FC<EventModalProps> = ({
           {/* Recurrence */}
           <div style={{ marginBottom: 14 }}>
             <label style={labelStyle}>Recorrência</label>
-            <select style={inputStyle} value={form.recurringRule} onChange={e => set('recurringRule', e.target.value)}>
-              {RECURRENCE.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
+            <CustomSelect
+              value={form.recurringRule}
+              onChange={v => set('recurringRule', v)}
+              options={RECURRENCE}
+            />
           </div>
 
           {/* Location */}

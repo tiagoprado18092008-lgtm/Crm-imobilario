@@ -24,6 +24,7 @@ import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
+import { CustomSelect } from '../ui/CustomSelect'
 import { DatePickerInput } from '../ui/DatePickerInput'
 import { Badge } from '../ui/Badge'
 import { PageSpinner } from '../ui/Spinner'
@@ -276,27 +277,35 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <div>
-              <label style={labelStyle}>Tipo de Imóvel</label>
-              <select {...register('interest_type')} style={inputStyle}>
-                <option value="">Selecionar...</option>
-                <option value="APARTMENT">Apartamento</option>
-                <option value="HOUSE">Moradia</option>
-                <option value="COMMERCIAL">Comercial</option>
-                <option value="LAND">Terreno</option>
-                <option value="GARAGE">Garagem</option>
-                <option value="WAREHOUSE">Armazém</option>
-                <option value="FARM">Quinta</option>
-              </select>
+              <CustomSelect
+                label="Tipo de Imóvel"
+                value={watch('interest_type') || ''}
+                onChange={v => setFormValue('interest_type', v)}
+                placeholder="Selecionar..."
+                options={[
+                  { value: 'APARTMENT', label: 'Apartamento' },
+                  { value: 'HOUSE', label: 'Moradia' },
+                  { value: 'COMMERCIAL', label: 'Comercial' },
+                  { value: 'LAND', label: 'Terreno' },
+                  { value: 'GARAGE', label: 'Garagem' },
+                  { value: 'WAREHOUSE', label: 'Armazém' },
+                  { value: 'FARM', label: 'Quinta' },
+                ]}
+              />
             </div>
             <div>
-              <label style={labelStyle}>Urgência</label>
-              <select {...register('timeline')} style={inputStyle}>
-                <option value="">Selecionar...</option>
-                <option value="IMMEDIATE">Imediato</option>
-                <option value="1_3_MONTHS">1 a 3 meses</option>
-                <option value="3_6_MONTHS">3 a 6 meses</option>
-                <option value="6_PLUS_MONTHS">Mais de 6 meses</option>
-              </select>
+              <CustomSelect
+                label="Urgência"
+                value={watch('timeline') || ''}
+                onChange={v => setFormValue('timeline', v)}
+                placeholder="Selecionar..."
+                options={[
+                  { value: 'IMMEDIATE', label: 'Imediato' },
+                  { value: '1_3_MONTHS', label: '1 a 3 meses' },
+                  { value: '3_6_MONTHS', label: '3 a 6 meses' },
+                  { value: '6_PLUS_MONTHS', label: 'Mais de 6 meses' },
+                ]}
+              />
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -332,11 +341,13 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
               </div>
             </div>
             <div>
-              <label style={labelStyle}>Razão da Venda</label>
-              <select {...register('sale_reason')} style={inputStyle}>
-                <option value="">Selecionar...</option>
-                {SALE_REASON_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
+              <CustomSelect
+                label="Razão da Venda"
+                value={watch('sale_reason') || ''}
+                onChange={v => setFormValue('sale_reason', v)}
+                placeholder="Selecionar..."
+                options={SALE_REASON_OPTIONS.map(r => ({ value: r, label: r }))}
+              />
             </div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
               <input type="checkbox" {...register('buying_also')} checked={buyingAlso} onChange={e => setFormValue('buying_also', e.target.checked)} style={{ accentColor: 'var(--accent)', width: 15, height: 15 }} />
@@ -798,26 +809,25 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                 }}>
                   <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Filtros</p>
                   <div style={{ marginBottom: 10 }}>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Fonte</label>
-                    <select
+                    <CustomSelect
+                      label="Fonte"
                       value={filterSource}
-                      onChange={e => setFilterSource(e.target.value)}
-                      style={{ width: '100%', padding: '7px 10px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', outline: 'none', background: 'var(--surface-2)', color: 'var(--text-primary)' }}
-                    >
-                      <option value="">Todas as fontes</option>
-                      {SOURCE_OPTIONS_FORM.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
+                      onChange={v => setFilterSource(v)}
+                      placeholder="Todas as fontes"
+                      options={SOURCE_OPTIONS_FORM.map(s => ({ value: s, label: s }))}
+                      size="sm"
+                    />
                   </div>
                   <div style={{ marginBottom: 12 }}>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Responsável</label>
-                    <select
+                    <CustomSelect
+                      label="Responsável"
                       value={filterAssignee}
-                      onChange={e => setFilterAssignee(e.target.value)}
-                      style={{ width: '100%', padding: '7px 10px', fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', outline: 'none', background: 'var(--surface-2)', color: 'var(--text-primary)' }}
-                    >
-                      <option value="">Todos</option>
-                      {allUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-                    </select>
+                      onChange={v => setFilterAssignee(v)}
+                      placeholder="Todos"
+                      options={allUsers.map(u => ({ value: u.id, label: u.name }))}
+                      size="sm"
+                      searchable
+                    />
                   </div>
                   {activeFilters > 0 && (
                     <button onClick={() => { setFilterSource(''); setFilterAssignee('') }}

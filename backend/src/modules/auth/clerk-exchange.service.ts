@@ -34,11 +34,25 @@ export const clerkExchange = async (clerkToken: string): Promise<{ token: string
     const email: string | undefined = clerkUser.emailAddresses?.[0]?.emailAddress;
 
     if (email) {
-      user = await prisma.user.findUnique({ where: { email } });
+      const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || email.split('@')[0];
+
+      // Super-admin: auto-link on first login
+      if (email === process.env.SUPER_ADMIN_EMAIL) {
+        user = await prisma.user.findUnique({ where: { email } });
+        if (user) {
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { clerkUserId, isActive: true, role: 'SUPER_ADMIN', name: name || user.name },
+          });
+        }
+      }
+
+      if (!user) {
+        user = await prisma.user.findUnique({ where: { email } });
+      }
 
       if (user && user.clerkUserId === null) {
         // First-time Clerk login for an invited user — associate clerkUserId, activate, sync name
-        const name = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(' ') || email.split('@')[0];
         user = await prisma.user.update({
           where: { id: user.id },
           data: {
@@ -53,6 +67,27 @@ export const clerkExchange = async (clerkToken: string): Promise<{ token: string
           where: { email, usedAt: null },
           data: { usedAt: new Date() },
         });
+      }
+
+      // OWNER invite: no placeholder was created, create user now on first login
+      if (!user) {
+        const ownerInv = await prisma.invitation.findFirst({
+          where: { email, type: 'OWNER', usedAt: null, expiresAt: { gt: new Date() } },
+        });
+        if (ownerInv) {
+          user = await prisma.user.create({
+            data: {
+              name,
+              email,
+              clerkUserId,
+              role: 'AGENCY_OWNER',
+              isActive: true,
+              onboardingCompleted: false,
+              ...(ownerInv.agencyId ? { agencyId: ownerInv.agencyId } : {}),
+            },
+          });
+          await prisma.invitation.update({ where: { id: ownerInv.id }, data: { usedAt: new Date() } });
+        }
       }
     }
 

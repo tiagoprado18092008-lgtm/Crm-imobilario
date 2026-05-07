@@ -5,6 +5,7 @@ import { Card } from '../../ui/Card'
 import type { Property } from '../../../types'
 import { updateProperty, generateDescription } from '../../../api/properties.api'
 import { useUIStore } from '../../../store/ui.store'
+import { CustomSelect } from '../../ui/CustomSelect'
 
 const COMODIDADES = [
   'Garagem', 'Elevador', 'Varanda', 'Terraço', 'Jardim', 'Piscina',
@@ -36,14 +37,13 @@ const InlineField: React.FC<InlineFieldProps> = ({ label, value, type = 'text', 
     return (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
         <span style={{ fontSize: 12, color: 'var(--text-muted)', minWidth: 140 }}>{label}</span>
-        <select
+        <CustomSelect
           value={current}
-          onChange={(e) => { setCurrent(e.target.value); onSave(e.target.value) }}
-          style={{ fontSize: 13, color: 'var(--text-primary)', background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 6, padding: '2px 6px' }}
-        >
-          <option value="">—</option>
-          {options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+          onChange={v => { setCurrent(v); onSave(v) }}
+          placeholder="—"
+          options={options ?? []}
+          size="sm"
+        />
       </div>
     )
   }

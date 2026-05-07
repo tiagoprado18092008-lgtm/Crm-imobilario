@@ -6,6 +6,7 @@ import { VisitModal } from '../modals/VisitModal'
 import type { PropertyVisit } from '../../../types'
 import { updateVisit } from '../../../api/properties.api'
 import { useUIStore } from '../../../store/ui.store'
+import { CustomSelect } from '../../ui/CustomSelect'
 
 const statusVariant: Record<string, 'warning' | 'success' | 'danger'> = {
   agendada: 'warning', realizada: 'success', cancelada: 'danger'
@@ -69,16 +70,18 @@ export const VisitsTab: React.FC<Props> = ({ propertyId, visits, onChange }) => 
                   </span>
                   <Badge variant={statusVariant[visit.status]} small>{statusLabel[visit.status]}</Badge>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{visit.notas || '—'}</span>
-                  <select
-                    value={visit.status}
-                    onChange={e => { e.stopPropagation(); handleStatusChange(visit.id, e.target.value) }}
-                    onClick={e => e.stopPropagation()}
-                    style={{ fontSize: 12, background: 'var(--surface-2)', border: '1px solid var(--input-border)', borderRadius: 6, padding: '2px 6px', color: 'var(--text-primary)' }}
-                  >
-                    <option value="agendada">Agendada</option>
-                    <option value="realizada">Realizada</option>
-                    <option value="cancelada">Cancelada</option>
-                  </select>
+                  <div onClick={e => e.stopPropagation()}>
+                    <CustomSelect
+                      value={visit.status}
+                      onChange={v => handleStatusChange(visit.id, v)}
+                      options={[
+                        { value: 'agendada', label: 'Agendada' },
+                        { value: 'realizada', label: 'Realizada' },
+                        { value: 'cancelada', label: 'Cancelada' },
+                      ]}
+                      size="sm"
+                    />
+                  </div>
                 </div>
 
                 {isExpanded && visit.status === 'realizada' && (

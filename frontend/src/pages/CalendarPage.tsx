@@ -105,21 +105,29 @@ function TaskForm({
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
-          <label style={labelStyle}>Estado</label>
-          <select style={inputStyle} {...register('status')}>
-            <option value="PENDING">Pendente</option>
-            <option value="IN_PROGRESS">Em curso</option>
-            <option value="COMPLETED">Concluída</option>
-            <option value="CANCELLED">Cancelada</option>
-          </select>
+          <CustomSelect
+            label="Estado"
+            value={watch('status')}
+            onChange={v => setValue('status', v as any, { shouldValidate: true })}
+            options={[
+              { value: 'PENDING', label: 'Pendente' },
+              { value: 'IN_PROGRESS', label: 'Em curso' },
+              { value: 'COMPLETED', label: 'Concluída' },
+              { value: 'CANCELLED', label: 'Cancelada' },
+            ]}
+          />
         </div>
         <div>
-          <label style={labelStyle}>Prioridade</label>
-          <select style={inputStyle} {...register('priority')}>
-            <option value="LOW">Baixa</option>
-            <option value="MEDIUM">Média</option>
-            <option value="HIGH">Alta</option>
-          </select>
+          <CustomSelect
+            label="Prioridade"
+            value={watch('priority')}
+            onChange={v => setValue('priority', v as any, { shouldValidate: true })}
+            options={[
+              { value: 'LOW', label: 'Baixa' },
+              { value: 'MEDIUM', label: 'Média' },
+              { value: 'HIGH', label: 'Alta' },
+            ]}
+          />
         </div>
       </div>
       <div>
@@ -130,19 +138,25 @@ function TaskForm({
         />
       </div>
       <div>
-        <label style={labelStyle}>Responsável *</label>
-        <select style={inputStyle} {...register('assignedToId')}>
-          <option value="">Selecionar...</option>
-          {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-        </select>
-        {errors.assignedToId && <span style={{ color: '#ef4444', fontSize: 11 }}>{errors.assignedToId.message}</span>}
+        <CustomSelect
+          label="Responsável *"
+          value={watch('assignedToId')}
+          onChange={v => setValue('assignedToId', v, { shouldValidate: true })}
+          placeholder="Selecionar..."
+          options={users.map(u => ({ value: u.id, label: u.name }))}
+          searchable
+          error={errors.assignedToId?.message}
+        />
       </div>
       <div>
-        <label style={labelStyle}>Contacto</label>
-        <select style={inputStyle} {...register('contactId')}>
-          <option value="">Nenhum</option>
-          {contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <CustomSelect
+          label="Contacto"
+          value={watch('contactId') || ''}
+          onChange={v => setValue('contactId', v, { shouldValidate: true })}
+          placeholder="Nenhum"
+          options={contacts.map(c => ({ value: c.id, label: c.name }))}
+          searchable
+        />
       </div>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', paddingTop: 4 }}>
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>Cancelar</Button>
@@ -235,26 +249,14 @@ export const CalendarPage: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {(user?.role === 'AGENCY_OWNER' || user?.role === 'AGENCY_ADMIN' || user?.role === 'TEAM_LEADER') && users.length > 0 && (
-            <select
+            <CustomSelect
               value={selectedUserId || ''}
-              onChange={e => setSelectedUserId(e.target.value || null)}
-              style={{
-                padding: '7px 12px',
-                borderRadius: 8,
-                border: '1.5px solid #dce3ef',
-                fontSize: 13,
-                color: '#374151',
-                background: '#fff',
-                fontFamily: 'inherit',
-                cursor: 'pointer',
-                outline: 'none',
-              }}
-            >
-              <option value="">Todos os consultores</option>
-              {users.map((u: any) => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </select>
+              onChange={v => setSelectedUserId(v || null)}
+              placeholder="Todos os consultores"
+              options={users.map((u: any) => ({ value: u.id, label: u.name }))}
+              searchable
+              size="sm"
+            />
           )}
           {syncStatus && (
             <SyncStatusBadge

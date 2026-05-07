@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { MessageSquare, MessageCircle, FileText, CheckSquare, X, Loader2, CalendarDays } from 'lucide-react'
 import { DatePickerInput } from '../ui/DatePickerInput'
 import { DateTimePickerInput } from '../ui/DateTimePickerInput'
+import { CustomSelect } from '../ui/CustomSelect'
 import type { Opportunity } from '../../types'
 import { createInteraction } from '../../api/interactions.api'
 import { createTask } from '../../api/tasks.api'
@@ -99,13 +100,17 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
             onKeyDown={e => e.key === 'Enter' && saveAppt()}
             placeholder="Título do agendamento..." />
 
-          <select style={inputStyle} value={type} onChange={e => setType(e.target.value)}>
-            <option value="VISIT">Visita</option>
-            <option value="ANGARIACAO_MEETING">Reunião de angariação</option>
-            <option value="CPCV">CPCV</option>
-            <option value="ESCRITURA">Escritura</option>
-            <option value="GENERAL_MEETING">Reunião geral</option>
-          </select>
+          <CustomSelect
+            value={type}
+            onChange={v => setType(v)}
+            options={[
+              { value: 'VISIT', label: 'Visita' },
+              { value: 'ANGARIACAO_MEETING', label: 'Reunião de angariação' },
+              { value: 'CPCV', label: 'CPCV' },
+              { value: 'ESCRITURA', label: 'Escritura' },
+              { value: 'GENERAL_MEETING', label: 'Reunião geral' },
+            ]}
+          />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <DateTimePickerInput
@@ -222,20 +227,17 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
             />
           </div>
           <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>Prioridade</label>
-            <select
+            <CustomSelect
+              label="Prioridade"
               value={taskPriority}
-              onChange={e => setTaskPriority(e.target.value)}
-              style={{
-                width: '100%', padding: '8px 10px', borderRadius: 8,
-                border: '1px solid #e2e8f0', fontSize: 12,
-                outline: 'none', fontFamily: 'inherit', color: 'var(--text-primary)', background: 'var(--surface)',
-              }}
-            >
-              <option value="LOW">Baixa</option>
-              <option value="MEDIUM">Média</option>
-              <option value="HIGH">Alta</option>
-            </select>
+              onChange={v => setTaskPriority(v)}
+              options={[
+                { value: 'LOW', label: 'Baixa' },
+                { value: 'MEDIUM', label: 'Média' },
+                { value: 'HIGH', label: 'Alta' },
+              ]}
+              size="sm"
+            />
           </div>
         </div>
         <ContextRow opportunity={opportunity} />
