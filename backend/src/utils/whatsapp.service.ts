@@ -6,13 +6,20 @@ const BASE_URL = 'https://graph.facebook.com/v21.0';
 export async function sendWhatsAppMessage(
   to: string,
   message: string,
-  agencyId?: string
+  agencyId?: string,
+  userId?: string | null
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   if (agencyId) {
-    const waStatus = getStatus(agencyId);
-    if (waStatus.status === 'CONNECTED') {
-      const sent = await sendViaBaileys(agencyId, to, message);
-      if (sent) return { success: true, messageId: `baileys_${Date.now()}` };
+    // Try personal session first (assigned consultant's own WhatsApp), then agency session
+    const personalStatus = userId ? getStatus(agencyId, userId) : null
+    if (personalStatus?.status === 'CONNECTED') {
+      const sent = await sendViaBaileys(agencyId, to, message, userId)
+      if (sent) return { success: true, messageId: `baileys_${Date.now()}` }
+    }
+    const agencyStatus = getStatus(agencyId)
+    if (agencyStatus.status === 'CONNECTED') {
+      const sent = await sendViaBaileys(agencyId, to, message)
+      if (sent) return { success: true, messageId: `baileys_${Date.now()}` }
     }
   }
 

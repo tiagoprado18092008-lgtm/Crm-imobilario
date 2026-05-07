@@ -260,7 +260,7 @@ export const sendMessage = async (
   const agencyId = senderAgencyId || (conversation as any).location?.agencyId;
 
   if (channel === 'WHATSAPP') {
-    sendResult = await sendWhatsAppMessage(destination, content, agencyId);
+    sendResult = await sendWhatsAppMessage(destination, content, agencyId, userId);
   } else if (channel === 'EMAIL') {
     sendResult = await sendEmail({
       to: destination,
