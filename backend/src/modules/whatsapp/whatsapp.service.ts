@@ -266,8 +266,12 @@ async function doInitWhatsApp(agencyId: string, userId?: string | null): Promise
     console.error(`[WA:${sessionKey}] initWhatsApp error:`, err)
     s.status = 'DISCONNECTED'
     s.sock = null
+    // Don't clear creds if pairing is in progress — the error may be transient
+    // and clearing would force the user to scan the QR again unnecessarily.
+    if (!s.pairingInProgress) {
+      await clearCredsInDb(agencyId, userId ?? null)
+    }
     s.pairingInProgress = false
-    await clearCredsInDb(agencyId, userId ?? null)
   }
 }
 

@@ -23,11 +23,11 @@ export async function usePrismaAuthState(sessionKey: string) {
   if (hasCreds && hasKeys) {
     try {
       const parsed = JSON.parse(row!.creds, BufferJSON.reviver)
-      // Baileys requires BOTH me.id AND registered=true to restore a session.
-      // A half-paired session (me.id set but registered=false) is a zombie:
-      // it survived a 515 reconnect with partial state and will never finish
-      // the handshake. Treat it as no creds so the next attempt asks for QR.
-      if (parsed?.me?.id && parsed?.registered === true) {
+      // Accept creds if me.id is present, regardless of registered flag.
+      // After a QR scan, Baileys fires a 515 restart before registered=true is set,
+      // so creds will have me.id but registered=false during that reconnect window.
+      // Discarding them causes a new QR to be shown instead of completing the handshake.
+      if (parsed?.me?.id) {
         creds = parsed
         canRestore = true
       } else {
