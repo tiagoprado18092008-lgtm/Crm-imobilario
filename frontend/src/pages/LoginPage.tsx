@@ -1,10 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SignIn, useAuth, useSession, useClerk } from '@clerk/clerk-react'
 import { motion } from 'framer-motion'
 import { AlertCircle } from 'lucide-react'
 import { useAuthStore } from '../store/auth.store'
 import { CasaFlowLogo } from '../assets/casaflow-logo'
+
+// Module-level: survives component unmount/remount cycles caused by redirects
+const _processedSessions = new Set<string>()
+let _isExchanging = false
 
 const T = {
   navy:    '#0f2553',
@@ -34,22 +38,20 @@ export const LoginPage: React.FC = () => {
   const { signOut } = useClerk()
   const { clerkExchange, token, hydrated, logout } = useAuthStore()
   const navigate = useNavigate()
-  const exchanging = useRef(false)
-  const processedSessionIds = useRef<Set<string>>(new Set())
   const [exchangeError, setExchangeError] = useState('')
 
   useEffect(() => {
     if (!isLoaded || !hydrated) return
     if (isSignedIn && token) { navigate('/dashboard', { replace: true }); return }
     if (!isSignedIn || !session) return
-    if (exchanging.current) return
-    if (processedSessionIds.current.has(session.id)) return
+    if (_isExchanging) return
+    if (_processedSessions.has(session.id)) return
 
-    exchanging.current = true
-    processedSessionIds.current.add(session.id)
+    _isExchanging = true
+    _processedSessions.add(session.id)
 
     session.getToken().then(async (clerkToken) => {
-      if (!clerkToken) { exchanging.current = false; return }
+      if (!clerkToken) { _isExchanging = false; return }
       try {
         await clerkExchange(clerkToken)
         navigate('/dashboard', { replace: true })
@@ -59,7 +61,7 @@ export const LoginPage: React.FC = () => {
         logout()
         await signOut()
         setExchangeError(msg)
-        exchanging.current = false
+        _isExchanging = false
       }
     })
   }, [isLoaded, hydrated, isSignedIn, session, token, clerkExchange, navigate, logout, signOut])
