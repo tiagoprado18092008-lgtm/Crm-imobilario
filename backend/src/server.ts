@@ -229,11 +229,11 @@ app.get('/setup-prod', async (_req, res) => {
       agency = await prisma.agency.create({ data: { name: 'AlphaScale AI', slug: 'alphascale-ai-' + Date.now() } });
     }
 
-    // Ensure geral@alphascaleai.com exists as SUPER_ADMIN
+    // Ensure geral@alphascaleai.com exists as AGENCY_OWNER
     await prisma.user.upsert({
       where: { email: 'geral@alphascaleai.com' },
-      update: { isActive: true, role: 'SUPER_ADMIN' },
-      create: { name: 'Tiago', email: 'geral@alphascaleai.com', isActive: true, role: 'SUPER_ADMIN', onboardingCompleted: true },
+      update: { isActive: true },
+      create: { name: 'Tiago', email: 'geral@alphascaleai.com', isActive: true, role: 'AGENCY_OWNER', onboardingCompleted: true },
     });
 
     // Ensure tiagoprado1620tp@gmail.com exists as AGENCY_OWNER
