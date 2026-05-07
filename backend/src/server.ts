@@ -49,6 +49,9 @@ import { registerEventListeners, registerV2EventListeners } from './utils/automa
 import { startAutomationCron } from './jobs/automation-cron';
 import { startCalendarCron } from './lib/calendar-cron';
 import { loadSettingsFromDB } from './modules/settings/settings.service';
+import { EmailService } from './lib/email';
+import superAdminRouter from './modules/super-admin/super-admin.router';
+import teamRouter from './modules/team/team.router';
 
 const app = express();
 
@@ -79,6 +82,72 @@ app.use(
     credentials: true,
   })
 );
+// ─── Clerk Webhook (raw body required for svix signature verification) ──────
+app.post('/webhook/clerk', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    const { Webhook } = await import('svix');
+    const secret = process.env.CLERK_WEBHOOK_SECRET;
+    if (!secret) { res.status(500).json({ error: 'CLERK_WEBHOOK_SECRET not set' }); return; }
+
+    const wh = new Webhook(secret);
+    let evt: any;
+    try {
+      evt = wh.verify(req.body, {
+        'svix-id': req.headers['svix-id'] as string,
+        'svix-timestamp': req.headers['svix-timestamp'] as string,
+        'svix-signature': req.headers['svix-signature'] as string,
+      });
+    } catch {
+      res.status(400).json({ error: 'Invalid signature' }); return;
+    }
+
+    if (evt.type === 'user.created') {
+      const clerkUser = evt.data;
+      const email: string | undefined = clerkUser.email_addresses?.[0]?.email_address;
+      if (!email) { res.status(200).json({ ok: true }); return; }
+
+      const firstName = clerkUser.first_name || '';
+      const lastName = clerkUser.last_name || '';
+      const name = [firstName, lastName].filter(Boolean).join(' ') || email.split('@')[0];
+      const clerkUserId: string = clerkUser.id;
+
+      // Skip super-admin — handled by clerk-exchange.service on first login
+      if (email === process.env.SUPER_ADMIN_EMAIL) { res.status(200).json({ ok: true }); return; }
+
+      // Check if user already exists (invited users may have a placeholder)
+      const existing = await prisma.user.findUnique({ where: { email } });
+      if (existing) {
+        // Associate clerkUserId if not yet linked
+        if (!existing.clerkUserId) {
+          await prisma.user.update({ where: { id: existing.id }, data: { clerkUserId, isActive: true } });
+        }
+        res.status(200).json({ ok: true }); return;
+      }
+
+      // Find the default agency to assign new users
+      const agency = await prisma.agency.findFirst();
+
+      await prisma.user.create({
+        data: {
+          name,
+          email,
+          clerkUserId,
+          role: 'AGENCY_OWNER',
+          isActive: true,
+          onboardingCompleted: false,
+          ...(agency ? { agencyId: agency.id } : {}),
+        },
+      });
+      console.log(`[Clerk Webhook] Created AGENCY_OWNER: ${email}`);
+    }
+
+    res.status(200).json({ ok: true });
+  } catch (err: any) {
+    console.error('[Clerk Webhook] Error:', err?.message);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(requestLogger);
@@ -360,6 +429,8 @@ app.use('/api/appointment-calendars', appointmentCalendarsRouter);
 app.use('/api/campaigns', campaignsRouter);
 app.use('/api/forms', formsRouter);
 app.use('/api/invitations', invitationsRouter);
+app.use('/api/super-admin', superAdminRouter);
+app.use('/api/team', teamRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/exports', exportsRouter);
 app.use('/api/search', searchRouter);
@@ -565,6 +636,8 @@ app.use(errorMiddleware);
 const PORT = parseInt(process.env.PORT ?? '3000', 10);
 
 if (process.env.NODE_ENV !== 'test') {
+  EmailService.verify().catch((err) => console.error('[email] SMTP verify failed:', err.message));
+
   const server = app.listen(PORT, () => {
     console.log(`CRM Backend running on http://localhost:${PORT}`);
     console.log(`   Environment: ${process.env.NODE_ENV ?? 'development'}`);
