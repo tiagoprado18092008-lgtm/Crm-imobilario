@@ -185,6 +185,7 @@ model User {
   calendarEvents        CalendarEvent[]
   calendarSlots         CalendarSlot[]
   whatsappSessions      WhatsAppSession[]
+  refreshTokens         RefreshToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -842,4 +843,27 @@ model WhatsAppSession {
   updatedAt DateTime @updatedAt
 
   @@unique([agencyId, userId])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  email     String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
