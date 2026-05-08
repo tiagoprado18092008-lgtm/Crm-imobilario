@@ -292,6 +292,7 @@ const MessageBubble: React.FC<{ msg: Message; isOutbound: boolean }> = ({ msg, i
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {msg.status === 'FAILED' && <span style={{ fontSize: 10, color: '#ef4444', fontWeight: 700 }}>✕ Falhou</span>}
             <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{format(parseISO(msg.createdAt), 'HH:mm')}</span>
             {expanded ? <ChevronDown size={13} style={{ color: 'var(--text-muted)' }} /> : <ChevronRight size={13} style={{ color: 'var(--text-muted)' }} />}
           </div>
@@ -338,9 +339,11 @@ const MessageBubble: React.FC<{ msg: Message; isOutbound: boolean }> = ({ msg, i
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3, justifyContent: isOutbound ? 'flex-end' : 'flex-start', padding: '0 4px' }}>
           <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{format(parseISO(msg.createdAt), 'HH:mm')}</span>
           {isOutbound && (
-            msg.status === 'READ' ? <CheckCheck size={11} style={{ color: '#60a5fa' }} /> :
-            msg.status === 'DELIVERED' ? <CheckCheck size={11} style={{ color: 'var(--text-muted)' }} /> :
-            <Check size={11} style={{ color: 'var(--text-muted)' }} />
+            msg.status === 'FAILED'
+              ? <span style={{ fontSize: 10, color: '#ef4444', fontWeight: 700 }}>✕ Falhou</span>
+              : msg.status === 'READ' ? <CheckCheck size={11} style={{ color: '#60a5fa' }} />
+              : msg.status === 'DELIVERED' ? <CheckCheck size={11} style={{ color: 'var(--text-muted)' }} />
+              : <Check size={11} style={{ color: 'var(--text-muted)' }} />
           )}
           <ChannelIcon channel={msg.channel} size={10} />
         </div>
@@ -712,8 +715,12 @@ export const ConversationsPage: React.FC = () => {
     try {
       const res = await sendMessage(selected.id, { channel, content, subject })
       const newMsg = res.data?.message || res.data
+      const sendResult = res.data?.sendResult
       setMessages(prev => [...prev, newMsg])
       setConversations(cs => cs.map(c => c.id === selected.id ? { ...c, lastMessageText: content.substring(0, 100), lastMessageAt: new Date().toISOString() } : c))
+      if (sendResult && !sendResult.success) {
+        alert('Erro ao enviar: ' + (sendResult.error || 'Falha desconhecida'))
+      }
     } catch (err: any) {
       console.error('[Send error]', err?.response?.data || err)
       alert('Erro ao enviar: ' + (err?.response?.data?.error || err?.message || 'desconhecido'))
