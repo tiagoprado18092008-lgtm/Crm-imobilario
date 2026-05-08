@@ -5,6 +5,7 @@ import { useUIStore } from './store/ui.store'
 import { AppShell } from './components/layout/AppShell'
 import { ProtectedRoute } from './components/layout/ProtectedRoute'
 import { LoginPage } from './pages/LoginPage'
+import PublicBookingPage from './pages/PublicBookingPage'
 import { RoleGuard } from './components/auth/RoleGuard'
 import { SuperAdminLayout } from './pages/super-admin/SuperAdminLayout'
 import { SuperAdminAgenciesPage } from './pages/super-admin/SuperAdminAgenciesPage'
@@ -57,6 +58,7 @@ function App() {
 
   return (
     <Routes>
+      <Route path="/book/:userId" element={<PublicBookingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<Navigate to="/login" replace />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />

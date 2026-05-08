@@ -33,6 +33,7 @@ import exportsRouter from './modules/exports/exports.router';
 import searchRouter from './modules/search/search.router';
 import calendarRouter from './modules/calendar/calendar.router';
 import calendarEventsRouter from './modules/calendar/calendar-events.router';
+import bookingRouter from './modules/calendar/booking.router';
 import webhooksRouter from './modules/webhooks/webhooks.router';
 import locationsRouter from './modules/locations/locations.router';
 import activityRouter from './modules/activity/activity.router';
@@ -471,6 +472,7 @@ app.use('/api/activity', activityRouter);
 app.use('/api/pipelines', pipelinesRouter);
 app.use('/api/calendar', calendarRouter);
 app.use('/api/calendar', calendarEventsRouter);
+app.use('/api/booking', bookingRouter); // público — sem authenticate middleware
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/whatsapp', whatsappRouter);
 

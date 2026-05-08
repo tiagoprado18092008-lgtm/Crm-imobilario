@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Settings, User, Lock, Bell, Save, Eye, EyeOff } from 'lucide-react'
+import { Settings, User, Lock, Bell, Save, Eye, EyeOff, Link, Copy, Check } from 'lucide-react'
 import { useAuthStore } from '../../store/auth.store'
 import { useUIStore } from '../../store/ui.store'
 import { updateUser } from '../../api/users.api'
@@ -25,6 +25,16 @@ export const GeneralSettingsPage: React.FC = () => {
 
   const [profile, setProfile] = useState({ name: user?.name || '', phone: user?.phone || '', email: user?.email || '', amiNumber: (user as any)?.amiNumber || '' })
   const [savingProfile, setSavingProfile] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const bookingUrl = user ? `${window.location.origin}/book/${user.id}` : ''
+
+  const handleCopy = () => {
+    if (!bookingUrl) return
+    navigator.clipboard.writeText(bookingUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   const [passwords, setPasswords] = useState({ current: '', newPwd: '', confirm: '' })
   const [showPwd, setShowPwd] = useState(false)
@@ -104,6 +114,21 @@ export const GeneralSettingsPage: React.FC = () => {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Booking Link */}
+      <div style={sectionStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <Link size={15} style={{ color: '#6366f1' }} />
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: '#0f2553', margin: 0 }}>Link de agendamento público</h2>
+        </div>
+        <p style={{ fontSize: 13, color: '#6b7a99', margin: '0 0 12px' }}>Partilha este link com clientes para que possam agendar uma reunião diretamente na tua agenda.</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input readOnly value={bookingUrl} style={{ ...inputStyle, flex: 1, background: '#f1f5f9', color: '#374151', cursor: 'text', fontSize: 12 }} />
+          <button onClick={handleCopy} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 9, border: '1.5px solid #e5e9f2', background: copied ? '#f0fdf4' : '#fff', color: copied ? '#16a34a' : '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' }}>
+            {copied ? <><Check size={13} /> Copiado</> : <><Copy size={13} /> Copiar</>}
+          </button>
+        </div>
       </div>
 
       {/* Password */}
