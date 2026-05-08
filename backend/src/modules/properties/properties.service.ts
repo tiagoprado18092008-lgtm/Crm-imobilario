@@ -132,6 +132,9 @@ export const update = async (
     parking?: number;
     reference?: string;
     imageUrls?: string;
+    lat?: number;
+    lng?: number;
+    district?: string;
     postalCode?: string;
     freguesia?: string;
     concelho?: string;
@@ -176,6 +179,9 @@ export const update = async (
       parking: dto.parking,
       reference: dto.reference,
       imageUrls: dto.imageUrls,
+      ...(dto.lat !== undefined && { lat: dto.lat }),
+      ...(dto.lng !== undefined && { lng: dto.lng }),
+      district: dto.district,
       postalCode: dto.postalCode,
       freguesia: dto.freguesia,
       concelho: dto.concelho,

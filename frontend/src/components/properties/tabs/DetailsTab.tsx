@@ -6,6 +6,8 @@ import type { Property } from '../../../types'
 import { updateProperty, generateDescription } from '../../../api/properties.api'
 import { useUIStore } from '../../../store/ui.store'
 import { CustomSelect } from '../../ui/CustomSelect'
+import { AddressAutocomplete } from '../AddressAutocomplete'
+import { PropertyMap } from '../PropertyMap'
 
 const COMODIDADES = [
   'Garagem', 'Elevador', 'Varanda', 'Terraço', 'Jardim', 'Piscina',
@@ -135,11 +137,34 @@ export const DetailsTab: React.FC<Props> = ({ property, onChange }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Localização */}
       <Card title="Localização">
-        <InlineField label="Endereço" value={property.address} onSave={v => save('address', v)} />
+        <div style={{ padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>Endereço</span>
+          <AddressAutocomplete
+            value={property.address || ''}
+            onChange={async (address, lat, lng, components) => {
+              const updates: any = { address }
+              if (lat !== undefined) updates.lat = lat
+              if (lng !== undefined) updates.lng = lng
+              if (components?.postalCode) updates.postalCode = components.postalCode
+              if (components?.city) updates.concelho = components.city
+              if (components?.district) updates.district = components.district
+              if (components?.freguesia) updates.freguesia = components.freguesia
+              try {
+                await updateProperty(property.id, updates)
+                onChange(updates)
+              } catch {
+                showToast('Erro ao guardar morada', 'error')
+              }
+            }}
+          />
+        </div>
         <InlineField label="Código postal" value={property.postalCode} onSave={v => save('postalCode', v)} />
         <InlineField label="Freguesia" value={property.freguesia} onSave={v => save('freguesia', v)} />
         <InlineField label="Concelho" value={property.concelho} onSave={v => save('concelho', v)} />
         <InlineField label="Distrito" value={property.district} onSave={v => save('district', v)} />
+        {property.lat && property.lng && (
+          <PropertyMap lat={property.lat} lng={property.lng} title={property.title} />
+        )}
       </Card>
 
       {/* Características */}
