@@ -111,6 +111,8 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
   const { user: currentUser } = useAuthStore()
   const [users, setUsers] = useState<User[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [tagInput, setTagInput] = useState('')
+  const [tags, setTags] = useState<string[]>(contact?.tags ?? [])
 
   const {
     register,
@@ -150,6 +152,13 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
   const buyingAlso = watch('buying_also') ?? false
 
   const commission = askingPrice ? (Number(askingPrice) * 0.05) : null
+
+  const addTag = () => {
+    const t = tagInput.trim()
+    if (t && !tags.includes(t)) setTags([...tags, t])
+    setTagInput('')
+  }
+  const removeTag = (t: string) => setTags(tags.filter(x => x !== t))
 
   useEffect(() => {
     getUsers()
@@ -191,6 +200,8 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
         payload.sale_reason = data.sale_reason || undefined
         payload.buying_also = data.buying_also ?? false
       }
+
+      payload.tags = tags
 
       if (contact) {
         await updateContact(contact.id, payload)
@@ -262,6 +273,39 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
           style={{ ...inputStyle, resize: 'vertical' }}
           placeholder="Notas sobre o contacto..."
         />
+      </div>
+
+      {/* Tags */}
+      <div className="flex flex-col gap-1">
+        <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Tags</label>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input
+            value={tagInput}
+            onChange={e => setTagInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag() } }}
+            placeholder="Adicionar tag..."
+            style={{ ...inputStyle, flex: 1 }}
+          />
+          <button type="button" onClick={addTag} style={{
+            padding: '8px 14px', borderRadius: 8, border: '1px solid var(--input-border)',
+            background: 'var(--surface-2)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: 13,
+          }}>+</button>
+        </div>
+        {tags.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+            {tags.map(t => (
+              <span key={t} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '2px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                background: 'var(--accent-subtle, #f0e9d6)', color: '#c9a84c',
+                border: '1px solid #c9a84c44',
+              }}>
+                {t}
+                <span onClick={() => removeTag(t)} style={{ cursor: 'pointer', fontSize: 14, lineHeight: 1 }}>×</span>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── BUYER fields ── */}

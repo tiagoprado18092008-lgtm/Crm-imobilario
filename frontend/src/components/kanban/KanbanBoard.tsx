@@ -45,6 +45,7 @@ const oppSchema = z.object({
   propertyId: z.string().optional(),
   assignedToId: z.string().min(1, 'Responsável obrigatório'),
   lostReason: z.string().optional(),
+  probability: z.preprocess(v => (v === '' || v == null ? undefined : Number(v)), z.number().min(0).max(100).optional()),
   // Dynamic fields
   budget_min: z.preprocess(v => (v === '' || v == null ? undefined : Number(v)), z.number().positive().optional()),
   budget_max: z.preprocess(v => (v === '' || v == null ? undefined : Number(v)), z.number().positive().optional()),
@@ -107,6 +108,7 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
       propertyId: opportunity?.propertyId || '',
       assignedToId: opportunity?.assignedToId || currentUser?.id || '',
       lostReason: opportunity?.lostReason || '',
+      probability: (opportunity as any)?.probability ?? 50,
       budget_min: (opportunity as any)?.budget_min,
       budget_max: (opportunity as any)?.budget_max,
       interest_type: (opportunity as any)?.interest_type || '',
@@ -166,6 +168,7 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
         propertyId: data.propertyId || undefined,
         assignedToId: data.assignedToId,
         lostReason: data.lostReason || undefined,
+        probability: data.probability ?? 50,
       }
       const dynamicPayload = contactType === 'BUYER' ? {
         budget_min: data.budget_min,
@@ -220,6 +223,10 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
             : STAGE_ORDER.map(s => ({ value: s, label: STAGE_LABELS[s] }))
         } {...register('stage')} />
         <Input label="Valor (€)" type="number" {...register('value')} />
+        <div>
+          <label style={labelStyle}>Probabilidade (%)</label>
+          <input {...register('probability', { valueAsNumber: true })} type="number" min={0} max={100} placeholder="50" style={inputStyle} />
+        </div>
         <Select label="Contacto" required error={errors.contactId?.message} placeholder="Selecionar contacto" options={contacts.map(c => ({ value: c.id, label: c.name }))} {...register('contactId')} />
         <Select label="Responsável" required error={errors.assignedToId?.message} placeholder="Selecionar responsável" options={users.map(u => ({ value: u.id, label: u.name }))} {...register('assignedToId')} />
         <Select label="Fonte" placeholder="Selecionar fonte" options={SOURCE_OPTIONS_FORM.map(s => ({ value: s, label: s }))} {...register('source')} />
@@ -1196,6 +1203,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {selectedOpp.value && <InfoRow label="Valor" value={formatCurrency(selectedOpp.value)} valueStyle={{ color: '#16a34a', fontWeight: 700 }} />}
+              {(selectedOpp as any).probability != null && <InfoRow label="Probabilidade" value={`${(selectedOpp as any).probability}%`} />}
               {selectedOpp.source && <InfoRow label="Fonte" value={selectedOpp.source} />}
               {selectedOpp.contact && <InfoRow label="Contacto" value={selectedOpp.contact.name} />}
               {selectedOpp.property && <InfoRow label="Propriedade" value={selectedOpp.property.title} />}

@@ -152,6 +152,27 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
               </span>
             </div>
 
+            {/* Probability badge */}
+            {(opportunity as any).probability != null && (
+              <div style={{ marginBottom: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Probabilidade</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: (opportunity as any).probability >= 70 ? '#16a34a' : (opportunity as any).probability >= 40 ? '#f59e0b' : '#ef4444' }}>
+                    {(opportunity as any).probability}%
+                  </span>
+                </div>
+                <div style={{ height: 3, borderRadius: 2, background: 'var(--border)', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${(opportunity as any).probability}%`,
+                    background: (opportunity as any).probability >= 70 ? '#16a34a' : (opportunity as any).probability >= 40 ? '#f59e0b' : '#ef4444',
+                    borderRadius: 2,
+                    transition: 'width 0.3s',
+                  }} />
+                </div>
+              </div>
+            )}
+
             {/* Phone row */}
             {opportunity.contact?.phone && (
               <div
