@@ -47,6 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   logout: () => {
     localStorage.removeItem('crm_token')
+    localStorage.removeItem('crm_refresh_token')
     localStorage.removeItem('crm_user')
     localStorage.removeItem('crm_impersonating')
     localStorage.removeItem('crm_location')

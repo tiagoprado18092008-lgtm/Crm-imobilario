@@ -40,6 +40,8 @@ import { TeamPage } from './pages/settings/TeamPage'
 import { GeneralSettingsPage } from './pages/settings/GeneralSettingsPage'
 import { InviteAcceptPage } from './pages/InviteAcceptPage'
 import { ForbiddenPage } from './pages/ForbiddenPage'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
 
 function App() {
   const { hydrate } = useAuthStore()
@@ -57,6 +59,8 @@ function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<Navigate to="/login" replace />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/invite/:token" element={<InviteAcceptPage />} />
       <Route path="/403" element={<ForbiddenPage />} />
 
