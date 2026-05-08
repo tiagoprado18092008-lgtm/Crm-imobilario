@@ -5,9 +5,23 @@ const buildContactWhere = async (user: any): Promise<any> => buildScope(user);
 
 const buildOpportunityWhere = async (user: any): Promise<any> => buildScope(user);
 
-export const getSummary = async (user: any) => {
-  const contactWhere = await buildContactWhere(user);
-  const oppWhere = await buildOpportunityWhere(user);
+export const getSummary = async (user: any, filters?: { from?: Date; to?: Date; assignedToId?: string }) => {
+  const baseContact = await buildContactWhere(user);
+  const baseOpp = await buildOpportunityWhere(user);
+
+  const dateFilter = filters?.from || filters?.to
+    ? { createdAt: { ...(filters.from && { gte: filters.from }), ...(filters.to && { lte: filters.to }) } }
+    : {};
+  const agentFilter = filters?.assignedToId ? { assignedToId: filters.assignedToId } : {};
+
+  const contactWhere = { ...baseContact, ...dateFilter, ...agentFilter };
+  const oppWhere = { ...baseOpp, ...dateFilter, ...agentFilter };
+
+  const propertyScope = user.agencyId
+    ? { createdBy: { agencyId: user.agencyId } }
+    : user.locationId
+    ? { createdBy: { locationId: user.locationId } }
+    : { createdById: user.id };
 
   const today = new Date();
   const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -26,6 +40,7 @@ export const getSummary = async (user: any) => {
     closedWonThisMonth,
     newContactsThisMonth,
     closedWonWithDates,
+    propertiesByStatusResult,
   ] = await Promise.all([
     prisma.contact.count({ where: contactWhere }),
     prisma.contact.count({ where: { ...contactWhere, type: 'LEAD' } }),
@@ -65,6 +80,11 @@ export const getSummary = async (user: any) => {
       select: { createdAt: true, updatedAt: true },
       take: 100,
     }),
+    prisma.property.groupBy({
+      by: ['status'],
+      where: propertyScope,
+      _count: { _all: true },
+    }),
   ]);
 
   const avgDaysToClose =
@@ -89,11 +109,20 @@ export const getSummary = async (user: any) => {
     closedWonThisMonth,
     newContactsThisMonth,
     avgDaysToClose,
+    propertiesByStatus: propertiesByStatusResult.reduce((acc: any, r: any) => {
+      acc[r.status] = r._count._all;
+      return acc;
+    }, {}),
   };
 };
 
-export const getPipeline = async (user: any) => {
-  const oppWhere = await buildOpportunityWhere(user);
+export const getPipeline = async (user: any, filters?: { from?: Date; to?: Date; assignedToId?: string }) => {
+  const baseOpp = await buildOpportunityWhere(user);
+  const dateFilter = filters?.from || filters?.to
+    ? { createdAt: { ...(filters.from && { gte: filters.from }), ...(filters.to && { lte: filters.to }) } }
+    : {};
+  const agentFilter = filters?.assignedToId ? { assignedToId: filters.assignedToId } : {};
+  const oppWhere = { ...baseOpp, ...dateFilter, ...agentFilter };
 
   const stages = [
     'LEAD_IN',

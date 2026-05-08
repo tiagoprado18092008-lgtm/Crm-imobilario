@@ -1,6 +1,6 @@
 export type Role = 'SUPER_ADMIN' | 'AGENCY_OWNER' | 'AGENCY_ADMIN' | 'TEAM_LEADER' | 'CONSULTANT' | 'LOCATION_ADMIN' | 'USER'
 export type PermissionMap = Record<string, string[]>
-export type ContactType = 'BUYER' | 'OWNER' | 'PARTNER'
+export type ContactType = 'BUYER' | 'OWNER' | 'PARTNER' | 'TENANT'
 export type ContactStatus = 'NEW' | 'QUALIFIED' | 'CONTACTED' | 'INACTIVE'
 export type PropertyType = 'APARTMENT' | 'HOUSE' | 'COMMERCIAL' | 'LAND' | 'GARAGE' | 'WAREHOUSE' | 'FARM' | 'OTHER'
 export type PropertyPurpose = 'SALE' | 'RENT' | 'TRESPASSE'
@@ -331,6 +331,7 @@ export interface ReportSummary {
   pipelineValue: number
   tasksDueToday: number
   closedWonThisMonth: number
+  propertiesByStatus?: Record<string, number>
 }
 
 export interface PipelineStage {

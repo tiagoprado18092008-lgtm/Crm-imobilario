@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, FunnelChart, Funnel, LabelList
@@ -22,6 +24,7 @@ import {
 import { Button } from '../components/ui/Button'
 import { exportContacts, exportOpportunities } from '../api/exports.api'
 import { downloadBlob } from '../utils/download'
+import { getUsers } from '../api/users.api'
 
 const FUNNEL_COLORS = ['var(--accent)', 'var(--accent)', '#f59e0b', '#f97316', '#8b5cf6', '#22c55e', '#ef4444']
 
@@ -56,31 +59,63 @@ export const ReportsPage: React.FC = () => {
   const [agents, setAgents] = useState<AgentPerformance[]>([])
   const [convStats, setConvStats] = useState<ConversationStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const [consultorId, setConsultorId] = useState('')
+  const [allUsers, setAllUsers] = useState<any[]>([])
+  const reportRef = useRef<HTMLDivElement>(null)
+
+  const loadData = async (params?: { from?: string; to?: string; assignedToId?: string }) => {
+    setLoading(true)
+    try {
+      const isAdmin = user?.role === 'AGENCY_OWNER' || user?.role === 'AGENCY_ADMIN' || user?.role === 'TEAM_LEADER'
+      const promises: Promise<any>[] = [
+        getReportSummary(params),
+        getReportPipeline(params),
+        getConversationStats(),
+      ]
+      if (isAdmin) promises.push(getAgentPerformance())
+      const results = await Promise.all(promises)
+      setSummary(results[0].data)
+      setPipeline(results[1].data || [])
+      setConvStats(results[2].data || null)
+      if (results[3]) setAgents(results[3].data || [])
+    } catch {
+      showToast('Erro ao carregar relatórios', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchAll = async () => {
-      setLoading(true)
-      try {
-        const isAdmin = user?.role === 'AGENCY_OWNER' || user?.role === 'AGENCY_ADMIN'
-        const promises: Promise<any>[] = [
-          getReportSummary(),
-          getReportPipeline(),
-          getConversationStats(),
-        ]
-        if (isAdmin) promises.push(getAgentPerformance())
-        const results = await Promise.all(promises)
-        setSummary(results[0].data)
-        setPipeline(results[1].data || [])
-        setConvStats(results[2].data || null)
-        if (results[3]) setAgents(results[3].data || [])
-      } catch {
-        showToast('Erro ao carregar relatórios', 'error')
-      } finally {
-        setLoading(false)
-      }
+    loadData()
+    const isManager = ['AGENCY_OWNER', 'AGENCY_ADMIN', 'TEAM_LEADER'].includes(user?.role || '')
+    if (isManager) {
+      getUsers().then((r: any) => {
+        const d = r.data; setAllUsers(Array.isArray(d) ? d : d.data || [])
+      }).catch(() => {})
     }
-    fetchAll()
   }, [])
+
+  const handleExportPDF = async () => {
+    if (!reportRef.current) return
+    try {
+      showToast('A gerar PDF…', 'info')
+      const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const imgWidth = pageWidth - 20
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, Math.min(imgHeight, pageHeight - 20))
+      const dateStr = new Date().toLocaleDateString('pt-PT').replace(/\//g, '-')
+      pdf.save(`relatorio-casaflow-${dateStr}.pdf`)
+      showToast('PDF exportado com sucesso.', 'success')
+    } catch {
+      showToast('Erro ao gerar PDF.', 'error')
+    }
+  }
 
   if (loading) return <PageSpinner />
 
@@ -118,7 +153,7 @@ export const ReportsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Export Buttons */}
-      <div className="flex items-center gap-3 justify-end">
+      <div className="flex items-center gap-3 justify-end flex-wrap">
         <Button
           variant="secondary"
           onClick={async () => {
@@ -143,8 +178,44 @@ export const ReportsPage: React.FC = () => {
         >
           <Download className="w-4 h-4" /> Exportar Oportunidades
         </Button>
+        <Button variant="secondary" onClick={handleExportPDF}>
+          <Download className="w-4 h-4" /> Exportar PDF
+        </Button>
       </div>
 
+      {/* Filter bar */}
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap', padding: '16px 20px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>De</label>
+          <input type="date" value={from} onChange={e => setFrom(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: 'var(--surface-2)', color: 'var(--text-primary)', outline: 'none' }} />
+        </div>
+        <div>
+          <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Até</label>
+          <input type="date" value={to} onChange={e => setTo(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: 'var(--surface-2)', color: 'var(--text-primary)', outline: 'none' }} />
+        </div>
+        {allUsers.length > 0 && (
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Consultor</label>
+            <select value={consultorId} onChange={e => setConsultorId(e.target.value)}
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, background: 'var(--surface-2)', color: 'var(--text-primary)', outline: 'none' }}>
+              <option value="">Todos</option>
+              {allUsers.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          </div>
+        )}
+        <button onClick={() => loadData({ ...(from && { from }), ...(to && { to }), ...(consultorId && { assignedToId: consultorId }) })}
+          style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Aplicar filtros
+        </button>
+        <button onClick={() => { setFrom(''); setTo(''); setConsultorId(''); loadData() }}
+          style={{ padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Limpar
+        </button>
+      </div>
+
+      <div ref={reportRef}>
       {/* 6 KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <div className="rounded-xl border shadow-sm p-5" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
@@ -217,6 +288,27 @@ export const ReportsPage: React.FC = () => {
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>lead → fecho</p>
         </div>
       </div>
+
+      {/* Properties by status */}
+      {(summary as any)?.propertiesByStatus && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginTop: 16 }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Imóveis por Estado</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+            {[
+              { key: 'AVAILABLE', label: 'Disponível', color: '#16a34a', bg: '#dcfce7' },
+              { key: 'RESERVED', label: 'Reservado', color: '#d97706', bg: '#fef3c7' },
+              { key: 'SOLD', label: 'Vendido', color: '#2563eb', bg: '#dbeafe' },
+              { key: 'RENTED', label: 'Arrendado', color: '#7c3aed', bg: '#ede9fe' },
+              { key: 'IN_PROCESS', label: 'Em processo', color: '#6b7280', bg: '#f3f4f6' },
+            ].map(({ key, label, color, bg }) => (
+              <div key={key} style={{ background: bg, borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
+                <div style={{ fontSize: 28, fontWeight: 800, color }}>{(summary as any).propertiesByStatus?.[key] ?? 0}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color, marginTop: 4 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Row 1: Pipeline bar + Funnel */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -399,6 +491,7 @@ export const ReportsPage: React.FC = () => {
           )}
         </Card>
       )}
+      </div>
     </div>
   )
 }
