@@ -48,6 +48,7 @@ import { startImapPolling } from './utils/imap.service';
 import { registerEventListeners, registerV2EventListeners } from './utils/automation.engine';
 import { startAutomationCron } from './jobs/automation-cron';
 import { startCalendarCron } from './lib/calendar-cron';
+import { startOverdueTasksCron } from './lib/overdue-tasks-cron';
 import { loadSettingsFromDB } from './modules/settings/settings.service';
 import { EmailService } from './lib/email';
 import superAdminRouter from './modules/super-admin/super-admin.router';
@@ -712,6 +713,7 @@ if (process.env.NODE_ENV !== 'test') {
       registerV2EventListeners();
       startAutomationCron();
       startCalendarCron();
+      startOverdueTasksCron();
       restoreAllSessions().catch(() => {});
     })
     .catch((err) => {

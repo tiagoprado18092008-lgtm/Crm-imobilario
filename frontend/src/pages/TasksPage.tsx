@@ -384,7 +384,16 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
                       onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-3)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <td style={{ padding: '10px 14px', fontWeight: 500, color: 'var(--text-primary)' }}>{task.title}</td>
+                      <td style={{ padding: '10px 14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {task.title}
+                          {overdue && (
+                            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 10, background: '#fee2e2', color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
+                              Em atraso
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>{task.contact?.name || '-'}</td>
                       <td style={{ padding: '10px 14px' }}>
                         <Pill bg={pr.bg} color={pr.color} label={TASK_PRIORITY_LABELS[task.priority]} />

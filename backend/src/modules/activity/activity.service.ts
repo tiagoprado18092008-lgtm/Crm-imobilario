@@ -16,6 +16,7 @@ export const list = async (filters: any, user: any) => {
 
   if (filters.userId) where.userId = filters.userId;
   if (filters.entityType) where.entityType = filters.entityType;
+  if (filters.entityId) where.entityId = filters.entityId;
   if (filters.from || filters.to) {
     where.createdAt = {};
     if (filters.from) where.createdAt.gte = new Date(filters.from);

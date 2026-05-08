@@ -387,6 +387,13 @@ export const update = async (
     throw err;
   }
 
+  // Build change diff before update
+  const changes: Record<string, { from: any; to: any }> = {};
+  if (dto.stage !== undefined && dto.stage !== existing.stage) changes.stage = { from: existing.stage, to: dto.stage };
+  if (dto.value !== undefined && dto.value !== existing.value) changes.value = { from: existing.value, to: dto.value };
+  if (dto.assignedToId !== undefined && dto.assignedToId !== existing.assignedToId) changes.assignedToId = { from: existing.assignedToId, to: dto.assignedToId };
+  if (dto.title !== undefined && dto.title !== existing.title) changes.title = { from: existing.title, to: dto.title };
+
   const opp_commission = dto.asking_price !== undefined ? dto.asking_price * 0.05 : undefined;
 
   const updated = await prisma.opportunity.update({
@@ -417,6 +424,19 @@ export const update = async (
       assignedTo: { select: { id: true, name: true } },
     },
   });
+
+  // Log changes to ActivityLog
+  if (Object.keys(changes).length > 0) {
+    logActivity({
+      agencyId: user?.agencyId,
+      locationId: user?.locationId,
+      userId: user?.id,
+      action: 'OPPORTUNITY_UPDATED',
+      entityType: 'Opportunity',
+      entityId: id,
+      metadata: { changes, title: existing.title },
+    });
+  }
 
   // Fire automation triggers based on stage change
   if (dto.stage && dto.stage !== existing.stage) {

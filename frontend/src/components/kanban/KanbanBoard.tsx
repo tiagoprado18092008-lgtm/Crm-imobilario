@@ -399,6 +399,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
   const [quickAction, setQuickAction] = useState<{ opp: Opportunity; action: string } | null>(null)
   const [oppInteractions, setOppInteractions] = useState<any[]>([])
   const [oppTasks, setOppTasks] = useState<any[]>([])
+  const [oppHistory, setOppHistory] = useState<any[]>([])
 
   // View & filter state
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban')
@@ -500,12 +501,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
 
   const fetchOppDetails = useCallback(async (oppId: string) => {
     try {
-      const [iRes, tRes] = await Promise.all([
+      const [iRes, tRes, hRes] = await Promise.all([
         getInteractions({ opportunityId: oppId, limit: 20 }),
         getTasks({ opportunityId: oppId, limit: 20 }),
+        api.get(`/activity?entityType=Opportunity&entityId=${oppId}&limit=20`),
       ])
       const iData = iRes.data; setOppInteractions(Array.isArray(iData) ? iData : iData.data || [])
       const tData = tRes.data; setOppTasks(Array.isArray(tData) ? tData : tData.data || [])
+      const hData = hRes.data; setOppHistory(Array.isArray(hData) ? hData : hData.data || [])
     } catch { /* silently ignore */ }
   }, [])
 
@@ -513,6 +516,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
     if (selectedOpp) {
       setOppInteractions([])
       setOppTasks([])
+      setOppHistory([])
       fetchOppDetails(selectedOpp.id)
     }
   }, [selectedOpp?.id])
@@ -1280,6 +1284,33 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                 </div>
               )}
             </div>
+          {/* Change History */}
+          {oppHistory.length > 0 && (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 8 }}>
+                Histórico de alterações
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {oppHistory.map((h: any) => {
+                  const changes = h.metadata?.changes || {};
+                  const FIELD_LABELS: Record<string, string> = { stage: 'Etapa', value: 'Valor', assignedToId: 'Responsável', title: 'Título' };
+                  return (
+                    <div key={h.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', marginTop: 6, flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{new Date(h.createdAt).toLocaleString('pt-PT')}</div>
+                        {Object.entries(changes).map(([field, change]: [string, any]) => (
+                          <div key={field} style={{ fontSize: 12, color: 'var(--text-primary)', marginTop: 2 }}>
+                            <strong>{FIELD_LABELS[field] || field}</strong>: {String(change.from ?? '—')} → {String(change.to ?? '—')}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           </div>
         </div>
       )}
