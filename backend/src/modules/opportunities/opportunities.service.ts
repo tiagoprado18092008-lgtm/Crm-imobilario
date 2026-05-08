@@ -58,6 +58,23 @@ export const list = async (
     }),
   ]);
 
+  // Auto-match contact by name for opportunities without a contactId
+  const unlinked = opportunities.filter(o => !o.contactId && o.title);
+  if (unlinked.length > 0) {
+    const agencyFilter = where.agencyId ? { agencyId: where.agencyId } : {};
+    const names = unlinked.map(o => o.title);
+    const matchedContacts = await prisma.contact.findMany({
+      where: { name: { in: names }, ...agencyFilter },
+      select: { id: true, name: true, email: true, phone: true },
+    });
+    const contactByName = new Map(matchedContacts.map(c => [c.name, c]));
+    for (const opp of opportunities as any[]) {
+      if (!opp.contactId && opp.title && contactByName.has(opp.title)) {
+        opp.contact = contactByName.get(opp.title);
+      }
+    }
+  }
+
   return { data: opportunities, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
