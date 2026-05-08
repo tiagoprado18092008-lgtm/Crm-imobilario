@@ -1,4 +1,6 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 import { OAuth2Client } from 'google-auth-library';
 import prisma from '../../config/database';
 import { signToken } from '../../utils/jwt';
@@ -115,7 +117,7 @@ export const register = async (
 export const login = async (
   email: string,
   password: string
-): Promise<{ token: string; user: object }> => {
+): Promise<{ token: string; refreshToken: string; user: object }> => {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !user.isActive) {
     const err: any = new Error('Invalid credentials');
@@ -137,8 +139,9 @@ export const login = async (
   }
 
   const token = signToken({ userId: user.id, role: user.role });
+  const refresh = await issueRefreshToken(user.id);
   const { passwordHash: _, ...userWithoutHash } = user;
-  return { token, user: userWithoutHash };
+  return { token, refreshToken: refresh, user: userWithoutHash };
 };
 
 export const googleAuth = async (idToken: string): Promise<{ token: string; user: object }> => {
@@ -221,4 +224,84 @@ export const getMe = async (userId: string): Promise<object> => {
   }
 
   return user;
+};
+
+const getMailTransporter = () => nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT) || 587,
+  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+});
+
+export const forgotPassword = async (email: string): Promise<void> => {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return; // don't leak whether email exists
+
+  await prisma.passwordResetToken.deleteMany({ where: { email } });
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
+
+  await prisma.passwordResetToken.create({ data: { email, token, expiresAt } });
+
+  const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
+
+  await getMailTransporter().sendMail({
+    from: `"${process.env.FROM_NAME || 'CasaFlow'}" <${process.env.FROM_EMAIL}>`,
+    to: email,
+    subject: 'Recuperação de password — CasaFlow',
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#0f2553">Recuperar password</h2>
+        <p>Clica no botão abaixo para definir uma nova password. O link expira em 1 hora.</p>
+        <a href="${resetUrl}" style="display:inline-block;padding:12px 24px;background:#0f2553;color:#fff;border-radius:8px;text-decoration:none;font-weight:600">Definir nova password</a>
+        <p style="color:#888;font-size:12px;margin-top:24px">Se não pediste a recuperação, ignora este email.</p>
+      </div>
+    `,
+  });
+};
+
+export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+  const record = await prisma.passwordResetToken.findUnique({ where: { token } });
+
+  if (!record) throw Object.assign(new Error('Token inválido'), { status: 400 });
+  if (record.usedAt) throw Object.assign(new Error('Token já utilizado'), { status: 410 });
+  if (record.expiresAt < new Date()) throw Object.assign(new Error('Token expirado'), { status: 410 });
+  if (newPassword.length < 6) throw Object.assign(new Error('A password deve ter pelo menos 6 caracteres'), { status: 400 });
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+
+  await prisma.$transaction([
+    prisma.user.update({ where: { email: record.email }, data: { passwordHash } }),
+    prisma.passwordResetToken.update({ where: { token }, data: { usedAt: new Date() } }),
+  ]);
+};
+
+export const issueRefreshToken = async (userId: string): Promise<string> => {
+  const token = crypto.randomBytes(40).toString('hex');
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); // 30 days
+  await prisma.refreshToken.create({ data: { token, userId, expiresAt } });
+  return token;
+};
+
+export const refreshAccessToken = async (refreshToken: string): Promise<{ token: string; refreshToken: string }> => {
+  const record = await prisma.refreshToken.findUnique({ where: { token: refreshToken } });
+  if (!record) throw Object.assign(new Error('Refresh token inválido'), { status: 401 });
+  if (record.revokedAt) throw Object.assign(new Error('Refresh token revogado'), { status: 401 });
+  if (record.expiresAt < new Date()) throw Object.assign(new Error('Refresh token expirado'), { status: 401 });
+
+  const user = await prisma.user.findUnique({ where: { id: record.userId } });
+  if (!user || !user.isActive) throw Object.assign(new Error('Utilizador inativo'), { status: 401 });
+
+  await prisma.refreshToken.update({ where: { token: refreshToken }, data: { revokedAt: new Date() } });
+  const newRefreshToken = await issueRefreshToken(user.id);
+  const accessToken = signToken({ userId: user.id, role: user.role });
+
+  return { token: accessToken, refreshToken: newRefreshToken };
+};
+
+export const revokeAllRefreshTokens = async (userId: string): Promise<void> => {
+  await prisma.refreshToken.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
 };
