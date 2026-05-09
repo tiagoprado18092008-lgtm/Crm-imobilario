@@ -468,3 +468,16 @@ html, body {
   border-color: var(--accent) !important;
   box-shadow: 0 0 0 3px rgba(46, 107, 230, 0.18);
 }
+
+/* ── Mobile UX globals ─────────────────────────────── */
+@media (max-width: 767px) {
+  /* Prevent iOS auto-zoom on input focus */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Minimum touch targets */
+  button {
+    min-height: 44px;
+  }
+}
