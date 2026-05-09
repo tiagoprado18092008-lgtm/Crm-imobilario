@@ -79,6 +79,7 @@ app.use(
       // Allow any *.casaflow.pt and *.onrender.com subdomain
       if (/^https:\/\/([a-z0-9-]+\.)?casaflow\.pt$/i.test(origin)) return cb(null, true);
       if (/^https:\/\/[a-z0-9-]+\.onrender\.com$/i.test(origin)) return cb(null, true);
+      if (/^https:\/\/[a-z0-9-]+\.up\.railway\.app$/i.test(origin)) return cb(null, true);
       cb(new Error(`CORS blocked: ${origin}`));
     },
     credentials: true,
