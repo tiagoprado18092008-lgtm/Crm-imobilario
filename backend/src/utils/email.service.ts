@@ -1,4 +1,4 @@
-import https from 'https';
+import nodemailer from 'nodemailer';
 
 export async function sendEmail(opts: {
   to: string;
@@ -6,67 +6,40 @@ export async function sendEmail(opts: {
   html: string;
   text?: string;
 }): Promise<{ success: boolean; messageId?: string; error?: string }> {
-  const apiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM || 'onboarding@resend.dev';
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.SMTP_FROM || user;
 
-  if (!apiKey || !apiKey.startsWith('re_')) {
+  if (!host || !user || !pass) {
     console.log(`[Email DEMO] To: ${opts.to} | Subject: ${opts.subject}`);
     return { success: true, messageId: `sim_email_${Date.now()}` };
   }
 
-  const body = JSON.stringify({
-    from,
-    to: [opts.to],
-    subject: opts.subject,
-    html: opts.html,
-    text: opts.text,
-  });
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port: Number(process.env.SMTP_PORT) || 465,
+      secure: (Number(process.env.SMTP_PORT) || 465) === 465,
+      auth: { user, pass },
+    });
 
-  return new Promise((resolve) => {
-    const req = https.request(
-      {
-        hostname: 'api.resend.com',
-        path: '/emails',
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(body),
-        },
-      },
-      (res) => {
-        let data = '';
-        res.on('data', (chunk) => { data += chunk; });
-        res.on('end', () => {
-          try {
-            const json = JSON.parse(data);
-            if (res.statusCode && res.statusCode < 300) {
-              console.log(`[Email OK] To: ${opts.to} | id: ${json.id}`);
-              resolve({ success: true, messageId: json.id });
-            } else {
-              console.error('[Email Error]', json);
-              resolve({ success: false, error: json.message || JSON.stringify(json) });
-            }
-          } catch {
-            resolve({ success: false, error: data });
-          }
-        });
-      }
-    );
-    req.on('error', (err) => {
-      console.error('[Email Error]', err.message);
-      resolve({ success: false, error: err.message });
+    const info = await transporter.sendMail({
+      from: `"CasaFlow CRM" <${from}>`,
+      to: opts.to,
+      subject: opts.subject,
+      html: opts.html,
+      text: opts.text,
     });
-    req.setTimeout(15000, () => {
-      req.destroy();
-      resolve({ success: false, error: 'timeout' });
-    });
-    req.write(body);
-    req.end();
-  });
+
+    console.log(`[Email OK] To: ${opts.to} | id: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (err: any) {
+    console.error('[Email Error]', err.message);
+    return { success: false, error: err.message };
+  }
 }
 
 export function isEmailConfigured(): boolean {
-  const apiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASS;
-  return !!(apiKey && apiKey.startsWith('re_'));
+  return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 }
