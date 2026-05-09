@@ -166,6 +166,16 @@ export const googleAuth = async (idToken: string): Promise<{ token: string; user
   let user = await prisma.user.findUnique({ where: { email: payload.email } });
 
   if (!user) {
+    // Verificar se existe convite válido para este email — herdar agência/location
+    const invitation = await prisma.invitation.findFirst({
+      where: {
+        email: payload.email,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
     user = await prisma.user.create({
       data: {
         name: payload.name || payload.email,
@@ -173,10 +183,18 @@ export const googleAuth = async (idToken: string): Promise<{ token: string; user
         googleId: payload.sub,
         avatarUrl: payload.picture,
         passwordHash: null,
-        role: 'CONSULTANT',
+        role: (invitation?.role as any) || 'CONSULTANT',
         isActive: true,
+        // Sem convite: agencyId fica null — utilizador fará onboarding para criar/entrar numa agência
+        ...(invitation?.agencyId ? { agencyId: invitation.agencyId } : {}),
+        ...(invitation?.locationId ? { locationId: invitation.locationId } : {}),
       },
     });
+
+    // Marcar convite como usado se existia
+    if (invitation) {
+      await prisma.invitation.update({ where: { id: invitation.id }, data: { usedAt: new Date() } });
+    }
   } else if (!user.googleId) {
     user = await prisma.user.update({
       where: { id: user.id },

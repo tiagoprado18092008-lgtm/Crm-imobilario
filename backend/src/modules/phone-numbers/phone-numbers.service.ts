@@ -106,9 +106,9 @@ export const purchase = async (userId: string, phoneNumber: string, friendlyName
   // Auto-set TWILIO_PHONE_NUMBER if not already set — persist to DB (works on Render)
   if (!process.env.TWILIO_PHONE_NUMBER) {
     await prisma.systemSettings.upsert({
-      where: { key: 'TWILIO_PHONE_NUMBER' },
+      where: { agencyId_key: { agencyId: null as any, key: 'TWILIO_PHONE_NUMBER' } },
       update: { value: twilioNum.phoneNumber },
-      create: { key: 'TWILIO_PHONE_NUMBER', value: twilioNum.phoneNumber },
+      create: { key: 'TWILIO_PHONE_NUMBER', value: twilioNum.phoneNumber, agencyId: null },
     });
     process.env.TWILIO_PHONE_NUMBER = twilioNum.phoneNumber;
   }
@@ -187,21 +187,21 @@ export const autoProvisionTwilio = async () => {
     apiKey = await (client as any).newKeys.create({ friendlyName: 'CRM Voice Key' });
   }
 
-  // 3. Persist into SystemSettings
+  // 3. Persist into SystemSettings (platform-level, no agencyId)
   await prisma.systemSettings.upsert({
-    where: { key: 'TWILIO_TWIML_APP_SID' },
+    where: { agencyId_key: { agencyId: null as any, key: 'TWILIO_TWIML_APP_SID' } },
     update: { value: twimlApp.sid },
-    create: { key: 'TWILIO_TWIML_APP_SID', value: twimlApp.sid },
+    create: { key: 'TWILIO_TWIML_APP_SID', value: twimlApp.sid, agencyId: null },
   });
   await prisma.systemSettings.upsert({
-    where: { key: 'TWILIO_API_KEY' },
+    where: { agencyId_key: { agencyId: null as any, key: 'TWILIO_API_KEY' } },
     update: { value: apiKey.sid },
-    create: { key: 'TWILIO_API_KEY', value: apiKey.sid },
+    create: { key: 'TWILIO_API_KEY', value: apiKey.sid, agencyId: null },
   });
   await prisma.systemSettings.upsert({
-    where: { key: 'TWILIO_API_SECRET' },
+    where: { agencyId_key: { agencyId: null as any, key: 'TWILIO_API_SECRET' } },
     update: { value: apiKey.secret },
-    create: { key: 'TWILIO_API_SECRET', value: apiKey.secret },
+    create: { key: 'TWILIO_API_SECRET', value: apiKey.secret, agencyId: null },
   });
   process.env.TWILIO_TWIML_APP_SID = twimlApp.sid;
   process.env.TWILIO_API_KEY = apiKey.sid;

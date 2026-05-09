@@ -37,43 +37,55 @@ function decrypt(value: string): string {
   return result;
 }
 
-// ─── Bootstrap: load all settings from DB into process.env on server start ───
+// ─── Bootstrap: load platform-level (agencyId=null) settings from DB into process.env ───
+// Only loads global/platform settings — never loads per-agency settings into process.env.
 
 export async function loadSettingsFromDB(): Promise<void> {
   try {
-    const rows = await prisma.systemSettings.findMany();
+    const rows = await prisma.systemSettings.findMany({ where: { agencyId: null } });
     let loaded = 0;
     for (const row of rows) {
       const plain = decrypt(row.value);
-      // Only override if the env var is not already set by the platform (platform vars take priority)
       if (!process.env[row.key] || process.env[row.key] === '') {
         process.env[row.key] = plain;
         loaded++;
       }
     }
     if (rows.length > 0) {
-      console.log(`[Settings] Loaded ${rows.length} settings from DB (${loaded} applied, rest overridden by platform env)`);
+      console.log(`[Settings] Loaded ${rows.length} platform settings from DB (${loaded} applied)`);
     }
   } catch (err) {
-    // Table may not exist yet on first deploy — safe to ignore
     console.warn('[Settings] Could not load settings from DB (first deploy?):', (err as Error).message);
   }
 }
 
-// ─── Persist settings to DB + process.env ────────────────────────────────────
+// ─── Load settings for a specific agency from DB ──────────────────────────────
 
-async function persistSettings(updates: Record<string, string>): Promise<void> {
+export async function getAgencySettings(agencyId: string): Promise<Record<string, string>> {
+  const rows = await prisma.systemSettings.findMany({ where: { agencyId } });
+  const result: Record<string, string> = {};
+  for (const row of rows) {
+    result[row.key] = decrypt(row.value);
+  }
+  return result;
+}
+
+// ─── Persist settings to DB scoped by agencyId ──────────────────────────────
+
+async function persistSettings(updates: Record<string, string>, agencyId?: string): Promise<void> {
   for (const [key, value] of Object.entries(updates)) {
     const stored = SENSITIVE_KEYS.has(key) ? encrypt(value) : value;
 
     await prisma.systemSettings.upsert({
-      where: { key },
+      where: { agencyId_key: { agencyId: agencyId ?? null as any, key } },
       update: { value: stored },
-      create: { key, value: stored },
+      create: { key, value: stored, agencyId: agencyId ?? null },
     });
 
-    // Also update process.env immediately so the running server uses the new value
-    process.env[key] = value;
+    // Only update process.env for platform-level (no agency) settings
+    if (!agencyId) {
+      process.env[key] = value;
+    }
   }
 }
 
@@ -86,53 +98,60 @@ function maskValue(value: string): string {
 }
 
 // ─── getCommunicationsConfig ──────────────────────────────────────────────────
+// Lê as settings da agência da BD. Fallback para process.env (plataforma) se não existir na agência.
 
-export const getCommunicationsConfig = () => {
+export const getCommunicationsConfig = async (agencyId?: string) => {
+  const ag = agencyId ? await getAgencySettings(agencyId) : {};
+  const get = (key: string) => ag[key] || process.env[key] || '';
+
   return {
     // WhatsApp
-    whatsappToken: maskValue(process.env.WHATSAPP_TOKEN || ''),
-    phoneNumberId: maskValue(process.env.WHATSAPP_PHONE_NUMBER_ID || ''),
-    verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || '',
+    whatsappToken: maskValue(get('WHATSAPP_TOKEN')),
+    phoneNumberId: maskValue(get('WHATSAPP_PHONE_NUMBER_ID')),
+    verifyToken: get('WHATSAPP_VERIFY_TOKEN'),
     // Email SMTP
-    smtpHost: process.env.SMTP_HOST || '',
-    smtpPort: process.env.SMTP_PORT || '587',
-    smtpUser: process.env.SMTP_USER || '',
-    smtpPass: maskValue(process.env.SMTP_PASS || ''),
-    smtpFrom: process.env.SMTP_FROM || '',
-    fromName: process.env.SMTP_FROM_NAME || '',
-    fromEmail: process.env.SMTP_FROM || '',
+    smtpHost: get('SMTP_HOST'),
+    smtpPort: get('SMTP_PORT') || '587',
+    smtpUser: get('SMTP_USER'),
+    smtpPass: maskValue(get('SMTP_PASS')),
+    smtpFrom: get('SMTP_FROM'),
+    fromName: get('SMTP_FROM_NAME'),
+    fromEmail: get('SMTP_FROM'),
     // IMAP
-    imapHost: process.env.IMAP_HOST || '',
-    imapPort: process.env.IMAP_PORT || '993',
-    imapUser: process.env.IMAP_USER || '',
-    imapPass: maskValue(process.env.IMAP_PASS || ''),
+    imapHost: get('IMAP_HOST'),
+    imapPort: get('IMAP_PORT') || '993',
+    imapUser: get('IMAP_USER'),
+    imapPass: maskValue(get('IMAP_PASS')),
     // Instagram
-    igAccessToken: maskValue(process.env.INSTAGRAM_ACCESS_TOKEN || ''),
-    igPageId: process.env.INSTAGRAM_PAGE_ID || '',
-    igVerifyToken: process.env.INSTAGRAM_VERIFY_TOKEN || '',
+    igAccessToken: maskValue(get('INSTAGRAM_ACCESS_TOKEN')),
+    igPageId: get('INSTAGRAM_PAGE_ID'),
+    igVerifyToken: get('INSTAGRAM_VERIFY_TOKEN'),
     // Twilio
-    twilioAccountSid: maskValue(process.env.TWILIO_ACCOUNT_SID || ''),
-    twilioAuthToken: maskValue(process.env.TWILIO_AUTH_TOKEN || ''),
-    twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER || '',
-    twilioTwimlAppSid: process.env.TWILIO_TWIML_APP_SID || '',
-    twilioApiKey: maskValue(process.env.TWILIO_API_KEY || ''),
-    twilioApiSecret: maskValue(process.env.TWILIO_API_SECRET || ''),
-    publicUrl: process.env.PUBLIC_URL || '',
+    twilioAccountSid: maskValue(get('TWILIO_ACCOUNT_SID')),
+    twilioAuthToken: maskValue(get('TWILIO_AUTH_TOKEN')),
+    twilioPhoneNumber: get('TWILIO_PHONE_NUMBER'),
+    twilioTwimlAppSid: get('TWILIO_TWIML_APP_SID'),
+    twilioApiKey: maskValue(get('TWILIO_API_KEY')),
+    twilioApiSecret: maskValue(get('TWILIO_API_SECRET')),
+    publicUrl: get('PUBLIC_URL'),
     // General
-    crmName: process.env.CRM_NAME || 'CasaFlow',
-    timezone: process.env.TZ || 'Europe/Lisbon',
-    language: process.env.APP_LANGUAGE || 'pt-PT',
+    crmName: get('CRM_NAME') || 'CasaFlow',
+    timezone: get('TZ') || 'Europe/Lisbon',
+    language: get('APP_LANGUAGE') || 'pt-PT',
   };
 };
 
 // ─── getChannelStatus ─────────────────────────────────────────────────────────
 
-export const getChannelStatus = () => {
+export const getChannelStatus = async (agencyId?: string) => {
+  const ag = agencyId ? await getAgencySettings(agencyId) : {};
+  const get = (key: string) => ag[key] || process.env[key] || '';
+
   return {
-    whatsapp: isWhatsAppConfigured() ? 'configured' : 'unconfigured',
-    email: isEmailConfigured() ? 'configured' : 'unconfigured',
-    instagram: isInstagramConfigured() ? 'configured' : 'unconfigured',
-    phone: isTwilioConfigured() ? 'configured' : 'unconfigured',
+    whatsapp: (get('WHATSAPP_TOKEN') && get('WHATSAPP_PHONE_NUMBER_ID')) ? 'configured' : 'unconfigured',
+    email: (get('SMTP_HOST') && get('SMTP_USER')) ? 'configured' : 'unconfigured',
+    instagram: (get('INSTAGRAM_ACCESS_TOKEN') && get('INSTAGRAM_PAGE_ID')) ? 'configured' : 'unconfigured',
+    phone: (get('TWILIO_ACCOUNT_SID') && get('TWILIO_AUTH_TOKEN') && get('TWILIO_PHONE_NUMBER')) ? 'configured' : 'unconfigured',
   };
 };
 
@@ -181,13 +200,15 @@ const ALLOWED_KEYS: Record<string, string> = {
 
 // ─── Twilio Auto-Setup ────────────────────────────────────────────────────────
 
-async function runTwilioAutoSetup(sid: string, token: string): Promise<void> {
+async function runTwilioAutoSetup(sid: string, token: string, agencyId?: string): Promise<void> {
   const client = twilio(sid, token);
-  const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '');
+  const ag = agencyId ? await getAgencySettings(agencyId) : {};
+  const publicUrl = (ag['PUBLIC_URL'] || process.env.PUBLIC_URL || '').replace(/\/$/, '');
   const autoUpdates: Record<string, string> = {};
 
-  // 1. Create TwiML App if not already configured, or update voiceUrl if PUBLIC_URL changed
-  if (!process.env.TWILIO_TWIML_APP_SID) {
+  const existingTwimlSid = ag['TWILIO_TWIML_APP_SID'] || '';
+
+  if (!existingTwimlSid) {
     try {
       const voiceUrl = publicUrl
         ? `${publicUrl}/webhook/twilio/voice`
@@ -204,18 +225,18 @@ async function runTwilioAutoSetup(sid: string, token: string): Promise<void> {
     }
   } else if (publicUrl) {
     try {
-      await client.applications(process.env.TWILIO_TWIML_APP_SID).update({
+      await client.applications(existingTwimlSid).update({
         voiceUrl: `${publicUrl}/webhook/twilio/voice`,
         voiceMethod: 'POST',
       });
-      console.log(`[Twilio Auto-Setup] TwiML App updated: ${process.env.TWILIO_TWIML_APP_SID}`);
     } catch (err) {
       console.error('[Twilio Auto-Setup] Failed to update TwiML App:', err);
     }
   }
 
-  // 2. Create API Key if not already configured
-  if (!process.env.TWILIO_API_KEY || !process.env.TWILIO_API_SECRET) {
+  const existingApiKey = ag['TWILIO_API_KEY'] || '';
+  const existingApiSecret = ag['TWILIO_API_SECRET'] || '';
+  if (!existingApiKey || !existingApiSecret) {
     try {
       const key = await (client as any).newKeys.create({ friendlyName: 'CRM Browser Calls Key' });
       autoUpdates['TWILIO_API_KEY'] = key.sid;
@@ -227,10 +248,9 @@ async function runTwilioAutoSetup(sid: string, token: string): Promise<void> {
   }
 
   if (Object.keys(autoUpdates).length > 0) {
-    await persistSettings(autoUpdates);
+    await persistSettings(autoUpdates, agencyId);
   }
 
-  // 3. Update phone number webhooks if PUBLIC_URL is set
   if (publicUrl) {
     try {
       const numbers = await client.incomingPhoneNumbers.list();
@@ -249,25 +269,25 @@ async function runTwilioAutoSetup(sid: string, token: string): Promise<void> {
   }
 }
 
-export const triggerTwilioAutoSetup = async (): Promise<{ ok: boolean; message: string }> => {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
+export const triggerTwilioAutoSetup = async (agencyId?: string): Promise<{ ok: boolean; message: string }> => {
+  const ag = agencyId ? await getAgencySettings(agencyId) : {};
+  const sid = ag['TWILIO_ACCOUNT_SID'] || process.env.TWILIO_ACCOUNT_SID;
+  const token = ag['TWILIO_AUTH_TOKEN'] || process.env.TWILIO_AUTH_TOKEN;
   if (!sid || !token) {
     return { ok: false, message: 'Twilio não configurado. Guarda o Account SID e Auth Token primeiro.' };
   }
-  await runTwilioAutoSetup(sid, token);
+  await runTwilioAutoSetup(sid, token, agencyId);
   return { ok: true, message: 'Auto-setup concluído.' };
 };
 
 // ─── updateCommunicationsConfig ───────────────────────────────────────────────
 
-export const updateCommunicationsConfig = async (body: Record<string, string>) => {
+export const updateCommunicationsConfig = async (body: Record<string, string>, agencyId?: string) => {
   const updates: Record<string, string> = {};
 
   for (const [bodyKey, envKey] of Object.entries(ALLOWED_KEYS)) {
     if (bodyKey in body && body[bodyKey] !== undefined) {
       const val = String(body[bodyKey]);
-      // Skip masked values (e.g. "****f869") — don't overwrite real value with mask
       if (val.startsWith('*')) continue;
       if (val.trim() === '') continue;
       updates[envKey] = val;
@@ -275,22 +295,22 @@ export const updateCommunicationsConfig = async (body: Record<string, string>) =
   }
 
   if (Object.keys(updates).length === 0) {
-    return { updated: [], config: getCommunicationsConfig() };
+    return { updated: [], config: await getCommunicationsConfig(agencyId) };
   }
 
-  await persistSettings(updates);
+  await persistSettings(updates, agencyId);
 
-  // Auto-setup Twilio when credentials are saved
-  const sidToUse = updates['TWILIO_ACCOUNT_SID'] || process.env.TWILIO_ACCOUNT_SID;
-  const tokenToUse = updates['TWILIO_AUTH_TOKEN'] || process.env.TWILIO_AUTH_TOKEN;
+  const ag = agencyId ? await getAgencySettings(agencyId) : {};
+  const sidToUse = updates['TWILIO_ACCOUNT_SID'] || ag['TWILIO_ACCOUNT_SID'] || process.env.TWILIO_ACCOUNT_SID;
+  const tokenToUse = updates['TWILIO_AUTH_TOKEN'] || ag['TWILIO_AUTH_TOKEN'] || process.env.TWILIO_AUTH_TOKEN;
   if (
     (updates['TWILIO_ACCOUNT_SID'] || updates['TWILIO_AUTH_TOKEN']) &&
     sidToUse && tokenToUse
   ) {
-    await runTwilioAutoSetup(sidToUse, tokenToUse);
+    await runTwilioAutoSetup(sidToUse, tokenToUse, agencyId);
   }
 
-  return { updated: Object.keys(updates), config: getCommunicationsConfig() };
+  return { updated: Object.keys(updates), config: await getCommunicationsConfig(agencyId) };
 };
 
 // ─── Connection tests ─────────────────────────────────────────────────────────

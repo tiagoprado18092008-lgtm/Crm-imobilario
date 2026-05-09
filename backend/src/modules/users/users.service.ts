@@ -9,15 +9,28 @@ export const list = async (currentUser?: any) => {
   } else if (currentUser.locationId) {
     where.locationId = currentUser.locationId;
   } else {
-    // fallback: só devolve o próprio utilizador se não tiver agência/location
+    // Sem agência nem location: devolve apenas o próprio utilizador
     where.id = currentUser.id;
   }
 
   // Exclude invitation placeholders (users created on invite, not yet onboarded).
   // These appear under the "Convites" tab, not "Membros".
-  where.OR = [
-    { clerkUserId: { not: null } },
-    { passwordHash: { not: '' } },
+  // Usar AND para não sobrescrever o filtro de agência/location acima.
+  const agencyFilter = where.agencyId
+    ? { agencyId: where.agencyId }
+    : where.locationId
+    ? { locationId: where.locationId }
+    : { id: where.id };
+
+  Object.keys(where).forEach(k => delete where[k]);
+  where.AND = [
+    agencyFilter,
+    {
+      OR: [
+        { clerkUserId: { not: null } },
+        { passwordHash: { not: '' } },
+      ],
+    },
   ];
 
   const users = await prisma.user.findMany({
@@ -95,7 +108,7 @@ export const create = async (dto: {
   return user;
 };
 
-export const getById = async (id: string) => {
+export const getById = async (id: string, requestingUser?: any) => {
   const user = await prisma.user.findUnique({
     where: { id },
     select: {
@@ -125,6 +138,20 @@ export const getById = async (id: string) => {
     err.status = 404;
     throw err;
   }
+
+  // Verificar isolamento: o utilizador pedido deve pertencer à mesma agência
+  if (requestingUser && requestingUser.role !== 'SUPER_ADMIN') {
+    const userWithAgency = await prisma.user.findUnique({ where: { id }, select: { agencyId: true } });
+    if (
+      requestingUser.agencyId &&
+      userWithAgency?.agencyId !== requestingUser.agencyId
+    ) {
+      const err: any = new Error('Acesso negado');
+      err.status = 403;
+      throw err;
+    }
+  }
+
   return user;
 };
 
@@ -209,7 +236,14 @@ export const deactivate = async (id: string) => {
   return user;
 };
 
-export const getSubAgents = async (supervisorId: string) => {
+export const getSubAgents = async (supervisorId: string, requestingUser?: any) => {
+  // Verificar que o supervisor pertence à mesma agência antes de listar os seus agentes
+  if (requestingUser && requestingUser.role !== 'SUPER_ADMIN' && requestingUser.agencyId) {
+    const supervisor = await prisma.user.findUnique({ where: { id: supervisorId }, select: { agencyId: true } });
+    if (supervisor && supervisor.agencyId !== requestingUser.agencyId) {
+      return [];
+    }
+  }
   return prisma.user.findMany({
     where: { supervisorId, isActive: true },
     select: {

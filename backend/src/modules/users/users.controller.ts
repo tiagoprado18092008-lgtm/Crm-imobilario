@@ -21,7 +21,7 @@ export const create = async (req: Request, res: Response, next: NextFunction): P
 
 export const getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const user = await usersService.getById(req.params.id);
+    const user = await usersService.getById(req.params.id, req.user);
     res.status(200).json(user);
   } catch (err) {
     next(err);
@@ -80,7 +80,7 @@ export const changePassword = async (req: Request, res: Response, next: NextFunc
 
 export const getSubAgents = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const agents = await usersService.getSubAgents(req.params.id);
+    const agents = await usersService.getSubAgents(req.params.id, req.user);
     res.status(200).json(agents);
   } catch (err) {
     next(err);

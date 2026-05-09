@@ -64,6 +64,7 @@ model Agency {
   opportunities Opportunity[]
   appointmentCalendars AppointmentCalendar[]
   whatsappSessions WhatsAppSession[]
+  systemSettings SystemSettings[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -802,9 +803,14 @@ model PropertyVisit {
 // Key-value store for system settings that must persist across deployments
 // Values for sensitive keys are stored encrypted
 model SystemSettings {
-  key       String   @id
+  id        String   @id @default(cuid())
+  agencyId  String?
+  agency    Agency?  @relation(fields: [agencyId], references: [id])
+  key       String
   value     String   // plain text or AES-encrypted (prefix "enc:")
   updatedAt DateTime @updatedAt
+
+  @@unique([agencyId, key])
 }
 
 model Pipeline {
