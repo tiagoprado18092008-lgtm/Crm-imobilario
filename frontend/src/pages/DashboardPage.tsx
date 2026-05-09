@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { ArrowUp, ArrowDown, Users, TrendingUp, DollarSign, CheckSquare, MoreHorizontal, CalendarDays, Clock, Building2, Target } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { format, isPast, parseISO } from 'date-fns'
@@ -76,9 +77,10 @@ interface KpiCardProps {
   iconColor: string
   sparkData?: number[]
   sparkColor?: string
+  hideSpark?: boolean
 }
 
-const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon, iconBg, iconColor, sparkData, sparkColor }) => {
+const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon, iconBg, iconColor, sparkData, sparkColor, hideSpark }) => {
   const positive = trend === undefined || trend >= 0
   return (
     <div
@@ -129,7 +131,7 @@ const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, icon, iconBg, ic
             </div>
           )}
         </div>
-        {sparkData && sparkData.length > 1 && sparkColor && (
+        {!hideSpark && sparkData && sparkData.length > 1 && sparkColor && (
           <Sparkline data={sparkData} color={sparkColor} />
         )}
       </div>
@@ -146,6 +148,7 @@ const APPOINTMENT_TYPE_COLORS: Record<string, { bg: string; color: string }> = {
 }
 
 export const DashboardPage: React.FC = () => {
+  const isMobile = useIsMobile()
   const [summary, setSummary] = useState<ReportSummary | null>(null)
   const [pipeline, setPipeline] = useState<PipelineStage[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
@@ -235,7 +238,7 @@ export const DashboardPage: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* Row 1 — 4 primary KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4" style={{ gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 14 }}>
         <KpiCard
           title="Contactos"
           value={summary?.totalContacts ?? 0}
@@ -245,6 +248,7 @@ export const DashboardPage: React.FC = () => {
           iconColor="var(--accent)"
           sparkData={sparkContacts}
           sparkColor="var(--accent)"
+          hideSpark={isMobile}
         />
         <KpiCard
           title="Leads Ativos"
@@ -255,6 +259,7 @@ export const DashboardPage: React.FC = () => {
           iconColor="#7C3AED"
           sparkData={sparkLeads}
           sparkColor="#7C3AED"
+          hideSpark={isMobile}
         />
         <KpiCard
           title="Pipeline"
@@ -265,6 +270,7 @@ export const DashboardPage: React.FC = () => {
           iconColor="var(--warning)"
           sparkData={sparkPipe}
           sparkColor="var(--warning)"
+          hideSpark={isMobile}
         />
         <KpiCard
           title="Fechados (mês)"
@@ -275,6 +281,7 @@ export const DashboardPage: React.FC = () => {
           iconColor="var(--success)"
           sparkData={sparkClosed}
           sparkColor="var(--success)"
+          hideSpark={isMobile}
         />
       </div>
 
@@ -287,6 +294,7 @@ export const DashboardPage: React.FC = () => {
           icon={<Building2 size={16} />}
           iconBg="rgba(46,107,230,0.1)"
           iconColor="var(--accent)"
+          hideSpark={isMobile}
         />
         <KpiCard
           title="Tarefas para Hoje"
@@ -294,6 +302,7 @@ export const DashboardPage: React.FC = () => {
           icon={<CheckSquare size={16} />}
           iconBg="rgba(22,163,74,0.1)"
           iconColor="var(--success)"
+          hideSpark={isMobile}
         />
         <KpiCard
           title="Total Clientes"
@@ -301,6 +310,7 @@ export const DashboardPage: React.FC = () => {
           icon={<Users size={16} />}
           iconBg="rgba(217,119,6,0.1)"
           iconColor="var(--warning)"
+          hideSpark={isMobile}
         />
       </div>
 
