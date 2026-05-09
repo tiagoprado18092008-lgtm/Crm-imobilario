@@ -266,12 +266,17 @@ export const sendMessage = async (
     if (!emailTo) {
       sendResult = { success: false, error: 'Contacto sem endereço de e-mail' };
     } else {
-      sendResult = await sendEmail({
-        to: emailTo,
-        subject: subject || '(sem assunto)',
-        html: `<p>${content.replace(/\n/g, '<br>')}</p>`,
-        text: content,
-      });
+      try {
+        sendResult = await sendEmail({
+          to: emailTo,
+          subject: subject || '(sem assunto)',
+          html: `<p>${content.replace(/\n/g, '<br>')}</p>`,
+          text: content,
+        });
+      } catch (emailErr: any) {
+        console.error('[Email send error]', emailErr?.message);
+        sendResult = { success: false, error: emailErr?.message || 'Erro ao enviar email' };
+      }
     }
   } else if (channel === 'INSTAGRAM') {
     sendResult = await sendInstagramDM(destination, content);
