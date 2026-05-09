@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { Plus, Edit, Trash2, CheckCircle, AlertCircle } from 'lucide-react'
+import { Plus, Edit, Trash2, CheckCircle, AlertCircle, MoreHorizontal } from 'lucide-react'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -57,6 +58,101 @@ function Pill({ bg, color, label }: { bg: string; color: string; label: string }
     }}>
       {label}
     </span>
+  )
+}
+
+const TaskCard: React.FC<{
+  task: Task
+  onComplete: () => void
+  onEdit: () => void
+  onDelete: () => void
+}> = ({ task, onComplete, onEdit, onDelete }) => {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const overdue = isOverdue(task.dueDate) && task.status !== 'COMPLETED' && task.status !== 'CANCELLED'
+  const priority = PRIORITY_STYLE[task.priority] || PRIORITY_STYLE.MEDIUM
+
+  return (
+    <div style={{
+      background: 'var(--surface)',
+      border: `1px solid ${overdue && task.status === 'PENDING' ? 'rgba(220,38,38,0.3)' : 'var(--border)'}`,
+      borderRadius: 12,
+      padding: '14px 16px',
+      display: 'flex',
+      gap: 12,
+      alignItems: 'flex-start',
+    }}>
+      <button
+        onClick={onComplete}
+        style={{
+          width: 24, height: 24, borderRadius: '50%', flexShrink: 0, marginTop: 2,
+          border: `2px solid ${task.status === 'COMPLETED' ? 'var(--success)' : 'var(--border)'}`,
+          background: task.status === 'COMPLETED' ? 'var(--success)' : 'transparent',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >
+        {task.status === 'COMPLETED' && <CheckCircle size={14} color="#fff" />}
+      </button>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{
+          fontSize: 14, fontWeight: 600, color: task.status === 'COMPLETED' ? 'var(--text-muted)' : 'var(--text-primary)',
+          margin: 0, textDecoration: task.status === 'COMPLETED' ? 'line-through' : 'none',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {task.title}
+        </p>
+        {task.contact && (
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>{task.contact.name}</p>
+        )}
+        <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+          <Pill bg={priority.bg} color={priority.color} label={TASK_PRIORITY_LABELS[task.priority] || task.priority} />
+          {task.dueDate && (
+            <span style={{
+              fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
+              background: overdue ? 'rgba(220,38,38,0.08)' : 'var(--surface-3)',
+              color: overdue ? 'var(--danger)' : 'var(--text-muted)',
+            }}>
+              {formatDate(task.dueDate)}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <button
+          onClick={() => setMenuOpen(o => !o)}
+          style={{
+            width: 32, height: 32, borderRadius: 8, border: 'none',
+            background: 'var(--surface-3)', color: 'var(--text-muted)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          <MoreHorizontal size={16} />
+        </button>
+        {menuOpen && (
+          <div style={{
+            position: 'fixed', right: 16, zIndex: 100,
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            overflow: 'hidden', minWidth: 140,
+          }}>
+            <button
+              onClick={() => { setMenuOpen(false); onEdit() }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, color: 'var(--text-primary)', border: 'none', background: 'none', cursor: 'pointer' }}
+            >
+              <Edit size={13} /> Editar
+            </button>
+            <button
+              onClick={() => { setMenuOpen(false); onDelete() }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, color: 'var(--danger)', border: 'none', background: 'none', cursor: 'pointer' }}
+            >
+              <Trash2 size={13} /> Eliminar
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -193,6 +289,7 @@ interface TasksPageProps {
 }
 
 export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => {
+  const isMobile = useIsMobile()
   const { showToast } = useUIStore()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
@@ -360,6 +457,18 @@ export const TasksPage: React.FC<TasksPageProps> = ({ initialTab = 'list' }) => 
           actionLabel="Nova Tarefa"
           onAction={() => { setEditTask(undefined); setShowModal(true) }}
         />
+      ) : isMobile ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {tasks.map(task => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onComplete={() => handleComplete(task)}
+              onEdit={() => { setEditTask(task); setShowModal(true) }}
+              onDelete={() => setDeleteId(task.id)}
+            />
+          ))}
+        </div>
       ) : (
         <div style={{ borderRadius: 12, overflow: 'hidden', background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ overflowX: 'auto' }}>
