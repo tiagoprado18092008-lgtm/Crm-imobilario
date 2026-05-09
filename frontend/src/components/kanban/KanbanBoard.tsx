@@ -33,6 +33,7 @@ import { STAGE_ORDER, STAGE_LABELS } from '../../utils/constants'
 import type { PipelineStage, Pipeline } from '../../api/pipelines.api'
 import { getPipelines, createPipeline, deletePipeline } from '../../api/pipelines.api'
 import { formatCurrency, formatDate, getInitials } from '../../utils/formatters'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 const oppSchema = z.object({
   title: z.string().min(2, 'Título obrigatório'),
@@ -419,6 +420,20 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
   const [creatingPipeline, setCreatingPipeline] = useState(false)
   const [pipelinesLoading, setPipelinesLoading] = useState(false)
 
+  const isMobile = useIsMobile()
+  const [mobileStage, setMobileStage] = useState<string>('')
+
+  useEffect(() => {
+    const stageList = stages && stages.length > 0
+      ? stages
+      : null
+    if (!mobileStage && stageList && stageList.length > 0) {
+      setMobileStage(stageList[0].id)
+    } else if (!mobileStage && !stageList) {
+      setMobileStage(STAGE_ORDER[0])
+    }
+  }, [stages, mobileStage])
+
   const loadAllPipelines = useCallback(async (selectFirst = false) => {
     setPipelinesLoading(true)
     try {
@@ -608,6 +623,155 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
   const activeFilters = [filterSource, filterAssignee].filter(Boolean).length
 
   if (initialLoad) return <PageSpinner />
+
+  // ── MOBILE VIEW ──
+  if (isMobile) {
+    const mobileStageKeys = stages && stages.length > 0
+      ? stages.map(s => ({ key: s.id, label: s.name }))
+      : STAGE_ORDER.map(s => ({ key: s, label: STAGE_LABELS[s] }))
+    const mobileOpps = applyFilters(columns[mobileStage] || [])
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        {/* Stage tabs */}
+        <div style={{
+          display: 'flex', overflowX: 'auto', gap: 0,
+          borderBottom: '1px solid var(--border)',
+          background: 'var(--surface)',
+          flexShrink: 0,
+          scrollbarWidth: 'none',
+        }}>
+          {mobileStageKeys.map(({ key, label }) => {
+            const count = (columns[key] || []).length
+            return (
+              <button
+                key={key}
+                onClick={() => setMobileStage(key)}
+                style={{
+                  padding: '10px 16px',
+                  fontSize: 13, fontWeight: mobileStage === key ? 700 : 400,
+                  color: mobileStage === key ? 'var(--accent)' : 'var(--text-muted)',
+                  border: 'none', background: 'none', cursor: 'pointer',
+                  borderBottom: mobileStage === key ? '2px solid var(--accent)' : '2px solid transparent',
+                  whiteSpace: 'nowrap', fontFamily: 'var(--font-body)',
+                  transition: 'color 150ms',
+                }}
+              >
+                {label}
+                {count > 0 && (
+                  <span style={{
+                    marginLeft: 6, fontSize: 11, fontWeight: 700,
+                    padding: '1px 6px', borderRadius: 20,
+                    background: mobileStage === key ? 'var(--accent-soft)' : 'var(--surface-3)',
+                    color: mobileStage === key ? 'var(--accent)' : 'var(--text-muted)',
+                  }}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Opportunity list for current stage */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {mobileOpps.length === 0 ? (
+            <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+              Sem oportunidades nesta fase
+            </div>
+          ) : mobileOpps.map((opp: Opportunity) => (
+            <div
+              key={opp.id}
+              onClick={() => setSelectedOpp(opp)}
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                padding: '14px 16px',
+                cursor: 'pointer',
+              }}
+            >
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{opp.title}</p>
+              {opp.contact && <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '3px 0 0' }}>{opp.contact.name}</p>}
+              <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+                {opp.value && (
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>
+                    {formatCurrency(opp.value)}
+                  </span>
+                )}
+                {opp.expectedCloseDate && (
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatDate(opp.expectedCloseDate)}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* FAB */}
+        <button
+          onClick={() => { setNewStage(mobileStage); setShowModal(true) }}
+          style={{
+            position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom) + 16px)', right: 16,
+            width: 52, height: 52, borderRadius: '50%',
+            background: 'var(--accent)', color: '#fff', border: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', zIndex: 30,
+            boxShadow: '0 4px 16px rgba(46,107,230,0.4)',
+          }}
+        >
+          <Plus size={22} />
+        </button>
+
+        {/* Modals still needed on mobile */}
+        <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Nova Oportunidade" size="xl">
+          <OppForm initialStage={newStage} activePipeline={activePipeline} onSuccess={() => { setShowModal(false); fetchOpportunities(true) }} onCancel={() => setShowModal(false)} />
+        </Modal>
+        <Modal isOpen={!!editOpp} onClose={() => setEditOpp(undefined)} title="Editar Oportunidade" size="xl">
+          {editOpp && <OppForm opportunity={editOpp} activePipeline={activePipeline} onSuccess={() => { setEditOpp(undefined); setSelectedOpp(null); fetchOpportunities(true) }} onCancel={() => setEditOpp(undefined)} />}
+        </Modal>
+        {selectedOpp && (
+          <div style={{
+            position: 'fixed', right: 0, top: 0, height: '100%', width: '100%',
+            background: 'var(--surface)', zIndex: 40,
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Oportunidade</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <button onClick={() => setEditOpp(selectedOpp)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)' }}><Edit size={15} /></button>
+                <button onClick={() => setDeleteId(selectedOpp.id)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)' }}><Trash2 size={15} /></button>
+                <button onClick={() => setSelectedOpp(null)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={15} /></button>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+              <h4 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>{selectedOpp.title}</h4>
+              <Badge variant="info">{STAGE_LABELS[selectedOpp.stage]}</Badge>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                {selectedOpp.value && <InfoRow label="Valor" value={formatCurrency(selectedOpp.value)} valueStyle={{ color: '#16a34a', fontWeight: 700 }} />}
+                {selectedOpp.source && <InfoRow label="Fonte" value={selectedOpp.source} />}
+                {selectedOpp.contact && <InfoRow label="Contacto" value={selectedOpp.contact.name} />}
+                {selectedOpp.expectedCloseDate && <InfoRow label="Fecho Previsto" value={formatDate(selectedOpp.expectedCloseDate)} />}
+                <InfoRow label="Criado em" value={formatDate(selectedOpp.createdAt)} />
+              </div>
+              {selectedOpp.notes && (
+                <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 6 }}>Notas</p>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>{selectedOpp.notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Confirmar Eliminação" size="sm">
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 20 }}>Deseja eliminar esta oportunidade?</p>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <Button variant="secondary" onClick={() => setDeleteId(null)}>Cancelar</Button>
+            <Button variant="danger" onClick={handleDelete}>Eliminar</Button>
+          </div>
+        </Modal>
+      </div>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 0, position: 'relative' }}>
