@@ -150,7 +150,7 @@ export const TopBar: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
 
         {/* Dark mode toggle — hidden on mobile */}
-        <span className="hidden sm:contents">
+        <span className="hidden md:contents">
           <TopBarIconBtn
             title={darkMode ? 'Modo claro' : 'Modo escuro'}
             onClick={toggleDarkMode}

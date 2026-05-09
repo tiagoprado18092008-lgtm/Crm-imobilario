@@ -34,6 +34,7 @@ import type { PipelineStage, Pipeline } from '../../api/pipelines.api'
 import { getPipelines, createPipeline, deletePipeline } from '../../api/pipelines.api'
 import { formatCurrency, formatDate, getInitials } from '../../utils/formatters'
 import { useIsMobile } from '../../hooks/useIsMobile'
+import api from '../../api/client'
 
 const oppSchema = z.object({
   title: z.string().min(2, 'Título obrigatório'),
@@ -743,7 +744,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                 <button onClick={() => setSelectedOpp(null)} style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={15} /></button>
               </div>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: 20, paddingBottom: 'calc(56px + env(safe-area-inset-bottom))' }}>
               <h4 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>{selectedOpp.title}</h4>
               <Badge variant="info">{STAGE_LABELS[selectedOpp.stage]}</Badge>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
