@@ -10,7 +10,7 @@ router.get('/:userId', async (req: Request, res: Response, next: NextFunction) =
     const { userId } = req.params;
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, avatarUrl: true, phone: true, amiNumber: true },
+      select: { id: true, name: true, avatarUrl: true, phone: true },
     });
     if (!user) { res.status(404).json({ error: 'Consultor não encontrado' }); return; }
 
@@ -94,7 +94,6 @@ router.post('/:userId/book', async (req: Request, res: Response, next: NextFunct
           name, email, phone: phone || null,
           assignedToId: userId,
           locationId: user.locationId || null,
-          agencyId: user.agencyId || null,
           source: 'Agendamento Online',
           type: 'BUYER' as any,
         },
