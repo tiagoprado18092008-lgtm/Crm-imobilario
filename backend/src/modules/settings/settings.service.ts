@@ -310,12 +310,16 @@ export const testWhatsAppConnection = async () => {
 };
 
 export const testEmailConnection = async () => {
-  const { createTransporter } = await import('../../utils/email.service');
+  const { isEmailConfigured, sendEmail } = await import('../../utils/email.service');
+  if (!isEmailConfigured()) return { success: false, message: 'SMTP não configurado' };
   try {
-    const t = createTransporter();
-    if (!t) return { success: false, message: 'SMTP não configurado' };
-    await t.verify();
-    return { success: true, message: 'Ligação SMTP verificada com sucesso' };
+    const result = await sendEmail({
+      to: process.env.SMTP_USER || process.env.SMTP_FROM || 'test@test.com',
+      subject: 'Teste de ligação SMTP',
+      html: '<p>Teste de ligação SMTP bem-sucedido.</p>',
+    });
+    if (result.success) return { success: true, message: 'Ligação SMTP verificada com sucesso' };
+    return { success: false, message: result.error || 'Erro SMTP' };
   } catch (err: any) {
     return { success: false, message: err.message || 'Erro SMTP' };
   }
