@@ -19,6 +19,7 @@ import { CalendarView } from '../components/calendar/CalendarView'
 import { EventModal } from '../components/calendar/EventModal'
 import { SyncStatusBadge } from '../components/calendar/SyncStatusBadge'
 import { useUIStore } from '../store/ui.store'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -170,6 +171,7 @@ export const CalendarPage: React.FC = () => {
   const { showToast } = useUIStore()
   const { isAgencyAdmin } = usePermissions()
   const { user } = useAuthStore()
+  const isMobile = useIsMobile()
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [allTasks, setAllTasks] = useState<Task[]>([])
   const [calendarEvents, setCalendarEvents] = useState<any[]>([])
@@ -320,6 +322,22 @@ export const CalendarPage: React.FC = () => {
           onClose={() => setShowEventModal(false)}
           onSaved={() => { setShowEventModal(false); fetchCalendarEvents() }}
         />
+      )}
+
+      {isMobile && (
+        <button
+          onClick={() => { setEditTask(undefined); setCalendarDefaultDate(undefined); setShowModal(true) }}
+          style={{
+            position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom) + 16px)', right: 16,
+            width: 52, height: 52, borderRadius: '50%',
+            background: 'var(--accent)', color: '#fff', border: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', zIndex: 30,
+            boxShadow: '0 4px 16px rgba(46,107,230,0.4)',
+          }}
+        >
+          <Plus size={22} />
+        </button>
       )}
     </div>
   )
