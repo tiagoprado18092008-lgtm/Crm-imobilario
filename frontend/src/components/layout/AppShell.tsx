@@ -2,6 +2,7 @@ import React from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
+import { BottomNav } from './BottomNav'
 import { Toast } from '../ui/Toast'
 import { SoftPhone } from '../calls/SoftPhone'
 import { useUIStore } from '../../store/ui.store'
@@ -10,11 +11,13 @@ import { ErrorBoundary } from './ErrorBoundary'
 import { OnboardingWizard } from '../onboarding/OnboardingWizard'
 import { GlobalSearch } from './GlobalSearch'
 import { ImpersonationBanner } from './ImpersonationBanner'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 export const AppShell: React.FC = () => {
   const { sidebarOpen, setSidebarOpen } = useUIStore()
   const { user, setAuth, token, impersonating } = useAuthStore()
   const showOnboarding = user?.onboardingCompleted === false
+  const isMobile = useIsMobile()
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--surface-2)' }}>
@@ -28,12 +31,12 @@ export const AppShell: React.FC = () => {
         />
       )}
 
-      {/* Sidebar - desktop always visible, manages its own animated width */}
+      {/* Sidebar - desktop always visible */}
       <div className="hidden lg:flex flex-shrink-0" style={{ height: '100vh' }}>
         <Sidebar />
       </div>
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar drawer */}
       <div
         className="fixed inset-y-0 left-0 z-30 lg:hidden"
         style={{
@@ -50,13 +53,19 @@ export const AppShell: React.FC = () => {
         <TopBar />
         <main
           className={`flex-1 overflow-y-auto${impersonating ? ' pt-10' : ''}`}
-          style={{ padding: 'clamp(12px, 4vw, 28px)' }}
+          style={{
+            padding: 'clamp(12px, 4vw, 28px)',
+            paddingBottom: isMobile ? 'calc(56px + env(safe-area-inset-bottom) + 12px)' : 'clamp(12px, 4vw, 28px)',
+          }}
         >
           <ErrorBoundary inline>
             <Outlet />
           </ErrorBoundary>
         </main>
       </div>
+
+      {/* Bottom nav — mobile only */}
+      {isMobile && <BottomNav />}
 
       <Toast />
       <SoftPhone />
