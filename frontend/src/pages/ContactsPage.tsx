@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ChevronLeft, ChevronRight, Trash2, Edit, Download, X, Upload, Mail, Phone as PhoneIcon } from 'lucide-react'
+import { Plus, Search, ChevronLeft, ChevronRight, Trash2, Edit, Download, X, Upload, Mail, Phone as PhoneIcon, MoreHorizontal } from 'lucide-react'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { getContacts, deleteContact } from '../api/contacts.api'
 import { ImportModal } from '../components/import/ImportModal'
 import { exportContacts } from '../api/exports.api'
@@ -59,6 +60,97 @@ function Pill({ bg, color, label }: { bg: string; color: string; label: string }
   )
 }
 
+const ContactCard: React.FC<{
+  contact: Contact
+  onEdit: () => void
+  onDelete: () => void
+  onClick: () => void
+}> = ({ contact, onEdit, onDelete, onClick }) => {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const initials = getInitials(contact.name)
+  const color = avatarColor(contact.name)
+  const status = STATUS_STYLE[contact.status] || STATUS_STYLE.NEW
+  const type = TYPE_STYLE[contact.type || '']
+
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        padding: '14px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        cursor: 'pointer',
+        position: 'relative',
+      }}
+    >
+      <div style={{
+        width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+        background: color,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: '#fff', fontWeight: 700, fontSize: 14,
+      }}>
+        {initials}
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {contact.name}
+          </span>
+          <Pill bg={status.bg} color={status.color} label={status.label} />
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {contact.email || contact.phone || '—'}
+        </div>
+        {type && (
+          <div style={{ marginTop: 4 }}>
+            <Pill bg={type.bg} color={type.color} label={type.label} />
+          </div>
+        )}
+      </div>
+
+      <div style={{ position: 'relative', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+        <button
+          onClick={() => setMenuOpen(o => !o)}
+          style={{
+            width: 32, height: 32, borderRadius: 8, border: 'none',
+            background: 'var(--surface-3)', color: 'var(--text-muted)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+          }}
+        >
+          <MoreHorizontal size={16} />
+        </button>
+        {menuOpen && (
+          <div style={{
+            position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 50,
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            overflow: 'hidden', minWidth: 140,
+          }}>
+            <button
+              onClick={() => { setMenuOpen(false); onEdit() }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, color: 'var(--text-primary)', border: 'none', background: 'none', cursor: 'pointer' }}
+            >
+              <Edit size={13} /> Editar
+            </button>
+            <button
+              onClick={() => { setMenuOpen(false); onDelete() }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 14px', fontSize: 13, color: 'var(--danger)', border: 'none', background: 'none', cursor: 'pointer' }}
+            >
+              <Trash2 size={13} /> Eliminar
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 const TH = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
   <th style={{
     padding: '0 14px', height: 44, textAlign: right ? 'right' : 'left',
@@ -74,6 +166,7 @@ const TH = ({ children, right }: { children: React.ReactNode; right?: boolean })
 
 export const ContactsPage: React.FC = () => {
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const { showToast } = useUIStore()
   const [contacts, setContacts] = useState<Contact[]>([])
   const [total, setTotal] = useState(0)
@@ -239,83 +332,20 @@ export const ContactsPage: React.FC = () => {
         />
       ) : (
         <>
-        {/* ── Mobile cards (hidden on sm+) ── */}
-        <div className="sm:hidden" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {contacts.map(contact => {
-            const st = STATUS_STYLE[contact.status] ?? STATUS_STYLE.NEW
-            const tp = TYPE_STYLE[contact.type] ?? TYPE_STYLE.BUYER
-            const color = avatarColor(contact.name)
-            return (
-              <div
+        {isMobile ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {contacts.map(contact => (
+              <ContactCard
                 key={contact.id}
+                contact={contact}
                 onClick={() => navigate(`/contacts/${contact.id}`)}
-                style={{
-                  background: 'var(--surface)', borderRadius: 12,
-                  border: '1px solid var(--border)', padding: '12px 14px',
-                  display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                }}
-              >
-                <div style={{
-                  width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-                  background: color, color: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, fontWeight: 700,
-                }}>
-                  {getInitials(contact.name)}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-primary)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {contact.name}
-                  </p>
-                  {contact.phone && (
-                    <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <PhoneIcon size={10} /> {contact.phone}
-                    </p>
-                  )}
-                  {contact.email && !contact.phone && (
-                    <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {contact.email}
-                    </p>
-                  )}
-                  <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
-                    <Pill bg={tp.bg} color={tp.color} label={tp.label} />
-                    <Pill bg={st.bg} color={st.color} label={st.label} />
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                  <button
-                    onClick={() => { setEditContact(contact); setShowModal(true) }}
-                    style={{ padding: 8, borderRadius: 8, border: 'none', background: 'var(--surface-2)', cursor: 'pointer', color: 'var(--text-muted)', minHeight: 36, minWidth: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Edit size={14} />
-                  </button>
-                  <button
-                    onClick={() => setDeleteId(contact.id)}
-                    style={{ padding: 8, borderRadius: 8, border: 'none', background: 'var(--surface-2)', cursor: 'pointer', color: 'var(--danger)', minHeight: 36, minWidth: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-          {/* Pagination mobile */}
-          {totalPages > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '8px 0' }}>
-              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.4 : 1, fontSize: 13, color: 'var(--text-primary)' }}>
-                ← Anterior
-              </button>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{page} / {totalPages}</span>
-              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', cursor: page === totalPages ? 'not-allowed' : 'pointer', opacity: page === totalPages ? 0.4 : 1, fontSize: 13, color: 'var(--text-primary)' }}>
-                Próxima →
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* ── Desktop table (hidden on mobile) ── */}
-        <div className="hidden sm:block" style={{
+                onEdit={() => { setEditContact(contact); setShowModal(true) }}
+                onDelete={() => setDeleteId(contact.id)}
+              />
+            ))}
+          </div>
+        ) : (
+        <div style={{
           borderRadius: 12, overflow: 'hidden',
           border: '1px solid var(--border)',
           background: 'var(--surface)',
@@ -497,6 +527,7 @@ export const ContactsPage: React.FC = () => {
             )}
           </div>
         </div>
+        )}
         </>
       )}
 
