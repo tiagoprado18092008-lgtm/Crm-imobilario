@@ -270,12 +270,12 @@ export const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onSucce
               </button>
             </div>
 
-            <div
-              onClick={() => fileRef.current?.click()}
+            <label
+              htmlFor="import-file-input"
               onDragOver={e => e.preventDefault()}
               onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) parseFile(f) }}
               style={{
-                border: '2px dashed var(--border)', borderRadius: 12,
+                display: 'block', border: '2px dashed var(--border)', borderRadius: 12,
                 padding: '40px 20px', textAlign: 'center', cursor: 'pointer',
                 transition: 'border-color 200ms',
               }}
@@ -287,8 +287,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onSucce
               <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
                 Suporta .xlsx, .xls, .csv — qualquer formato, qualquer nome de coluna
               </p>
-            </div>
-            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }}
+            </label>
+            <input id="import-file-input" ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }}
               onChange={e => { const f = e.target.files?.[0]; if (f) parseFile(f) }} />
           </div>
         )}
