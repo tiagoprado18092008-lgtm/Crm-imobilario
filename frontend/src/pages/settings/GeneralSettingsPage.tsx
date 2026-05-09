@@ -23,7 +23,7 @@ export const GeneralSettingsPage: React.FC = () => {
   const { showToast } = useUIStore()
   const token = localStorage.getItem('crm_token') || ''
 
-  const [profile, setProfile] = useState({ name: user?.name || '', phone: user?.phone || '', email: user?.email || '', amiNumber: (user as any)?.amiNumber || '' })
+  const [profile, setProfile] = useState({ name: user?.name || '', phone: user?.phone || '', email: user?.email || '', amiNumber: user?.amiNumber || '' })
   const [savingProfile, setSavingProfile] = useState(false)
   const [copied, setCopied] = useState(false)
   const bookingUrl = user ? `${window.location.origin}/book/${user.id}` : ''
@@ -45,8 +45,8 @@ export const GeneralSettingsPage: React.FC = () => {
     if (!user) return
     setSavingProfile(true)
     try {
-      const res = await updateUser(user.id, { name: profile.name, phone: profile.phone, amiNumber: profile.amiNumber || undefined })
-      setAuth({ ...user, name: profile.name, phone: profile.phone } as any, token)
+      await updateUser(user.id, { name: profile.name, phone: profile.phone, amiNumber: profile.amiNumber || undefined })
+      setAuth({ ...user, name: profile.name, phone: profile.phone }, token)
       showToast('Perfil atualizado.', 'success')
     } catch (err: any) {
       showToast(err?.response?.data?.error || 'Erro ao guardar.', 'error')

@@ -138,6 +138,7 @@ export const CONTACT_TYPE_LABELS: Record<string, string> = {
   BUYER: 'Comprador',
   OWNER: 'Proprietário',
   PARTNER: 'Parceiro',
+  TENANT: 'Inquilino',
 }
 
 export const APPOINTMENT_TYPE_LABELS: Record<string, string> = {

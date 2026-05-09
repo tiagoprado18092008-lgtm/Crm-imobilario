@@ -222,58 +222,6 @@ app.get('/health', async (_req, res) => {
   res.json({ status: 'ok', db, version: process.env.npm_package_version || '1.0.0', timestamp: new Date().toISOString() });
 });
 
-// One-time: seed production DB with agency + users
-app.get('/setup-prod', async (_req, res) => {
-  try {
-    // Ensure agency exists
-    let agency = await prisma.agency.findFirst();
-    if (!agency) {
-      agency = await prisma.agency.create({ data: { name: 'AlphaScale AI', slug: 'alphascale-ai-' + Date.now() } });
-    }
-
-    // Ensure geral@alphascaleai.com exists as AGENCY_OWNER
-    await prisma.user.upsert({
-      where: { email: 'geral@alphascaleai.com' },
-      update: { isActive: true },
-      create: { name: 'Tiago', email: 'geral@alphascaleai.com', isActive: true, role: 'AGENCY_OWNER', onboardingCompleted: true },
-    });
-
-    // Ensure tiagoprado1620tp@gmail.com exists as AGENCY_OWNER
-    const tiago = await prisma.user.upsert({
-      where: { email: 'tiagoprado1620tp@gmail.com' },
-      update: { isActive: true, role: 'AGENCY_OWNER', agencyId: agency.id },
-      create: { name: 'Tiago Prado', email: 'tiagoprado1620tp@gmail.com', isActive: true, role: 'AGENCY_OWNER', agencyId: agency.id, onboardingCompleted: true },
-    });
-
-    const users = await prisma.user.findMany({ select: { id: true, email: true, role: true, isActive: true, clerkUserId: true, agencyId: true } });
-    res.json({ ok: true, agencyId: agency.id, tiagoPrado: tiago.id, allUsers: users });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// One-time password reset for geral@alphascaleai.com (safe: bcrypt hash hardcoded, no user input)
-app.get('/setup-admin', async (_req, res) => {
-  try {
-    const bcrypt = await import('bcryptjs');
-    const hash = await bcrypt.hash('Tiagoprado12', 10);
-    const result = await prisma.user.upsert({
-      where: { email: 'geral@alphascaleai.com' },
-      update: { passwordHash: hash, isActive: true, role: 'AGENCY_OWNER' as any },
-      create: {
-        name: 'Tiago',
-        email: 'geral@alphascaleai.com',
-        passwordHash: hash,
-        isActive: true,
-        role: 'AGENCY_OWNER' as any,
-      },
-    });
-    res.json({ ok: true, id: result.id, role: result.role });
-  } catch (e: any) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
 // ─── WhatsApp Webhook ───────────────────────────────────────────────────────
 
 // Webhook verification (GET) — called by Meta when first configuring

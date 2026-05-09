@@ -50,6 +50,7 @@ model Agency {
   city        String?
   country     String?
   niche       String?
+  amiNumber   String?
   currency    String  @default("EUR")
   apiKey      String? @unique
   isActive    Boolean @default(true)
@@ -156,6 +157,7 @@ model User {
   avatarUrl    String?
   isActive     Boolean  @default(true)
   onboardingCompleted Boolean @default(false)
+  amiNumber    String?
 
   agencyId     String?
   agency       Agency?  @relation(fields: [agencyId], references: [id])
@@ -215,6 +217,7 @@ model Contact {
   interest_zones String?
   timeline      String?
   score         Int       @default(0)
+  tags          String[]  @default([])
   gdprConsent   Boolean   @default(false)
   gdprConsentDate DateTime?
   gdprConsentOrigin String?

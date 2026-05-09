@@ -86,6 +86,9 @@ export interface User {
   locationId?: string
   location?: Location
   permissions?: PermissionMap
+  amiNumber?: string
+  googleId?: string
+  passwordHash?: string
 }
 
 export interface Contact {

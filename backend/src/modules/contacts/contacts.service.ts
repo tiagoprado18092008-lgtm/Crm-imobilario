@@ -27,6 +27,7 @@ export const list = async (
     status?: string;
     source?: string;
     assignedToId?: string;
+    tag?: string;
     page?: number;
     limit?: number;
   },
@@ -44,6 +45,7 @@ export const list = async (
   if (filters.status) where.status = filters.status;
   if (filters.source) where.source = filters.source;
   if (filters.assignedToId) where.assignedToId = filters.assignedToId;
+  if (filters.tag) where.tags = { has: filters.tag };
 
   const page = filters.page ?? 1;
   const limit = filters.limit ?? 20;
@@ -98,6 +100,7 @@ export const create = async (
     asking_price?: number;
     sale_reason?: string;
     buying_also?: boolean;
+    tags?: string[];
   },
   user: any
 ) => {
@@ -133,6 +136,7 @@ export const create = async (
       sale_reason: dto.sale_reason,
       buying_also: dto.buying_also ?? false,
       commission,
+      tags: dto.tags ?? [],
     },
     include: {
       assignedTo: { select: { id: true, name: true, email: true } },
@@ -294,6 +298,7 @@ export const update = async (
     asking_price?: number;
     sale_reason?: string;
     buying_also?: boolean;
+    tags?: string[];
   },
   user: any
 ) => {
@@ -338,6 +343,7 @@ export const update = async (
       sale_reason: dto.sale_reason,
       buying_also: dto.buying_also,
       commission,
+      ...(dto.tags !== undefined && { tags: dto.tags }),
     },
     include: {
       assignedTo: { select: { id: true, name: true, email: true } },

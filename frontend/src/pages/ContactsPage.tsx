@@ -84,6 +84,7 @@ export const ContactsPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
+  const [tagFilter, setTagFilter] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [editContact, setEditContact] = useState<Contact | undefined>()
@@ -104,6 +105,7 @@ export const ContactsPage: React.FC = () => {
         type: typeFilter || undefined,
         status: statusFilter || undefined,
         source: sourceFilter || undefined,
+        tag: tagFilter || undefined,
         page, limit,
       })
       const d = res.data
@@ -114,10 +116,10 @@ export const ContactsPage: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [debouncedSearch, typeFilter, statusFilter, sourceFilter, page])
+  }, [debouncedSearch, typeFilter, statusFilter, sourceFilter, tagFilter, page])
 
   useEffect(() => { fetchContacts() }, [fetchContacts])
-  useEffect(() => { setPage(1) }, [debouncedSearch, typeFilter, statusFilter, sourceFilter])
+  useEffect(() => { setPage(1) }, [debouncedSearch, typeFilter, statusFilter, sourceFilter, tagFilter])
 
   const handleDelete = async () => {
     if (!deleteId) return
@@ -133,7 +135,7 @@ export const ContactsPage: React.FC = () => {
   }
 
   const closeModal = () => { setShowModal(false); setEditContact(undefined) }
-  const hasFilters = !!(typeFilter || statusFilter || sourceFilter || debouncedSearch)
+  const hasFilters = !!(typeFilter || statusFilter || sourceFilter || tagFilter || debouncedSearch)
   const totalPages = Math.ceil(total / limit)
 
   return (
@@ -175,10 +177,26 @@ export const ContactsPage: React.FC = () => {
             options={[{ value: '', label: 'Todas as origens' }, ...SOURCE_OPTIONS.map(s => ({ value: s, label: s }))]}
           />
         </div>
+        <div style={{ position: 'relative', width: 140 }}>
+          <input
+            value={tagFilter}
+            onChange={e => setTagFilter(e.target.value)}
+            placeholder="Filtrar por tag..."
+            style={{
+              width: '100%', paddingLeft: 10, paddingRight: 10, height: 40,
+              borderRadius: 8, fontSize: 13,
+              border: '1px solid var(--border)', background: 'var(--surface)',
+              color: 'var(--text-primary)', outline: 'none', boxSizing: 'border-box',
+              fontFamily: 'var(--font-body)',
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(46,107,230,0.12)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none' }}
+          />
+        </div>
 
         {hasFilters && (
           <button
-            onClick={() => { setSearch(''); setTypeFilter(''); setStatusFilter(''); setSourceFilter('') }}
+            onClick={() => { setSearch(''); setTypeFilter(''); setStatusFilter(''); setSourceFilter(''); setTagFilter('') }}
             style={{
               display: 'flex', alignItems: 'center', gap: 4, height: 40,
               padding: '0 12px', borderRadius: 8, fontSize: 12, fontWeight: 500,

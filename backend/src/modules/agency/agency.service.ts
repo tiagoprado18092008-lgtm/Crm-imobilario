@@ -33,7 +33,7 @@ export const update = async (
   dto: {
     name?: string; legalName?: string; slug?: string; logoUrl?: string; coverUrl?: string;
     description?: string; phone?: string; email?: string; website?: string;
-    address?: string; city?: string; country?: string; niche?: string; currency?: string; isActive?: boolean
+    address?: string; city?: string; country?: string; niche?: string; amiNumber?: string; currency?: string; isActive?: boolean
   }
 ) => {
   return prisma.agency.update({ where: { id }, data: dto });
