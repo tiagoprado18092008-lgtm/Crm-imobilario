@@ -149,13 +149,15 @@ export const TopBar: React.FC = () => {
       {/* Right side actions */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
 
-        {/* Dark mode toggle */}
-        <TopBarIconBtn
-          title={darkMode ? 'Modo claro' : 'Modo escuro'}
-          onClick={toggleDarkMode}
-        >
-          {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-        </TopBarIconBtn>
+        {/* Dark mode toggle — hidden on mobile */}
+        <span className="hidden sm:contents">
+          <TopBarIconBtn
+            title={darkMode ? 'Modo claro' : 'Modo escuro'}
+            onClick={toggleDarkMode}
+          >
+            {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+          </TopBarIconBtn>
+        </span>
 
         {/* Notifications */}
         <div style={{ position: 'relative' }} ref={notifRef}>
