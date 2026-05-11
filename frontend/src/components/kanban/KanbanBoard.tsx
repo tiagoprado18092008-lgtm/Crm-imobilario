@@ -1334,6 +1334,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
       {showImport && (
         <ImportModal
           type="opportunities"
+          pipelineId={pipelineId}
           onClose={() => setShowImport(false)}
           onSuccess={() => { setShowImport(false); fetchOpportunities(true) }}
         />

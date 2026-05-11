@@ -68,12 +68,12 @@ export const moveStage = async (req: Request, res: Response, next: NextFunction)
 
 export const bulkImport = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { rows } = req.body;
+    const { rows, pipelineId } = req.body;
     if (!Array.isArray(rows) || rows.length === 0) {
       res.status(400).json({ error: 'rows array required' });
       return;
     }
-    const result = await opportunitiesService.bulkImport(rows, req.user);
+    const result = await opportunitiesService.bulkImport(rows, req.user, pipelineId);
     res.status(200).json(result);
   } catch (err) {
     next(err);

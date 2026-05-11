@@ -168,7 +168,8 @@ export const bulkImport = async (
     source?: string;
     notes?: string;
   }>,
-  user: any
+  user: any,
+  importPipelineId?: string
 ) => {
   const results = { created: 0, skipped: 0, errors: [] as string[] };
   const VALID_STAGES = ['LEAD_IN','QUALIFYING','VISIT_SCHEDULED','VISIT_DONE','PROPOSAL_SENT','NEGOTIATION','CPCV_SIGNED','FINANCING','ESCRITURA_SCHEDULED','CLOSED_WON','CLOSED_LOST'];
@@ -249,10 +250,19 @@ export const bulkImport = async (
     stagePositions.set(s.stage, (s._max.position ?? -1) + 1);
   }
 
-  // Find default pipeline + first stage so imported opps appear in the kanban
+  // Find pipeline + first stage so imported opps appear in the correct kanban
   let defaultPipelineId: string | undefined;
   let firstStageId: string | undefined;
-  if (user.agencyId) {
+  if (importPipelineId) {
+    const pipeline = await prisma.pipeline.findUnique({
+      where: { id: importPipelineId },
+      include: { stages: { orderBy: { position: 'asc' }, take: 1 } },
+    });
+    if (pipeline) {
+      defaultPipelineId = pipeline.id;
+      firstStageId = pipeline.stages[0]?.id;
+    }
+  } else if (user.agencyId) {
     const pipeline = await prisma.pipeline.findFirst({
       where: { agencyId: user.agencyId },
       orderBy: { position: 'asc' },

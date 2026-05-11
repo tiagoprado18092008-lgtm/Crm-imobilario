@@ -10,6 +10,7 @@ interface ImportModalProps {
   type: ImportType
   onClose: () => void
   onSuccess: () => void
+  pipelineId?: string
 }
 
 // Fields the CRM expects for each type, with label and whether required
@@ -81,7 +82,7 @@ const TYPE_LABELS: Record<string, string> = {
   opportunities: 'Oportunidades',
 }
 
-export const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onSuccess }) => {
+export const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onSuccess, pipelineId }) => {
   const { showToast } = useUIStore()
   const [step, setStep] = useState<'upload' | 'map' | 'result'>('upload')
   const [rows, setRows] = useState<any[][]>([])
@@ -202,7 +203,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onSucce
     try {
       for (let i = 0; i < mapped.length; i += BATCH_SIZE) {
         const batch = mapped.slice(i, i + BATCH_SIZE)
-        const res = await api.post(endpoint, { rows: batch })
+        const res = await api.post(endpoint, { rows: batch, pipelineId: pipelineId || undefined })
         aggregate.created += res.data.created ?? 0
         aggregate.skipped += res.data.skipped ?? 0
         aggregate.errors.push(...(res.data.errors ?? []))
