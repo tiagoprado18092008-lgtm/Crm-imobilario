@@ -162,6 +162,7 @@ export const bulkImport = async (
     title: string;
     contactName?: string;
     contactEmail?: string;
+    contactPhone?: string;
     stage?: string;
     value?: number;
     source?: string;
@@ -206,7 +207,7 @@ export const bulkImport = async (
 
   // Resolve or queue contact creation for each row
   const resolvedContactIds: Array<string | '__create__'> = [];
-  const toCreate = new Map<string, { name: string; email?: string }>(); // dedup key -> data
+  const toCreate = new Map<string, { name: string; email?: string; phone?: string }>(); // dedup key -> data
 
   for (const row of validRows) {
     const emailKey = row.contactEmail?.toLowerCase();
@@ -221,7 +222,7 @@ export const bulkImport = async (
       // Will create — deduplicate by key
       const createKey = emailKey || nameKey;
       if (!toCreate.has(createKey)) {
-        toCreate.set(createKey, { name: contactName, email: row.contactEmail });
+        toCreate.set(createKey, { name: contactName, email: row.contactEmail, phone: row.contactPhone });
       }
       resolvedContactIds.push('__create__:' + createKey);
     }
@@ -234,7 +235,7 @@ export const bulkImport = async (
     const batch = toCreateEntries.slice(i, i + BATCH_SIZE);
     const created = await Promise.all(batch.map(([, data]) =>
       prisma.contact.create({
-        data: { name: data.name, email: data.email || undefined, type: 'BUYER', status: 'NEW', assignedToId: user.id },
+        data: { name: data.name, email: data.email || undefined, phone: data.phone || undefined, type: 'BUYER', status: 'NEW', assignedToId: user.id },
         select: { id: true },
       })
     ));

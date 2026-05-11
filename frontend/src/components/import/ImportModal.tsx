@@ -29,6 +29,7 @@ const OPPORTUNITY_FIELDS = [
   { key: 'title', label: 'Título da oportunidade', required: true },
   { key: 'contactName', label: 'Nome do contacto', required: false },
   { key: 'contactEmail', label: 'Email do contacto', required: false },
+  { key: 'contactPhone', label: 'Telefone do contacto', required: false },
   { key: 'stage', label: 'Fase (LEAD_IN/QUALIFYING/...)', required: false },
   { key: 'value', label: 'Valor (€)', required: false },
   { key: 'source', label: 'Origem', required: false },
@@ -42,9 +43,9 @@ const CONTACTS_SAMPLE = [
 ]
 
 const OPPORTUNITIES_SAMPLE = [
-  ['titulo', 'nomeContacto', 'emailContacto', 'fase', 'valor', 'origem', 'notas'],
-  ['T2 Lisboa Centro', 'João Silva', 'joao@exemplo.com', 'LEAD_IN', '250000', 'Google', ''],
-  ['Moradia Porto', 'Maria Santos', 'maria@exemplo.com', 'QUALIFYING', '350000', 'Indicação', 'Urgente'],
+  ['titulo', 'nomeContacto', 'emailContacto', 'telefone', 'fase', 'valor', 'origem', 'notas'],
+  ['T2 Lisboa Centro', 'João Silva', 'joao@exemplo.com', '+351912345678', 'LEAD_IN', '250000', 'Google', ''],
+  ['Moradia Porto', 'Maria Santos', 'maria@exemplo.com', '+351923456789', 'QUALIFYING', '350000', 'Indicação', 'Urgente'],
 ]
 
 // Auto-detect mapping from header name to field key
@@ -66,6 +67,7 @@ function autoDetect(header: string, type: ImportType): string {
     if (/nome.?(do.?)?contacto|contact.?name/i.test(h)) return 'contactName'
     if (/email.?(do.?)?contacto|contact.?email/i.test(h)) return 'contactEmail'
     if (/^email/i.test(h)) return 'contactEmail'
+    if (/^(telefone|phone|tel|telef|mobile|m[oó]vel|cell)/i.test(h)) return 'contactPhone'
     if (/^(fase|stage|etapa|pipeline.?stage)/i.test(h)) return 'stage'
     if (/^(valor|value|pre[cç]o|price|amount|montante)/i.test(h)) return 'value'
     if (/^(origem|source|canal|channel|fonte)/i.test(h)) return 'source'
@@ -165,6 +167,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ type, onClose, onSucce
         title: get('title'),
         contactName: get('contactName'),
         contactEmail: get('contactEmail'),
+        contactPhone: get('contactPhone'),
         stage: get('stage'),
         value: valStr ? parseFloat(valStr.replace(/[^0-9.]/g, '')) || undefined : undefined,
         source: get('source'),
