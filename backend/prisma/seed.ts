@@ -36,6 +36,9 @@ async function main() {
   await prisma.interaction.deleteMany();
   await prisma.opportunity.deleteMany();
   await prisma.contact.deleteMany();
+  await prisma.quote.deleteMany();
+  await prisma.dealLineItem.deleteMany();
+  await prisma.product.deleteMany();
   await prisma.pipelineStage.deleteMany();
   await prisma.pipeline.deleteMany();
   await prisma.invitation.deleteMany();
@@ -128,10 +131,23 @@ async function main() {
     });
   }
 
+  // ─── PRODUTOS ───────────────────────────────────────────────────────────────
+  // O que a AlphaScale vende hoje, valores sem IVA.
+  await prisma.product.createMany({
+    data: [
+      { agencyId: agency.id, name: 'Website', description: 'Website institucional, entregue e publicado', priceType: 'UNICO', price: 700, position: 0 },
+      { agencyId: agency.id, name: 'Ads Setup', description: 'Configuração inicial de campanhas Google e Meta', priceType: 'UNICO', price: 250, position: 1 },
+      { agencyId: agency.id, name: 'Gestão de Ads', description: 'Gestão mensal de campanhas e relatório', priceType: 'MENSAL', price: 200, position: 2 },
+      { agencyId: agency.id, name: 'Gestão de Redes Sociais', description: 'Planeamento e publicação mensal', priceType: 'MENSAL', price: 200, position: 3 },
+      { agencyId: agency.id, name: 'SEO', description: 'Otimização para motores de busca, mensal', priceType: 'MENSAL', price: 200, position: 4 },
+    ],
+    skipDuplicates: true,
+  });
+
   console.log('Seed concluído.');
   console.log(`   ${owner.email}  | admin123 | AGENCY_OWNER`);
   console.log(`   ${bdr.email}    | user123  | CONSULTANT`);
-  console.log(`   ${pipelines.length} pipelines criados, sem contactos nem negócios.`);
+  console.log(`   ${pipelines.length} pipelines e 5 produtos criados, sem contactos nem negócios.`);
 }
 
 main()

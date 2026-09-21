@@ -91,6 +91,9 @@ model Agency {
   CallEvent      CallEvent[]
   Recording      Recording[]
   AgentExtension AgentExtension[]
+  Product        Product[]
+  DealLineItem   DealLineItem[]
+  Quote          Quote[]
 }
 
 model AgencySettings {
@@ -267,6 +270,9 @@ model Opportunity {
   company   Company? @relation(fields: [companyId], references: [id])
 
   calls Call[]
+
+  lineItems DealLineItem[]
+  quotes    Quote[]
 
   @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([agencyId, stageId, position])
@@ -1161,4 +1167,135 @@ model AgentExtension {
   updatedAt DateTime @updatedAt
 
   @@index([agencyId, extension])
+}
+
+// ─── Closing ──────────────────────────────────────────────────────────────────
+
+enum PriceType {
+  UNICO
+  MENSAL
+}
+
+enum QuoteState {
+  RASCUNHO
+  ENVIADA
+  VISTA
+  ACEITE
+  RECUSADA
+  EXPIRADA
+}
+
+enum RevenueType {
+  ONE_OFF
+  RECORRENTE
+}
+
+/// Something AlphaScale sells. Prices are stored net of VAT; the rate is kept
+/// per product because not everything sold carries the standard 23%.
+model Product {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  priceType PriceType @default(UNICO)
+  /// Net of VAT, in euros.
+  price     Float
+  /// Percentage, e.g. 23.
+  vatRate   Float     @default(23)
+
+  isActive Boolean @default(true)
+  position Int     @default(0)
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  lineItems DealLineItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId, isActive, position])
+}
+
+/// A product on a deal. The price is copied rather than referenced, so
+/// changing a product's price never rewrites history on deals already quoted.
+model DealLineItem {
+  id String @id @default(cuid())
+
+  dealId String
+  deal   Opportunity @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+
+  /// Snapshot at the time of quoting.
+  name        String
+  quantity    Int         @default(1)
+  unitPrice   Float
+  /// Percentage off the line, 0-100.
+  discount    Float       @default(0)
+  vatRate     Float       @default(23)
+  revenueType RevenueType @default(ONE_OFF)
+
+  position Int @default(0)
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([dealId, position])
+  @@index([agencyId])
+}
+
+/// A proposal sent to a client.
+model Quote {
+  id String @id @default(cuid())
+
+  dealId String
+  deal   Opportunity @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  /// Sequential per workspace, for referring to it out loud.
+  number  Int
+  version Int @default(1)
+
+  state QuoteState @default(RASCUNHO)
+
+  /// Totals snapshotted when sent, so a quote shows what was agreed even if
+  /// the deal's line items change afterwards.
+  subtotal Float @default(0)
+  vatTotal Float @default(0)
+  total    Float @default(0)
+  /// Monthly component, separated because a proposal mixing a one-off website
+  /// with a retainer is two different commitments.
+  mrr      Float @default(0)
+
+  validUntil DateTime?
+  notes      String?
+
+  /// Unguessable token for the public link. Not the id, which is sequential
+  /// enough to enumerate.
+  publicToken String  @unique
+  pdfUrl      String?
+
+  sentAt     DateTime?
+  viewedAt   DateTime?
+  acceptedAt DateTime?
+  rejectedAt DateTime?
+
+  /// Signature provider reference, when one is used.
+  signatureProvider  String?
+  signatureRequestId String?
+  signedAt           DateTime?
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agencyId, number, version])
+  @@index([agencyId, state, createdAt(sort: Desc)])
+  @@index([agencyId, validUntil])
 }

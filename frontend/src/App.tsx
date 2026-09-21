@@ -10,6 +10,7 @@ import { RoleGuard } from './components/auth/RoleGuard'
 /* Routes are split per page: the login screen should not ship the kanban,
    the report charts and the CSV importer before anyone has signed in. */
 const PublicBookingPage = lazy(() => import('./pages/PublicBookingPage'))
+const PublicQuotePage = lazy(() => import('./pages/PublicQuotePage'))
 const SuperAdminLayout = lazy(() => import('./pages/super-admin/SuperAdminLayout').then(m => ({ default: m.SuperAdminLayout })))
 const SuperAdminAgenciesPage = lazy(() => import('./pages/super-admin/SuperAdminAgenciesPage').then(m => ({ default: m.SuperAdminAgenciesPage })))
 const SuperAdminAgencyDetailPage = lazy(() => import('./pages/super-admin/SuperAdminAgencyDetailPage').then(m => ({ default: m.SuperAdminAgencyDetailPage })))
@@ -63,6 +64,8 @@ function App() {
     <Suspense fallback={<RouteFallback />}>
     <Routes>
       <Route path="/book/:userId" element={<PublicBookingPage />} />
+      {/* Public proposal: no session, the token in the URL is the authorisation. */}
+      <Route path="/proposta/:token" element={<PublicQuotePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<Navigate to="/login" replace />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
