@@ -13,6 +13,7 @@ import usersRouter from './modules/users/users.router';
 import contactsRouter from './modules/contacts/contacts.router';
 import leadsRouter from './modules/leads/leads.router';
 import zadarmaWebhooks from './modules/telephony/webhooks.router';
+import quotesRouter, { publicRouter as quotesPublicRouter } from './modules/quotes/quotes.router';
 import opportunitiesRouter from './modules/opportunities/opportunities.router';
 import interactionsRouter from './modules/interactions/interactions.router';
 import tasksRouter from './modules/tasks/tasks.router';
@@ -431,6 +432,10 @@ app.use('/api/leads', leadsRouter);
 // Unauthenticated by design: the provider cannot hold a session. Verified by
 // a path secret plus an IP allowlist inside the router.
 app.use('/api/webhooks/zadarma', zadarmaWebhooks);
+app.use('/api/quotes', quotesRouter);
+// Public proposal page: the recipient has no session, so the token in the URL
+// is the authorisation. Rate limited inside the router.
+app.use('/p/proposta', quotesPublicRouter);
 app.use('/api/opportunities', opportunitiesRouter);
 app.use('/api/interactions', interactionsRouter);
 app.use('/api/tasks', tasksRouter);
