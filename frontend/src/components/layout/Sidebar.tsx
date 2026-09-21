@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Users, Kanban, BarChart3, UserCog, LogOut, Settings,
+  LayoutDashboard, Sun, Inbox, Users, Kanban, BarChart3, UserCog, LogOut, Settings,
   CalendarClock, ChevronRight,
   UserCircle, ChevronsUpDown, UserPlus, MessageSquare, Activity, Layers, PhoneCall,
 } from 'lucide-react'
@@ -62,6 +62,8 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
 
   // TRABALHO — o trabalho do dia, por ordem de utilização
   const trabalhoItems: NavItem[] = [
+    { to: '/hoje',         icon: Sun,             label: t('nav.hoje') },
+    ...(can('contacts', 'view')      ? [{ to: '/leads',         icon: Inbox,         label: t('nav.leads') }]                : []),
     { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
     ...(can('contacts', 'view')      ? [{ to: '/contacts',      icon: Users,         label: t('nav.contactos') }]                   : []),
     ...(can('opportunities', 'view') ? [{ to: '/pipeline',      icon: Kanban,        label: t('nav.pipeline') }]                    : []),
