@@ -1,0 +1,329 @@
+import prisma from '../../config/database';
+import { withWorkspace, workspaceIdFor } from '../../lib/workspace';
+import { normalisePhone } from '../../lib/phone';
+
+/**
+ * Lead triage.
+ *
+ * A lead is a row on a call list, not a deal. It only becomes an Opportunity
+ * once someone has qualified it, which is what stops the pipeline filling with
+ * thousands of untouched rows.
+ */
+
+type ListFilters = {
+  state?: string;
+  ownerId?: string;
+  search?: string;
+  sector?: string;
+  /** Leads whose next attempt is due on or before now. */
+  dueOnly?: boolean;
+  limit?: number;
+  cursor?: string;
+};
+
+const LIST_SELECT = {
+  id: true,
+  companyName: true,
+  contactName: true,
+  phone: true,
+  email: true,
+  state: true,
+  source: true,
+  attempts: true,
+  lastAttemptAt: true,
+  nextAttemptAt: true,
+  lastDisposition: true,
+  optOutCalls: true,
+  tags: true,
+  createdAt: true,
+  owner: { select: { id: true, name: true } },
+  company: { select: { id: true, name: true, sector: true, concelho: true } },
+} as const;
+
+export const list = async (filters: ListFilters, user: any) => {
+  const where: any = withWorkspace(user, { deletedAt: null });
+
+  if (filters.state) where.state = filters.state;
+  if (filters.ownerId) where.ownerId = filters.ownerId;
+  if (filters.sector) where.company = { sector: filters.sector };
+  if (filters.dueOnly) {
+    where.nextAttemptAt = { lte: new Date() };
+    where.optOutCalls = false;
+  }
+  if (filters.search) {
+    where.OR = [
+      { companyName: { contains: filters.search, mode: 'insensitive' } },
+      { contactName: { contains: filters.search, mode: 'insensitive' } },
+      { phone: { contains: filters.search } },
+      { email: { contains: filters.search, mode: 'insensitive' } },
+    ];
+  }
+
+  const limit = Math.min(filters.limit ?? 50, 200);
+
+  const leads = await prisma.lead.findMany({
+    where,
+    take: limit,
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    select: LIST_SELECT,
+    ...(filters.cursor ? { cursor: { id: filters.cursor }, skip: 1 } : {}),
+  });
+
+  return {
+    data: leads,
+    nextCursor: leads.length === limit ? leads[leads.length - 1].id : null,
+    hasMore: leads.length === limit,
+  };
+};
+
+export const getById = async (id: string, user: any) => {
+  const lead = await prisma.lead.findFirst({
+    where: withWorkspace(user, { id, deletedAt: null }),
+    include: {
+      company: true,
+      contact: true,
+      owner: { select: { id: true, name: true, email: true } },
+    },
+  });
+  if (!lead) throw Object.assign(new Error('Lead não encontrada'), { status: 404 });
+  return lead;
+};
+
+export const create = async (dto: any, user: any) => {
+  return prisma.lead.create({
+    data: {
+      agencyId: workspaceIdFor(user),
+      companyName: dto.companyName ?? null,
+      contactName: dto.contactName ?? null,
+      phone: dto.phone ? normalisePhone(dto.phone) : null,
+      email: dto.email ?? null,
+      source: dto.source ?? null,
+      state: dto.state ?? 'NOVO',
+      ownerId: dto.ownerId ?? user.id,
+      notes: dto.notes ?? null,
+      tags: dto.tags ?? [],
+      companyId: dto.companyId ?? null,
+      contactId: dto.contactId ?? null,
+    },
+  });
+};
+
+export const update = async (id: string, dto: any, user: any) => {
+  await getById(id, user);
+  return prisma.lead.update({
+    where: { id },
+    data: {
+      ...(dto.companyName !== undefined && { companyName: dto.companyName }),
+      ...(dto.contactName !== undefined && { contactName: dto.contactName }),
+      ...(dto.phone !== undefined && { phone: dto.phone ? normalisePhone(dto.phone) : null }),
+      ...(dto.email !== undefined && { email: dto.email }),
+      ...(dto.state !== undefined && { state: dto.state }),
+      ...(dto.ownerId !== undefined && { ownerId: dto.ownerId }),
+      ...(dto.notes !== undefined && { notes: dto.notes }),
+      ...(dto.tags !== undefined && { tags: dto.tags }),
+      ...(dto.qualification !== undefined && { qualification: dto.qualification }),
+      ...(dto.nextAttemptAt !== undefined && {
+        nextAttemptAt: dto.nextAttemptAt ? new Date(dto.nextAttemptAt) : null,
+      }),
+      ...(dto.disqualifiedReason !== undefined && { disqualifiedReason: dto.disqualifiedReason }),
+    },
+  });
+};
+
+/**
+ * Records the outcome of a call attempt.
+ *
+ * Every disposition has a consequence, which is the point of making it
+ * mandatory: NAO_CONTACTAR opts the lead out for good, REMARCAR schedules the
+ * next attempt, and REUNIAO_MARCADA hands the lead to the conversion path.
+ */
+export const recordDisposition = async (
+  id: string,
+  dto: { disposition: string; notes?: string; nextAttemptAt?: string },
+  user: any,
+) => {
+  const lead = await getById(id, user);
+  const now = new Date();
+
+  const data: any = {
+    attempts: { increment: 1 },
+    lastAttemptAt: now,
+    lastDisposition: dto.disposition,
+    nextAttemptAt: null,
+  };
+
+  if (dto.notes) {
+    data.notes = lead.notes ? `${lead.notes}\n\n[${now.toISOString()}] ${dto.notes}` : dto.notes;
+  }
+
+  switch (dto.disposition) {
+    case 'NAO_CONTACTAR':
+      // Opting out removes the lead from every queue, sequence and future
+      // import. It is deliberately not reversible from the dialer.
+      data.optOutCalls = true;
+      data.state = 'DESQUALIFICADO';
+      data.disqualifiedReason = 'Pediu para não ser contactado';
+      break;
+
+    case 'NUMERO_ERRADO':
+      data.state = 'DESQUALIFICADO';
+      data.disqualifiedReason = 'Número errado';
+      break;
+
+    case 'ATENDEU_SEM_INTERESSE':
+      data.state = 'NURTURING';
+      break;
+
+    case 'REMARCAR':
+      data.state = 'A_TRABALHAR';
+      data.nextAttemptAt = dto.nextAttemptAt ? new Date(dto.nextAttemptAt) : null;
+      break;
+
+    case 'REUNIAO_MARCADA':
+    case 'ATENDEU_INTERESSADO':
+      data.state = 'QUALIFICADO';
+      break;
+
+    case 'NAO_ATENDEU':
+    case 'VOICEMAIL':
+    case 'GATEKEEPER':
+    case 'PEDIU_INFO_EMAIL':
+    default: {
+      data.state = 'A_TRABALHAR';
+      // Back off between attempts so a number is not dialled five times in a
+      // morning: 1, 2, 4, 7 days, then park it in nurturing.
+      const attempt = lead.attempts + 1;
+      const backoffDays = [1, 2, 4, 7][Math.min(attempt - 1, 3)];
+      if (attempt >= 5) {
+        data.state = 'NURTURING';
+      } else {
+        const next = new Date(now);
+        next.setDate(next.getDate() + backoffDays);
+        data.nextAttemptAt = next;
+      }
+      break;
+    }
+  }
+
+  return prisma.lead.update({ where: { id }, data });
+};
+
+/**
+ * Turns a qualified lead into Company + Contact + Opportunity.
+ *
+ * Runs in one transaction: a half-converted lead — a company with no deal, or
+ * a deal with no contact — is worse than an unconverted one, because nothing
+ * downstream can tell it is incomplete.
+ */
+export const convert = async (
+  id: string,
+  dto: {
+    pipelineId?: string;
+    stageId?: string;
+    dealTitle?: string;
+    value?: number;
+    sector?: string;
+    expectedCloseDate?: string;
+  },
+  user: any,
+) => {
+  const lead = await getById(id, user);
+
+  if (lead.convertedAt) {
+    throw Object.assign(new Error('Lead já convertida'), { status: 409 });
+  }
+
+  const agencyId = workspaceIdFor(user);
+
+  return prisma.$transaction(async (tx) => {
+    // Reuse the company the lead already points at, else create one.
+    const company =
+      (lead.companyId ? await tx.company.findUnique({ where: { id: lead.companyId } }) : null) ??
+      (await tx.company.create({
+        data: {
+          agencyId,
+          name: lead.companyName ?? lead.contactName ?? 'Empresa sem nome',
+          phone: lead.phone,
+          email: lead.email,
+          sector: (dto.sector as any) ?? 'OUTRO',
+          type: 'PROSPECT',
+          source: lead.source,
+          ownerId: lead.ownerId ?? user.id,
+        },
+      }));
+
+    const contact =
+      (lead.contactId ? await tx.contact.findUnique({ where: { id: lead.contactId } }) : null) ??
+      (await tx.contact.create({
+        data: {
+          agencyId,
+          companyId: company.id,
+          name: lead.contactName ?? lead.companyName ?? 'Contacto sem nome',
+          phone: lead.phone,
+          email: lead.email,
+          type: 'PROSPECT',
+          status: 'QUALIFIED',
+          source: lead.source,
+          assignedToId: lead.ownerId ?? user.id,
+        },
+      }));
+
+    // Fall back to the workspace's default pipeline and its first stage, so a
+    // conversion never fails just because the caller did not name one.
+    let pipelineId = dto.pipelineId;
+    let stageId = dto.stageId;
+    if (!pipelineId || !stageId) {
+      const pipeline = await tx.pipeline.findFirst({
+        where: { agencyId },
+        orderBy: { position: 'asc' },
+        include: { stages: { orderBy: { position: 'asc' }, take: 1 } },
+      });
+      pipelineId = pipelineId ?? pipeline?.id;
+      stageId = stageId ?? pipeline?.stages[0]?.id;
+    }
+
+    const opportunity = await tx.opportunity.create({
+      data: {
+        agencyId,
+        companyId: company.id,
+        contactId: contact.id,
+        assignedToId: lead.ownerId ?? user.id,
+        title: dto.dealTitle ?? `${company.name}`,
+        value: dto.value ?? null,
+        source: lead.source,
+        pipelineId: pipelineId ?? null,
+        stageId: stageId ?? null,
+        expectedCloseDate: dto.expectedCloseDate ? new Date(dto.expectedCloseDate) : null,
+      },
+    });
+
+    // The lead stays as the audit trail of how the deal was sourced.
+    await tx.lead.update({
+      where: { id },
+      data: {
+        state: 'QUALIFICADO',
+        companyId: company.id,
+        contactId: contact.id,
+        convertedToOpportunityId: opportunity.id,
+        convertedAt: new Date(),
+      },
+    });
+
+    return { company, contact, opportunity };
+  });
+};
+
+export const remove = async (id: string, user: any) => {
+  await getById(id, user);
+  // Soft delete: a deleted lead is still evidence the number was worked.
+  await prisma.lead.update({ where: { id }, data: { deletedAt: new Date() } });
+};
+
+/** Bulk assignment for the list's selection actions. */
+export const bulkAssign = async (ids: string[], ownerId: string, user: any) => {
+  const result = await prisma.lead.updateMany({
+    where: withWorkspace(user, { id: { in: ids } }),
+    data: { ownerId },
+  });
+  return { updated: result.count };
+};
