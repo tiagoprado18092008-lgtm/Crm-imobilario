@@ -2,7 +2,7 @@
 
 > Data: 2026-09-21 · Fase 0 · Autor: Claude Opus 5
 > Base: [`docs/AUDITORIA.md`](AUDITORIA.md). Prompt mestre nas secções 1–15 (as §5 e §11 foram substituídas pela §5 da auditoria).
-> **Estado: à espera de aprovação do Tiago antes de executar a Fase 1.**
+> **Estado: Fases 0, 1 e 1.5 concluídas. A seguir: Fase 2 (Fundações).**
 
 ---
 
@@ -67,7 +67,7 @@ Cada fase: branch próprio, PR com checklist, `tsc --noEmit` limpo, `eslint` lim
 |---|---|---|---|
 | **0 — Baseline** ✅ | `AUDITORIA.md`, `PLANO.md`, `pg_dump`, Sentry (front+back), Vitest + Playwright instalados, feature flags, staging | Auditoria aprovada; staging a correr; Sentry a receber eventos | **em curso** |
 | **1 — Limpeza e reset** ✅ | Remover Property e Location; consolidar os 3 ecrãs de equipa; renomear CasaFlow→AlphaCRM; remover terminologia imobiliária; corrigir `buildScope` (R21) | ✅ 0 referências a `Property`/`Location`; ✅ 3 grupos de navegação; ✅ backend `tsc` limpo; ✅ build do frontend passa (erros 61→56, todos herdados) | **concluída** |
-| **1.5 — `workspaceId`** | Desnormalizar `workspaceId NOT NULL` em todos os modelos; `withWorkspace(ctx)`; **teste que falha** se houver `prisma.<model>.findMany` sem `where.workspaceId` fora da whitelist; esconder gestão de workspaces da UI | Teste anti-fuga a passar; 0 queries fora do helper; isolamento testado entre 2 workspaces | 2 dias |
+| **1.5 — `workspaceId`** ✅ | Desnormalizar `agencyId` em 17 modelos; `lib/workspace.ts`; índices compostos + pg_trgm; **teste anti-fuga** (leituras, escritas e allowlist obsoleta) | ✅ 3 testes a passar; ✅ 0 leituras não scoped; ✅ 4 fugas reais corrigidas; ✅ teste validado com fuga injetada | **concluída** |
 | **2 — Fundações** | Design system (tokens OKLCH, navy/cyan, Plus Jakarta + Inter); `DataTable` virtualizada; `Board` (migrar `@hello-pangea/dnd` → dnd-kit); `RecordPanel`; `CommandPalette`; atalhos; keyset pagination; índices compostos; pg_trgm; SSE; `next-intl`-equivalente + `pt-PT.json`; unificar Zod | 1.700 contactos interativos <800ms; INP <200ms medido; `Cmd+K` funcional; axe sem violações críticas; 0 strings hardcoded | 2–3 sem |
 | **3 — Núcleo de vendas** | `Lead`/`Company`/`Person`/`Deal`; Caixa de Leads + conversão; 2 pipelines com campos obrigatórios e rotting; `Activity`; **`/hoje`**; Vistas Guardadas + ações em massa; **importador CSV** (§1.1) | Fluxo lead→qualificar→negócio→ganho <2min; ≥6 vistas por defeito; `/hoje` é a rota inicial; CSV de clínicas importado com 0 mojibake e 100% E.164 | 3 sem |
 | **4 — Telefonia Zadarma** 🔴 | `ITelephonyProvider`; `ZadarmaProvider`; HMAC testado; extensões SIP; softphone SIP.js; webhooks; gravações em storage próprio; dispositions; power dialer; compliance | BDR faz 50 chamadas de um **+351** sem sair do CRM; todas com disposition; gravação na ficha; teste de opt-out a passar | 3 sem |
