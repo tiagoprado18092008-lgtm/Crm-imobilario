@@ -314,7 +314,9 @@ export const sendMessage = async (
   });
 
   // Broadcast real-time event
-  eventBus.emit('new_message', { conversationId, message });
+  // agencyId decides which workspace's tabs receive this; without it the
+  // SSE layer drops the event rather than broadcasting it.
+  eventBus.emit('new_message', { conversationId, message, agencyId: conversation.agencyId });
 
   return { message, sendResult };
 };
@@ -394,7 +396,7 @@ export const receiveInbound = async (
   });
 
   // Broadcast real-time event
-  eventBus.emit('new_message', { conversationId: conversation.id, message });
+  eventBus.emit('new_message', { conversationId: conversation.id, message, agencyId: conversation.agencyId });
 
   // IA de Qualificação — extrai dados automaticamente de mensagens inbound
   if (conversation.contactId && content.length > 10) {

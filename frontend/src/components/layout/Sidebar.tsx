@@ -11,6 +11,7 @@ import { useClerk } from '@clerk/clerk-react'
 import { useAuthStore } from '../../store/auth.store'
 import { getInitials } from '../../utils/formatters'
 import { ROLE_LABELS } from '../../utils/constants'
+import { t } from '../../i18n'
 import { usePermissions } from '../../hooks/usePermissions'
 import { getUnreadCount } from '../../api/conversations.api'
 import { useUIStore } from '../../store/ui.store'
@@ -62,32 +63,32 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   // TRABALHO — o trabalho do dia, por ordem de utilização
   const trabalhoItems: NavItem[] = [
     { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
-    ...(can('contacts', 'view')      ? [{ to: '/contacts',      icon: Users,         label: 'Contactos' }]                   : []),
-    ...(can('opportunities', 'view') ? [{ to: '/pipeline',      icon: Kanban,        label: 'Pipeline' }]                    : []),
-    ...(can('conversations', 'view') ? [{ to: '/conversations', icon: MessageSquare, label: 'Conversas', badge: convBadge }] : []),
-    { to: '/calls',        icon: PhoneCall,     label: 'Chamadas' },
-    ...(can('appointments', 'view')  ? [{ to: '/appointments',  icon: CalendarClock, label: 'Agenda' }]                      : []),
+    ...(can('contacts', 'view')      ? [{ to: '/contacts',      icon: Users,         label: t('nav.contactos') }]                   : []),
+    ...(can('opportunities', 'view') ? [{ to: '/pipeline',      icon: Kanban,        label: t('nav.pipeline') }]                    : []),
+    ...(can('conversations', 'view') ? [{ to: '/conversations', icon: MessageSquare, label: t('nav.conversas'), badge: convBadge }] : []),
+    { to: '/calls',        icon: PhoneCall,     label: t('nav.chamadas') },
+    ...(can('appointments', 'view')  ? [{ to: '/appointments',  icon: CalendarClock, label: t('nav.agenda') }]                      : []),
   ]
 
   // GESTÃO — leitura e configuração, não trabalho diário
   const gestaoItems: NavItem[] = [
-    ...(can('reports', 'view') ? [{ to: '/reports', icon: BarChart3, label: 'Relatórios' }] : []),
-    ...(isAgencyManager ? [{ to: '/agency/pipelines', icon: Layers, label: 'Pipelines' }] : []),
+    ...(can('reports', 'view') ? [{ to: '/reports', icon: BarChart3, label: t('nav.relatorios') }] : []),
+    ...(isAgencyManager ? [{ to: '/agency/pipelines', icon: Layers, label: t('nav.pipelines') }] : []),
   ]
 
   const navGroups: NavGroup[] = [
-    { label: 'Trabalho', items: trabalhoItems },
-    ...(gestaoItems.length ? [{ label: 'Gestão', items: gestaoItems }] : []),
+    { label: t('nav.trabalho'), items: trabalhoItems },
+    ...(gestaoItems.length ? [{ label: t('nav.gestao'), items: gestaoItems }] : []),
   ]
 
   // Equipa e definições vivem num único sítio (/settings/*), em vez dos três
   // ecrãs sobrepostos que existiam antes (/agency, /agency/users, /settings/team).
   const definicoesItems: NavItem[] = [
-    { to: '/settings/team', icon: UserCog, label: 'Equipa' },
-    ...(isAgencyManager ? [{ to: '/agency/activity', icon: Activity, label: 'Actividade' }] : []),
-    { to: '/settings', icon: Settings, label: 'Definições' },
+    { to: '/settings/team', icon: UserCog, label: t('nav.equipa') },
+    ...(isAgencyManager ? [{ to: '/agency/activity', icon: Activity, label: t('nav.actividade') }] : []),
+    { to: '/settings', icon: Settings, label: t('nav.definicoes') },
   ]
-  navGroups.push({ label: 'Definições', items: definicoesItems })
+  navGroups.push({ label: t('nav.definicoes'), items: definicoesItems })
 
   return (
     <motion.aside

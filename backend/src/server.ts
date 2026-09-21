@@ -42,6 +42,7 @@ import { restoreAllSessions } from './modules/whatsapp/whatsapp.service';
 import { errorMiddleware } from './middleware/error.middleware';
 import { requestLogger } from './utils/logger';
 import prisma from './config/database';
+import { verifyToken } from './utils/jwt';
 import { eventBus } from './utils/event-bus';
 import { startImapPolling } from './utils/imap.service';
 import { registerEventListeners, registerV2EventListeners } from './utils/automation.engine';
@@ -166,11 +167,34 @@ app.use('/uploads', express.static(uploadsPath));
 
 // ─── SSE (Server-Sent Events) for real-time updates ────────────────────────────
 
-const sseClients = new Map<string, any>()
+/**
+ * SSE fan-out, keyed by workspace.
+ *
+ * Clients used to be held in a flat map and every event written to all of
+ * them, so one workspace's inbound WhatsApp messages were delivered to every
+ * other workspace's open tab. Connections are now grouped by agencyId and only
+ * ever receive their own group's events.
+ */
+type SseClient = { res: any; userId: string; agencyId: string | null }
+const sseClients = new Map<string, SseClient>()
 
-app.get('/api/sse', (req, res) => {
+app.get('/api/sse', async (req, res) => {
   const token = (req.headers.authorization?.replace('Bearer ', '') || req.query.token) as string
   if (!token) return res.status(401).json({ error: 'Unauthorized' })
+
+  // The token was previously accepted on presence alone, never verified.
+  let user: { id: string; agencyId: string | null } | null = null
+  try {
+    const decoded = verifyToken(token) as { userId: string }
+    user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, agencyId: true, isActive: true },
+    }) as any
+    if (!user || !(user as any).isActive) user = null
+  } catch {
+    user = null
+  }
+  if (!user) return res.status(401).json({ error: 'Unauthorized' })
 
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
@@ -179,12 +203,16 @@ app.get('/api/sse', (req, res) => {
   res.flushHeaders()
 
   const clientId = `${Date.now()}-${Math.random()}`
-  sseClients.set(clientId, res)
+  sseClients.set(clientId, { res, userId: user.id, agencyId: user.agencyId })
 
-  res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`)
+  res.write(`data: ${JSON.stringify({ type: 'connected' })}
+
+`)
 
   const ping = setInterval(() => {
-    res.write(`data: ${JSON.stringify({ type: 'ping' })}\n\n`)
+    try { res.write(`data: ${JSON.stringify({ type: 'ping' })}
+
+`) } catch {}
   }, 30000)
 
   req.on('close', () => {
@@ -193,26 +221,30 @@ app.get('/api/sse', (req, res) => {
   })
 })
 
-eventBus.on('new_message', (payload: any) => {
-  const data = `data: ${JSON.stringify({ type: 'new_message', ...payload })}\n\n`
-  sseClients.forEach((client) => {
-    try { client.write(data) } catch {}
-  })
-})
+/**
+ * Writes an event to one workspace's connections.
+ *
+ * An event carrying no agencyId is dropped rather than broadcast: a payload we
+ * cannot attribute is exactly the case that used to leak.
+ */
+const emitToWorkspace = (type: string, payload: any) => {
+  const agencyId: string | null = payload?.agencyId ?? null
+  if (!agencyId) {
+    console.warn(`[SSE] Dropped ${type} with no agencyId — cannot target a workspace`)
+    return
+  }
+  const data = `data: ${JSON.stringify({ type, ...payload })}
 
-eventBus.on('whatsapp_qr', (payload: any) => {
-  const data = `data: ${JSON.stringify({ type: 'whatsapp_qr', ...payload })}\n\n`
+`
   sseClients.forEach((client) => {
-    try { client.write(data) } catch {}
+    if (client.agencyId !== agencyId) return
+    try { client.res.write(data) } catch {}
   })
-})
+}
 
-eventBus.on('whatsapp_connected', (payload: any) => {
-  const data = `data: ${JSON.stringify({ type: 'whatsapp_connected', ...payload })}\n\n`
-  sseClients.forEach((client) => {
-    try { client.write(data) } catch {}
-  })
-})
+eventBus.on('new_message', (payload: any) => emitToWorkspace('new_message', payload))
+eventBus.on('whatsapp_qr', (payload: any) => emitToWorkspace('whatsapp_qr', payload))
+eventBus.on('whatsapp_connected', (payload: any) => emitToWorkspace('whatsapp_connected', payload))
 
 // Health check
 app.get('/health', async (_req, res) => {

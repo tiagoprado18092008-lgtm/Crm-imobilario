@@ -95,23 +95,23 @@ export const LoginPage: React.FC = () => {
               <div style={{ fontSize: 20, fontWeight: 700, color: T.white, letterSpacing: '-0.02em' }}>
                 CASA<span style={{ fontWeight: 400 }}>FLOW</span>
               </div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.14em', textTransform: 'uppercase', marginTop: 1 }}>CRM Imobiliário</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.14em', textTransform: 'uppercase', marginTop: 1 }}>Sistema operativo comercial</div>
             </div>
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, delay: 0.2 }} style={{ zIndex: 1 }}>
             <div style={{ width: 40, height: 3, background: T.gold, borderRadius: 2, marginBottom: 28 }} />
             <h2 style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 36, fontWeight: 700, color: T.white, lineHeight: 1.18, letterSpacing: '-0.03em', margin: '0 0 20px' }}>
-              Gerencie o seu<br />negócio imobiliário<br /><span style={{ color: T.goldLt }}>com confiança.</span>
+              Da chamada fria<br />ao cliente em avença,<br /><span style={{ color: T.goldLt }}>num só sítio.</span>
             </h2>
             <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, margin: 0, fontWeight: 300, maxWidth: 300 }}>
-              Contactos, oportunidades e propriedades centralizados numa única plataforma.
+              Leads, chamadas, propostas, projetos e faturação — sem sair do CRM.
             </p>
-            <div style={{ display: 'flex', gap: 36, marginTop: 44 }}>
-              {[{ value: '2.4k+', label: 'Imóveis' }, { value: '98%', label: 'Satisfação' }, { value: '150+', label: 'Agentes' }].map(s => (
+            <div style={{ display: 'flex', gap: 26, marginTop: 44 }}>
+              {[{ value: 'Leads', label: 'Triagem antes do pipeline' }, { value: 'Chamadas', label: 'Softphone no browser' }, { value: 'Avenças', label: 'MRR e cobranças' }].map(s => (
                 <div key={s.label}>
-                  <div style={{ fontSize: 26, fontWeight: 700, color: T.goldLt, letterSpacing: '-0.02em' }}>{s.value}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 3, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{s.label}</div>
+                  <div style={{ fontSize: 17, fontWeight: 700, color: T.goldLt, letterSpacing: '-0.01em' }}>{s.value}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 3, maxWidth: 110, lineHeight: 1.4 }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -130,7 +130,7 @@ export const LoginPage: React.FC = () => {
             <AlphaCrmLogo size={34} />
             <div>
               <div style={{ fontSize: 18, fontWeight: 700, color: T.navy, letterSpacing: '-0.02em' }}>CASA<span style={{ fontWeight: 400 }}>FLOW</span></div>
-              <div style={{ fontSize: 9, color: T.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1 }}>CRM Imobiliário</div>
+              <div style={{ fontSize: 9, color: T.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1 }}>Sistema operativo comercial</div>
             </div>
           </div>
 
