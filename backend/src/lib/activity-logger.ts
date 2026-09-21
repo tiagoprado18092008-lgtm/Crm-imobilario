@@ -3,7 +3,6 @@ import prisma from '../config/database';
 interface ActivityParams {
   userId?: string;
   agencyId?: string;
-  locationId?: string;
   action: string;
   entityType?: string;
   entityId?: string;

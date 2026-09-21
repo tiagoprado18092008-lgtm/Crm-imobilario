@@ -14,7 +14,6 @@ const DEFAULT_STAGES = [
 
 const userScope = (user: any) => {
   if (user.agencyId) return { agencyId: user.agencyId };
-  if (user.locationId) return { locationId: user.locationId };
   // Never return empty scope — return impossible match to prevent data leakage
   return { id: '__no_match__' };
 };
@@ -32,7 +31,7 @@ export const list = async (user: any) => {
   });
 
   // Auto-create default pipeline if agency has none yet
-  if (pipelines.length === 0 && (user.agencyId || user.locationId)) {
+  if (pipelines.length === 0 && user.agencyId) {
     const created = await prisma.pipeline.create({
       data: {
         name: 'Geral',

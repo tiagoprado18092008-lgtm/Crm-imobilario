@@ -197,8 +197,7 @@ export const bulkImport = async (
   const BATCH_SIZE = 500;
   const agencyFilter: any = user?.agencyId
     ? { assignedTo: { agencyId: user.agencyId } }
-    : user?.locationId
-    ? { assignedTo: { locationId: user.locationId } }
+
     : { assignedToId: userId };
 
   // Filter rows with valid names

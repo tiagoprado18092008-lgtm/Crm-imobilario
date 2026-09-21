@@ -143,7 +143,6 @@ export const getAgentPerformance = async (user?: any) => {
   // Strict tenant filter — no fallback to empty
   let agentFilter: any;
   if (user.agencyId) agentFilter = { agencyId: user.agencyId };
-  else if (user.locationId) agentFilter = { locationId: user.locationId };
   else agentFilter = { id: user.id };
 
   const agents = await prisma.user.findMany({
@@ -158,7 +157,11 @@ export const getAgentPerformance = async (user?: any) => {
       const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
 
       // Cross-check: contacts/opps must also belong to the same agency (agent.assignedTo.agencyId)
-      const contactScope = user.agencyId ? { assignedTo: { agencyId: user.agencyId } } : user.locationId ? { assignedTo: { locationId: user.locationId } } : {};
+      // An empty scope would drop the filter entirely and report across every
+      // workspace, so a user without one is scoped to their own records.
+      const contactScope = user.agencyId
+        ? { agencyId: user.agencyId }
+        : { assignedToId: user.id };
 
       const [contacts, openOpportunities, closedWon] = await Promise.all([
         prisma.contact.count({ where: { assignedToId: agent.id, ...contactScope } }),

@@ -165,6 +165,22 @@ export function DataTable<T>({
         >
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
+              {selectedIds && onSelectionChange && (
+                <th style={{ width: 34, padding: '0 0 0 12px' }}>
+                  <input
+                    type="checkbox"
+                    aria-label="Selecionar todas as linhas visíveis"
+                    checked={rows.length > 0 && selectedIds.size === rows.length}
+                    ref={(el) => {
+                      if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < rows.length
+                    }}
+                    onChange={(e) =>
+                      onSelectionChange(e.target.checked ? new Set(rows.map((r) => r.id)) : new Set())
+                    }
+                    style={{ accentColor: 'var(--accent)', width: 14, height: 14, cursor: 'pointer' }}
+                  />
+                </th>
+              )}
               {hg.headers.map((header) => (
                 <th
                   key={header.id}
@@ -219,6 +235,20 @@ export function DataTable<T>({
                 }}
                 className="data-table-row"
               >
+                {selectedIds && onSelectionChange && (
+                  <td
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ width: 34, padding: '0 0 0 12px', borderBottom: '1px solid var(--border)' }}
+                  >
+                    <input
+                      type="checkbox"
+                      aria-label={`Selecionar linha ${virtualRow.index + 1}`}
+                      checked={Boolean(isSelected)}
+                      onChange={() => toggleSelection(row.id)}
+                      style={{ accentColor: 'var(--accent)', width: 14, height: 14, cursor: 'pointer' }}
+                    />
+                  </td>
+                )}
                 {row.getVisibleCells().map((cell) => (
                   <td
                     key={cell.id}

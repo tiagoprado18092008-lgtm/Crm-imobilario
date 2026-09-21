@@ -6,21 +6,15 @@ export const list = async (currentUser?: any) => {
   const where: any = {};
   if (currentUser.agencyId) {
     where.agencyId = currentUser.agencyId;
-  } else if (currentUser.locationId) {
-    where.locationId = currentUser.locationId;
   } else {
-    // Sem agência nem location: devolve apenas o próprio utilizador
+    // Sem workspace: devolve apenas o próprio utilizador.
     where.id = currentUser.id;
   }
 
   // Exclude invitation placeholders (users created on invite, not yet onboarded).
   // These appear under the "Convites" tab, not "Membros".
-  // Usar AND para não sobrescrever o filtro de agência/location acima.
-  const agencyFilter = where.agencyId
-    ? { agencyId: where.agencyId }
-    : where.locationId
-    ? { locationId: where.locationId }
-    : { id: where.id };
+  // Usar AND para não sobrescrever o filtro de workspace acima.
+  const agencyFilter = where.agencyId ? { agencyId: where.agencyId } : { id: where.id };
 
   Object.keys(where).forEach(k => delete where[k]);
   where.AND = [
@@ -86,9 +80,8 @@ export const create = async (dto: {
       phone: dto.phone,
       avatarUrl: dto.avatarUrl,
       supervisorId: dto.supervisorId,
-      // herda agência e location do criador
+      // herda o workspace do criador
       ...(creator?.agencyId ? { agencyId: creator.agencyId } : {}),
-      ...(creator?.locationId ? { locationId: creator.locationId } : {}),
     },
     select: {
       id: true,

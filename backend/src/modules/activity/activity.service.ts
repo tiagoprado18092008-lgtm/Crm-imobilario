@@ -6,7 +6,6 @@ export const list = async (filters: any, user: any) => {
   if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') {
     if (user.agencyId) where.agencyId = user.agencyId;
     else where.userId = user.id;
-    if (filters.locationId) where.locationId = filters.locationId;
   } else {
     where.userId = user.id;
   }

@@ -94,8 +94,7 @@ export const send = async (id: string, user: any) => {
   const contactWhere: any = {};
   if (filter.type) contactWhere.type = filter.type;
   if (filter.status) contactWhere.status = filter.status;
-  if (user.agencyId) contactWhere.assignedTo = { agencyId: user.agencyId };
-  else if (user.locationId) contactWhere.assignedTo = { locationId: user.locationId };
+  if (user.agencyId) contactWhere.agencyId = user.agencyId;
   else contactWhere.assignedToId = user.id;
   const contacts = await prisma.contact.findMany({ where: contactWhere, select: { id: true, email: true, name: true } });
   const withEmail = contacts.filter(c => c.email);

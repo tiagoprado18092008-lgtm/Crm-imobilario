@@ -61,7 +61,6 @@ export const register = async (
 
   // If registering as AGENCY_OWNER, create an Agency automatically
   let agencyId: string | undefined;
-  let locationId: string | undefined;
 
   if (validRole === 'AGENCY_OWNER' && agency) {
     const slug = agency.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -72,7 +71,7 @@ export const register = async (
     agencyId = newAgency.id;
   }
 
-  // Se veio via convite, herda agencyId e locationId de quem convidou
+  // Se veio via convite, herda o agencyId de quem convidou
   if (invitation) {
     if (invitation.agencyId) agencyId = invitation.agencyId;
 
@@ -94,7 +93,6 @@ export const register = async (
       phone,
       role: validRole as any,
       ...(agencyId ? { agencyId } : {}),
-      ...(locationId ? { locationId } : {}),
     },
   });
 

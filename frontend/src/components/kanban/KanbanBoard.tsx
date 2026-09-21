@@ -421,8 +421,19 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
         return next
       })
       if (selectedOpp?.id === draggableId) setSelectedOpp(prev => prev ? { ...prev, ...saved } : saved)
-    } catch {
-      showToast('Erro ao mover oportunidade. A reverter...', 'error')
+    } catch (err: any) {
+      // A stage can demand fields before it accepts a deal. That refusal is a
+      // prompt, not a failure, so it names what is missing instead of saying
+      // only that something went wrong.
+      const missing = err?.response?.data?.missing as { label: string }[] | undefined
+      if (err?.response?.status === 422 && missing?.length) {
+        showToast(
+          `Faltam campos para esta fase: ${missing.map((m) => m.label).join(', ')}`,
+          'error',
+        )
+      } else {
+        showToast('Não foi possível mover o negócio. A reverter.', 'error')
+      }
       fetchOpportunities(true)
     }
   }

@@ -2,8 +2,8 @@ import prisma from '../../config/database';
 
 const userScope = (user: any) => {
   if (user.agencyId) return { agencyId: user.agencyId };
-  if (user.locationId) return { locationId: user.locationId };
-  // Fallback: never return empty scope — show nothing if no agency/location
+  // Never return an empty scope: that would drop the filter and expose every
+  // workspace. A user without one sees nothing.
   return { id: '__no_match__' };
 };
 
