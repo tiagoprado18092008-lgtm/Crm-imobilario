@@ -1,8 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ChevronLeft, ChevronRight, Trash2, Edit, Download, X, Upload, Mail, Phone as PhoneIcon, MoreHorizontal } from 'lucide-react'
+import { Plus, Search, Trash2, Edit, Download, X, Upload, MoreHorizontal } from 'lucide-react'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { getContacts, deleteContact } from '../api/contacts.api'
+import { DataTable } from '../components/data-table/DataTable'
+import { buildContactColumns } from './contacts/contactColumns'
+import { useContactsList } from '../hooks/useContactsList'
+import { deleteContact } from '../api/contacts.api'
 import { ImportModal } from '../components/import/ImportModal'
 import { exportContacts } from '../api/exports.api'
 import { downloadBlob } from '../utils/download'
@@ -14,7 +17,6 @@ import { EmptyState } from '../components/ui/EmptyState'
 import { PageSpinner } from '../components/ui/Spinner'
 import { ContactForm } from '../components/contacts/ContactForm'
 import { useUIStore } from '../store/ui.store'
-import { formatDate } from '../utils/formatters'
 import { CONTACT_STATUS_LABELS, CONTACT_TYPE_LABELS, SOURCE_OPTIONS } from '../utils/constants'
 
 function getInitials(name: string) {
@@ -151,27 +153,11 @@ const ContactCard: React.FC<{
   )
 }
 
-const TH = ({ children, right }: { children: React.ReactNode; right?: boolean }) => (
-  <th style={{
-    padding: '0 14px', height: 44, textAlign: right ? 'right' : 'left',
-    fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em',
-    color: 'var(--text-muted)', whiteSpace: 'nowrap',
-    background: 'var(--surface-2)', borderBottom: '1px solid var(--border)',
-    position: 'sticky', top: 0, zIndex: 1,
-    fontFamily: 'var(--font-body)',
-  }}>
-    {children}
-  </th>
-)
 
 export const ContactsPage: React.FC = () => {
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const { showToast } = useUIStore()
-  const [contacts, setContacts] = useState<Contact[]>([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
@@ -182,44 +168,41 @@ export const ContactsPage: React.FC = () => {
   const [showImport, setShowImport] = useState(false)
   const [editContact, setEditContact] = useState<Contact | undefined>()
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [hoveredRow, setHoveredRow] = useState<string | null>(null)
-  const limit = 20
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300)
     return () => clearTimeout(t)
   }, [search])
 
-  const fetchContacts = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await getContacts({
-        search: debouncedSearch || undefined,
-        type: typeFilter || undefined,
-        status: statusFilter || undefined,
-        source: sourceFilter || undefined,
-        tag: tagFilter || undefined,
-        page, limit,
-      })
-      const d = res.data
-      if (Array.isArray(d)) { setContacts(d); setTotal(d.length) }
-      else { setContacts(d.data || []); setTotal(d.total || 0) }
-    } catch {
-      showToast('Erro ao carregar contactos', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }, [debouncedSearch, typeFilter, statusFilter, sourceFilter, tagFilter, page])
+  const filters = useMemo(() => ({
+    search: debouncedSearch || undefined,
+    type: typeFilter || undefined,
+    status: statusFilter || undefined,
+    source: sourceFilter || undefined,
+    tag: tagFilter || undefined,
+  }), [debouncedSearch, typeFilter, statusFilter, sourceFilter, tagFilter])
 
-  useEffect(() => { fetchContacts() }, [fetchContacts])
-  useEffect(() => { setPage(1) }, [debouncedSearch, typeFilter, statusFilter, sourceFilter, tagFilter])
+  const {
+    contacts, isLoading: loading, isFetchingNextPage, hasNextPage, fetchNextPage, refetch,
+  } = useContactsList(filters)
+
+  const columns = useMemo(
+    () => buildContactColumns({
+      onEdit: (c) => { setEditContact(c); setShowModal(true) },
+      onDelete: (id) => setDeleteId(id),
+    }),
+    [],
+  )
+
+  const fetchContacts = useCallback(() => { refetch() }, [refetch])
 
   const handleDelete = async () => {
     if (!deleteId) return
     try {
       await deleteContact(deleteId)
-      setContacts(prev => prev.filter(c => c.id !== deleteId))
-      setTotal(prev => prev - 1)
+      // Refetch rather than splice: the list is paged, so the local array is
+      // only the part that has been scrolled into view.
+      refetch()
       showToast('Contacto eliminado', 'success')
       setDeleteId(null)
     } catch {
@@ -229,7 +212,6 @@ export const ContactsPage: React.FC = () => {
 
   const closeModal = () => { setShowModal(false); setEditContact(undefined) }
   const hasFilters = !!(typeFilter || statusFilter || sourceFilter || tagFilter || debouncedSearch)
-  const totalPages = Math.ceil(total / limit)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14, fontFamily: 'var(--font-body)' }}>
@@ -351,179 +333,30 @@ export const ContactsPage: React.FC = () => {
           background: 'var(--surface)',
           boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
         }}>
-          <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 240px)', overflowY: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr>
-                  <TH>Nome</TH>
-                  <TH>Contacto</TH>
-                  <TH>Tipo</TH>
-                  <TH>Estado</TH>
-                  <TH>Origem</TH>
-                  <TH>Responsável</TH>
-                  <TH>Criado</TH>
-                  <TH right>Ações</TH>
-                </tr>
-              </thead>
-              <tbody>
-                {contacts.map(contact => {
-                  const st = STATUS_STYLE[contact.status] ?? STATUS_STYLE.NEW
-                  const tp = TYPE_STYLE[contact.type] ?? TYPE_STYLE.BUYER
-                  const color = avatarColor(contact.name)
-                  const isHovered = hoveredRow === contact.id
-                  return (
-                    <tr
-                      key={contact.id}
-                      onClick={() => navigate(`/contacts/${contact.id}`)}
-                      onMouseEnter={() => setHoveredRow(contact.id)}
-                      onMouseLeave={() => setHoveredRow(null)}
-                      style={{
-                        borderBottom: '1px solid var(--border)',
-                        cursor: 'pointer',
-                        background: isHovered ? 'var(--surface-3)' : 'var(--surface)',
-                        transition: 'background 120ms',
-                      }}
-                    >
-                      {/* Nome + avatar */}
-                      <td style={{ padding: '12px 14px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div style={{
-                            width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                            background: color, color: '#fff',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 11, fontWeight: 700, letterSpacing: '0.03em',
-                          }}>
-                            {getInitials(contact.name)}
-                          </div>
-                          <span style={{ fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                            {contact.name}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Email / telefone */}
-                      <td style={{ padding: '12px 14px' }}>
-                        {contact.email && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                            <Mail size={11} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                            {contact.email}
-                          </div>
-                        )}
-                        {contact.phone && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                            <PhoneIcon size={10} style={{ flexShrink: 0 }} />
-                            {contact.phone}
-                          </div>
-                        )}
-                        {!contact.email && !contact.phone && <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                      </td>
-
-                      <td style={{ padding: '12px 14px' }}>
-                        <Pill bg={tp.bg} color={tp.color} label={tp.label} />
-                      </td>
-                      <td style={{ padding: '12px 14px' }}>
-                        <Pill bg={st.bg} color={st.color} label={st.label} />
-                      </td>
-                      <td style={{ padding: '12px 14px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', fontSize: 12 }}>
-                        {contact.source || '—'}
-                      </td>
-                      <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
-                        {contact.assignedTo ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <div style={{
-                              width: 22, height: 22, borderRadius: '50%',
-                              background: avatarColor(contact.assignedTo.name),
-                              color: '#fff', fontSize: 9, fontWeight: 700,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              flexShrink: 0,
-                            }}>
-                              {getInitials(contact.assignedTo.name)}
-                            </div>
-                            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{contact.assignedTo.name}</span>
-                          </div>
-                        ) : <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>}
-                      </td>
-                      <td style={{ padding: '12px 14px', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontSize: 12 }}>
-                        {formatDate(contact.createdAt)}
-                      </td>
-
-                      {/* Ações — visíveis só no hover */}
-                      <td style={{ padding: '12px 14px' }}>
-                        <div
-                          style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 2,
-                            opacity: isHovered ? 1 : 0,
-                            transition: 'opacity 120ms',
-                          }}
-                          onClick={e => e.stopPropagation()}
-                        >
-                          <button
-                            onClick={() => { setEditContact(contact); setShowModal(true) }}
-                            title="Editar"
-                            style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-soft)'; e.currentTarget.style.color = 'var(--accent)' }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button
-                            onClick={() => setDeleteId(contact.id)}
-                            title="Eliminar"
-                            style={{ padding: 6, borderRadius: 6, border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)' }}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(220,38,38,0.08)'; e.currentTarget.style.color = 'var(--danger)' }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)' }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+          <div style={{ height: 'calc(100vh - 250px)', minHeight: 320 }}>
+            <DataTable
+              data={contacts}
+              columns={columns}
+              getRowId={(c) => c.id}
+              onRowClick={(c) => navigate(`/contacts/${c.id}`)}
+              onEndReached={() => { if (hasNextPage && !isFetchingNextPage) fetchNextPage() }}
+              isLoading={isFetchingNextPage}
+            />
           </div>
 
-          {/* Pagination */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '10px 16px', borderTop: '1px solid var(--border)',
+            padding: '9px 16px', borderTop: '1px solid var(--border)',
           }}>
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {total === 0 ? '0 contactos' : `Mostrando ${(page - 1) * limit + 1}–${Math.min(page * limit, total)} de ${total} contactos`}
+              {contacts.length === 0
+                ? 'Sem contactos'
+                : `${contacts.length} contacto${contacts.length === 1 ? '' : 's'}${hasNextPage ? ' carregados' : ''}`}
             </span>
-            {totalPages > 1 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  style={{
-                    width: 30, height: 30, borderRadius: 6, border: 'none', background: 'transparent',
-                    cursor: page === 1 ? 'not-allowed' : 'pointer',
-                    color: page === 1 ? 'var(--text-muted)' : 'var(--text-primary)',
-                    opacity: page === 1 ? 0.4 : 1,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  <ChevronLeft size={15} />
-                </button>
-                <span style={{ fontSize: 12, color: 'var(--text-secondary)', padding: '0 6px' }}>
-                  Página {page} de {totalPages}
-                </span>
-                <button
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  style={{
-                    width: 30, height: 30, borderRadius: 6, border: 'none', background: 'transparent',
-                    cursor: page === totalPages ? 'not-allowed' : 'pointer',
-                    color: page === totalPages ? 'var(--text-muted)' : 'var(--text-primary)',
-                    opacity: page === totalPages ? 0.4 : 1,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  <ChevronRight size={15} />
-                </button>
-              </div>
+            {hasNextPage && (
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                {isFetchingNextPage ? 'A carregar mais…' : 'Continua ao deslizar'}
+              </span>
             )}
           </div>
         </div>

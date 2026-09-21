@@ -8,6 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "check:contrast": "node scripts/check-contrast.mjs",
+    "check:pt": "node scripts/check-pt-pt.mjs",
+    "check": "npm run check:contrast && npm run check:pt",
     "preview": "vite preview"
   },
   "dependencies": {

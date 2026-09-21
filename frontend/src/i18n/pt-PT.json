@@ -1,0 +1,98 @@
+{
+  "_comment": "Português europeu. Nunca pt-BR: equipa (não time), utilizador (não usuário), ficheiro (não arquivo), gerir (não gerenciar), ecrã (não tela), telemóvel (não celular), contacto (não contato), palavra-passe (não senha). Tratamento por tu implícito — evitar 'você'.",
+
+  "app": {
+    "name": "AlphaCRM",
+    "tagline": "Sistema operativo comercial"
+  },
+
+  "nav": {
+    "trabalho": "Trabalho",
+    "gestao": "Gestão",
+    "definicoes": "Definições",
+    "hoje": "Hoje",
+    "leads": "Leads",
+    "contactos": "Contactos",
+    "empresas": "Empresas",
+    "pipeline": "Pipeline",
+    "conversas": "Conversas",
+    "chamadas": "Chamadas",
+    "agenda": "Agenda",
+    "clientes": "Clientes",
+    "projetos": "Projetos",
+    "receita": "Receita",
+    "relatorios": "Relatórios",
+    "automacoes": "Automações",
+    "equipa": "Equipa",
+    "actividade": "Actividade",
+    "pipelines": "Pipelines"
+  },
+
+  "actions": {
+    "criar": "Criar",
+    "guardar": "Guardar",
+    "cancelar": "Cancelar",
+    "eliminar": "Eliminar",
+    "editar": "Editar",
+    "fechar": "Fechar",
+    "procurar": "Procurar",
+    "filtrar": "Filtrar",
+    "exportar": "Exportar",
+    "importar": "Importar",
+    "ligar": "Ligar",
+    "agendar": "Agendar",
+    "qualificar": "Qualificar",
+    "anular": "Anular",
+    "tentarNovamente": "Tentar novamente"
+  },
+
+  "contacts": {
+    "singular": "contacto",
+    "plural": "contactos",
+    "novo": "Novo contacto",
+    "nome": "Nome",
+    "tipo": "Tipo",
+    "estado": "Estado",
+    "origem": "Origem",
+    "responsavel": "Responsável",
+    "criado": "Criado",
+    "telemovel": "Telemóvel",
+    "semContactos": "Sem contactos",
+    "eliminado": "Contacto eliminado",
+    "erroCarregar": "Não foi possível carregar os contactos.",
+    "erroEliminar": "Não foi possível eliminar o contacto."
+  },
+
+  "deals": {
+    "singular": "negócio",
+    "plural": "negócios",
+    "novo": "Novo negócio",
+    "valor": "Valor",
+    "fase": "Fase",
+    "proximaAtividade": "Próxima atividade",
+    "semProximaAtividade": "Sem próxima atividade",
+    "ganho": "Ganho",
+    "perdido": "Perdido",
+    "motivoPerda": "Motivo da perda"
+  },
+
+  "empty": {
+    "semResultados": "Sem resultados",
+    "semResultadosFiltro": "Nenhum registo corresponde aos filtros.",
+    "limparFiltros": "Limpar filtros"
+  },
+
+  "errors": {
+    "generico": "Algo correu mal. Tenta novamente.",
+    "semLigacao": "Sem ligação ao servidor.",
+    "semPermissao": "Não tens permissão para ver isto.",
+    "naoEncontrado": "Não encontrado."
+  },
+
+  "command": {
+    "placeholder": "Procurar contactos, negócios ou ir para…",
+    "irPara": "Ir para",
+    "criar": "Criar",
+    "semResultados": "Sem resultados para “{query}”."
+  }
+}
