@@ -49,6 +49,7 @@ import { eventBus } from './utils/event-bus';
 import { startImapPolling } from './utils/imap.service';
 import { registerEventListeners, registerV2EventListeners } from './utils/automation.engine';
 import { startAutomationCron } from './jobs/automation-cron';
+import { startRecordingJobs } from './jobs/recordings-cron';
 import { startCalendarCron } from './lib/calendar-cron';
 import { startOverdueTasksCron } from './lib/overdue-tasks-cron';
 import { loadSettingsFromDB } from './modules/settings/settings.service';
@@ -707,6 +708,7 @@ if (process.env.NODE_ENV !== 'test') {
       registerEventListeners();
       registerV2EventListeners();
       startAutomationCron();
+      startRecordingJobs();
       startCalendarCron();
       startOverdueTasksCron();
       restoreAllSessions().catch(() => {});
