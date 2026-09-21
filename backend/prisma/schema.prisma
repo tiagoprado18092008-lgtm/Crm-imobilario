@@ -82,8 +82,11 @@ model Agency {
   calendarSlot           CalendarSlot[]
   pipelineStage          PipelineStage[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  Company   Company[]
+  Lead      Lead[]
+  SavedView SavedView[]
 }
 
 model AgencySettings {
@@ -154,6 +157,10 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  ownedCompanies Company[]   @relation("CompanyOwner")
+  ownedLeads     Lead[]      @relation("LeadOwner")
+  savedViews     SavedView[] @relation("SavedViewOwner")
 }
 
 model Contact {
@@ -198,6 +205,11 @@ model Contact {
   agencyId String?
   agency   Agency? @relation(fields: [agencyId], references: [id])
 
+  // A contact belongs to the organisation being sold to, not the other way round.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  leads     Lead[]
+
   @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([agencyId, assignedToId, createdAt(sort: Desc)])
 }
@@ -231,6 +243,9 @@ model Opportunity {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
 
   @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([agencyId, stageId, position])
@@ -761,4 +776,195 @@ model RefreshToken {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+}
+
+// ─── Sales core ───────────────────────────────────────────────────────────────
+
+/// Business sectors AlphaScale sells into. Clinics dominate; construction and
+/// real estate are historical and kept so older records stay classifiable.
+enum Sector {
+  FISIOTERAPIA
+  DENTARIA
+  VETERINARIA
+  MEDICINA_ESTETICA
+  MEDICINA_CHINESA
+  CONSTRUCAO
+  IMOBILIARIA
+  OUTRO
+}
+
+enum CompanyType {
+  LEAD
+  PROSPECT
+  CLIENTE
+  EX_CLIENTE
+}
+
+enum LeadState {
+  NOVO
+  A_TRABALHAR
+  QUALIFICADO
+  DESQUALIFICADO
+  NURTURING
+}
+
+/// Call outcome. Recording one is mandatory when a call ends: a call with no
+/// disposition is a call that never happened as far as the pipeline knows.
+enum CallDisposition {
+  ATENDEU_INTERESSADO
+  ATENDEU_SEM_INTERESSE
+  GATEKEEPER
+  PEDIU_INFO_EMAIL
+  REMARCAR
+  NAO_ATENDEU
+  VOICEMAIL
+  NUMERO_ERRADO
+  NAO_CONTACTAR
+  REUNIAO_MARCADA
+}
+
+/// The organisation. B2B sells to companies, so this is the parent record:
+/// a clinic has many contacts, deals, projects and subscriptions.
+model Company {
+  id        String  @id @default(cuid())
+  name      String
+  legalName String?
+  nif       String?
+  domain    String?
+  website   String?
+  phone     String?
+  email     String?
+
+  address  String?
+  city     String?
+  /// Portuguese administrative divisions; used for territory filtering.
+  distrito String?
+  concelho String?
+
+  sector Sector      @default(OUTRO)
+  type   CompanyType @default(LEAD)
+  size   String?
+
+  /// Prospecting signals gathered before the first call.
+  hasWebsite        Boolean @default(false)
+  googleBusinessUrl String?
+  instagramUrl      String?
+  facebookUrl       String?
+  prospectingNotes  String?
+
+  ownerId String?
+  owner   User?   @relation("CompanyOwner", fields: [ownerId], references: [id])
+
+  source String?
+  tags   String[] @default([])
+  notes  String?
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  contacts      Contact[]
+  leads         Lead[]
+  opportunities Opportunity[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([agencyId, type, sector])
+  @@index([agencyId, nif])
+}
+
+/// Cold-call triage, deliberately outside the pipeline.
+///
+/// This is the fix for a pipeline where 2,882 of 3,442 "opportunities" sat in
+/// the first stage: a call list is not a pipeline. Leads live here until they
+/// qualify, and only then become a Deal.
+model Lead {
+  id String @id @default(cuid())
+
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id])
+
+  /// Denormalised so a lead can be imported and called before anyone decides
+  /// whether it deserves a Company record.
+  companyName String?
+  contactName String?
+  phone       String?
+  email       String?
+
+  source String?
+  state  LeadState @default(NOVO)
+
+  disqualifiedReason String?
+
+  ownerId String?
+  owner   User?   @relation("LeadOwner", fields: [ownerId], references: [id])
+
+  /// Dialer bookkeeping. nextAttemptAt is what the call queue sorts on.
+  attempts        Int              @default(0)
+  lastAttemptAt   DateTime?
+  nextAttemptAt   DateTime?
+  lastDisposition CallDisposition?
+
+  /// Qualification checklist: has a site, runs ads, who decides, budget, pain.
+  qualification Json?
+
+  notes String?
+  tags  String[] @default([])
+
+  /// Honoured by the dialer, every sequence and every future import.
+  optOutCalls    Boolean @default(false)
+  optOutEmail    Boolean @default(false)
+  optOutWhatsApp Boolean @default(false)
+
+  /// Set when the lead converts, so the history survives the move.
+  convertedToOpportunityId String?
+  convertedAt              DateTime?
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([agencyId, state, nextAttemptAt])
+  @@index([agencyId, ownerId, state])
+  @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([agencyId, phone])
+}
+
+/// A saved filter. One engine drives lists, call queues and bulk actions, so
+/// filtering is never built twice.
+model SavedView {
+  id     String @id @default(cuid())
+  name   String
+  /// Which list this view applies to: "lead", "contact", "opportunity".
+  entity String
+
+  filters Json
+  sort    Json?
+  columns Json?
+
+  /// Shared views are visible to the whole workspace; private ones are not.
+  isShared    Boolean @default(false)
+  /// Marks the view as selectable as a power-dialer queue.
+  isCallQueue Boolean @default(false)
+
+  icon     String?
+  position Int     @default(0)
+
+  ownerId String
+  owner   User   @relation("SavedViewOwner", fields: [ownerId], references: [id])
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId, entity, position])
 }

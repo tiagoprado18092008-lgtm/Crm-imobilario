@@ -13,6 +13,8 @@ const PublicBookingPage = lazy(() => import('./pages/PublicBookingPage'))
 const SuperAdminLayout = lazy(() => import('./pages/super-admin/SuperAdminLayout').then(m => ({ default: m.SuperAdminLayout })))
 const SuperAdminAgenciesPage = lazy(() => import('./pages/super-admin/SuperAdminAgenciesPage').then(m => ({ default: m.SuperAdminAgenciesPage })))
 const SuperAdminAgencyDetailPage = lazy(() => import('./pages/super-admin/SuperAdminAgencyDetailPage').then(m => ({ default: m.SuperAdminAgencyDetailPage })))
+const LeadsPage = lazy(() => import('./pages/LeadsPage').then(m => ({ default: m.LeadsPage })))
+const HojePage = lazy(() => import('./pages/HojePage').then(m => ({ default: m.HojePage })))
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const ContactsPage = lazy(() => import('./pages/ContactsPage').then(m => ({ default: m.ContactsPage })))
 const ContactDetailPage = lazy(() => import('./pages/ContactDetailPage').then(m => ({ default: m.ContactDetailPage })))
@@ -76,7 +78,10 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/dashboard" replace />} />
+        {/* /hoje is the landing screen: the day's work, not a wall of KPIs. */}
+        <Route index element={<Navigate to="/hoje" replace />} />
+        <Route path="hoje" element={<HojePage />} />
+        <Route path="leads" element={<LeadsPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="contacts" element={<ContactsPage />} />
         <Route path="contacts/:id" element={<ContactDetailPage />} />
