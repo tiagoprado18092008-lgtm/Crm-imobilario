@@ -72,7 +72,6 @@ export const create = async (dto: {
       contactId: dto.contactId || undefined,
       opportunityId: dto.opportunityId || undefined,
       assignedToId: dto.assignedToId || userId,
-      locationId: typeof userOrId === 'string' ? null : (userOrId.locationId ?? null),
     },
     include: {
       assignedTo: { select: { id: true, name: true } },

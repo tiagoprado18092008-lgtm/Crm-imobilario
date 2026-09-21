@@ -302,7 +302,7 @@ async function handleIncoming(msg: any, agencyId: string, userId: string | null)
         where: {
           AND: [
             { OR: variants.flatMap(v => [{ phone: v }, { whatsapp: v }]) },
-            { location: { agencyId } },
+            { assignedTo: { agencyId } },
           ],
           assignedToId: { not: undefined },
         },
@@ -313,7 +313,7 @@ async function handleIncoming(msg: any, agencyId: string, userId: string | null)
         assignedToId = contact.assignedToId
       } else {
         const consultants = await prisma.user.findMany({
-          where: { agencyId, isActive: true, role: { in: ['CONSULTANT', 'LOCATION_ADMIN', 'AGENCY_ADMIN', 'AGENCY_OWNER'] } },
+          where: { agencyId, isActive: true, role: { in: ['CONSULTANT', 'AGENCY_ADMIN', 'AGENCY_OWNER'] } },
           select: {
             id: true,
             _count: { select: { assignedConversations: { where: { status: 'OPEN' } } } },

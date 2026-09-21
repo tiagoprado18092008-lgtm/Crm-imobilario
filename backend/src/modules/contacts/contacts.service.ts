@@ -119,7 +119,6 @@ export const create = async (
       notes: dto.notes,
       preferences: dto.preferences,
       assignedToId: dto.assignedToId || userId,
-      locationId: typeof user === 'string' ? null : (user.locationId ?? null),
       city: dto.city,
       postalCode: dto.postalCode,
       budget_min: dto.budget_min,
@@ -151,7 +150,6 @@ export const create = async (
   logActivity({
     userId,
     agencyId: typeof user === 'string' ? undefined : (user.agencyId ?? undefined),
-    locationId: typeof user === 'string' ? undefined : (user.locationId ?? undefined),
     action: 'contact.create',
     entityType: 'Contact',
     entityId: contact.id,
@@ -248,7 +246,6 @@ export const getById = async (id: string, user: any) => {
       },
       opportunities: {
         include: {
-          property: { select: { id: true, title: true, price: true } },
           assignedTo: { select: { id: true, name: true } },
         },
       },
@@ -353,7 +350,6 @@ export const update = async (
   logActivity({
     userId: user.id,
     agencyId: user.agencyId ?? undefined,
-    locationId: user.locationId ?? undefined,
     action: 'contact.update',
     entityType: 'Contact',
     entityId: id,
@@ -389,7 +385,6 @@ export const remove = async (id: string, user: any) => {
   logActivity({
     userId: user.id,
     agencyId: user.agencyId ?? undefined,
-    locationId: user.locationId ?? undefined,
     action: 'contact.delete',
     entityType: 'Contact',
     entityId: id,

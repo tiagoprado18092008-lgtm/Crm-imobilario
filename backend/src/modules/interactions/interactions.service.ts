@@ -74,9 +74,7 @@ export const list = async (filters: {
   if (u.role === 'AGENCY_OWNER' || u.role === 'AGENCY_ADMIN') {
     if (u.agencyId) scope = { createdBy: { agencyId: u.agencyId } };
     else scope = { createdById: u.id };
-  } else if (u.role === 'LOCATION_ADMIN') {
-    scope = u.locationId ? { createdBy: { locationId: u.locationId } } : { createdById: u.id };
-  } else if (u.role === 'TEAM_LEADER') {
+    } else if (u.role === 'TEAM_LEADER') {
     const subs = await prisma.user.findMany({ where: { supervisorId: u.id }, select: { id: true } });
     scope = { createdById: { in: [u.id, ...subs.map((s: any) => s.id)] } };
   } else {
@@ -115,10 +113,7 @@ export const getById = async (id: string, user?: any) => {
     if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') {
       if (user.agencyId) scope.createdBy = { agencyId: user.agencyId };
       else scope.createdById = user.id;
-    } else if (user.role === 'LOCATION_ADMIN') {
-      if (user.locationId) scope.createdBy = { locationId: user.locationId };
-      else scope.createdById = user.id;
-    } else if (user.role === 'TEAM_LEADER') {
+        } else if (user.role === 'TEAM_LEADER') {
       const subs = await prisma.user.findMany({ where: { supervisorId: user.id }, select: { id: true } });
       scope.createdById = { in: [user.id, ...subs.map((s: any) => s.id)] };
     } else {

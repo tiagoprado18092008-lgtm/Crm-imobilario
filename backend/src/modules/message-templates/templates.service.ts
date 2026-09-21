@@ -19,7 +19,6 @@ export const list = async (user: any, channel?: string) => {
 export const create = async (data: any, user: any) => {
   return prisma.messageTemplate.create({
     data: {
-      locationId: user.locationId ?? '',
       agencyId: user.agencyId ?? null,
       name: data.name,
       channel: data.channel ?? 'ALL',
@@ -33,7 +32,7 @@ export const create = async (data: any, user: any) => {
 export const update = async (id: string, data: any, user: any) => {
   const tpl = await prisma.messageTemplate.findUnique({ where: { id } });
   if (!tpl) throw Object.assign(new Error('Template não encontrado'), { status: 404 });
-  if (tpl.locationId !== user.locationId && tpl.agencyId !== user.agencyId) {
+  if (!user.agencyId || tpl.agencyId !== user.agencyId) {
     throw Object.assign(new Error('Acesso negado'), { status: 403 });
   }
   return prisma.messageTemplate.update({
@@ -51,7 +50,7 @@ export const update = async (id: string, data: any, user: any) => {
 export const remove = async (id: string, user: any) => {
   const tpl = await prisma.messageTemplate.findUnique({ where: { id } });
   if (!tpl) throw Object.assign(new Error('Template não encontrado'), { status: 404 });
-  if (tpl.locationId !== user.locationId && tpl.agencyId !== user.agencyId) {
+  if (!user.agencyId || tpl.agencyId !== user.agencyId) {
     throw Object.assign(new Error('Acesso negado'), { status: 403 });
   }
   await prisma.messageTemplate.delete({ where: { id } });

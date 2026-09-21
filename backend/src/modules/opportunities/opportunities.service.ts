@@ -7,10 +7,6 @@ const buildWhereClause = async (user: any): Promise<any> => {
   if ((user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') && user.agencyId) {
     return { agencyId: user.agencyId };
   }
-  if (user.role === 'LOCATION_ADMIN' && user.locationId) {
-    // locationId OR agencyId (covers opps created before locationId was set)
-    return { OR: [{ locationId: user.locationId }, { agencyId: user.agencyId ?? '__none__' }] };
-  }
   if (user.role === 'TEAM_LEADER') {
     const subs = await prisma.user.findMany({ where: { supervisorId: user.id }, select: { id: true } });
     const ids = [user.id, ...subs.map((s: any) => s.id)];
@@ -51,7 +47,6 @@ export const list = async (
       orderBy: [{ stage: 'asc' }, { position: 'asc' }],
       include: {
         contact: { select: { id: true, name: true, email: true, phone: true } },
-        property: { select: { id: true, title: true, price: true, type: true } },
         assignedTo: { select: { id: true, name: true, email: true } },
         _count: { select: { interactions: true, tasks: true } },
       },
@@ -91,7 +86,6 @@ export const create = async (
     notes?: string;
     position?: number;
     contactId: string;
-    propertyId?: string;
     assignedToId?: string;
     // Dynamic fields
     selling_also?: boolean;
@@ -126,10 +120,8 @@ export const create = async (
       notes: dto.notes,
       position,
       contactId: dto.contactId,
-      propertyId: dto.propertyId || undefined,
       assignedToId: (user.role === 'CONSULTANT' ? user.id : dto.assignedToId) || user.id,
       agencyId: user.agencyId ?? null,
-      locationId: user.locationId ?? null,
       selling_also: dto.selling_also ?? false,
       needs_financing: dto.needs_financing ?? false,
       property_address: dto.property_address,
@@ -140,7 +132,6 @@ export const create = async (
     },
     include: {
       contact: { select: { id: true, name: true, email: true, phone: true } },
-      property: { select: { id: true, title: true, price: true } },
       assignedTo: { select: { id: true, name: true } },
     },
   });
@@ -343,7 +334,6 @@ export const getById = async (id: string, user: any) => {
     where,
     include: {
       contact: { select: { id: true, name: true, email: true, phone: true } },
-      property: true,
       assignedTo: { select: { id: true, name: true, email: true } },
       interactions: {
         orderBy: { createdAt: 'desc' },
@@ -376,7 +366,6 @@ export const update = async (
     notes?: string;
     position?: number;
     contactId?: string;
-    propertyId?: string;
     assignedToId?: string;
     // Dynamic fields
     selling_also?: boolean;
@@ -419,7 +408,6 @@ export const update = async (
       notes: dto.notes,
       // Never overwrite position via update — use moveStage for that
       contactId: dto.contactId || undefined,
-      propertyId: dto.propertyId || undefined,
       assignedToId: dto.assignedToId || undefined,
       selling_also: dto.selling_also,
       needs_financing: dto.needs_financing,
@@ -431,7 +419,6 @@ export const update = async (
     },
     include: {
       contact: { select: { id: true, name: true, email: true, phone: true } },
-      property: { select: { id: true, title: true, price: true } },
       assignedTo: { select: { id: true, name: true } },
     },
   });
@@ -521,7 +508,6 @@ export const moveStage = async (
       data: { stage: newStage as any, position: adjustedPosition, stageId: newStageId || null },
       include: {
         contact: { select: { id: true, name: true, email: true, phone: true } },
-        property: { select: { id: true, title: true, price: true } },
         assignedTo: { select: { id: true, name: true } },
       },
     });

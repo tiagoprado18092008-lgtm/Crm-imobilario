@@ -23,7 +23,6 @@ export const create = async (data: { name: string; color?: string; description?:
       color: data.color || '#6366f1',
       description: data.description,
       agencyId: (scope as any).agencyId || null,
-      locationId: (scope as any).locationId || null,
     },
     include: { _count: { select: { appointments: true } } },
   });
