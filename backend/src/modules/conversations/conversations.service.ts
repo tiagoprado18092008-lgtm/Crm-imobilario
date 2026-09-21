@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { automationEngine } from '../../utils/automation.engine';
 import { sendWhatsAppMessage } from '../../utils/whatsapp.service';
 import { sendEmail } from '../../utils/email.service';
 import { sendInstagramDM } from '../../utils/instagram.service';
@@ -397,6 +398,21 @@ export const receiveInbound = async (
 
   // Broadcast real-time event
   eventBus.emit('new_message', { conversationId: conversation.id, message, agencyId: conversation.agencyId });
+
+  // An inbound message means the conversation has started, so any cadence
+  // still running for this contact stops here. Continuing to send after a
+  // reply is the behaviour most likely to lose the deal the sequence was
+  // meant to win.
+  if (conversation.contactId) {
+    const stopEvent =
+      channel === 'WHATSAPP' ? 'REPLY_WHATSAPP' : channel === 'SMS' ? 'REPLY_SMS' : 'REPLY_EMAIL';
+    await automationEngine
+      .stopEnrollmentsFor(conversation.contactId, stopEvent as any, conversation.agencyId)
+      .catch((err: any) => {
+        // A failure here must not lose the message that has just arrived.
+        console.warn('[Sequences] Falha a parar sequências:', err?.message ?? err);
+      });
+  }
 
   // IA de Qualificação — extrai dados automaticamente de mensagens inbound
   if (conversation.contactId && content.length > 10) {
