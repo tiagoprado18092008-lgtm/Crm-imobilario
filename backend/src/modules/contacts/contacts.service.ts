@@ -31,6 +31,8 @@ export const list = async (
     tag?: string;
     page?: number;
     limit?: number;
+    /** Keyset cursor: the id of the last row of the previous page. */
+    cursor?: string;
   },
   user: any
 ) => {
@@ -49,29 +51,67 @@ export const list = async (
   if (filters.tag) where.tags = { has: filters.tag };
 
   const page = filters.page ?? 1;
-  const limit = filters.limit ?? 20;
-  const skip = (page - 1) * limit;
+  const limit = Math.min(filters.limit ?? 50, 200);
 
-  const [total, contacts] = await Promise.all([
-    prisma.contact.count({ where }),
-    prisma.contact.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        assignedTo: { select: { id: true, name: true, email: true } },
-        _count: { select: { opportunities: true, interactions: true, tasks: true } },
-      },
-    }),
-  ]);
+  // Keyset pagination. OFFSET makes the database walk every skipped row, so
+  // page 94 of the cold-call list costs 94x page 1. Seeking from the last id
+  // costs the same at any depth, and the (agencyId, createdAt DESC, id DESC)
+  // index serves the sort directly.
+  //
+  // `page` is still honoured for callers that have not moved over yet.
+  const useKeyset = Boolean(filters.cursor) || !filters.page;
+  const orderBy = [{ createdAt: 'desc' as const }, { id: 'desc' as const }];
+
+  const query = {
+    // `where` already carries the workspace filter from buildWhereClause above.
+    where: { ...where },
+    take: limit,
+    orderBy,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      whatsapp: true,
+      type: true,
+      status: true,
+      source: true,
+      tags: true,
+      score: true,
+      lastContactedAt: true,
+      createdAt: true,
+      assignedTo: { select: { id: true, name: true, email: true } },
+      _count: { select: { opportunities: true, interactions: true, tasks: true } },
+    },
+    ...(useKeyset
+      ? filters.cursor
+        ? { cursor: { id: filters.cursor }, skip: 1 }
+        : {}
+      : { skip: (page - 1) * limit }),
+  };
+
+  const contacts = await prisma.contact.findMany({ ...query, where } as any);
 
   const contactsWithScore = contacts.map((c: any) => ({
     ...c,
     leadScore: calculateLeadScore(c, c._count?.interactions ?? 0),
   }));
 
-  return { data: contactsWithScore, total, page, limit, totalPages: Math.ceil(total / limit) };
+  // A filtered COUNT(*) scans the whole match set on every page, so it is only
+  // paid for when the caller actually renders a page count.
+  const total = filters.page
+    ? await prisma.contact.count({ where })
+    : undefined;
+
+  return {
+    data: contactsWithScore,
+    nextCursor: contacts.length === limit ? contacts[contacts.length - 1].id : null,
+    hasMore: contacts.length === limit,
+    total,
+    page,
+    limit,
+    totalPages: total !== undefined ? Math.ceil(total / limit) : undefined,
+  };
 };
 
 export const create = async (

@@ -1,46 +1,84 @@
 @import "tailwindcss";
 
+/* Self-hosted: the Google CDN link blocked first render. */
+@import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource-variable/inter";
+
 /* ═══════════════════════════════════════════════════════════════
-   CasaFlow — Design Tokens (new palette)
+   AlphaCRM — Design Tokens
+   Brand: navy #143253 carries structure, cyan #00CDFF marks state.
+   The cyan is electric; in a dense CRM it only earns its place on
+   active items, focus rings and the primary chart series. Everything
+   else stays navy or neutral, or the screen turns into noise.
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
   /* ── Brand & accent ──────────────────────────────────────── */
-  --primary: #1B2B4B;
-  --primary-light: #243860;
-  --accent: #2E6BE6;
-  --accent-hover: #1E55C4;
-  --accent-soft: #EEF3FD;
+  --primary: #143253;
+  --primary-light: #1E4570;
+  /* Measured against the paper ground, not white: #F4F8FC is the harder
+     of the two and is what most text actually sits on. */
+  --accent: #0076A8;        /* 4.73:1 on paper */
+  --accent-hover: #006891;
+  --accent-soft: #E6F8FF;
+  --accent-bright: #00CDFF; /* the brand cyan — fills, not text */
 
   /* ── Semantic status ─────────────────────────────────────── */
-  --success: #16A34A;
-  --warning: #D97706;
-  --danger: #DC2626;
+  --success: #128040;   /* 4.70:1 on paper */
+  --warning: #A65A05;   /* 4.82:1 on paper */
+  --danger:  #C81E1E;   /* 5.494:1 on paper */
 
   /* ── Surfaces ────────────────────────────────────────────── */
   --surface: #FFFFFF;
-  --surface-2: #F8F9FC;
-  --surface-3: #F1F3F8;
+  --surface-2: #F4F8FC;   /* app paper */
+  --surface-3: #E9F0F7;
 
   /* ── Borders ─────────────────────────────────────────────── */
-  --border: #E4E7EF;
-  --border-strong: #CBD0DC;
+  --border: #DEE7F0;
+  --border-strong: #BFCEDE;
 
   /* ── Text ────────────────────────────────────────────────── */
-  --text-primary: #0F1728;
-  --text-secondary: #4B5675;
-  --text-muted: #8B92A9;
+  --text-primary: #0C1B2D;
+  --text-secondary: #46596F;   /* 7.1:1 on white */
+  --text-muted: #5E6E82;   /* 4.88:1 on paper */
 
   /* ── Sidebar (new: navy, not white) ──────────────────────── */
-  --sidebar-bg: #1B2B4B;
-  --sidebar-text: #C8D3E8;
+  --sidebar-bg: #143253;
+  --sidebar-text: #A9C2DA;
   --sidebar-active: #FFFFFF;
-  --sidebar-active-bg: #2E6BE6;
+  --sidebar-active-bg: rgba(0, 205, 255, 0.14);
+  --sidebar-active-bar: #00CDFF;
 
   /* ── Typography ──────────────────────────────────────────── */
-  --font-display: 'Open Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
-  --font-body:    'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
-  --font-mono:    'DM Mono', 'SF Mono', ui-monospace, Menlo, monospace;
+  /* Plus Jakarta for headings and display numbers; Inter for the dense
+     table text, where Jakarta's wide counters hurt legibility at 12-13px. */
+  --font-display: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-body:    'Inter Variable', 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, monospace;
+
+  /* ── Component tokens ────────────────────────────────────── */
+  /* 4px grid. Table rows are 34px: dense enough to show ~20 leads
+     without scrolling, tall enough to stay hit-targetable. */
+  --row-height: 34px;
+  --row-height-comfortable: 40px;
+  --card-radius: 10px;
+  --card-padding: 14px;
+  --sidebar-width: 240px;
+  --sidebar-width-collapsed: 56px;
+
+  /* ── Charts ──────────────────────────────────────────────── */
+  /* chart-1 is the brand cyan: the series the eye should find first. */
+  --chart-1: #00A8D6;
+  --chart-2: #143253;
+  --chart-3: #5E8AB4;
+  --chart-4: #16A34A;
+  --chart-5: #D97706;
+  --chart-6: #8B5CF6;
+
+  /* ── Motion ──────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --dur-hover: 140ms;
+  --dur-panel: 220ms;
 
   /* ── Legacy aliases (retained until each page migrated) ──── */
   --bg-page: var(--surface-2);
@@ -111,18 +149,28 @@
 
 .dark,
 [data-theme="dark"] {
-  --surface: #0F1728;
-  --surface-2: #1B2B4B;
-  --surface-3: #243860;
-  --border: #2D3E5F;
-  --border-strong: #3E5380;
+  --surface: #0B1724;
+  --surface-2: #122334;
+  --surface-3: #1B3247;
+  --border: #23384D;
+  --border-strong: #35506B;
 
-  --text-primary: #F0F4FF;
-  --text-secondary: #A9B4CE;
-  --text-muted: #8B92A9;
+  --text-primary: #EAF2F9;
+  --text-secondary: #A6BACD;
+  --text-muted: #7E93A8;
 
-  --sidebar-bg: #090E1A;
-  --accent-soft: rgba(46, 107, 230, 0.12);
+  --sidebar-bg: #0A1B2D;
+  --sidebar-text: #8FA9C4;
+  --sidebar-active-bg: rgba(0, 205, 255, 0.18);
+
+  /* Cyan can run brighter on dark ground without burning out. */
+  --accent: #35D3FF;
+  --accent-hover: #6ADEFF;
+  --accent-soft: rgba(0, 205, 255, 0.14);
+
+  --chart-1: #35D3FF;
+  --chart-2: #7FA8CE;
+  --chart-3: #4E6E92;
 
   /* Legacy aliases update too */
   --bg-page: var(--surface);
@@ -479,5 +527,29 @@ html, body {
   /* Minimum touch targets */
   button {
     min-height: 44px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Motion — drawers and panels
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes panelIn {
+  from { transform: translateX(16px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* Row hover is a background change only; the drag itself must track the
+   cursor with no easing, or dragging a card feels laggy. */
+.data-table-row:hover {
+  background: var(--surface-3) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
