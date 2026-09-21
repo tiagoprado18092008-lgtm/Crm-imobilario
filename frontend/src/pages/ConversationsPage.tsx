@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   MessageCircle, Mail, Search, Send, Star, Inbox,
-  Clock, CheckCheck, Check, Plus, X, Filter,
+  Clock, CheckCheck, Check, Plus, X, Filter, AlertCircle,
   Smartphone, ChevronDown, ChevronRight, User, Tag,
   PhoneCall, Calendar, AtSign, Edit2, Save, Archive,
   FileText, Phone, ChevronLeft, Wifi, WifiOff, BookOpen,
@@ -533,6 +533,9 @@ const Composer: React.FC<{
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
+    // "/" on an empty composer opens the templates, the way a slash command
+    // works elsewhere. Only when empty, so it stays typeable in a sentence.
+    else if (e.key === '/' && text.trim() === '') { e.preventDefault(); setShowTemplates(true) }
   }
 
   return (
@@ -568,7 +571,7 @@ const Composer: React.FC<{
 
         {/* textarea */}
         <textarea ref={textRef} value={text} onChange={e => setText(e.target.value)} onKeyDown={handleKeyDown}
-          placeholder={activeChannel === 'INTERNAL' ? 'Escrever nota interna... (visível só para a equipa)' : 'Escrever mensagem... (Enter para enviar, Shift+Enter para nova linha)'}
+          placeholder={activeChannel === 'INTERNAL' ? 'Nota interna — visível só para a equipa' : 'Escrever mensagem. / para templates, Enter para enviar'}
           rows={3}
           style={{
             width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--input-border)',
@@ -622,7 +625,18 @@ const Composer: React.FC<{
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-type FilterId = 'unread' | 'all' | 'recents' | 'starred' | 'mine_unread' | 'mine_all' | 'internal_unread' | 'internal_all'
+/**
+ * A conversation waiting on us: the contact wrote last, and that was more than
+ * a day ago. Unread is not the same thing — a message can be read and still
+ * unanswered, which is exactly how a warm lead goes cold.
+ */
+const AWAITING_HOURS = 24
+function isAwaitingReply(c: { isRead: boolean; lastMessageAt: string }): boolean {
+  const ageHours = (Date.now() - new Date(c.lastMessageAt).getTime()) / 3_600_000
+  return !c.isRead && ageHours >= AWAITING_HOURS
+}
+
+type FilterId = 'unread' | 'all' | 'recents' | 'starred' | 'awaiting' | 'mine_unread' | 'mine_all' | 'internal_unread' | 'internal_all'
 
 export const ConversationsPage: React.FC = () => {
   const { user } = useAuthStore()
@@ -761,6 +775,9 @@ export const ConversationsPage: React.FC = () => {
       case 'unread': return !c.isRead
       case 'starred': return c.isStarred
       case 'recents': return Date.now() - new Date(c.lastMessageAt).getTime() < 7 * 24 * 60 * 60 * 1000
+      // Conversations the contact last spoke in, still unanswered a day
+      // later. This is the queue that quietly loses deals.
+      case 'awaiting': return isAwaitingReply(c)
       case 'mine_unread': return c.assignedToId === user?.id && !c.isRead
       case 'mine_all': return c.assignedToId === user?.id
       case 'internal_unread': return c.channel === 'INTERNAL' && !c.isRead
@@ -770,6 +787,7 @@ export const ConversationsPage: React.FC = () => {
   })
 
   const unreadCount = conversations.filter(c => !c.isRead).length
+  const awaitingCount = conversations.filter(isAwaitingReply).length
 
   const groupedMessages = (() => {
     const groups: { date: string; messages: Message[] }[] = []
@@ -791,6 +809,7 @@ export const ConversationsPage: React.FC = () => {
       label: 'Caixa de entrada',
       items: [
         { id: 'unread', label: 'Não lidas', icon: Inbox, badge: unreadCount || undefined },
+        { id: 'awaiting', label: 'Sem resposta há 24h', icon: AlertCircle, badge: awaitingCount || undefined },
         { id: 'recents', label: 'Recentes', icon: Clock },
         { id: 'starred', label: 'Com estrela', icon: Star },
         { id: 'all', label: 'Todas', icon: MessageCircle },
@@ -1047,8 +1066,30 @@ export const ConversationsPage: React.FC = () => {
             <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(46,107,230,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <MessageCircle size={28} style={{ color: 'var(--accent)' }} />
             </div>
-            <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-secondary)', margin: 0 }}>Seleciona uma conversa</p>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Clica numa conversa para ver as mensagens</p>
+            <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', margin: 0 }}>
+              {filtered.length > 0 ? 'Escolhe uma conversa' : 'Caixa vazia'}
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0, maxWidth: 300, textAlign: 'center' }}>
+              {awaitingCount > 0
+                ? `${awaitingCount} conversa${awaitingCount === 1 ? '' : 's'} à espera de resposta há mais de um dia.`
+                : filtered.length > 0
+                ? 'Seleciona à esquerda para ler e responder.'
+                : 'Sem mensagens nesta vista. Começa uma conversa nova para contactar alguém.'}
+            </p>
+            {/* An empty screen is an invitation to act, not a dead end. */}
+            <button
+              onClick={() => (awaitingCount > 0 ? setFilter('awaiting') : setShowNewModal(true))}
+              style={{
+                height: 32, padding: '0 14px', marginTop: 2,
+                border: awaitingCount > 0 ? 'none' : '1px solid var(--border-strong)',
+                borderRadius: 7,
+                background: awaitingCount > 0 ? 'var(--primary)' : 'var(--surface)',
+                color: awaitingCount > 0 ? '#fff' : 'var(--text-primary)',
+                fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)', cursor: 'pointer',
+              }}
+            >
+              {awaitingCount > 0 ? 'Ver as que esperam resposta' : 'Nova conversa'}
+            </button>
           </div>
         )}
 

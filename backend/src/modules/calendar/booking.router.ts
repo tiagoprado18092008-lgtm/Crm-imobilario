@@ -94,14 +94,15 @@ router.post('/:userId/book', async (req: Request, res: Response, next: NextFunct
           name, email, phone: phone || null,
           assignedToId: userId,
           source: 'Agendamento Online',
-          type: 'BUYER' as any,
+          type: 'LEAD' as any,
+          agencyId: user.agencyId ?? null,
         },
       });
     }
 
     const appointment = await prisma.appointment.create({
       data: {
-        title: `${type === 'VISIT' ? 'Visita' : 'Reunião'} com ${name}`,
+        title: `Reunião com ${name}`,
         description: notes || null,
         startAt, endAt,
         type: type || 'GENERAL_MEETING',
@@ -109,8 +110,28 @@ router.post('/:userId/book', async (req: Request, res: Response, next: NextFunct
         assignedToId: userId,
         contactId: contact.id,
         notes: notes || null,
+        agencyId: user.agencyId ?? null,
       },
     });
+
+    // The meeting also lands on the contact's timeline. An appointment that
+    // exists only in the calendar is invisible from the record it belongs to.
+    await prisma.interaction
+      .create({
+        data: {
+          contactId: contact.id,
+          createdById: userId,
+          agencyId: user.agencyId ?? null,
+          type: 'MEETING',
+          direction: 'INBOUND',
+          subject: 'Reunião marcada pelo próprio',
+          body: `Marcada através do link de marcação${notes ? `. Notas: ${notes}` : '.'}`,
+        },
+      })
+      .catch(() => {
+        // The booking is already confirmed; a timeline entry that failed to
+        // write must not turn a successful booking into an error.
+      });
 
     try {
       const transporter = nodemailer.createTransport({
@@ -130,7 +151,7 @@ router.post('/:userId/book', async (req: Request, res: Response, next: NextFunct
             <div style="background:#f8f9fc;border:1px solid #e5e9f2;border-radius:10px;padding:16px 20px;margin:16px 0">
               <p style="margin:0 0 8px"><strong>📅 Data:</strong> ${new Date(startAt).toLocaleDateString('pt-PT', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</p>
               <p style="margin:0 0 8px"><strong>🕐 Hora:</strong> ${time}</p>
-              <p style="margin:0"><strong>📍 Tipo:</strong> ${type === 'VISIT' ? 'Visita ao imóvel' : 'Reunião'}</p>
+              <p style="margin:0"><strong>Com:</strong> ${user.name}</p>
             </div>
             ${notes ? `<p><strong>Notas:</strong> ${notes}</p>` : ''}
             <p style="color:#888;font-size:12px">Em caso de necessidade de reagendamento, contacta-nos diretamente.</p>
