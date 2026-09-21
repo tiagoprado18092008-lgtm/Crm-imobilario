@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { workspaceIdFor } from '../../lib/workspace';
 import { fireTrigger } from '../../utils/automation.engine';
 import { buildScope } from '../../lib/scope';
 import { logActivity } from '../../lib/activity-logger';
@@ -102,12 +103,13 @@ export const create = async (
       email: dto.email,
       phone: dto.phone,
       whatsapp: dto.whatsapp,
-      type: (dto.type as any) ?? 'BUYER',
+      type: (dto.type as any) ?? 'LEAD',
       status: (dto.status as any) ?? 'NEW',
       source: dto.source,
       notes: dto.notes,
       preferences: dto.preferences,
       assignedToId: dto.assignedToId || userId,
+      agencyId: typeof user === 'string' ? undefined : user.agencyId ?? undefined,
       city: dto.city,
       postalCode: dto.postalCode,
       gdprConsent: dto.gdprConsent ?? false,
@@ -188,6 +190,7 @@ export const bulkImport = async (
       notes: row.notes || undefined,
       city: row.city || undefined,
       assignedToId: userId,
+      agencyId: typeof user === 'string' ? undefined : user.agencyId ?? undefined,
     });
   }
 

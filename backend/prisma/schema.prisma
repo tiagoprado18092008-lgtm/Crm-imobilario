@@ -54,16 +54,33 @@ model Agency {
   apiKey      String? @unique
   isActive    Boolean @default(true)
 
-  users                User[]
-  automations          Automation[]
-  automationRules      AutomationRule[]
-  settings             AgencySettings?
-  pipelines            Pipeline[]
-  opportunities        Opportunity[]
-  appointmentCalendars AppointmentCalendar[]
-  whatsappSessions     WhatsAppSession[]
-  systemSettings       SystemSettings[]
-  conversations        Conversation[]
+  users                  User[]
+  automations            Automation[]
+  automationRules        AutomationRule[]
+  settings               AgencySettings?
+  pipelines              Pipeline[]
+  opportunities          Opportunity[]
+  appointmentCalendars   AppointmentCalendar[]
+  whatsappSessions       WhatsAppSession[]
+  systemSettings         SystemSettings[]
+  conversations          Conversation[]
+  contact                Contact[]
+  interaction            Interaction[]
+  task                   Task[]
+  message                Message[]
+  phoneNumber            PhoneNumber[]
+  appointment            Appointment[]
+  emailCampaign          EmailCampaign[]
+  emailCampaignRecipient EmailCampaignRecipient[]
+  form                   Form[]
+  formSubmission         FormSubmission[]
+  automationLog          AutomationLog[]
+  automationEnrollment   AutomationEnrollment[]
+  automationRun          AutomationRun[]
+  calendarIntegration    CalendarIntegration[]
+  calendarEvent          CalendarEvent[]
+  calendarSlot           CalendarSlot[]
+  pipelineStage          PipelineStage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -176,6 +193,13 @@ model Contact {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([agencyId, assignedToId, createdAt(sort: Desc)])
 }
 
 model Opportunity {
@@ -207,6 +231,10 @@ model Opportunity {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([agencyId, stageId, position])
+  @@index([agencyId, stage, expectedCloseDate])
 }
 
 model Interaction {
@@ -225,6 +253,12 @@ model Interaction {
   createdBy     User         @relation(fields: [createdById], references: [id])
 
   createdAt DateTime @default(now())
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  @@index([agencyId, contactId, createdAt(sort: Desc)])
 }
 
 model Task {
@@ -245,6 +279,12 @@ model Task {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  @@index([agencyId, assignedToId, status, dueDate])
 }
 
 model Conversation {
@@ -311,6 +351,10 @@ model AutomationLog {
   status     String         @default("SUCCESS") // SUCCESS, FAILED
   error      String?
   executedAt DateTime       @default(now())
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
 }
 
 model Message {
@@ -330,6 +374,12 @@ model Message {
 
   metadata  String? // JSON string for extra data (attachments, etc.)
   createdAt DateTime @default(now())
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  @@index([conversationId, createdAt])
 }
 
 model PhoneNumber {
@@ -351,6 +401,10 @@ model PhoneNumber {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
 }
 
 model AppointmentCalendar {
@@ -390,6 +444,12 @@ model Appointment {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  @@index([agencyId, assignedToId, startAt])
 }
 
 model EmailCampaign {
@@ -416,6 +476,10 @@ model EmailCampaign {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
 }
 
 model EmailCampaignRecipient {
@@ -429,6 +493,10 @@ model EmailCampaignRecipient {
   sentAt     DateTime?
   openedAt   DateTime?
   createdAt  DateTime      @default(now())
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
 }
 
 model Form {
@@ -447,6 +515,10 @@ model Form {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
 }
 
 model FormSubmission {
@@ -458,6 +530,10 @@ model FormSubmission {
   contact   Contact? @relation(fields: [contactId], references: [id])
   ipAddress String?
   createdAt DateTime @default(now())
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
 }
 
 model Invitation {
@@ -505,6 +581,10 @@ model AutomationEnrollment {
   finishedAt      DateTime?
 
   runs AutomationRun[]
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
 }
 
 model AutomationRun {
@@ -519,6 +599,10 @@ model AutomationRun {
   output       Json?
   error        String?
   executedAt   DateTime              @default(now())
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
 }
 
 model CalendarIntegration {
@@ -539,6 +623,10 @@ model CalendarIntegration {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   user              User      @relation(fields: [userId], references: [id])
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
 
   @@unique([userId, provider])
 }
@@ -571,8 +659,13 @@ model CalendarEvent {
   user             User      @relation(fields: [userId], references: [id])
   contact          Contact?  @relation(fields: [contactId], references: [id])
 
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
   @@unique([userId, externalId, externalProvider])
   @@index([userId, startAt, endAt])
+  @@index([agencyId, userId, startAt])
 }
 
 model CalendarSlot {
@@ -583,6 +676,10 @@ model CalendarSlot {
   endTime     String
   isAvailable Boolean @default(true)
   user        User    @relation(fields: [userId], references: [id])
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
 }
 
 // Key-value store for system settings that must persist across deployments
@@ -620,6 +717,12 @@ model PipelineStage {
   opportunities Opportunity[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+
+  // Tenant owner, denormalised so every query can filter on one indexed column.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  @@index([pipelineId, position])
 }
 
 model WhatsAppSession {

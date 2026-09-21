@@ -290,6 +290,7 @@ export const sendMessage = async (
   const message = await prisma.message.create({
     data: {
       conversationId,
+      agencyId: conversation.agencyId,
       direction: 'OUTBOUND',
       channel,
       content,
@@ -378,6 +379,7 @@ export const receiveInbound = async (
   const message = await prisma.message.create({
     data: {
       conversationId: conversation.id,
+      agencyId: conversation.agencyId,
       direction: 'INBOUND',
       channel,
       content,
