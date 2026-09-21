@@ -2,7 +2,7 @@
 
 > Data: 2026-09-21 · Fase 0 · Autor: Claude Opus 5
 > Base: [`docs/AUDITORIA.md`](AUDITORIA.md). Prompt mestre nas secções 1–15 (as §5 e §11 foram substituídas pela §5 da auditoria).
-> **Estado: Fases 0 a 2 concluídas. Fase 3 em curso.**
+> **Estado: Fases 0 a 3 concluídas. A seguir: Fase 4 (Telefonia Zadarma).**
 
 ---
 
@@ -69,7 +69,7 @@ Cada fase: branch próprio, PR com checklist, `tsc --noEmit` limpo, `eslint` lim
 | **1 — Limpeza e reset** ✅ | Remover Property e Location; consolidar os 3 ecrãs de equipa; renomear CasaFlow→AlphaCRM; remover terminologia imobiliária; corrigir `buildScope` (R21) | ✅ 0 referências a `Property`/`Location`; ✅ 3 grupos de navegação; ✅ backend `tsc` limpo; ✅ build do frontend passa (erros 61→56, todos herdados) | **concluída** |
 | **1.5 — `workspaceId`** ✅ | Desnormalizar `agencyId` em 17 modelos; `lib/workspace.ts`; índices compostos + pg_trgm; **teste anti-fuga** (leituras, escritas e allowlist obsoleta) | ✅ 3 testes a passar; ✅ 0 leituras não scoped; ✅ 4 fugas reais corrigidas; ✅ teste validado com fuga injetada | **concluída** |
 | **2 — Fundações** ✅ | Design system (tokens OKLCH, navy/cyan, Plus Jakarta + Inter); `DataTable` virtualizada; `Board` (migrar `@hello-pangea/dnd` → dnd-kit); `RecordPanel`; `CommandPalette`; atalhos; keyset pagination; índices compostos; pg_trgm; SSE; `next-intl`-equivalente + `pt-PT.json`; unificar Zod | ✅ `Cmd+K`; ✅ contraste AA 15/15 por script; ✅ bundle 3.1MB→824KB; ✅ keyset + índices + pg_trgm; ✅ DataTable ligada aos Contactos; ✅ SSE isolado por workspace; ✅ glossário pt-PT com verificação | **concluída** |
-| **3 — Núcleo de vendas** 🟡 | `Lead`/`Company`/`Person`/`Deal`; Caixa de Leads + conversão; 2 pipelines com campos obrigatórios e rotting; `Activity`; **`/hoje`**; Vistas Guardadas + ações em massa; **importador CSV** (§1.1) | ✅ `Lead`/`Company`/`SavedView` + migração; ✅ conversão transacional; ✅ dispositions com backoff; ✅ importador com pré-visualização (37 testes); ✅ `/hoje` é a rota inicial; ✅ 6 vistas de leads; ⬜ campos obrigatórios por fase e rotting no kanban; ⬜ ações em massa | **em curso** |
+| **3 — Núcleo de vendas** ✅ | `Lead`/`Company`/`Person`/`Deal`; Caixa de Leads + conversão; 2 pipelines com campos obrigatórios e rotting; `Activity`; **`/hoje`**; Vistas Guardadas + ações em massa; **importador CSV** (§1.1) | ✅ `Lead`/`Company`/`SavedView` + migração; ✅ conversão transacional; ✅ dispositions com backoff; ✅ importador com pré-visualização (37 testes); ✅ `/hoje` é a rota inicial; ✅ 6 vistas de leads; ✅ campos obrigatórios por fase; ✅ rotting nos cards; ✅ seleção e atribuição em massa; 51 testes | **concluída** |
 | **4 — Telefonia Zadarma** 🔴 | `ITelephonyProvider`; `ZadarmaProvider`; HMAC testado; extensões SIP; softphone SIP.js; webhooks; gravações em storage próprio; dispositions; power dialer; compliance | BDR faz 50 chamadas de um **+351** sem sair do CRM; todas com disposition; gravação na ficha; teste de opt-out a passar | 3 sem |
 | **5 — Comunicação** | Inbox com atribuição e templates; sequências multicanal com paragem à resposta; links de marcação; lembretes | Sequência de 5 passos para sozinha à resposta; link de marcação cria evento + atividade | 2 sem |
 | **6 — Fecho** | Produtos, line items, propostas com link público e PDF, DocuSign, webhook → Ganho | Proposta €700 gerada, enviada, assinada, negócio fecha sozinho | 2 sem |
