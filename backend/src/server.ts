@@ -12,6 +12,7 @@ import authRouter from './modules/auth/auth.router';
 import usersRouter from './modules/users/users.router';
 import contactsRouter from './modules/contacts/contacts.router';
 import leadsRouter from './modules/leads/leads.router';
+import zadarmaWebhooks from './modules/telephony/webhooks.router';
 import opportunitiesRouter from './modules/opportunities/opportunities.router';
 import interactionsRouter from './modules/interactions/interactions.router';
 import tasksRouter from './modules/tasks/tasks.router';
@@ -48,6 +49,7 @@ import { eventBus } from './utils/event-bus';
 import { startImapPolling } from './utils/imap.service';
 import { registerEventListeners, registerV2EventListeners } from './utils/automation.engine';
 import { startAutomationCron } from './jobs/automation-cron';
+import { startRecordingJobs } from './jobs/recordings-cron';
 import { startCalendarCron } from './lib/calendar-cron';
 import { startOverdueTasksCron } from './lib/overdue-tasks-cron';
 import { loadSettingsFromDB } from './modules/settings/settings.service';
@@ -426,6 +428,9 @@ app.use('/api', apiLimiter);
 app.use('/api/users', usersRouter);
 app.use('/api/contacts', contactsRouter);
 app.use('/api/leads', leadsRouter);
+// Unauthenticated by design: the provider cannot hold a session. Verified by
+// a path secret plus an IP allowlist inside the router.
+app.use('/api/webhooks/zadarma', zadarmaWebhooks);
 app.use('/api/opportunities', opportunitiesRouter);
 app.use('/api/interactions', interactionsRouter);
 app.use('/api/tasks', tasksRouter);
@@ -703,6 +708,7 @@ if (process.env.NODE_ENV !== 'test') {
       registerEventListeners();
       registerV2EventListeners();
       startAutomationCron();
+      startRecordingJobs();
       startCalendarCron();
       startOverdueTasksCron();
       restoreAllSessions().catch(() => {});

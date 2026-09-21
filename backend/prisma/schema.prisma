@@ -82,11 +82,15 @@ model Agency {
   calendarSlot           CalendarSlot[]
   pipelineStage          PipelineStage[]
 
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  Company   Company[]
-  Lead      Lead[]
-  SavedView SavedView[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  Company        Company[]
+  Lead           Lead[]
+  SavedView      SavedView[]
+  Call           Call[]
+  CallEvent      CallEvent[]
+  Recording      Recording[]
+  AgentExtension AgentExtension[]
 }
 
 model AgencySettings {
@@ -161,6 +165,9 @@ model User {
   ownedCompanies Company[]   @relation("CompanyOwner")
   ownedLeads     Lead[]      @relation("LeadOwner")
   savedViews     SavedView[] @relation("SavedViewOwner")
+
+  calls          Call[]
+  agentExtension AgentExtension?
 }
 
 model Contact {
@@ -210,6 +217,8 @@ model Contact {
   company   Company? @relation(fields: [companyId], references: [id])
   leads     Lead[]
 
+  calls Call[]
+
   @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([agencyId, assignedToId, createdAt(sort: Desc)])
 }
@@ -256,6 +265,8 @@ model Opportunity {
 
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
+
+  calls Call[]
 
   @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([agencyId, stageId, position])
@@ -893,6 +904,8 @@ model Company {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  calls Call[]
+
   @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([agencyId, type, sector])
   @@index([agencyId, nif])
@@ -954,6 +967,8 @@ model Lead {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
+  calls Call[]
+
   @@index([agencyId, state, nextAttemptAt])
   @@index([agencyId, ownerId, state])
   @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
@@ -990,4 +1005,160 @@ model SavedView {
   updatedAt DateTime @updatedAt
 
   @@index([agencyId, entity, position])
+}
+
+// ─── Telephony ────────────────────────────────────────────────────────────────
+
+enum CallDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum CallState {
+  INICIADA
+  A_TOCAR
+  ATENDIDA
+  TERMINADA
+  FALHADA
+}
+
+enum TelephonyProvider {
+  ZADARMA
+  TWILIO
+}
+
+/// One call. Calls used to be rows in Interaction, which left no room for
+/// disposition, recording, cost or provider reconciliation.
+model Call {
+  id String @id @default(cuid())
+
+  direction CallDirection
+  state     CallState     @default(INICIADA)
+
+  /// E.164 both sides.
+  from String
+  to   String
+
+  /// Whole call including ringing, and the part actually connected. The second
+  /// is the one worth reporting on.
+  duration Int?
+  talkTime Int?
+
+  /// Why the call went as it did. Mandatory at wrap-up: a call without one is
+  /// a call the pipeline cannot learn from.
+  disposition CallDisposition?
+  notes       String?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  contactId String?
+  contact   Contact?     @relation(fields: [contactId], references: [id])
+  companyId String?
+  company   Company?     @relation(fields: [companyId], references: [id])
+  leadId    String?
+  lead      Lead?        @relation(fields: [leadId], references: [id])
+  dealId    String?
+  deal      Opportunity? @relation(fields: [dealId], references: [id])
+
+  provider       TelephonyProvider @default(ZADARMA)
+  providerCallId String?
+  cost           Float?
+  currency       String?
+
+  /// Set when the call came from a power-dialer session.
+  queueId String?
+
+  recording Recording?
+  events    CallEvent[]
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([agencyId, startedAt(sort: Desc), id(sort: Desc)])
+  @@index([agencyId, userId, startedAt(sort: Desc)])
+  @@index([providerCallId])
+  @@index([agencyId, disposition])
+}
+
+/// Raw webhook log, for audit and for reconciling against provider statistics.
+/// Kept separate from Call so a malformed payload can never corrupt the call.
+model CallEvent {
+  id String @id @default(cuid())
+
+  callId String?
+  call   Call?   @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  provider       TelephonyProvider @default(ZADARMA)
+  providerCallId String?
+  eventType      String
+  payload        Json
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  /// Provider retries deliver the same event twice; this makes that a no-op.
+  @@unique([providerCallId, eventType])
+  @@index([agencyId, createdAt(sort: Desc)])
+}
+
+/// A recording, re-hosted in our own storage.
+///
+/// Provider quota is small (200MB free, 2GB on Office) and their links expire,
+/// so every recording is downloaded and stored by us on the day it is made.
+model Recording {
+  id String @id @default(cuid())
+
+  callId String @unique
+  call   Call   @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  /// Our own storage, not the provider's.
+  url       String
+  duration  Int?
+  sizeBytes Int?
+
+  transcript String?
+
+  /// Retention. GDPR: recordings for calls that did not convert are deleted
+  /// after 30 days (CNPD 1039/2017 for quality and training). A converted lead
+  /// moves to a pre-contractual basis with a longer, configurable period.
+  deleteAt DateTime?
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([agencyId, deleteAt])
+}
+
+/// A user's SIP extension on the PBX.
+model AgentExtension {
+  id String @id @default(cuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  extension   String
+  /// Encrypted at rest; the browser receives short-lived credentials from an
+  /// authenticated endpoint rather than these.
+  sipLogin    String?
+  sipPassword String?
+
+  isActive Boolean @default(true)
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId, extension])
 }

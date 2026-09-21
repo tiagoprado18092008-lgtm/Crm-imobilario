@@ -1,6 +1,7 @@
 import prisma from '../../config/database';
 import { withWorkspace, workspaceIdFor } from '../../lib/workspace';
 import { normalisePhone } from '../../lib/phone';
+import { effectOf } from '../../lib/dispositions';
 
 /**
  * Lead triage.
@@ -156,53 +157,20 @@ export const recordDisposition = async (
     data.notes = lead.notes ? `${lead.notes}\n\n[${now.toISOString()}] ${dto.notes}` : dto.notes;
   }
 
-  switch (dto.disposition) {
-    case 'NAO_CONTACTAR':
-      // Opting out removes the lead from every queue, sequence and future
-      // import. It is deliberately not reversible from the dialer.
-      data.optOutCalls = true;
-      data.state = 'DESQUALIFICADO';
-      data.disqualifiedReason = 'Pediu para não ser contactado';
-      break;
+  // One source of truth for what a disposition means, shared with the dialer
+  // and covered by its own tests.
+  const effect = effectOf(dto.disposition, lead.attempts + 1);
 
-    case 'NUMERO_ERRADO':
-      data.state = 'DESQUALIFICADO';
-      data.disqualifiedReason = 'Número errado';
-      break;
+  data.state = effect.state;
+  if (effect.optOutCalls) data.optOutCalls = true;
+  if (effect.disqualifiedReason) data.disqualifiedReason = effect.disqualifiedReason;
 
-    case 'ATENDEU_SEM_INTERESSE':
-      data.state = 'NURTURING';
-      break;
-
-    case 'REMARCAR':
-      data.state = 'A_TRABALHAR';
-      data.nextAttemptAt = dto.nextAttemptAt ? new Date(dto.nextAttemptAt) : null;
-      break;
-
-    case 'REUNIAO_MARCADA':
-    case 'ATENDEU_INTERESSADO':
-      data.state = 'QUALIFICADO';
-      break;
-
-    case 'NAO_ATENDEU':
-    case 'VOICEMAIL':
-    case 'GATEKEEPER':
-    case 'PEDIU_INFO_EMAIL':
-    default: {
-      data.state = 'A_TRABALHAR';
-      // Back off between attempts so a number is not dialled five times in a
-      // morning: 1, 2, 4, 7 days, then park it in nurturing.
-      const attempt = lead.attempts + 1;
-      const backoffDays = [1, 2, 4, 7][Math.min(attempt - 1, 3)];
-      if (attempt >= 5) {
-        data.state = 'NURTURING';
-      } else {
-        const next = new Date(now);
-        next.setDate(next.getDate() + backoffDays);
-        data.nextAttemptAt = next;
-      }
-      break;
-    }
+  if (effect.requiresDate) {
+    data.nextAttemptAt = dto.nextAttemptAt ? new Date(dto.nextAttemptAt) : null;
+  } else if (effect.retryInDays != null) {
+    const next = new Date(now);
+    next.setDate(next.getDate() + effect.retryInDays);
+    data.nextAttemptAt = next;
   }
 
   return prisma.lead.update({ where: { id }, data });
