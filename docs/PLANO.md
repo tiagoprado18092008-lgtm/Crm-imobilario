@@ -2,7 +2,7 @@
 
 > Data: 2026-09-21 · Fase 0 · Autor: Claude Opus 5
 > Base: [`docs/AUDITORIA.md`](AUDITORIA.md). Prompt mestre nas secções 1–15 (as §5 e §11 foram substituídas pela §5 da auditoria).
-> **Estado: Fases 0, 1 e 1.5 concluídas. Fase 2 em curso.**
+> **Estado: Fases 0 a 2 concluídas. A seguir: Fase 3 (Núcleo de vendas).**
 
 ---
 
@@ -68,7 +68,7 @@ Cada fase: branch próprio, PR com checklist, `tsc --noEmit` limpo, `eslint` lim
 | **0 — Baseline** ✅ | `AUDITORIA.md`, `PLANO.md`, `pg_dump`, Sentry (front+back), Vitest + Playwright instalados, feature flags, staging | Auditoria aprovada; staging a correr; Sentry a receber eventos | **em curso** |
 | **1 — Limpeza e reset** ✅ | Remover Property e Location; consolidar os 3 ecrãs de equipa; renomear CasaFlow→AlphaCRM; remover terminologia imobiliária; corrigir `buildScope` (R21) | ✅ 0 referências a `Property`/`Location`; ✅ 3 grupos de navegação; ✅ backend `tsc` limpo; ✅ build do frontend passa (erros 61→56, todos herdados) | **concluída** |
 | **1.5 — `workspaceId`** ✅ | Desnormalizar `agencyId` em 17 modelos; `lib/workspace.ts`; índices compostos + pg_trgm; **teste anti-fuga** (leituras, escritas e allowlist obsoleta) | ✅ 3 testes a passar; ✅ 0 leituras não scoped; ✅ 4 fugas reais corrigidas; ✅ teste validado com fuga injetada | **concluída** |
-| **2 — Fundações** 🟡 | Design system (tokens OKLCH, navy/cyan, Plus Jakarta + Inter); `DataTable` virtualizada; `Board` (migrar `@hello-pangea/dnd` → dnd-kit); `RecordPanel`; `CommandPalette`; atalhos; keyset pagination; índices compostos; pg_trgm; SSE; `next-intl`-equivalente + `pt-PT.json`; unificar Zod | ✅ `Cmd+K` funcional; ✅ contraste AA 15/15 verificado por script; ✅ bundle 3.1MB→824KB; ✅ keyset + índices; ⬜ ligar DataTable às páginas; ⬜ SSE; ⬜ i18n pt-PT | **em curso** |
+| **2 — Fundações** ✅ | Design system (tokens OKLCH, navy/cyan, Plus Jakarta + Inter); `DataTable` virtualizada; `Board` (migrar `@hello-pangea/dnd` → dnd-kit); `RecordPanel`; `CommandPalette`; atalhos; keyset pagination; índices compostos; pg_trgm; SSE; `next-intl`-equivalente + `pt-PT.json`; unificar Zod | ✅ `Cmd+K`; ✅ contraste AA 15/15 por script; ✅ bundle 3.1MB→824KB; ✅ keyset + índices + pg_trgm; ✅ DataTable ligada aos Contactos; ✅ SSE isolado por workspace; ✅ glossário pt-PT com verificação | **concluída** |
 | **3 — Núcleo de vendas** | `Lead`/`Company`/`Person`/`Deal`; Caixa de Leads + conversão; 2 pipelines com campos obrigatórios e rotting; `Activity`; **`/hoje`**; Vistas Guardadas + ações em massa; **importador CSV** (§1.1) | Fluxo lead→qualificar→negócio→ganho <2min; ≥6 vistas por defeito; `/hoje` é a rota inicial; CSV de clínicas importado com 0 mojibake e 100% E.164 | 3 sem |
 | **4 — Telefonia Zadarma** 🔴 | `ITelephonyProvider`; `ZadarmaProvider`; HMAC testado; extensões SIP; softphone SIP.js; webhooks; gravações em storage próprio; dispositions; power dialer; compliance | BDR faz 50 chamadas de um **+351** sem sair do CRM; todas com disposition; gravação na ficha; teste de opt-out a passar | 3 sem |
 | **5 — Comunicação** | Inbox com atribuição e templates; sequências multicanal com paragem à resposta; links de marcação; lembretes | Sequência de 5 passos para sozinha à resposta; link de marcação cria evento + atividade | 2 sem |
