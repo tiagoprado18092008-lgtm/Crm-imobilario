@@ -35,7 +35,6 @@ export const create = async (
   email: string,
   role: string,
   invitedById: string,
-  locationId?: string,
   permissions?: any,
   agencyId?: string,
   type?: string,

@@ -215,8 +215,18 @@ model Contact {
 }
 
 model Opportunity {
-  id                String         @id @default(cuid())
-  title             String
+  id    String @id @default(cuid())
+  title String
+
+  /// Denormalised activity clock. Recomputing "days since last activity"
+  /// across every card on every board render is what makes a kanban crawl.
+  lastActivityAt DateTime?
+  nextActivityAt DateTime?
+  /// When the deal crossed its stage's rot threshold. Null while healthy.
+  rottingAt      DateTime?
+  /// Set on each stage change, so rotting measures time in the current stage.
+  stageEnteredAt DateTime?
+
   stage             String         @default("LEAD_IN")
   value             Float?
   probability       Int            @default(50)
@@ -250,6 +260,8 @@ model Opportunity {
   @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([agencyId, stageId, position])
   @@index([agencyId, stage, expectedCloseDate])
+  @@index([agencyId, nextActivityAt])
+  @@index([agencyId, rottingAt])
 }
 
 model Interaction {
@@ -723,15 +735,26 @@ model Pipeline {
 }
 
 model PipelineStage {
-  id            String        @id @default(cuid())
-  name          String
-  color         String        @default("#6366f1")
-  position      Int           @default(0)
-  pipelineId    String
-  pipeline      Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
-  opportunities Opportunity[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id       String @id @default(cuid())
+  name     String
+  color    String @default("#6366f1")
+  position Int    @default(0)
+
+  /// Odds of closing from this stage, used for the weighted forecast.
+  probability Int @default(50)
+
+  /// Days a deal may sit here before it counts as rotting. Null disables it.
+  rotDays Int?
+
+  /// Fields a deal must have before it may enter this stage, e.g.
+  /// ["value", "expectedCloseDate"]. Enforced on the move, not on save, so
+  /// the prompt appears where the decision is made.
+  requiredFields Json?
+  pipelineId     String
+  pipeline       Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  opportunities  Opportunity[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   // Tenant owner, denormalised so every query can filter on one indexed column.
   agencyId String?

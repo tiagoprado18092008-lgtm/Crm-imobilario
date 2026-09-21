@@ -41,7 +41,7 @@ export const createAgencyWithOwner = async (
   });
 
   // Send OWNER invite
-  await createInvitation(ownerEmail, 'AGENCY_OWNER', superAdminId, undefined, undefined, agency.id, 'OWNER');
+  await createInvitation(ownerEmail, 'AGENCY_OWNER', superAdminId, undefined, agency.id, 'OWNER');
 
   return agency;
 };

@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { Draggable } from '@hello-pangea/dnd'
-import { Phone, MessageSquare, MessageCircle, FileText, CheckSquare, Calendar } from 'lucide-react'
+import { Phone, MessageSquare, MessageCircle, FileText, CheckSquare, Calendar, AlertTriangle, Flag } from 'lucide-react'
 import type { Opportunity } from '../../types'
 import { formatCurrency, getInitials } from '../../utils/formatters'
 
@@ -12,11 +12,21 @@ interface KanbanCardProps {
   onAction?: (opp: Opportunity, action: string, e: React.MouseEvent) => void
 }
 
+const formatShortDate = (d: string) =>
+  new Date(d).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })
+
 export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onClick, onAction }) => {
   const handleAction = (action: string) => (e: React.MouseEvent) => {
     e.stopPropagation()
     onAction?.(opportunity, action, e)
   }
+
+  // Rotting is read from a stored timestamp rather than recomputed per card,
+  // so a board of 200 deals costs no more than a board of 20.
+  const rottingAt = (opportunity as any).rottingAt as string | null | undefined
+  const nextActivityAt = (opportunity as any).nextActivityAt as string | null | undefined
+  const isRotting = Boolean(rottingAt && new Date(rottingAt) <= new Date())
+  const hasNextActivity = Boolean(nextActivityAt)
 
   return (
     <Draggable draggableId={opportunity.id} index={index}>
@@ -36,6 +46,13 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
               border: snapshot.isDragging
                 ? '1.5px solid var(--accent)'
                 : '1px solid var(--border)',
+              // A rotting deal is marked on its leading edge rather than with a
+              // coloured fill, so the board stays readable when many are stale.
+              borderLeft: isRotting
+                ? '3px solid var(--warning)'
+                : snapshot.isDragging
+                ? '1.5px solid var(--accent)'
+                : '1px solid var(--border)',
               borderRadius: 8,
               padding: '10px 12px',
               cursor: 'pointer',
@@ -45,6 +62,32 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({ opportunity, index, onCl
                 : 'relative',
             }}
           >
+            {/* Next activity — the line that says whether the deal is alive.
+                A deal with nothing scheduled is the thing worth noticing. */}
+            {!hasNextActivity || isRotting ? (
+              <div
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  marginBottom: 7, fontSize: 11, fontWeight: 600,
+                  color: isRotting ? 'var(--warning)' : 'var(--danger)',
+                }}
+              >
+                <AlertTriangle size={11} style={{ flexShrink: 0 }} />
+                {isRotting ? 'Parado nesta fase' : 'Sem próxima atividade'}
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  marginBottom: 7, fontSize: 11,
+                  color: 'var(--text-muted)',
+                }}
+              >
+                <Flag size={11} style={{ flexShrink: 0 }} />
+                {formatShortDate(nextActivityAt!)}
+              </div>
+            )}
+
             {/* Title row + avatar */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
               <p

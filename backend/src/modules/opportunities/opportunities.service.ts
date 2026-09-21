@@ -2,6 +2,11 @@ import prisma from '../../config/database';
 import { fireTrigger } from '../../utils/automation.engine';
 import { buildScope } from '../../lib/scope';
 import { withWorkspace } from '../../lib/workspace';
+import {
+  missingRequiredFields,
+  computeRottingAt,
+  StageRequirementError,
+} from '../../lib/pipeline-rules';
 import { logActivity } from '../../lib/activity-logger';
 
 const buildWhereClause = async (user: any): Promise<any> => {
@@ -126,7 +131,6 @@ export const create = async (
   logActivity({
     userId: user.id,
     agencyId: user.agencyId ?? undefined,
-    locationId: user.locationId ?? undefined,
     action: 'opportunity.create',
     entityType: 'Opportunity',
     entityId: opp.id,
@@ -161,8 +165,7 @@ export const bulkImport = async (
 
   const agencyFilter: any = user.agencyId
     ? { assignedTo: { agencyId: user.agencyId } }
-    : user.locationId
-    ? { assignedTo: { locationId: user.locationId } }
+
     : { assignedToId: user.id };
 
   // Pre-fetch existing contacts by email and name to avoid duplicates
@@ -287,7 +290,6 @@ export const bulkImport = async (
       contactId,
       assignedToId: user.id,
       agencyId: user.agencyId || undefined,
-      locationId: user.locationId || undefined,
     });
   }
 
@@ -403,7 +405,6 @@ export const update = async (
   if (Object.keys(changes).length > 0) {
     logActivity({
       agencyId: user?.agencyId,
-      locationId: user?.locationId,
       userId: user?.id,
       action: 'OPPORTUNITY_UPDATED',
       entityType: 'Opportunity',
@@ -444,11 +445,34 @@ export const moveStage = async (
     throw err;
   }
 
+  // A stage may demand facts before it will accept a deal. Checked here rather
+  // than on save, so the prompt appears where the decision is being made.
+  let targetStage: { id: string; name: string; rotDays: number | null; requiredFields: any } | null = null;
+  if (newStageId) {
+    targetStage = await prisma.pipelineStage.findFirst({
+      where: withWorkspace(user, { id: newStageId }),
+      select: { id: true, name: true, rotDays: true, requiredFields: true },
+    });
+    if (targetStage) {
+      const missing = missingRequiredFields(existing as any, targetStage.requiredFields);
+      if (missing.length > 0) {
+        throw new StageRequirementError(targetStage.name, missing);
+      }
+    }
+  }
+
+  const enteredAt = new Date();
+  const rottingAt = targetStage
+    ? computeRottingAt(enteredAt, targetStage.rotDays, existing.nextActivityAt)
+    : null;
+
   const result = await prisma.$transaction(async (tx) => {
     const oldStage = existing.stage as string;
     const oldPosition = existing.position;
     // Scope reorder to user's agency/location so we never touch other tenants' data
-    const tenantScope: any = user.agencyId ? { assignedTo: { agencyId: user.agencyId } } : user.locationId ? { assignedTo: { locationId: user.locationId } } : { assignedToId: user.id };
+    const tenantScope: any = user.agencyId
+      ? { agencyId: user.agencyId }
+      : { assignedToId: user.id };
 
     // Close the gap in the source stage
     await tx.opportunity.updateMany({
@@ -510,7 +534,6 @@ export const remove = async (id: string, user?: any) => {
     logActivity({
       userId: user.id,
       agencyId: user.agencyId ?? undefined,
-      locationId: user.locationId ?? undefined,
       action: 'opportunity.delete',
       entityType: 'Opportunity',
       entityId: id,

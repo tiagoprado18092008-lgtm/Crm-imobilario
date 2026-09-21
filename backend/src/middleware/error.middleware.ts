@@ -44,5 +44,11 @@ export const errorMiddleware = (
     }
   }
 
-  res.status(status).json({ error: message, status });
+  // A stage-requirement refusal carries the fields that are missing. Dropping
+  // them would leave the interface able to say only "no", not what to fill in.
+  res.status(status).json({
+    error: message,
+    status,
+    ...(Array.isArray(err.missing) ? { missing: err.missing } : {}),
+  });
 };

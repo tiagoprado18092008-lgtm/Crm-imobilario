@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Upload, Search, Phone, PhoneOff, Inbox } from 'lucide-react'
+import { Upload, Search, Phone, PhoneOff, Inbox, X } from 'lucide-react'
 import { DataTable } from '../components/data-table/DataTable'
 import { LeadImportModal } from '../components/leads/LeadImportModal'
-import { getLeads, type Lead, type LeadState } from '../api/leads.api'
+import { getLeads, bulkAssignLeads, type Lead, type LeadState } from '../api/leads.api'
+import { getUsers } from '../api/users.api'
 
 /**
  * The cold-call inbox.
@@ -51,6 +52,7 @@ export function LeadsPage() {
   const [view, setView] = useState<(typeof VIEWS)[number]['id']>('due')
   const [search, setSearch] = useState('')
   const [showImport, setShowImport] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
 
   const params = useMemo(() => {
     const v = VIEWS.find((x) => x.id === view)!
@@ -288,6 +290,18 @@ export function LeadsPage() {
         </label>
       </div>
 
+      {selected.size > 0 && (
+        <BulkBar
+          count={selected.size}
+          onClear={() => setSelected(new Set())}
+          onAssign={async (ownerId) => {
+            await bulkAssignLeads([...selected], ownerId)
+            setSelected(new Set())
+            queryClient.invalidateQueries({ queryKey: ['leads'] })
+          }}
+        />
+      )}
+
       <div
         style={{
           border: '1px solid var(--border)',
@@ -301,6 +315,8 @@ export function LeadsPage() {
             data={leads}
             columns={columns}
             getRowId={(l) => l.id}
+            selectedIds={selected}
+            onSelectionChange={setSelected}
             onEndReached={() => {
               if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage()
             }}
@@ -390,6 +406,113 @@ export function LeadsPage() {
           }}
         />
       )}
+    </div>
+  )
+}
+
+/**
+ * Appears only when rows are selected, and says how many. Assignment is the
+ * action that matters at this stage: a BDR joining the team needs a slice of
+ * the list, and doing that row by row over hundreds of leads is not work
+ * anyone should do by hand.
+ */
+function BulkBar({
+  count,
+  onClear,
+  onAssign,
+}: {
+  count: number
+  onClear: () => void
+  onAssign: (ownerId: string) => Promise<void>
+}) {
+  const [users, setUsers] = useState<Array<{ id: string; name: string }>>([])
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    getUsers()
+      .then((r) => {
+        const d = r.data
+        setUsers(Array.isArray(d) ? d : d.data ?? [])
+      })
+      .catch(() => {
+        // The bar still works without the list; the select is simply empty.
+      })
+  }, [])
+
+  return (
+    <div
+      role="region"
+      aria-label="Ações sobre a seleção"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '8px 12px',
+        border: '1px solid var(--accent)',
+        borderRadius: 8,
+        background: 'var(--accent-soft)',
+      }}
+    >
+      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+        {count} selecionada{count === 1 ? '' : 's'}
+      </span>
+
+      <select
+        defaultValue=""
+        disabled={busy}
+        onChange={async (e) => {
+          const ownerId = e.target.value
+          if (!ownerId) return
+          setBusy(true)
+          try {
+            await onAssign(ownerId)
+          } finally {
+            setBusy(false)
+            e.target.value = ''
+          }
+        }}
+        aria-label="Atribuir a"
+        style={{
+          height: 29,
+          padding: '0 8px',
+          border: '1px solid var(--border-strong)',
+          borderRadius: 6,
+          background: 'var(--surface)',
+          color: 'var(--text-primary)',
+          fontSize: 13,
+          fontFamily: 'var(--font-body)',
+          cursor: busy ? 'wait' : 'pointer',
+        }}
+      >
+        <option value="">Atribuir a…</option>
+        {users.map((u) => (
+          <option key={u.id} value={u.id}>
+            {u.name}
+          </option>
+        ))}
+      </select>
+
+      <button
+        onClick={onClear}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 5,
+          height: 29,
+          padding: '0 9px',
+          marginLeft: 'auto',
+          border: 'none',
+          borderRadius: 6,
+          background: 'transparent',
+          color: 'var(--text-secondary)',
+          fontSize: 13,
+          fontFamily: 'var(--font-body)',
+          cursor: 'pointer',
+        }}
+      >
+        <X size={13} />
+        Limpar
+      </button>
     </div>
   )
 }
