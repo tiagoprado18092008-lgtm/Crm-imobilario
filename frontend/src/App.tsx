@@ -1,45 +1,49 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/auth.store'
 import { useUIStore } from './store/ui.store'
 import { AppShell } from './components/layout/AppShell'
 import { ProtectedRoute } from './components/layout/ProtectedRoute'
 import { LoginPage } from './pages/LoginPage'
-import PublicBookingPage from './pages/PublicBookingPage'
 import { RoleGuard } from './components/auth/RoleGuard'
-import { SuperAdminLayout } from './pages/super-admin/SuperAdminLayout'
-import { SuperAdminAgenciesPage } from './pages/super-admin/SuperAdminAgenciesPage'
-import { SuperAdminAgencyDetailPage } from './pages/super-admin/SuperAdminAgencyDetailPage'
-import { DashboardPage } from './pages/DashboardPage'
-import { ContactsPage } from './pages/ContactsPage'
-import { ContactDetailPage } from './pages/ContactDetailPage'
-import { PipelinePage } from './pages/PipelinePage'
-import { TasksPage } from './pages/TasksPage'
-import { CalendarPage } from './pages/CalendarPage'
-import { CalendarSettingsPage } from './pages/CalendarSettingsPage'
-import { ReportsPage } from './pages/ReportsPage'
-import { UsersPage } from './pages/UsersPage'
-import { ConversationsPage } from './pages/ConversationsPage'
-import { SettingsPage } from './pages/SettingsPage'
-import { ProfilePage } from './pages/ProfilePage'
-import { AutomationsPage } from './pages/AutomationsPage'
-import { SnapshotsPage } from './pages/SnapshotsPage'
-import { PhoneNumbersPage } from './pages/PhoneNumbersPage'
-import { CallsPage } from './pages/CallsPage'
-import { AppointmentsPage } from './pages/AppointmentsPage'
-import { CampaignsPage } from './pages/CampaignsPage'
-import { FormsPage } from './pages/FormsPage'
-import { AgencyPage } from './pages/AgencyPage'
-import { AgencyUsersPage } from './pages/agency/AgencyUsersPage'
-import { AgencySettingsPage } from './pages/agency/AgencySettingsPage'
-import { ActivityPage } from './pages/agency/ActivityPage'
-import { PipelineSettingsPage } from './pages/agency/PipelineSettingsPage'
-import { TeamPage } from './pages/settings/TeamPage'
-import { GeneralSettingsPage } from './pages/settings/GeneralSettingsPage'
-import { InviteAcceptPage } from './pages/InviteAcceptPage'
-import { ForbiddenPage } from './pages/ForbiddenPage'
-import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
-import { ResetPasswordPage } from './pages/ResetPasswordPage'
+
+/* Routes are split per page: the login screen should not ship the kanban,
+   the report charts and the CSV importer before anyone has signed in. */
+const PublicBookingPage = lazy(() => import('./pages/PublicBookingPage'))
+const SuperAdminLayout = lazy(() => import('./pages/super-admin/SuperAdminLayout').then(m => ({ default: m.SuperAdminLayout })))
+const SuperAdminAgenciesPage = lazy(() => import('./pages/super-admin/SuperAdminAgenciesPage').then(m => ({ default: m.SuperAdminAgenciesPage })))
+const SuperAdminAgencyDetailPage = lazy(() => import('./pages/super-admin/SuperAdminAgencyDetailPage').then(m => ({ default: m.SuperAdminAgencyDetailPage })))
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const ContactsPage = lazy(() => import('./pages/ContactsPage').then(m => ({ default: m.ContactsPage })))
+const ContactDetailPage = lazy(() => import('./pages/ContactDetailPage').then(m => ({ default: m.ContactDetailPage })))
+const PipelinePage = lazy(() => import('./pages/PipelinePage').then(m => ({ default: m.PipelinePage })))
+const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: m.TasksPage })))
+const CalendarPage = lazy(() => import('./pages/CalendarPage').then(m => ({ default: m.CalendarPage })))
+const CalendarSettingsPage = lazy(() => import('./pages/CalendarSettingsPage').then(m => ({ default: m.CalendarSettingsPage })))
+const ReportsPage = lazy(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })))
+const UsersPage = lazy(() => import('./pages/UsersPage').then(m => ({ default: m.UsersPage })))
+const ConversationsPage = lazy(() => import('./pages/ConversationsPage').then(m => ({ default: m.ConversationsPage })))
+const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
+const AutomationsPage = lazy(() => import('./pages/AutomationsPage').then(m => ({ default: m.AutomationsPage })))
+const SnapshotsPage = lazy(() => import('./pages/SnapshotsPage').then(m => ({ default: m.SnapshotsPage })))
+const PhoneNumbersPage = lazy(() => import('./pages/PhoneNumbersPage').then(m => ({ default: m.PhoneNumbersPage })))
+const CallsPage = lazy(() => import('./pages/CallsPage').then(m => ({ default: m.CallsPage })))
+const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage').then(m => ({ default: m.AppointmentsPage })))
+const CampaignsPage = lazy(() => import('./pages/CampaignsPage').then(m => ({ default: m.CampaignsPage })))
+const FormsPage = lazy(() => import('./pages/FormsPage').then(m => ({ default: m.FormsPage })))
+const AgencyPage = lazy(() => import('./pages/AgencyPage').then(m => ({ default: m.AgencyPage })))
+const AgencyUsersPage = lazy(() => import('./pages/agency/AgencyUsersPage').then(m => ({ default: m.AgencyUsersPage })))
+const AgencySettingsPage = lazy(() => import('./pages/agency/AgencySettingsPage').then(m => ({ default: m.AgencySettingsPage })))
+const ActivityPage = lazy(() => import('./pages/agency/ActivityPage').then(m => ({ default: m.ActivityPage })))
+const PipelineSettingsPage = lazy(() => import('./pages/agency/PipelineSettingsPage').then(m => ({ default: m.PipelineSettingsPage })))
+const TeamPage = lazy(() => import('./pages/settings/TeamPage').then(m => ({ default: m.TeamPage })))
+const GeneralSettingsPage = lazy(() => import('./pages/settings/GeneralSettingsPage').then(m => ({ default: m.GeneralSettingsPage })))
+const InviteAcceptPage = lazy(() => import('./pages/InviteAcceptPage').then(m => ({ default: m.InviteAcceptPage })))
+const ForbiddenPage = lazy(() => import('./pages/ForbiddenPage').then(m => ({ default: m.ForbiddenPage })))
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })))
+
 
 function App() {
   const { hydrate } = useAuthStore()
@@ -54,6 +58,7 @@ function App() {
   }, [crmName])
 
   return (
+    <Suspense fallback={<RouteFallback />}>
     <Routes>
       <Route path="/book/:userId" element={<PublicBookingPage />} />
       <Route path="/login" element={<LoginPage />} />
@@ -144,7 +149,20 @@ function App() {
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </Suspense>
   )
 }
 
 export default App
+
+/** Shown while a route chunk loads. Deliberately quiet: a spinner that flashes
+ *  for 80ms reads as jank, an empty tinted panel does not. */
+function RouteFallback() {
+  return (
+    <div
+      aria-busy="true"
+      aria-live="polite"
+      style={{ padding: 24, minHeight: 200, background: 'var(--surface-2)' }}
+    />
+  )
+}

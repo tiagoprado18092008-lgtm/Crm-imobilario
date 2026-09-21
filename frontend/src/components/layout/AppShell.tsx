@@ -1,6 +1,7 @@
 import React from 'react'
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
+import { CommandPalette } from '../command/CommandPalette'
 import { TopBar } from './TopBar'
 import { BottomNav } from './BottomNav'
 import { Toast } from '../ui/Toast'
@@ -34,6 +35,7 @@ export const AppShell: React.FC = () => {
       {/* Sidebar - desktop always visible */}
       <div className="hidden lg:flex flex-shrink-0" style={{ height: '100vh' }}>
         <Sidebar />
+        <CommandPalette />
       </div>
 
       {/* Mobile sidebar drawer */}

@@ -9,8 +9,12 @@ export const list = async (req: Request, res: Response, next: NextFunction): Pro
       status: req.query.status as string,
       source: req.query.source as string,
       assignedToId: req.query.assignedToId as string,
-      page: req.query.page ? parseInt(req.query.page as string) : 1,
-      limit: req.query.limit ? parseInt(req.query.limit as string) : 20,
+      tag: req.query.tag as string,
+      // Left undefined unless asked for: its presence is what selects the old
+      // offset path and pays for the COUNT(*).
+      page: req.query.page ? parseInt(req.query.page as string) : undefined,
+      limit: req.query.limit ? parseInt(req.query.limit as string) : 50,
+      cursor: req.query.cursor as string | undefined,
     };
     const result = await contactsService.list(filters, req.user);
     res.status(200).json(result);
