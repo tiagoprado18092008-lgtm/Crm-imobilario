@@ -2,6 +2,7 @@ import prisma from '../../config/database';
 import { withWorkspace, workspaceIdFor } from '../../lib/workspace';
 import { normalisePhone } from '../../lib/phone';
 import { effectOf } from '../../lib/dispositions';
+import { automationEngine } from '../../utils/automation.engine';
 
 /**
  * Lead triage.
@@ -173,7 +174,32 @@ export const recordDisposition = async (
     data.nextAttemptAt = next;
   }
 
-  return prisma.lead.update({ where: { id }, data });
+  const updated = await prisma.lead.update({ where: { id }, data });
+
+  // Outcomes that end the conversation also end the cadence. A lead that
+  // answered, booked, or asked to be left alone must not keep receiving the
+  // remaining steps.
+  const stopEvent =
+    effect.optOutCalls
+      ? 'OPT_OUT'
+      : dto.disposition === 'REUNIAO_MARCADA'
+      ? 'MEETING_BOOKED'
+      : dto.disposition === 'ATENDEU_INTERESSADO' || dto.disposition === 'ATENDEU_SEM_INTERESSE'
+      ? 'CALL_ANSWERED'
+      : dto.disposition === 'NUMERO_ERRADO'
+      ? 'DISQUALIFIED'
+      : null;
+
+  if (stopEvent && lead.contactId) {
+    await automationEngine
+      .stopEnrollmentsFor(lead.contactId, stopEvent as any, lead.agencyId)
+      .catch(() => {
+        // The disposition is already recorded; a sequence that outlives it is
+        // cleaned up by the next event rather than failing the wrap-up.
+      });
+  }
+
+  return updated;
 };
 
 /**
@@ -278,6 +304,14 @@ export const convert = async (
     });
 
     return { company, contact, opportunity };
+  }).then(async (result) => {
+    // A converted lead is in a conversation, not a cadence. Stopping outside
+    // the transaction keeps a sequence-engine failure from rolling back the
+    // conversion itself.
+    await automationEngine
+      .stopEnrollmentsFor(result.contact.id, 'CONVERTED' as any, agencyId)
+      .catch(() => {});
+    return result;
   });
 };
 

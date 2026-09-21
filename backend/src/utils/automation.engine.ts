@@ -1,4 +1,5 @@
-import prisma from '../config/database';
+import prisma from '../config/database'
+import { stopReasonFor, type StopEvent } from '../lib/sequences';
 import { sendWhatsAppMessage } from './whatsapp.service';
 import { sendEmail } from './email.service';
 import { sendSMS } from './twilio.service';
@@ -640,6 +641,41 @@ export class AutomationEngine {
         await this.processEnrollment(e.id)
       })
     )
+  }
+
+  /**
+   * Ends every active enrollment for a contact.
+   *
+   * Called when the person responds, opts out, books a meeting or converts.
+   * Without this a cadence keeps sending after the conversation has already
+   * started, which turns a follow-up into harassment and is the fastest way
+   * to lose a deal the sequence was meant to win.
+   */
+  async stopEnrollmentsFor(
+    contactId: string,
+    event: StopEvent,
+    agencyId?: string | null,
+  ): Promise<number> {
+    const result = await prisma.automationEnrollment.updateMany({
+      where: {
+        contactId,
+        status: 'ACTIVE',
+        ...(agencyId ? { agencyId } : {}),
+      },
+      data: {
+        status: 'CANCELLED',
+        finishedAt: new Date(),
+        waitingForEvent: null,
+        waitingUntil: null,
+      },
+    })
+
+    if (result.count > 0) {
+      console.log(
+        `[Sequences] ${result.count} sequência(s) parada(s) para ${contactId}: ${stopReasonFor(event)}`,
+      )
+    }
+    return result.count
   }
 }
 
