@@ -1,6 +1,7 @@
 import prisma from '../../config/database';
 import { fireTrigger } from '../../utils/automation.engine';
 import { buildScope } from '../../lib/scope';
+import { withWorkspace } from '../../lib/workspace';
 import { logActivity } from '../../lib/activity-logger';
 
 const buildWhereClause = async (user: any): Promise<any> => {
@@ -94,7 +95,7 @@ export const create = async (
   const targetStage = (dto.stage as any) ?? 'LEAD_IN';
   // Auto-assign position to end of the target stage
   const lastInStage = await prisma.opportunity.findFirst({
-    where: { stage: targetStage },
+    where: withWorkspace(user, { stage: targetStage }),
     orderBy: { position: 'desc' },
     select: { position: true },
   });
@@ -213,7 +214,7 @@ export const bulkImport = async (
     const batch = toCreateEntries.slice(i, i + BATCH_SIZE);
     const created = await Promise.all(batch.map(([, data]) =>
       prisma.contact.create({
-        data: { name: data.name, email: data.email || undefined, phone: data.phone || undefined, type: 'BUYER', status: 'NEW', assignedToId: user.id },
+        data: { name: data.name, email: data.email || undefined, phone: data.phone || undefined, type: 'LEAD', status: 'NEW', assignedToId: user.id, agencyId: user.agencyId ?? undefined },
         select: { id: true },
       })
     ));
@@ -222,7 +223,11 @@ export const bulkImport = async (
 
   // Stage position counters
   const stagePositions = new Map<string, number>();
-  const stageMaxes = await prisma.opportunity.groupBy({ by: ['stage'], _max: { position: true } });
+  const stageMaxes = await prisma.opportunity.groupBy({
+    by: ['stage'],
+    where: withWorkspace(user),
+    _max: { position: true },
+  });
   for (const s of stageMaxes) {
     stagePositions.set(s.stage, (s._max.position ?? -1) + 1);
   }

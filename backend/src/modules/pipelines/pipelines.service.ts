@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { withWorkspace } from '../../lib/workspace';
 
 const DEFAULT_STAGES = [
   { name: 'Lead Novo',         color: '#6366f1', position: 0 },
@@ -94,10 +95,16 @@ export const remove = async (id: string, user: any) => {
 };
 
 export const createStage = async (pipelineId: string, data: { name: string; color?: string }, user: any) => {
-  await getById(pipelineId, user);
+  const pipeline = await getById(pipelineId, user);
   const count = await prisma.pipelineStage.count({ where: { pipelineId } });
   return prisma.pipelineStage.create({
-    data: { pipelineId, name: data.name, color: data.color || '#6366f1', position: count },
+    data: {
+      pipelineId,
+      agencyId: (pipeline as any)?.agencyId ?? user?.agencyId ?? null,
+      name: data.name,
+      color: data.color || '#6366f1',
+      position: count,
+    },
   });
 };
 
@@ -110,7 +117,7 @@ export const updateStage = async (pipelineId: string, stageId: string, data: { n
 
 export const removeStage = async (pipelineId: string, stageId: string, user: any) => {
   await getById(pipelineId, user);
-  const count = await prisma.opportunity.count({ where: { stageId } });
+  const count = await prisma.opportunity.count({ where: withWorkspace(user, { stageId }) });
   if (count > 0) {
     throw Object.assign(
       new Error(`Não é possível eliminar: a etapa tem ${count} oportunidade(s).`),

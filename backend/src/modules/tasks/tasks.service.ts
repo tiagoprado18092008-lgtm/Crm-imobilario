@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { workspaceIdFor } from '../../lib/workspace';
 import { buildScope } from '../../lib/scope';
 import { logActivity } from '../../lib/activity-logger';
 
@@ -72,6 +73,7 @@ export const create = async (dto: {
       contactId: dto.contactId || undefined,
       opportunityId: dto.opportunityId || undefined,
       assignedToId: dto.assignedToId || userId,
+      agencyId: typeof userOrId === 'string' ? undefined : userOrId.agencyId ?? undefined,
     },
     include: {
       assignedTo: { select: { id: true, name: true } },

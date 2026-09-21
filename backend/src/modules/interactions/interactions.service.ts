@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { workspaceIdFor } from '../../lib/workspace';
 import { sendMockEmail, sendMockWhatsApp } from '../../utils/mock-comms';
 import { buildScope } from '../../lib/scope';
 
@@ -16,7 +17,9 @@ export const create = async (
 ) => {
   // Verify contact belongs to user's tenant
   if (user) {
-    const contactScope: any = user.agencyId ? { assignedTo: { agencyId: user.agencyId } } : user.locationId ? { assignedTo: { locationId: user.locationId } } : { assignedToId: user.id };
+    const contactScope: any = user.agencyId
+      ? { agencyId: user.agencyId }
+      : { assignedToId: user.id };
     const contact = await prisma.contact.findFirst({ where: { id: dto.contactId, ...contactScope } });
     if (!contact) {
       const err: any = new Error('Contacto não encontrado ou acesso negado');
@@ -26,6 +29,7 @@ export const create = async (
   }
   const interaction = await prisma.interaction.create({
     data: {
+      agencyId: user?.agencyId ?? undefined,
       type: dto.type as any,
       subject: dto.subject,
       body: dto.body,

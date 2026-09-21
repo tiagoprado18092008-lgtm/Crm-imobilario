@@ -512,9 +512,19 @@ app.post('/webhook/twilio/voicemail-complete', async (req, res) => {
     const { RecordingUrl, RecordingDuration } = req.body || {};
     const { phoneNumberId, from } = req.query as any;
     if (!RecordingUrl || !phoneNumberId) return;
-    const pn = await prisma.phoneNumber.findUnique({ where: { id: phoneNumberId } });
+    const pn = await prisma.phoneNumber.findUnique({
+      where: { id: phoneNumberId },
+      include: { user: { select: { agencyId: true } } },
+    });
     if (!pn) return;
-    const contact = await prisma.contact.findFirst({ where: { phone: from as string } });
+    // The phone number establishes the tenant; the caller lookup must stay
+    // inside it, or a shared number would match another workspace's contact.
+    const tenantScope = pn.user?.agencyId
+      ? { agencyId: pn.user.agencyId }
+      : { assignedToId: pn.userId };
+    const contact = await prisma.contact.findFirst({
+      where: { phone: from as string, ...tenantScope },
+    });
     const fallbackContact = contact
       ? contact.id
       : (await prisma.contact.findFirst({ where: { assignedToId: pn.userId } }))?.id;
