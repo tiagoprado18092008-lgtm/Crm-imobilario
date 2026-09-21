@@ -13,6 +13,7 @@
 | **D1** | **Opção A** — manter Vite + React Router SPA; não migrar para Next.js | Elimina uma reescrita completa do frontend antes de entregar valor. §5 e §11 do prompt reescritas na auditoria |
 | **D2** | **Todos os dados de CRM são descartáveis**; existe o **CSV original** da lista de clínicas | Remove o maior risco do projeto (R5). Ver §1 abaixo |
 | **D3** | **Fase 1.5 (`workspaceId`) antes das Fundações** | Índices compostos e keyset pagination passam a ser possíveis na Fase 2 |
+| **D4** | **Contactos e oportunidades saem do âmbito.** Não se migram, não se reimportam, não se comparam | A Fase 1 deixa de ter trabalho de dados. O importador CSV move-se para a **Fase 3**, quando o modelo `Lead` existir |
 
 ### 0.1 O que a D2 elimina do prompt original
 
@@ -21,12 +22,12 @@ A regra #3 do prompt ("nunca apagues dados") existia para proteger 3.442 oportun
 | Trabalho previsto no prompt | Estado | Porquê |
 |---|---|---|
 | Dedupe com pré-visualização, merge e rollback (§8.2, R5) | ❌ **Cancelado** | Não se deduplica o que se vai truncar. O dedupe passa a ser **na entrada** do importador |
-| Script idempotente de correção de mojibake + relatório (Fase 1) | ❌ **Cancelado** | Corrige-se a **deteção de codificação do importador**, uma vez. Reimporta-se limpo |
+| Script idempotente de correção de mojibake + relatório (Fase 1) | ❌ **Cancelado** | Corrige-se a **deteção de codificação do importador**, uma vez — agora na Fase 3 (D4) |
 | Migração nullable → backfill → `NOT NULL` do `workspaceId` (R16) | ❌ **Cancelado** | Tabelas vazias aceitam `NOT NULL` diretamente |
 | Limpeza de fases de pipeline duplicadas (problema #5) | ❌ **Cancelado** | Fases novas criadas por seed, já como enum |
 | `@@map("_deprecated_")` antes de remover Property/Location (R17) | ❌ **Cancelado** | `DROP` direto |
 
-**Ganho estimado: Fases 1 + 1.5 passam de ~3–4 semanas para ~1 semana.**
+**Ganho estimado: Fases 1 + 1.5 passam de ~3–4 semanas para ~1 semana** — e, com a D4, para **~5 dias** (2–3 dias de limpeza + 2 de `workspaceId`).
 
 **A regra #3 mantém-se para tudo o resto** — utilizadores, agência, integrações e, a partir da Fase 1, todos os dados novos. A licença de destruição aplica-se **uma vez só**, na Fase 1.
 
@@ -41,11 +42,12 @@ Ordem obrigatória:
 3. **Truncar:** `Contact`, `Opportunity`, `Interaction`, `Task`, `Conversation`, `Message`, `Appointment`, `CalendarEvent`, `CalendarSlot`, `Form*`, `EmailCampaign*`, `Automation*`, `ActivityLog`.
 4. **Remover (schema + código):** `Property`, `PropertyPhoto`, `PropertyDocument`, `PropertyVisit`, `Location`, `LocationSettings`.
 5. **Schema novo** com `workspaceId NOT NULL` em todos os modelos (Fase 1.5).
-6. **Reimportar** o CSV original com o importador corrigido.
 
-### 1.1 Importador corrigido — o único sítio onde a higiene de dados passa a viver
+Por **D4**, a Fase 1 termina aqui. Não há reimportação: a base de dados fica vazia de CRM e assim permanece até à Fase 3. O CRM continua utilizável para configuração, equipa e integrações, mas **não há trabalho comercial no sistema entre a Fase 1 e a Fase 3** — é o custo aceite desta decisão, e a razão para a Fase 2 ser curta.
 
-Requisitos (substituem o script de limpeza que deixou de existir):
+### 1.1 Importador CSV — **Fase 3**, não Fase 1
+
+Construído quando o modelo `Lead` existir, e é aí que toda a higiene de dados passa a viver. Requisitos:
 
 - **Deteção de codificação** (`chardet`/`jschardet`): resolve o mojibake na origem. Teste obrigatório com ficheiro latin1 duplamente codificado, a verificar que "GonÃ§alves" entra como "Gonçalves".
 - **Normalização E.164** com `libphonenumber-js`, região `PT` por defeito. Linhas sem telefone válido vão para relatório de rejeitados, não para a base de dados.
@@ -53,7 +55,7 @@ Requisitos (substituem o script de limpeza que deixou de existir):
 - **Mapeamento de colunas** com pré-visualização antes de gravar.
 - **Destino: `Lead`**, não `Opportunity`. É isto que resolve o problema #1 de raiz — a lista de cold call nunca chega a entrar no pipeline.
 
-**Critério de aceitação:** reimportação produz 0 registos com `Ã`, 100% dos telefones em E.164, 0 duplicados por telefone, e todos os registos como `Lead` (0 negócios no pipeline).
+**Critério de aceitação (Fase 3):** a importação produz 0 registos com `Ã`, 100% dos telefones em E.164, 0 duplicados por telefone, e todos os registos como `Lead` (0 negócios no pipeline).
 
 ---
 
@@ -64,10 +66,10 @@ Cada fase: branch próprio, PR com checklist, `tsc --noEmit` limpo, `eslint` lim
 | Fase | Objetivo | Critérios de aceitação | Est. |
 |---|---|---|---|
 | **0 — Baseline** ✅ | `AUDITORIA.md`, `PLANO.md`, `pg_dump`, Sentry (front+back), Vitest + Playwright instalados, feature flags, staging | Auditoria aprovada; staging a correr; Sentry a receber eventos | **em curso** |
-| **1 — Limpeza e reset** | Remover Property (71 ficheiros) e Location; consolidar os 3 ecrãs de equipa em `/definicoes/equipa`; renomear CasaFlow→AlphaCRM; truncar CRM; corrigir `buildScope` (R21); importador corrigido; reimportar CSV | 0 referências a `Property`/`Location`; navegação ≤10 itens; 0 strings com `Ã`; 100% E.164; leads importados como `Lead` | 1 sem |
+| **1 — Limpeza e reset** | Remover Property (71 ficheiros) e Location; consolidar os 3 ecrãs de equipa em `/definicoes/equipa`; renomear CasaFlow→AlphaCRM; truncar CRM; corrigir `buildScope` (R21) | 0 referências a `Property`/`Location`; navegação ≤10 itens; app arranca e autentica com a BD de CRM vazia | **2–3 dias** |
 | **1.5 — `workspaceId`** | Desnormalizar `workspaceId NOT NULL` em todos os modelos; `withWorkspace(ctx)`; **teste que falha** se houver `prisma.<model>.findMany` sem `where.workspaceId` fora da whitelist; esconder gestão de workspaces da UI | Teste anti-fuga a passar; 0 queries fora do helper; isolamento testado entre 2 workspaces | 2 dias |
 | **2 — Fundações** | Design system (tokens OKLCH, navy/cyan, Plus Jakarta + Inter); `DataTable` virtualizada; `Board` (migrar `@hello-pangea/dnd` → dnd-kit); `RecordPanel`; `CommandPalette`; atalhos; keyset pagination; índices compostos; pg_trgm; SSE; `next-intl`-equivalente + `pt-PT.json`; unificar Zod | 1.700 contactos interativos <800ms; INP <200ms medido; `Cmd+K` funcional; axe sem violações críticas; 0 strings hardcoded | 2–3 sem |
-| **3 — Núcleo de vendas** | `Lead`/`Company`/`Person`/`Deal`; Caixa de Leads + conversão; 2 pipelines com campos obrigatórios e rotting; `Activity`; **`/hoje`**; Vistas Guardadas + ações em massa | Fluxo lead→qualificar→negócio→ganho <2min; ≥6 vistas por defeito; `/hoje` é a rota inicial | 3 sem |
+| **3 — Núcleo de vendas** | `Lead`/`Company`/`Person`/`Deal`; Caixa de Leads + conversão; 2 pipelines com campos obrigatórios e rotting; `Activity`; **`/hoje`**; Vistas Guardadas + ações em massa; **importador CSV** (§1.1) | Fluxo lead→qualificar→negócio→ganho <2min; ≥6 vistas por defeito; `/hoje` é a rota inicial; CSV de clínicas importado com 0 mojibake e 100% E.164 | 3 sem |
 | **4 — Telefonia Zadarma** 🔴 | `ITelephonyProvider`; `ZadarmaProvider`; HMAC testado; extensões SIP; softphone SIP.js; webhooks; gravações em storage próprio; dispositions; power dialer; compliance | BDR faz 50 chamadas de um **+351** sem sair do CRM; todas com disposition; gravação na ficha; teste de opt-out a passar | 3 sem |
 | **5 — Comunicação** | Inbox com atribuição e templates; sequências multicanal com paragem à resposta; links de marcação; lembretes | Sequência de 5 passos para sozinha à resposta; link de marcação cria evento + atividade | 2 sem |
 | **6 — Fecho** | Produtos, line items, propostas com link público e PDF, DocuSign, webhook → Ganho | Proposta €700 gerada, enviada, assinada, negócio fecha sozinho | 2 sem |
@@ -77,7 +79,9 @@ Cada fase: branch próprio, PR com checklist, `tsc --noEmit` limpo, `eslint` lim
 | **10 — Automações** | Motor de workflows + os 7 templates da §8.9 | 7 workflows ativos com `WorkflowRun` registado | 2 sem |
 | **11 — Polimento** | Acessibilidade, estados vazios, onboarding, E2E dos 5 fluxos, manual pt-PT | Lighthouse ≥90 Perf+A11y nas 5 rotas; E2E verde no CI | 2 sem |
 
-**Total estimado: ~22–25 semanas** (~5–6 meses) a um desenvolvedor a tempo inteiro.
+**Total estimado: ~21–24 semanas** (~5–6 meses) a um desenvolvedor a tempo inteiro.
+
+A Fase 1 encolheu para 2–3 dias com a D4; o importador não desapareceu, mudou para a Fase 3 (já contabilizado nas suas 3 semanas).
 
 ---
 
@@ -100,7 +104,7 @@ Cada fase: branch próprio, PR com checklist, `tsc --noEmit` limpo, `eslint` lim
 
 | # | Risco | Estado | Mitigação |
 |---|---|---|---|
-| R5 | Migração de 3.442 oportunidades | ✅ **Eliminado** | D2 — truncar e reimportar |
+| R5 | Migração de 3.442 oportunidades | ✅ **Eliminado** | D2 + D4 — truncar; sem migração nem reimportação |
 | R16 | Backfill de `workspaceId` | ✅ **Eliminado** | D2 — tabelas vazias |
 | R17 | 71 ficheiros com Property | 🟡 Reduzido | `DROP` direto; remoção por camadas UI→rotas→serviços→schema |
 | R1 | Número Zadarma atribuído aleatoriamente | 🔴 **Ativo** | **Contactar vendas Zadarma AGORA** (Fase 0) — não esperar pela Fase 4 |
@@ -113,23 +117,22 @@ Cada fase: branch próprio, PR com checklist, `tsc --noEmit` limpo, `eslint` lim
 | R20 | Zero testes frontend/E2E | 🟡 Ativo | Vitest + Playwright já na Fase 0 |
 | R21 | `buildScope` devolve `{}` | 🔴 **Ativo** | Corrigir na Fase 1 — falhar para fechado |
 | **R22** | **Perda acidental para lá do âmbito da D2** | 🔴 **Novo** | `pg_dump` antes de tocar em nada; lista explícita de tabelas a preservar (§1.2); truncar por lista branca, nunca por `DROP SCHEMA` |
-| **R23** | **O CSV original pode não cobrir tudo** o que está na BD | 🟡 **Novo** | Antes de truncar: exportar a BD atual para CSV e comparar contagens com o original. Se o CSV tiver menos, decidir antes de destruir |
+| R23 | O CSV original pode não cobrir tudo o que está na BD | ✅ **Eliminado** | D4 — contactos e oportunidades saem do âmbito; não há nada a comparar |
+| **R24** | **Sem dados de CRM entre a Fase 1 e a Fase 3** (~4–5 semanas) | 🟡 **Novo** | Aceite pelo Tiago (D4). Mitigação: manter a Fase 2 curta e focada; o cold calling continua fora do CRM neste período |
 
 ---
 
 ## 5. Ações imediatas da Fase 0 (antes da Fase 1)
 
 1. **`pg_dump` de produção**, guardado fora do Railway — bloqueia tudo o resto.
-2. **Exportar a BD atual para CSV** e comparar com o CSV original (R23).
-3. **Contactar vendas da Zadarma** sobre reserva manual de um número 289 de Faro (R1) — o prazo de resposta é externo, começa já.
-4. Instalar Sentry (front + back), Vitest, Playwright.
-5. Medir baseline de LCP/INP nas 3 listas principais, para comparação na Fase 2.
-6. Criar ambiente de staging com cópia dos dados.
+2. **Contactar vendas da Zadarma** sobre reserva manual de um número 289 de Faro (R1) — o prazo de resposta é externo, começa já.
+3. Instalar Sentry (front + back), Vitest, Playwright.
+4. Medir baseline de LCP/INP nas 3 listas principais, para comparação na Fase 2.
+5. Criar ambiente de staging.
 
 ---
 
 ## 6. Perguntas em aberto
 
-1. **O CSV original tem quantas linhas?** Determina se o reimport cobre a base atual (R23).
-2. **Setor por clínica vem no CSV** ou é preciso classificar? Afeta o seed do enum `Setor` (§6.2).
-3. **Já existe conta Zadarma?** Se não, o prazo de verificação de documentos (certidão/CC + morada PT) entra no caminho crítico da Fase 4.
+1. **Setor por clínica vem no CSV** ou é preciso classificar? Afeta o seed do enum `Setor` (§6.2) — resposta necessária na Fase 3, não agora.
+2. **Já existe conta Zadarma?** Se não, o prazo de verificação de documentos (certidão/CC + morada PT) entra no caminho crítico da Fase 4.
