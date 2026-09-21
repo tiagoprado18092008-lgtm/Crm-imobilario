@@ -61,7 +61,7 @@ router.post('/impersonate/:userId', requireRole('AGENCY_OWNER', 'AGENCY_ADMIN'),
   const user = req.user;
   const target = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, role: true, agencyId: true, locationId: true, avatarUrl: true, permissions: true, isActive: true },
+    select: { id: true, name: true, email: true, role: true, agencyId: true, avatarUrl: true, permissions: true, isActive: true },
   });
   if (!target || !target.isActive || target.agencyId !== user.agencyId) {
     res.status(403).json({ error: 'Utilizador não encontrado ou de outra agência', status: 403 });

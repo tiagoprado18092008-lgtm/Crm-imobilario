@@ -4,8 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DATABASE_DIRECT_URL")
 }
 
@@ -13,7 +13,6 @@ enum UserRole {
   SUPER_ADMIN
   AGENCY_OWNER
   AGENCY_ADMIN
-  LOCATION_ADMIN
   TEAM_LEADER
   CONSULTANT
   USER
@@ -55,65 +54,19 @@ model Agency {
   apiKey      String? @unique
   isActive    Boolean @default(true)
 
-  users       User[]
-  automations Automation[]
-  automationRules AutomationRule[]
-  locations   Location[]
-  settings    AgencySettings?
-  pipelines     Pipeline[]
-  opportunities Opportunity[]
+  users                User[]
+  automations          Automation[]
+  automationRules      AutomationRule[]
+  settings             AgencySettings?
+  pipelines            Pipeline[]
+  opportunities        Opportunity[]
   appointmentCalendars AppointmentCalendar[]
-  whatsappSessions WhatsAppSession[]
-  systemSettings SystemSettings[]
+  whatsappSessions     WhatsAppSession[]
+  systemSettings       SystemSettings[]
+  conversations        Conversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model Location {
-  id        String   @id @default(cuid())
-  agencyId  String
-  agency    Agency   @relation(fields: [agencyId], references: [id])
-  name      String
-  slug      String
-  email     String?
-  phone     String?
-  address   String?
-  logoUrl   String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  users         User[]
-  contacts      Contact[]
-  opportunities Opportunity[]
-  properties    Property[]
-  tasks         Task[]
-  appointments  Appointment[] @relation("AppointmentLocation")
-  conversations Conversation[]
-  campaigns     EmailCampaign[]
-  forms         Form[]
-  automations   Automation[]
-  settings      LocationSettings?
-  activityLogs  ActivityLog[]
-  calendarEvents CalendarEvent[] @relation("CalendarEventLocation")
-  pipelines     Pipeline[]     @relation("PipelineLocation")
-  appointmentCalendars AppointmentCalendar[]
-
-  @@unique([agencyId, slug])
-}
-
-model LocationSettings {
-  id           String   @id @default(cuid())
-  locationId   String   @unique
-  location     Location @relation(fields: [locationId], references: [id])
-  timezone     String   @default("Europe/Lisbon")
-  locale       String   @default("pt-PT")
-  currency     String   @default("EUR")
-  workingHours Json     @default("{}")
-  bookingPage  Json     @default("{}")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
 }
 
 model AgencySettings {
@@ -129,43 +82,37 @@ model AgencySettings {
 }
 
 model ActivityLog {
-  id         String    @id @default(cuid())
+  id         String   @id @default(cuid())
   agencyId   String?
-  locationId String?
-  location   Location? @relation(fields: [locationId], references: [id])
   userId     String?
   action     String
   entityType String?
   entityId   String?
   metadata   Json?
   ip         String?
-  createdAt  DateTime  @default(now())
+  createdAt  DateTime @default(now())
 
   @@index([agencyId, createdAt])
-  @@index([locationId, createdAt])
   @@index([userId, createdAt])
 }
 
 model User {
-  id           String  @id @default(cuid())
-  name         String
-  email        String  @unique
-  passwordHash String?
-  googleId     String? @unique
-  clerkUserId  String? @unique
-  role         UserRole @default(CONSULTANT)
-  phone        String?
-  avatarUrl    String?
-  isActive     Boolean  @default(true)
-  onboardingCompleted Boolean @default(false)
-  amiNumber    String?
+  id                  String   @id @default(cuid())
+  name                String
+  email               String   @unique
+  passwordHash        String?
+  googleId            String?  @unique
+  clerkUserId         String?  @unique
+  role                UserRole @default(CONSULTANT)
+  phone               String?
+  avatarUrl           String?
+  isActive            Boolean  @default(true)
+  onboardingCompleted Boolean  @default(false)
+  amiNumber           String?
 
-  agencyId     String?
-  agency       Agency?  @relation(fields: [agencyId], references: [id])
-
-  locationId   String?
-  location     Location? @relation(fields: [locationId], references: [id])
-  permissions  Json?
+  agencyId    String?
+  agency      Agency? @relation(fields: [agencyId], references: [id])
+  permissions Json?
 
   supervisorId String?
   supervisor   User?   @relation("SupervisorSubAgents", fields: [supervisorId], references: [id])
@@ -176,14 +123,12 @@ model User {
   tasks         Task[]
   interactions  Interaction[]
 
-  assignedConversations Conversation[] @relation("ConversationAssigned")
-  sentMessages          Message[]      @relation("MessageSentBy")
+  assignedConversations Conversation[]        @relation("ConversationAssigned")
+  sentMessages          Message[]             @relation("MessageSentBy")
   phoneNumbers          PhoneNumber[]
   appointments          Appointment[]
-  campaigns             EmailCampaign[] @relation("CampaignCreatedBy")
-  assignedForms         Form[]          @relation("FormAssignedTo")
-  createdProperties     Property[]      @relation("PropertyCreator")
-  coAssignedProperties  Property[]      @relation("PropertyCoAssigned")
+  campaigns             EmailCampaign[]       @relation("CampaignCreatedBy")
+  assignedForms         Form[]                @relation("FormAssignedTo")
   calendarIntegrations  CalendarIntegration[]
   calendarEvents        CalendarEvent[]
   calendarSlots         CalendarSlot[]
@@ -206,44 +151,26 @@ model Contact {
   notes       String?
   preferences String?
 
-  assignedToId String
-  assignedTo   User   @relation(fields: [assignedToId], references: [id])
-
-  locationId   String?
-  location     Location? @relation(fields: [locationId], references: [id])
-
-  budget_min    Float?
-  budget_max    Float?
-  interest_type String?
-  interest_zones String?
-  timeline      String?
-  score         Int       @default(0)
-  tags          String[]  @default([])
-  gdprConsent   Boolean   @default(false)
-  gdprConsentDate DateTime?
+  assignedToId      String
+  assignedTo        User      @relation(fields: [assignedToId], references: [id])
+  score             Int       @default(0)
+  tags              String[]  @default([])
+  gdprConsent       Boolean   @default(false)
+  gdprConsentDate   DateTime?
   gdprConsentOrigin String?
-  city          String?
-  postalCode    String?
-  nif           String?
-  birthday      DateTime?
-  lastContactedAt DateTime?
+  city              String?
+  postalCode        String?
+  nif               String?
+  birthday          DateTime?
+  lastContactedAt   DateTime?
 
-  // Campos dinâmicos por tipo
-  selling_also     Boolean @default(false)  // Comprador que também quer vender
-  needs_financing  Boolean @default(false)  // Comprador precisa de financiamento
-  property_address String?                  // Morada do imóvel (Proprietário)
-  asking_price     Float?                   // Preço pedido (Proprietário)
-  sale_reason      String?                  // Razão da venda (Proprietário)
-  buying_also      Boolean @default(false)  // Proprietário que também quer comprar
-  commission       Float?                   // 5% × asking_price
-
-  opportunities    Opportunity[]
-  interactions     Interaction[]
-  tasks            Task[]
-  conversations    Conversation[]
-  appointments     Appointment[]
-  campaignRecipients EmailCampaignRecipient[]
-  calendarEvents   CalendarEvent[]
+  opportunities         Opportunity[]
+  interactions          Interaction[]
+  tasks                 Task[]
+  conversations         Conversation[]
+  appointments          Appointment[]
+  campaignRecipients    EmailCampaignRecipient[]
+  calendarEvents        CalendarEvent[]
   formSubmissions       FormSubmission[]
   automationEnrollments AutomationEnrollment[]
 
@@ -251,114 +178,28 @@ model Contact {
   updatedAt DateTime @updatedAt
 }
 
-model Property {
-  id          String  @id @default(cuid())
-  title       String
-  description String?
-  type        String
-  status      String  @default("AVAILABLE")
-  price       Float
-  address     String
-  area        Float?
-  bedrooms    Int?
-  bathrooms   Int?
-  parking     Int?
-  reference   String? @unique
-  imageUrls   String  @default("[]")
-
-  // Localização extra
-  postalCode         String?
-  freguesia          String?
-  concelho           String?
-
-  // Características extra
-  tipologia          String?
-  areaUtil           Float?
-  areaTereno         Float?
-  anoConstrucao      Int?
-  piso               Int?
-  orientacao         String?
-
-  // Comodidades (array de strings)
-  comodidades        String[]
-
-  // Negócio extra
-  precoArrendamento  Float?
-  despesasCondominio Float?
-  imiAnual           Float?
-
-  purpose           String  @default("SALE")
-  lat               Float?
-  lng               Float?
-  district          String?
-  energyCertificate String?
-  yearBuilt         Int?
-  condition         String?
-  features          String  @default("[]")
-  virtualTourUrl    String?
-  tags              String  @default("[]")
-  portalsPublished  String  @default("{}")
-  commission        Float?
-  contractStart     DateTime?
-  contractEnd       DateTime?
-  viewCount         Int     @default(0)
-
-  createdById    String?
-  createdBy      User?   @relation("PropertyCreator", fields: [createdById], references: [id])
-  coAssignedToId String?
-  coAssignedTo   User?   @relation("PropertyCoAssigned", fields: [coAssignedToId], references: [id])
-
-  locationId   String?
-  location     Location? @relation(fields: [locationId], references: [id])
-
-  opportunities Opportunity[]
-
-  // Relações media
-  photos             PropertyPhoto[]
-  documents          PropertyDocument[]
-  visits             PropertyVisit[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
 model Opportunity {
-  id                String    @id @default(cuid())
+  id                String         @id @default(cuid())
   title             String
-  stage             String    @default("LEAD_IN")
+  stage             String         @default("LEAD_IN")
   value             Float?
-  commission        Float?
-  probability       Int       @default(50)
+  probability       Int            @default(50)
   source            String?
   expectedCloseDate DateTime?
   lostReason        String?
   notes             String?
-  position          Int       @default(0)
-  pipelineId    String?
-  pipeline      Pipeline?      @relation(fields: [pipelineId], references: [id])
-  stageId       String?
-  pipelineStage PipelineStage? @relation(fields: [stageId], references: [id])
+  position          Int            @default(0)
+  pipelineId        String?
+  pipeline          Pipeline?      @relation(fields: [pipelineId], references: [id])
+  stageId           String?
+  pipelineStage     PipelineStage? @relation(fields: [stageId], references: [id])
 
   contactId    String
-  contact      Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  propertyId   String?
-  property     Property? @relation(fields: [propertyId], references: [id])
+  contact      Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
   assignedToId String
-  assignedTo   User      @relation(fields: [assignedToId], references: [id])
-
-  locationId   String?
-  location     Location? @relation(fields: [locationId], references: [id])
+  assignedTo   User    @relation(fields: [assignedToId], references: [id])
   agencyId     String?
-  agency       Agency?   @relation(fields: [agencyId], references: [id])
-
-  // Campos dinâmicos por tipo (espelho do Contact)
-  selling_also     Boolean @default(false)
-  needs_financing  Boolean @default(false)
-  property_address String?
-  asking_price     Float?
-  sale_reason      String?
-  buying_also      Boolean @default(false)
-  opp_commission   Float?  // comissão 5% calculada (renomeado para evitar conflito com commission existente)
+  agency       Agency? @relation(fields: [agencyId], references: [id])
 
   interactions Interaction[]
   tasks        Task[]
@@ -402,111 +243,107 @@ model Task {
   assignedToId  String
   assignedTo    User         @relation(fields: [assignedToId], references: [id])
 
-  locationId   String?
-  location     Location? @relation(fields: [locationId], references: [id])
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Conversation {
-  id          String    @id @default(cuid())
-  channel     String    // WHATSAPP, EMAIL, INSTAGRAM, INTERNAL
-  externalId  String?   // thread ID / phone / email address
-  status      String    @default("OPEN") // OPEN, RESOLVED, ARCHIVED
+  id         String  @id @default(cuid())
+  channel    String // WHATSAPP, EMAIL, INSTAGRAM, INTERNAL
+  externalId String? // thread ID / phone / email address
+  status     String  @default("OPEN") // OPEN, RESOLVED, ARCHIVED
 
-  isRead          Boolean   @default(true)
-  isStarred       Boolean   @default(false)
+  isRead          Boolean @default(true)
+  isStarred       Boolean @default(false)
   lastMessageText String?
 
-  contactId   String?
-  contact     Contact?  @relation(fields: [contactId], references: [id])
+  contactId    String?
+  contact      Contact? @relation(fields: [contactId], references: [id])
   assignedToId String?
   assignedTo   User?    @relation("ConversationAssigned", fields: [assignedToId], references: [id])
 
-  locationId   String?
-  location     Location? @relation(fields: [locationId], references: [id])
+  // Tenant owner. Previously reached indirectly via Location; denormalised here
+  // when the Location model was removed so isolation stays enforceable.
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
 
-  messages    Message[]
+  messages Message[]
 
   lastMessageAt DateTime @default(now())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  @@index([locationId, lastMessageAt])
   @@index([contactId])
+  @@index([agencyId, lastMessageAt])
 }
 
 model MessageTemplate {
-  id         String   @id @default(cuid())
-  locationId String
-  agencyId   String?
-  name       String
-  channel    String   // WHATSAPP | EMAIL | SMS | ALL
-  subject    String?
-  body       String   @db.Text
-  variables  String[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@index([locationId])
+  id        String   @id @default(cuid())
+  agencyId  String?
+  name      String
+  channel   String // WHATSAPP | EMAIL | SMS | ALL
+  subject   String?
+  body      String   @db.Text
+  variables String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model AutomationRule {
-  id          String   @id @default(cuid())
-  name        String
-  trigger     String   // NEW_LEAD, VISIT_SCHEDULED, MISSED_CALL, NO_RESPONSE_2H, LEAD_QUALIFIED, PROPOSAL_SENT
-  isActive    Boolean  @default(true)
-  actions     String   // JSON array of actions
-  agencyId    String?
-  agency      Agency?  @relation(fields: [agencyId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  logs        AutomationLog[]
+  id        String          @id @default(cuid())
+  name      String
+  trigger   String // NEW_LEAD, VISIT_SCHEDULED, MISSED_CALL, NO_RESPONSE_2H, LEAD_QUALIFIED, PROPOSAL_SENT
+  isActive  Boolean         @default(true)
+  actions   String // JSON array of actions
+  agencyId  String?
+  agency    Agency?         @relation(fields: [agencyId], references: [id])
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  logs      AutomationLog[]
 }
 
 model AutomationLog {
-  id           String   @id @default(cuid())
-  ruleId       String
-  rule         AutomationRule @relation(fields: [ruleId], references: [id])
-  contactId    String?
-  trigger      String
-  status       String   @default("SUCCESS") // SUCCESS, FAILED
-  error        String?
-  executedAt   DateTime @default(now())
+  id         String         @id @default(cuid())
+  ruleId     String
+  rule       AutomationRule @relation(fields: [ruleId], references: [id])
+  contactId  String?
+  trigger    String
+  status     String         @default("SUCCESS") // SUCCESS, FAILED
+  error      String?
+  executedAt DateTime       @default(now())
 }
 
 model Message {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id])
 
-  direction      String   // INBOUND, OUTBOUND
-  channel        String   // WHATSAPP, EMAIL, INSTAGRAM, INTERNAL, SMS
-  content        String
-  subject        String?  // for email
-  status         String   @default("SENT") // SENT, DELIVERED, READ, FAILED
-  externalId     String?  // message ID from WhatsApp/Meta
+  direction  String // INBOUND, OUTBOUND
+  channel    String // WHATSAPP, EMAIL, INSTAGRAM, INTERNAL, SMS
+  content    String
+  subject    String? // for email
+  status     String  @default("SENT") // SENT, DELIVERED, READ, FAILED
+  externalId String? // message ID from WhatsApp/Meta
 
-  sentById       String?
-  sentBy         User?    @relation("MessageSentBy", fields: [sentById], references: [id])
+  sentById String?
+  sentBy   User?   @relation("MessageSentBy", fields: [sentById], references: [id])
 
-  metadata       String?  // JSON string for extra data (attachments, etc.)
-  createdAt      DateTime @default(now())
+  metadata  String? // JSON string for extra data (attachments, etc.)
+  createdAt DateTime @default(now())
 }
 
 model PhoneNumber {
-  id           String  @id @default(cuid())
-  number       String  @unique
-  friendlyName String?
-  twilioSid    String?
-  status       String  @default("ACTIVE") // ACTIVE, RELEASED
-  countryCode  String
-  numberType   String  @default("LOCAL") // LOCAL, TOLLFREE, MOBILE
-  capabilities String  @default("{\"voice\":true,\"sms\":true}")
-  monthlyPrice Float   @default(1.15)
-  source       String  @default("TWILIO") // TWILIO, EXTERNAL_VERIFIED
-  ringAll      Boolean @default(false)
+  id               String  @id @default(cuid())
+  number           String  @unique
+  friendlyName     String?
+  twilioSid        String?
+  status           String  @default("ACTIVE") // ACTIVE, RELEASED
+  countryCode      String
+  numberType       String  @default("LOCAL") // LOCAL, TOLLFREE, MOBILE
+  capabilities     String  @default("{\"voice\":true,\"sms\":true}")
+  monthlyPrice     Float   @default(1.15)
+  source           String  @default("TWILIO") // TWILIO, EXTERNAL_VERIFIED
+  ringAll          Boolean @default(false)
   voicemailEnabled Boolean @default(true)
 
   userId String
@@ -517,17 +354,15 @@ model PhoneNumber {
 }
 
 model AppointmentCalendar {
-  id          String   @id @default(cuid())
-  name        String
-  color       String   @default("#6366f1")
-  description String?
-  agencyId    String?
-  locationId  String?
-  agency      Agency?   @relation(fields: [agencyId], references: [id])
-  location    Location? @relation(fields: [locationId], references: [id])
+  id           String        @id @default(cuid())
+  name         String
+  color        String        @default("#6366f1")
+  description  String?
+  agencyId     String?
+  agency       Agency?       @relation(fields: [agencyId], references: [id])
   appointments Appointment[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 model Appointment {
@@ -546,27 +381,24 @@ model Appointment {
   assignedToId  String
   assignedTo    User         @relation(fields: [assignedToId], references: [id])
 
-  locationId   String?
-  appointmentLocation Location? @relation("AppointmentLocation", fields: [locationId], references: [id])
-
   reminderSent Boolean @default(false)
   notes        String?
   location     String?
 
-  calendarId   String?
-  calendar     AppointmentCalendar? @relation(fields: [calendarId], references: [id])
+  calendarId String?
+  calendar   AppointmentCalendar? @relation(fields: [calendarId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model EmailCampaign {
-  id        String @id @default(cuid())
-  name      String
-  subject   String
-  body      String // HTML content
-  status    String @default("DRAFT") // DRAFT, SCHEDULED, SENDING, SENT, CANCELLED
-  type      String @default("BROADCAST") // BROADCAST, SEQUENCE
+  id      String @id @default(cuid())
+  name    String
+  subject String
+  body    String // HTML content
+  status  String @default("DRAFT") // DRAFT, SCHEDULED, SENDING, SENT, CANCELLED
+  type    String @default("BROADCAST") // BROADCAST, SEQUENCE
 
   scheduledAt DateTime?
   sentAt      DateTime?
@@ -580,9 +412,6 @@ model EmailCampaign {
   createdById String
   createdBy   User   @relation("CampaignCreatedBy", fields: [createdById], references: [id])
 
-  locationId  String?
-  location    Location? @relation(fields: [locationId], references: [id])
-
   recipients EmailCampaignRecipient[]
 
   createdAt DateTime @default(now())
@@ -590,32 +419,29 @@ model EmailCampaign {
 }
 
 model EmailCampaignRecipient {
-  id         String @id @default(cuid())
+  id         String        @id @default(cuid())
   campaignId String
   campaign   EmailCampaign @relation(fields: [campaignId], references: [id])
   contactId  String
-  contact    Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contact    Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
   email      String
-  status     String @default("PENDING") // PENDING, SENT, OPENED, CLICKED, BOUNCED, UNSUBSCRIBED
+  status     String        @default("PENDING") // PENDING, SENT, OPENED, CLICKED, BOUNCED, UNSUBSCRIBED
   sentAt     DateTime?
   openedAt   DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime      @default(now())
 }
 
 model Form {
-  id          String @id @default(cuid())
-  name        String
-  description String?
-  fields      String // JSON array of field definitions
-  isActive    Boolean @default(true)
-  submitAction String @default("CREATE_CONTACT") // CREATE_CONTACT, CREATE_LEAD
-  thankYouMessage String @default("Obrigado! Entraremos em contacto em breve.")
+  id              String  @id @default(cuid())
+  name            String
+  description     String?
+  fields          String // JSON array of field definitions
+  isActive        Boolean @default(true)
+  submitAction    String  @default("CREATE_CONTACT") // CREATE_CONTACT, CREATE_LEAD
+  thankYouMessage String  @default("Obrigado! Entraremos em contacto em breve.")
 
   assignedToId String?
   assignedTo   User?   @relation("FormAssignedTo", fields: [assignedToId], references: [id])
-
-  locationId   String?
-  location     Location? @relation(fields: [locationId], references: [id])
 
   submissions FormSubmission[]
 
@@ -624,10 +450,10 @@ model Form {
 }
 
 model FormSubmission {
-  id     String @id @default(cuid())
-  formId String
-  form   Form   @relation(fields: [formId], references: [id])
-  data   String // JSON of submitted field values
+  id        String   @id @default(cuid())
+  formId    String
+  form      Form     @relation(fields: [formId], references: [id])
+  data      String // JSON of submitted field values
   contactId String?
   contact   Contact? @relation(fields: [contactId], references: [id])
   ipAddress String?
@@ -644,7 +470,6 @@ model Invitation {
   expiresAt   DateTime
   usedAt      DateTime?
   createdAt   DateTime  @default(now())
-  locationId  String?
   permissions Json?
   agencyId    String?
 }
@@ -653,8 +478,6 @@ model Automation {
   id          String   @id @default(cuid())
   agencyId    String
   agency      Agency   @relation(fields: [agencyId], references: [id])
-  locationId  String?
-  location    Location? @relation(fields: [locationId], references: [id])
   name        String
   description String?
   isActive    Boolean  @default(true)
@@ -699,23 +522,23 @@ model AutomationRun {
 }
 
 model CalendarIntegration {
-  id               String    @id @default(cuid())
-  userId           String
-  provider         String    // "google" | "outlook"
-  email            String
-  accessToken      String    @db.Text
-  refreshToken     String    @db.Text
-  tokenExpiresAt   DateTime
+  id                String    @id @default(cuid())
+  userId            String
+  provider          String // "google" | "outlook"
+  email             String
+  accessToken       String    @db.Text
+  refreshToken      String    @db.Text
+  tokenExpiresAt    DateTime
   webhookChannelId  String?
   webhookResourceId String?
-  webhookExpiry    DateTime?
-  syncToken        String?
-  deltaLink        String?
-  lastSyncedAt     DateTime?
-  isActive         Boolean   @default(true)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  user             User      @relation(fields: [userId], references: [id])
+  webhookExpiry     DateTime?
+  syncToken         String?
+  deltaLink         String?
+  lastSyncedAt      DateTime?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id])
 
   @@unique([userId, provider])
 }
@@ -725,7 +548,7 @@ model CalendarEvent {
   userId           String
   integrationId    String?
   externalId       String?
-  externalProvider String?   // "google" | "outlook" | null
+  externalProvider String? // "google" | "outlook" | null
   title            String
   description      String?   @db.Text
   location         String?
@@ -740,7 +563,6 @@ model CalendarEvent {
   attendees        Json?
   contactId        String?
   opportunityId    String?
-  propertyId       String?
   meetLink         String?
   teamsLink        String?
   syncedAt         DateTime?
@@ -748,9 +570,6 @@ model CalendarEvent {
   updatedAt        DateTime  @updatedAt
   user             User      @relation(fields: [userId], references: [id])
   contact          Contact?  @relation(fields: [contactId], references: [id])
-
-  locationId       String?
-  calendarLocation Location? @relation("CalendarEventLocation", fields: [locationId], references: [id])
 
   @@unique([userId, externalId, externalProvider])
   @@index([userId, startAt, endAt])
@@ -766,40 +585,6 @@ model CalendarSlot {
   user        User    @relation(fields: [userId], references: [id])
 }
 
-model PropertyPhoto {
-  id         String   @id @default(cuid())
-  propertyId String
-  url        String
-  categoria  String?
-  ordem      Int      @default(0)
-  createdAt  DateTime @default(now())
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-}
-
-model PropertyDocument {
-  id         String   @id @default(cuid())
-  propertyId String
-  nome       String
-  tipo       String?
-  url        String
-  tamanho    Int?
-  createdAt  DateTime @default(now())
-  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-}
-
-model PropertyVisit {
-  id          String   @id @default(cuid())
-  propertyId  String
-  contactId   String?
-  userId      String
-  scheduledAt DateTime
-  status      String   @default("agendada")
-  interesse   String?
-  notas       String?
-  createdAt   DateTime @default(now())
-  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-}
-
 // Key-value store for system settings that must persist across deployments
 // Values for sensitive keys are stored encrypted
 model SystemSettings {
@@ -807,7 +592,7 @@ model SystemSettings {
   agencyId  String?
   agency    Agency?  @relation(fields: [agencyId], references: [id])
   key       String
-  value     String   // plain text or AES-encrypted (prefix "enc:")
+  value     String // plain text or AES-encrypted (prefix "enc:")
   updatedAt DateTime @updatedAt
 
   @@unique([agencyId, key])
@@ -819,8 +604,6 @@ model Pipeline {
   position      Int             @default(0)
   agencyId      String?
   agency        Agency?         @relation(fields: [agencyId], references: [id])
-  locationId    String?
-  location      Location?       @relation("PipelineLocation", fields: [locationId], references: [id])
   stages        PipelineStage[]
   opportunities Opportunity[]
   createdAt     DateTime        @default(now())

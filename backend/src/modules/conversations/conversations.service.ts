@@ -20,7 +20,7 @@ function normalizeExternalId(externalId: string): string {
 const buildConversationWhere = async (user: any): Promise<any> => {
   const scope = await buildScope(user);
   // For conversations: also include unassigned ones for non-admin roles
-  if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN' || user.role === 'LOCATION_ADMIN') {
+  if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') {
     return scope;
   }
   // TEAM_LEADER / CONSULTANT / USER: include nulls
@@ -116,7 +116,7 @@ export const createOrFind = async (
   externalId: string,
   contactId?: string,
   userId?: string,
-  locationId?: string
+  agencyId?: string
 ) => {
   // Build phone variants so we match regardless of +351 prefix format
   const digits = externalId.replace(/\D/g, '')
@@ -128,24 +128,17 @@ export const createOrFind = async (
     externalIdVariants.push(local, `+${local}`)
   }
 
-  // Look for an open conversation with the same channel + externalId (scoped to location if provided)
+  // Look for an open conversation with the same channel + externalId (scoped to agency if provided)
   const existing = await prisma.conversation.findFirst({
     where: {
       channel,
       externalId: { in: externalIdVariants },
       status: 'OPEN',
-      ...(locationId ? { locationId } : {}),
+      ...(agencyId ? { agencyId } : {}),
     },
   });
 
   if (existing) return existing;
-
-  // Resolve locationId: use provided or fall back to first active location
-  let resolvedLocationId = locationId || null;
-  if (!resolvedLocationId) {
-    const firstLocation = await prisma.location.findFirst({ select: { id: true } });
-    resolvedLocationId = firstLocation?.id || null;
-  }
 
   return prisma.conversation.create({
     data: {
@@ -155,7 +148,7 @@ export const createOrFind = async (
       isRead: false,
       contactId: contactId || null,
       assignedToId: userId || null,
-      locationId: resolvedLocationId,
+      agencyId: agencyId || null,
       lastMessageAt: new Date(),
     },
   });
@@ -167,7 +160,7 @@ export const findOrReopenForInbound = async (
   channel: string,
   externalId: string,
   contactId: string | undefined,
-  locationId: string,
+  agencyId: string | null,
   assignedToId?: string,
 ) => {
   const canonical = normalizeExternalId(externalId);
@@ -183,7 +176,7 @@ export const findOrReopenForInbound = async (
       where: {
         channel,
         externalId: { in: variants },
-        locationId,
+        ...(agencyId ? { agencyId } : {}),
       },
       orderBy: { lastMessageAt: 'desc' },
     });
@@ -205,7 +198,7 @@ export const findOrReopenForInbound = async (
       return existing;
     }
 
-    console.log(`[Inbound] Created new conversation for ${canonical} (channel: ${channel}, location: ${locationId})`);
+    console.log(`[Inbound] Created new conversation for ${canonical} (channel: ${channel}, agency: ${agencyId})`);
     return tx.conversation.create({
       data: {
         channel,
@@ -213,7 +206,7 @@ export const findOrReopenForInbound = async (
         status: 'OPEN',
         isRead: false,
         contactId: contactId || null,
-        locationId,
+        agencyId,
         lastMessageAt: new Date(),
         ...(assignedToId ? { assignedToId } : {}),
       },
@@ -236,7 +229,6 @@ export const sendMessage = async (
     where: { id: conversationId },
     include: {
       contact: { select: { email: true, whatsapp: true, phone: true } },
-      location: { select: { agencyId: true } },
     },
   });
 
@@ -245,7 +237,7 @@ export const sendMessage = async (
   }
 
   // Tenant check: sender must belong to same agency as the conversation
-  if (senderAgencyId && conversation.location?.agencyId && conversation.location.agencyId !== senderAgencyId) {
+  if (senderAgencyId && conversation.agencyId && conversation.agencyId !== senderAgencyId) {
     throw Object.assign(new Error('Access denied'), { status: 403 });
   }
 
@@ -257,7 +249,7 @@ export const sendMessage = async (
 
   const destination = conversation.externalId || '';
 
-  const agencyId = senderAgencyId || (conversation as any).location?.agencyId;
+  const agencyId = senderAgencyId || conversation.agencyId || undefined;
 
   if (channel === 'WHATSAPP') {
     sendResult = await sendWhatsAppMessage(destination, content, agencyId, userId);
@@ -343,13 +335,6 @@ export const receiveInbound = async (
     return null;
   }
 
-  const loc = await prisma.location.findFirst({ where: { agencyId }, select: { id: true } });
-  const resolvedLocationId: string | null = loc?.id || null;
-  if (!resolvedLocationId) {
-    console.warn(`[Inbound] Ignored ${channel} message — agency ${agencyId} has no locations`);
-    return null;
-  }
-
   // Only process messages from existing contacts of THIS agency — unknown numbers ignored
   let resolvedContactId: string | undefined;
   try {
@@ -364,18 +349,18 @@ export const receiveInbound = async (
         where: {
           AND: [
             { OR: phoneVariants.flatMap(v => [{ phone: v }, { whatsapp: v }]) },
-            { location: { agencyId } },
+            { assignedTo: { agencyId } },
           ],
         },
       });
       if (!contact) {
-        // Allow reply if there's already an outbound conversation with this number
-        // on a location owned by this agency.
+        // Allow reply if there's already an outbound conversation with this
+        // number owned by this agency.
         const existingConversation = await prisma.conversation.findFirst({
           where: {
             channel,
             externalId: { in: phoneVariants },
-            location: { agencyId },
+            agencyId,
           },
         });
         if (!existingConversation) {
@@ -388,7 +373,7 @@ export const receiveInbound = async (
     }
   } catch { /* non-critical */ }
 
-  const conversation = await findOrReopenForInbound(channel, externalId, resolvedContactId, resolvedLocationId, assignedToId);
+  const conversation = await findOrReopenForInbound(channel, externalId, resolvedContactId, agencyId, assignedToId);
 
   const message = await prisma.message.create({
     data: {
@@ -432,13 +417,12 @@ export const updateStatus = async (id: string, status: string, currentUser?: any
 
   const conversation = await prisma.conversation.findUnique({
     where: { id },
-    include: { location: { select: { agencyId: true } } },
   });
   if (!conversation) {
     throw Object.assign(new Error('Conversation not found'), { status: 404 });
   }
 
-  if (currentUser?.agencyId && conversation.location?.agencyId && conversation.location.agencyId !== currentUser.agencyId) {
+  if (currentUser?.agencyId && conversation.agencyId && conversation.agencyId !== currentUser.agencyId) {
     throw Object.assign(new Error('Access denied'), { status: 403 });
   }
 
@@ -450,13 +434,12 @@ export const updateStatus = async (id: string, status: string, currentUser?: any
 export const assign = async (id: string, assignedToId: string, currentUser?: any) => {
   const conversation = await prisma.conversation.findUnique({
     where: { id },
-    include: { location: { select: { agencyId: true } } },
   });
   if (!conversation) {
     throw Object.assign(new Error('Conversation not found'), { status: 404 });
   }
 
-  if (currentUser?.agencyId && conversation.location?.agencyId && conversation.location.agencyId !== currentUser.agencyId) {
+  if (currentUser?.agencyId && conversation.agencyId && conversation.agencyId !== currentUser.agencyId) {
     throw Object.assign(new Error('Access denied'), { status: 403 });
   }
 

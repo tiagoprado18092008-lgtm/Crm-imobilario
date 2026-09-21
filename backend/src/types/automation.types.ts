@@ -5,7 +5,6 @@ export type TriggerType =
   | 'lead_stage_changed'
   | 'lead_assigned'
   | 'lead_tag_added'
-  | 'property_added'
   | 'form_submitted'
   | 'scheduled'
 

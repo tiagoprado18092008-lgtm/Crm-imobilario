@@ -11,7 +11,6 @@ dotenv.config();
 import authRouter from './modules/auth/auth.router';
 import usersRouter from './modules/users/users.router';
 import contactsRouter from './modules/contacts/contacts.router';
-import propertiesRouter from './modules/properties/properties.router';
 import opportunitiesRouter from './modules/opportunities/opportunities.router';
 import interactionsRouter from './modules/interactions/interactions.router';
 import tasksRouter from './modules/tasks/tasks.router';
@@ -35,7 +34,6 @@ import calendarRouter from './modules/calendar/calendar.router';
 import calendarEventsRouter from './modules/calendar/calendar-events.router';
 import bookingRouter from './modules/calendar/booking.router';
 import webhooksRouter from './modules/webhooks/webhooks.router';
-import locationsRouter from './modules/locations/locations.router';
 import activityRouter from './modules/activity/activity.router';
 import pipelinesRouter from './modules/pipelines/pipelines.router';
 import { ensureDefaultPipelines } from './modules/pipelines/pipelines.service';
@@ -66,9 +64,9 @@ app.use(helmet({
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
-  'https://casaflow.pt',
-  'https://www.casaflow.pt',
-  'https://casaflow-frontend.onrender.com',
+  'https://alphacrm.pt',
+  'https://www.alphacrm.pt',
+  'https://alphacrm-frontend.onrender.com',
   ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map(u => u.trim()) : []),
 ];
 app.use(
@@ -76,8 +74,8 @@ app.use(
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
       if (allowedOrigins.includes(origin)) return cb(null, true);
-      // Allow any *.casaflow.pt and *.onrender.com subdomain
-      if (/^https:\/\/([a-z0-9-]+\.)?casaflow\.pt$/i.test(origin)) return cb(null, true);
+      // Allow any *.alphacrm.pt and *.onrender.com subdomain
+      if (/^https:\/\/([a-z0-9-]+\.)?alphacrm\.pt$/i.test(origin)) return cb(null, true);
       if (/^https:\/\/[a-z0-9-]+\.onrender\.com$/i.test(origin)) return cb(null, true);
       if (/^https:\/\/[a-z0-9-]+\.up\.railway\.app$/i.test(origin)) return cb(null, true);
       cb(new Error(`CORS blocked: ${origin}`));
@@ -161,7 +159,7 @@ app.use(requestLogger);
 const uploadsPath = (() => {
   const fromSrc = path.resolve(__dirname, '../../uploads');       // ts-node path
   const fromDist = path.resolve(__dirname, '../../../uploads');   // compiled path
-  if (fs.existsSync(fromSrc + '/properties') || fs.existsSync(fromSrc)) return fromSrc;
+  if (fs.existsSync(fromSrc)) return fromSrc;
   return fromDist;
 })();
 app.use('/uploads', express.static(uploadsPath));
@@ -394,7 +392,6 @@ app.use('/api/auth', authLimiter, authRouter);
 app.use('/api', apiLimiter);
 app.use('/api/users', usersRouter);
 app.use('/api/contacts', contactsRouter);
-app.use('/api/properties', propertiesRouter);
 app.use('/api/opportunities', opportunitiesRouter);
 app.use('/api/interactions', interactionsRouter);
 app.use('/api/tasks', tasksRouter);
@@ -416,7 +413,6 @@ app.use('/api/notifications', notificationsRouter);
 app.use('/api/exports', exportsRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/agency', agencyRouter);
-app.use('/api/locations', locationsRouter);
 app.use('/api/activity', activityRouter);
 app.use('/api/pipelines', pipelinesRouter);
 app.use('/api/calendar', calendarRouter);

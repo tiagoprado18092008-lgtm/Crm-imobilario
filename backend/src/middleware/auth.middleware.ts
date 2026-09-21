@@ -40,7 +40,6 @@ export const authenticate = async (
         isActive: true,
         supervisorId: true,
         agencyId: true,
-        locationId: true,
         permissions: true,
         createdAt: true,
         updatedAt: true,
@@ -71,7 +70,6 @@ export const authenticate = async (
           avatarUrl: true,
           isActive: true,
           agencyId: true,
-          locationId: true,
           permissions: true,
         },
       });

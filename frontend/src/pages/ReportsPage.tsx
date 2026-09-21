@@ -110,7 +110,7 @@ export const ReportsPage: React.FC = () => {
       const imgHeight = (canvas.height * imgWidth) / canvas.width
       pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, Math.min(imgHeight, pageHeight - 20))
       const dateStr = new Date().toLocaleDateString('pt-PT').replace(/\//g, '-')
-      pdf.save(`relatorio-casaflow-${dateStr}.pdf`)
+      pdf.save(`relatorio-alphacrm-${dateStr}.pdf`)
       showToast('PDF exportado com sucesso.', 'success')
     } catch {
       showToast('Erro ao gerar PDF.', 'error')
@@ -288,27 +288,6 @@ export const ReportsPage: React.FC = () => {
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>lead → fecho</p>
         </div>
       </div>
-
-      {/* Properties by status */}
-      {(summary as any)?.propertiesByStatus && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px 24px', marginTop: 16 }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>Imóveis por Estado</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-            {[
-              { key: 'AVAILABLE', label: 'Disponível', color: '#16a34a', bg: '#dcfce7' },
-              { key: 'RESERVED', label: 'Reservado', color: '#d97706', bg: '#fef3c7' },
-              { key: 'SOLD', label: 'Vendido', color: '#2563eb', bg: '#dbeafe' },
-              { key: 'RENTED', label: 'Arrendado', color: '#7c3aed', bg: '#ede9fe' },
-              { key: 'IN_PROCESS', label: 'Em processo', color: '#6b7280', bg: '#f3f4f6' },
-            ].map(({ key, label, color, bg }) => (
-              <div key={key} style={{ background: bg, borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
-                <div style={{ fontSize: 28, fontWeight: 800, color }}>{(summary as any).propertiesByStatus?.[key] ?? 0}</div>
-                <div style={{ fontSize: 12, fontWeight: 600, color, marginTop: 4 }}>{label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Row 1: Pipeline bar + Funnel */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

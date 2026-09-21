@@ -11,7 +11,6 @@ interface PermissionEditorProps {
 const MODULES = [
   { key: 'contacts', label: 'Contactos' },
   { key: 'opportunities', label: 'Negócios' },
-  { key: 'properties', label: 'Imóveis' },
   { key: 'tasks', label: 'Tarefas' },
   { key: 'appointments', label: 'Agendamentos' },
   { key: 'conversations', label: 'Conversas' },

@@ -55,11 +55,9 @@ export const create = async (
   }
 
   let resolvedAgencyId = agencyId;
-  let resolvedLocationId = locationId;
   const inviter = await prisma.user.findUnique({ where: { id: invitedById } });
   if (inviter) {
     if (!resolvedAgencyId && inviter.agencyId) resolvedAgencyId = inviter.agencyId;
-    if (!resolvedLocationId && inviter.locationId) resolvedLocationId = inviter.locationId;
   }
 
   const token = crypto.randomUUID();
@@ -77,7 +75,6 @@ export const create = async (
             isActive: false,
             onboardingCompleted: false,
             ...(resolvedAgencyId ? { agencyId: resolvedAgencyId } : {}),
-            ...(resolvedLocationId ? { locationId: resolvedLocationId } : {}),
           },
         })
       : prisma.user.findFirst({ where: { id: invitedById } }), // no-op placeholder
@@ -89,7 +86,6 @@ export const create = async (
         token,
         invitedById,
         expiresAt,
-        ...(resolvedLocationId ? { locationId: resolvedLocationId } : {}),
         ...(resolvedAgencyId ? { agencyId: resolvedAgencyId } : {}),
         ...(permissions ? { permissions } : {}),
       },
@@ -102,7 +98,7 @@ export const create = async (
       email,
       type: invType,
       agencyId: resolvedAgencyId,
-      inviterName: inviter?.name || 'CasaFlow',
+      inviterName: inviter?.name || 'AlphaCRM',
       inviteUrl,
     });
   } catch (err: any) {
@@ -130,7 +126,7 @@ export const resend = async (id: string) => {
     email: inv.email,
     type: inv.type || 'CONSULTANT',
     agencyId: inv.agencyId,
-    inviterName: inviter?.name || 'CasaFlow',
+    inviterName: inviter?.name || 'AlphaCRM',
     inviteUrl,
   });
 
@@ -144,9 +140,7 @@ export const list = async (user?: any) => {
       // sees all
     } else if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') {
       if (user.agencyId) where.agencyId = user.agencyId;
-    } else if (user.role === 'LOCATION_ADMIN') {
-      if (user.locationId) where.locationId = user.locationId;
-    }
+        }
   }
   return prisma.invitation.findMany({ where, orderBy: { createdAt: 'desc' } });
 };

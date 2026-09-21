@@ -61,7 +61,6 @@ export const create = async (userId: string, dto: {
   attendees?: any[];
   contactId?: string;
   opportunityId?: string;
-  propertyId?: string;
 }) => {
   const event = await prisma.calendarEvent.create({
     data: {
@@ -79,7 +78,6 @@ export const create = async (userId: string, dto: {
       attendees: dto.attendees as any,
       contactId: dto.contactId || undefined,
       opportunityId: dto.opportunityId || undefined,
-      propertyId: dto.propertyId || undefined,
     },
     include: {
       contact: { select: { id: true, name: true, email: true } },
@@ -108,7 +106,6 @@ export const update = async (userId: string, id: string, dto: {
   attendees?: any[];
   contactId?: string;
   opportunityId?: string;
-  propertyId?: string;
 }) => {
   const existing = await prisma.calendarEvent.findFirst({ where: { id, userId } });
   if (!existing) {
@@ -133,7 +130,6 @@ export const update = async (userId: string, id: string, dto: {
       attendees: dto.attendees as any,
       contactId: dto.contactId || undefined,
       opportunityId: dto.opportunityId || undefined,
-      propertyId: dto.propertyId || undefined,
     },
     include: {
       contact: { select: { id: true, name: true, email: true } },
@@ -190,7 +186,6 @@ export const duplicate = async (userId: string, id: string) => {
       color: event.color,
       contactId: event.contactId,
       opportunityId: event.opportunityId,
-      propertyId: event.propertyId,
     },
   });
 };

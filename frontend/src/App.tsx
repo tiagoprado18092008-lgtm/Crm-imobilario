@@ -13,8 +13,6 @@ import { SuperAdminAgencyDetailPage } from './pages/super-admin/SuperAdminAgency
 import { DashboardPage } from './pages/DashboardPage'
 import { ContactsPage } from './pages/ContactsPage'
 import { ContactDetailPage } from './pages/ContactDetailPage'
-import { PropertiesPage } from './pages/PropertiesPage'
-import { PropertyDetailPage } from './pages/PropertyDetailPage'
 import { PipelinePage } from './pages/PipelinePage'
 import { TasksPage } from './pages/TasksPage'
 import { CalendarPage } from './pages/CalendarPage'
@@ -32,7 +30,6 @@ import { AppointmentsPage } from './pages/AppointmentsPage'
 import { CampaignsPage } from './pages/CampaignsPage'
 import { FormsPage } from './pages/FormsPage'
 import { AgencyPage } from './pages/AgencyPage'
-import { LocationsPage } from './pages/agency/LocationsPage'
 import { AgencyUsersPage } from './pages/agency/AgencyUsersPage'
 import { AgencySettingsPage } from './pages/agency/AgencySettingsPage'
 import { ActivityPage } from './pages/agency/ActivityPage'
@@ -78,8 +75,6 @@ function App() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="contacts" element={<ContactsPage />} />
         <Route path="contacts/:id" element={<ContactDetailPage />} />
-        <Route path="properties" element={<PropertiesPage />} />
-        <Route path="properties/:id" element={<PropertyDetailPage />} />
         <Route path="pipeline" element={<PipelinePage />} />
         <Route path="tasks" element={<TasksPage />} />
         <Route path="calendar" element={<CalendarPage />} />
@@ -103,11 +98,6 @@ function App() {
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="forms" element={<FormsPage />} />
         <Route path="agency" element={<AgencyPage />} />
-        <Route path="agency/locations" element={
-          <ProtectedRoute allowedRoles={['AGENCY_OWNER', 'AGENCY_ADMIN']}>
-            <LocationsPage />
-          </ProtectedRoute>
-        } />
         <Route path="agency/users" element={
           <ProtectedRoute allowedRoles={['AGENCY_OWNER', 'AGENCY_ADMIN']}>
             <AgencyUsersPage />
@@ -130,7 +120,7 @@ function App() {
         } />
         <Route path="settings/team" element={<TeamPage />} />
         <Route path="settings/general" element={
-          <ProtectedRoute allowedRoles={['AGENCY_OWNER', 'AGENCY_ADMIN', 'LOCATION_ADMIN']}>
+          <ProtectedRoute allowedRoles={['AGENCY_OWNER', 'AGENCY_ADMIN']}>
             <GeneralSettingsPage />
           </ProtectedRoute>
         } />

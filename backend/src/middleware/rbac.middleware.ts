@@ -5,7 +5,6 @@ export const ROLES = {
   SUPER_ADMIN: 'SUPER_ADMIN',
   AGENCY_OWNER: 'AGENCY_OWNER',
   AGENCY_ADMIN: 'AGENCY_ADMIN',
-  LOCATION_ADMIN: 'LOCATION_ADMIN',
   TEAM_LEADER: 'TEAM_LEADER',
   CONSULTANT: 'CONSULTANT',
   USER: 'USER',
@@ -19,8 +18,8 @@ export const AGENCY_MANAGERS = [ROLES.AGENCY_OWNER, ROLES.AGENCY_ADMIN] as const
 // Roles that can see team data (own + direct reports)
 export const TEAM_MANAGERS = [ROLES.AGENCY_OWNER, ROLES.AGENCY_ADMIN, ROLES.TEAM_LEADER] as const;
 
-export const LOCATION_MANAGERS = [ROLES.AGENCY_OWNER, ROLES.AGENCY_ADMIN, ROLES.LOCATION_ADMIN] as const;
-export const ALL_AUTHENTICATED = [ROLES.AGENCY_OWNER, ROLES.AGENCY_ADMIN, ROLES.LOCATION_ADMIN, ROLES.TEAM_LEADER, ROLES.CONSULTANT, ROLES.USER] as const;
+export const LOCATION_MANAGERS = [ROLES.AGENCY_OWNER, ROLES.AGENCY_ADMIN] as const;
+export const ALL_AUTHENTICATED = [ROLES.AGENCY_OWNER, ROLES.AGENCY_ADMIN, ROLES.TEAM_LEADER, ROLES.CONSULTANT, ROLES.USER] as const;
 
 export const requireRole = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -69,11 +68,6 @@ export const withPermission = (module: string, action: string) => {
     }
     // AGENCY_OWNER and AGENCY_ADMIN always pass
     if (user.role === ROLES.AGENCY_OWNER || user.role === ROLES.AGENCY_ADMIN) {
-      next();
-      return;
-    }
-    // LOCATION_ADMIN has full access within their location
-    if (user.role === ROLES.LOCATION_ADMIN) {
       next();
       return;
     }

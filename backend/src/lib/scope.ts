@@ -3,28 +3,24 @@ import prisma from '../config/database';
 export type ScopeOptions = {
   /** For models that use a custom field name instead of assignedToId */
   assignedField?: string;
-  /** For models that use locationId directly (no assignedTo relation) */
-  useLocationId?: boolean;
 };
 
-export const buildScope = async (user: any, opts: ScopeOptions = {}): Promise<Record<string, any>> => {
-  const { useLocationId = false } = opts;
-
+/**
+ * Builds the tenant-isolation filter for a request.
+ *
+ * Every branch must return a filter that NARROWS the query. Returning `{}`
+ * would disable filtering entirely and expose other tenants' records, so a
+ * role we cannot scope falls back to the user's own records rather than to an
+ * empty filter.
+ */
+export const buildScope = async (user: any, _opts: ScopeOptions = {}): Promise<Record<string, any>> => {
   // AGENCY_OWNER / AGENCY_ADMIN — see entire agency
   if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') {
     if (user.agencyId) {
-      if (useLocationId) {
-        return { location: { agencyId: user.agencyId } };
-      }
       return { assignedTo: { agencyId: user.agencyId } };
     }
     // No agencyId — restrict to own records only (never expose everything)
     return { assignedToId: user.id };
-  }
-
-  // LOCATION_ADMIN — see entire location
-  if (user.role === 'LOCATION_ADMIN') {
-    return user.locationId ? { locationId: user.locationId } : {};
   }
 
   // TEAM_LEADER — own + direct reports
@@ -37,28 +33,6 @@ export const buildScope = async (user: any, opts: ScopeOptions = {}): Promise<Re
     return { assignedToId: { in: ids } };
   }
 
-  // CONSULTANT / USER — own records only
+  // CONSULTANT / USER / anything unrecognised — own records only
   return { assignedToId: user.id };
-};
-
-/** Scope for Property model (uses createdById instead of assignedToId) */
-export const buildPropertyScope = async (user: any): Promise<Record<string, any>> => {
-  if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') {
-    if (user.agencyId) {
-      return { createdBy: { agencyId: user.agencyId } };
-    }
-    return { createdById: user.id };
-  }
-  if (user.role === 'LOCATION_ADMIN') {
-    return user.locationId ? { locationId: user.locationId } : {};
-  }
-  if (user.role === 'TEAM_LEADER') {
-    const subs = await prisma.user.findMany({
-      where: { supervisorId: user.id },
-      select: { id: true },
-    });
-    const ids = [user.id, ...subs.map((s: any) => s.id)];
-    return { createdById: { in: ids } };
-  }
-  return { createdById: user.id };
 };

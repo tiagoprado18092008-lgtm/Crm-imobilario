@@ -116,7 +116,7 @@ export const TeamPage: React.FC = () => {
             <p style={{ fontSize: 13, color: '#6b7a99', margin: 0 }}>Membros e convites pendentes</p>
           </div>
         </div>
-        {['AGENCY_OWNER', 'AGENCY_ADMIN', 'LOCATION_ADMIN'].includes(user?.role || '') && (
+        {['AGENCY_OWNER', 'AGENCY_ADMIN'].includes(user?.role || '') && (
           <button onClick={() => setInviteOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, background: '#6366f1', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
             <UserPlus size={14} /> Convidar
           </button>

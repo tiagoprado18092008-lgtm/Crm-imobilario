@@ -14,8 +14,6 @@ import {
   SOURCE_OPTIONS,
   CONTACT_STATUS_LABELS,
   CONTACT_TYPE_LABELS,
-  TIMELINE_OPTIONS,
-  SALE_REASON_OPTIONS,
 } from '../../utils/constants'
 
 const schema = z.object({
@@ -28,27 +26,6 @@ const schema = z.object({
   notes: z.string().optional(),
   assignedToId: z.string().optional(),
   preferences: z.string().optional(),
-  // BUYER fields
-  budget_min: z.preprocess(
-    (v) => (v === '' || v === null || v === undefined || (typeof v === 'number' && isNaN(v)) ? undefined : Number(v)),
-    z.number().nonnegative().optional()
-  ),
-  budget_max: z.preprocess(
-    (v) => (v === '' || v === null || v === undefined || (typeof v === 'number' && isNaN(v)) ? undefined : Number(v)),
-    z.number().nonnegative().optional()
-  ),
-  interest_type: z.string().optional(),
-  timeline: z.string().optional(),
-  selling_also: z.boolean().optional(),
-  needs_financing: z.boolean().optional(),
-  // OWNER fields
-  property_address: z.string().optional(),
-  asking_price: z.preprocess(
-    (v) => (v === '' || v === null || v === undefined || (typeof v === 'number' && isNaN(v)) ? undefined : Number(v)),
-    z.number().nonnegative().optional()
-  ),
-  sale_reason: z.string().optional(),
-  buying_also: z.boolean().optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -64,47 +41,7 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid var(--input-border)', background: 'var(--surface-2)',
   color: 'var(--text-primary)', fontSize: 13,
 }
-const labelStyle: React.CSSProperties = {
-  fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)',
-  display: 'block', marginBottom: 4,
-}
-const sectionTitleStyle: React.CSSProperties = {
-  fontSize: 11, fontWeight: 700, color: 'var(--text-muted)',
-  textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12,
-}
-const sectionStyle: React.CSSProperties = {
-  borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8,
-}
 
-function ToggleField({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string
-  checked: boolean
-  onChange: (v: boolean) => void
-}) {
-  return (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-      <div
-        onClick={() => onChange(!checked)}
-        style={{
-          width: 36, height: 20, borderRadius: 10, flexShrink: 0,
-          background: checked ? '#c9a84c' : 'var(--border)',
-          position: 'relative', cursor: 'pointer', transition: 'background 0.2s',
-        }}
-      >
-        <div style={{
-          position: 'absolute', top: 2, left: checked ? 18 : 2,
-          width: 16, height: 16, borderRadius: '50%', background: '#fff',
-          transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-        }} />
-      </div>
-      <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{label}</span>
-    </label>
-  )
-}
 
 export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, onCancel }) => {
   const { showToast } = useUIStore()
@@ -126,32 +63,14 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
       name: contact?.name || '',
       email: contact?.email || '',
       phone: contact?.phone || '',
-      type: (contact?.type as FormData['type']) || 'BUYER',
+      type: (contact?.type as FormData['type']) || 'LEAD',
       status: contact?.status || 'NEW',
       source: contact?.source || '',
       notes: contact?.notes || '',
       assignedToId: contact?.assignedToId || currentUser?.id || '',
       preferences: contact?.preferences || '',
-      budget_min: contact?.budget_min,
-      budget_max: contact?.budget_max,
-      interest_type: contact?.interest_type || '',
-      timeline: contact?.timeline || '',
-      selling_also: contact?.selling_also ?? false,
-      needs_financing: contact?.needs_financing ?? false,
-      property_address: contact?.property_address || '',
-      asking_price: contact?.asking_price,
-      sale_reason: contact?.sale_reason || '',
-      buying_also: contact?.buying_also ?? false,
     },
   })
-
-  const contactType = watch('type')
-  const askingPrice = watch('asking_price')
-  const sellingAlso = watch('selling_also') ?? false
-  const needsFinancing = watch('needs_financing') ?? false
-  const buyingAlso = watch('buying_also') ?? false
-
-  const commission = askingPrice ? (Number(askingPrice) * 0.05) : null
 
   const addTag = () => {
     const t = tagInput.trim()
@@ -185,20 +104,6 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
         notes: data.notes || undefined,
         preferences: data.preferences || undefined,
         assignedToId: data.assignedToId || undefined,
-      }
-
-      if (data.type === 'BUYER') {
-        payload.budget_min = data.budget_min
-        payload.budget_max = data.budget_max
-        payload.interest_type = data.interest_type || undefined
-        payload.timeline = data.timeline || undefined
-        payload.selling_also = data.selling_also ?? false
-        payload.needs_financing = data.needs_financing ?? false
-      } else if (data.type === 'OWNER') {
-        payload.property_address = data.property_address || undefined
-        payload.asking_price = data.asking_price
-        payload.sale_reason = data.sale_reason || undefined
-        payload.buying_also = data.buying_also ?? false
       }
 
       payload.tags = tags
@@ -307,116 +212,6 @@ export const ContactForm: React.FC<ContactFormProps> = ({ contact, onSuccess, on
           </div>
         )}
       </div>
-
-      {/* ── BUYER fields ── */}
-      {contactType === 'BUYER' && (
-        <div style={sectionStyle}>
-          <p style={sectionTitleStyle}>Perfil de Compra</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={labelStyle}>Budget Mínimo (€)</label>
-              <input
-                {...register('budget_min', { valueAsNumber: true })}
-                type="number"
-                placeholder="ex: 150 000"
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Budget Máximo (€)</label>
-              <input
-                {...register('budget_max', { valueAsNumber: true })}
-                type="number"
-                placeholder="ex: 500 000"
-                style={inputStyle}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12, marginBottom: 16 }}>
-            <Select
-              label="Tipo de Imóvel Pretendido"
-              placeholder="Selecionar..."
-              options={[
-                { value: 'APARTMENT', label: 'Apartamento' },
-                { value: 'HOUSE',     label: 'Moradia' },
-                { value: 'COMMERCIAL',label: 'Comercial' },
-                { value: 'LAND',      label: 'Terreno' },
-                { value: 'GARAGE',    label: 'Garagem' },
-                { value: 'WAREHOUSE', label: 'Armazém' },
-                { value: 'FARM',      label: 'Quinta' },
-              ]}
-              {...register('interest_type')}
-            />
-            <Select
-              label="Urgência / Timeline"
-              placeholder="Selecionar..."
-              options={Object.entries(TIMELINE_OPTIONS).map(([v, l]) => ({ value: v, label: l }))}
-              {...register('timeline')}
-            />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <ToggleField
-              label="Pretende vender também além de comprar?"
-              checked={sellingAlso}
-              onChange={(v) => setValue('selling_also', v)}
-            />
-            <ToggleField
-              label="Necessita de financiamento?"
-              checked={needsFinancing}
-              onChange={(v) => setValue('needs_financing', v)}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* ── OWNER fields ── */}
-      {contactType === 'OWNER' && (
-        <div style={sectionStyle}>
-          <p style={sectionTitleStyle}>Dados do Imóvel</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div>
-              <label style={labelStyle}>Morada do Imóvel</label>
-              <input
-                {...register('property_address')}
-                type="text"
-                placeholder="ex: Rua das Flores 12, Lisboa"
-                style={inputStyle}
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12 }}>
-              <div>
-                <label style={labelStyle}>Asking Price (€)</label>
-                <input
-                  {...register('asking_price', { valueAsNumber: true })}
-                  type="number"
-                  placeholder="ex: 320 000"
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Comissão estimada (5%)</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={commission !== null ? `${commission.toLocaleString('pt-PT', { minimumFractionDigits: 2 })} €` : '—'}
-                  style={{ ...inputStyle, background: 'var(--bg-subtle, #f8f9fc)', color: 'var(--text-muted)', cursor: 'default' }}
-                />
-              </div>
-            </div>
-            <Select
-              label="Razão da Venda"
-              placeholder="Selecionar..."
-              options={SALE_REASON_OPTIONS.map(r => ({ value: r, label: r }))}
-              {...register('sale_reason')}
-            />
-            <ToggleField
-              label="Necessita de comprar além de vender?"
-              checked={buyingAlso}
-              onChange={(v) => setValue('buying_also', v)}
-            />
-          </div>
-        </div>
-      )}
 
       <div className="flex justify-end gap-3 pt-2">
         <Button type="button" variant="secondary" onClick={onCancel}>

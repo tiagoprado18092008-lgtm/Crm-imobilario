@@ -5,7 +5,6 @@ export type TriggerType =
   | 'lead_stage_changed'
   | 'lead_assigned'
   | 'lead_tag_added'
-  | 'property_added'
   | 'form_submitted'
   | 'scheduled'
 
@@ -19,7 +18,6 @@ export const TRIGGER_LABELS: Record<TriggerType, string> = {
   lead_stage_changed: 'Etapa do lead alterada',
   lead_assigned: 'Lead atribuído a consultor',
   lead_tag_added: 'Tag adicionada ao lead',
-  property_added: 'Imóvel adicionado',
   form_submitted: 'Formulário submetido',
   scheduled: 'Agendado (cron)',
 }

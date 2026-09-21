@@ -75,16 +75,14 @@ export const register = async (
   // Se veio via convite, herda agencyId e locationId de quem convidou
   if (invitation) {
     if (invitation.agencyId) agencyId = invitation.agencyId;
-    if (invitation.locationId) locationId = invitation.locationId;
 
     // Se agencyId ainda não está definido, busca o do utilizador que convidou
     if (!agencyId && invitation.invitedById) {
       const inviter = await prisma.user.findUnique({
         where: { id: invitation.invitedById },
-        select: { agencyId: true, locationId: true },
+        select: { agencyId: true },
       });
       if (inviter?.agencyId) agencyId = inviter.agencyId;
-      if (inviter?.locationId && !locationId) locationId = inviter.locationId;
     }
   }
 
@@ -187,7 +185,6 @@ export const googleAuth = async (idToken: string): Promise<{ token: string; user
         isActive: true,
         // Sem convite: agencyId fica null — utilizador fará onboarding para criar/entrar numa agência
         ...(invitation?.agencyId ? { agencyId: invitation.agencyId } : {}),
-        ...(invitation?.locationId ? { locationId: invitation.locationId } : {}),
       },
     });
 
@@ -224,7 +221,6 @@ export const getMe = async (userId: string): Promise<object> => {
       phone: true,
       agencyId: true,
       agency: true,
-      locationId: true,
       avatarUrl: true,
       googleId: true,
       isActive: true,
@@ -264,9 +260,9 @@ export const forgotPassword = async (email: string): Promise<void> => {
   const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
 
   await getMailTransporter().sendMail({
-    from: `"${process.env.FROM_NAME || 'CasaFlow'}" <${process.env.FROM_EMAIL}>`,
+    from: `"${process.env.FROM_NAME || 'AlphaCRM'}" <${process.env.FROM_EMAIL}>`,
     to: email,
-    subject: 'Recuperação de password — CasaFlow',
+    subject: 'Recuperação de password — AlphaCRM',
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:auto">
         <h2 style="color:#0f2553">Recuperar password</h2>

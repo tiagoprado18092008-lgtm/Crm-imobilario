@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Users, Kanban, Building2,
-  BarChart3, UserCog, LogOut, Settings,
+  LayoutDashboard, Users, Kanban, BarChart3, UserCog, LogOut, Settings,
   CalendarClock, ChevronRight,
-  UserCircle, ChevronsUpDown, UserPlus, Briefcase,
-  MessageSquare, Activity, Layers, Phone, PhoneCall,
+  UserCircle, ChevronsUpDown, UserPlus, MessageSquare, Activity, Layers, PhoneCall,
 } from 'lucide-react'
-import { CasaFlowLogo } from '../../assets/casaflow-logo'
+import { AlphaCrmLogo } from '../../assets/alphacrm-logo'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useClerk } from '@clerk/clerk-react'
 import { useAuthStore } from '../../store/auth.store'
@@ -28,7 +26,7 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   const { crmName } = useUIStore()
   const navigate = useNavigate()
   const { signOut } = useClerk()
-  const { can, isAgencyAdmin, isLocationAdmin } = usePermissions()
+  const { can, isAgencyAdmin } = usePermissions()
   const isAgencyManager = isAgencyAdmin
   const isDirector = isAgencyManager
   const [collapsed, setCollapsed]   = useState(false)
@@ -61,51 +59,35 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
 
   const handleLogout = () => { logout(); signOut({ redirectUrl: '/login' }) }
 
-  const crmItems: NavItem[] = [
+  // TRABALHO — o trabalho do dia, por ordem de utilização
+  const trabalhoItems: NavItem[] = [
     { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
-    ...(can('contacts', 'view')      ? [{ to: '/contacts',      icon: Users,         label: 'Contactos' }]                                 : []),
-    ...(can('opportunities', 'view') ? [{ to: '/pipeline',      icon: Kanban,        label: 'Oportunidades' }]                             : []),
-    ...(can('appointments', 'view')  ? [{ to: '/appointments',  icon: CalendarClock, label: 'Agendamentos' }]                              : []),
-    ...(can('properties', 'view')    ? [{ to: '/properties',    icon: Building2,     label: 'Propriedades' }]                              : []),
-    ...(can('conversations', 'view') ? [{ to: '/conversations', icon: MessageSquare, label: 'Conversas', badge: convBadge }]               : []),
-    { to: '/calls',         icon: PhoneCall, label: 'Chamadas' },
+    ...(can('contacts', 'view')      ? [{ to: '/contacts',      icon: Users,         label: 'Contactos' }]                   : []),
+    ...(can('opportunities', 'view') ? [{ to: '/pipeline',      icon: Kanban,        label: 'Pipeline' }]                    : []),
+    ...(can('conversations', 'view') ? [{ to: '/conversations', icon: MessageSquare, label: 'Conversas', badge: convBadge }] : []),
+    { to: '/calls',        icon: PhoneCall,     label: 'Chamadas' },
+    ...(can('appointments', 'view')  ? [{ to: '/appointments',  icon: CalendarClock, label: 'Agenda' }]                      : []),
   ]
 
+  // GESTÃO — leitura e configuração, não trabalho diário
   const gestaoItems: NavItem[] = [
     ...(can('reports', 'view') ? [{ to: '/reports', icon: BarChart3, label: 'Relatórios' }] : []),
+    ...(isAgencyManager ? [{ to: '/agency/pipelines', icon: Layers, label: 'Pipelines' }] : []),
   ]
 
   const navGroups: NavGroup[] = [
-    { label: 'CRM', items: crmItems },
+    { label: 'Trabalho', items: trabalhoItems },
     ...(gestaoItems.length ? [{ label: 'Gestão', items: gestaoItems }] : []),
-    { label: 'Equipa', items: [{ to: '/settings/team', icon: Users, label: 'Equipa' }] },
   ]
 
-  if (isAgencyManager) {
-    navGroups.push({
-      label: 'Agência',
-      items: [
-        { to: '/agency',           icon: Briefcase, label: 'Gestão de Agência' },
-        { to: '/agency/locations', icon: Building2, label: 'Escritórios' },
-        { to: '/agency/users',     icon: Users,     label: 'Utilizadores' },
-        { to: '/agency/settings',  icon: Settings,  label: 'Config. Agência' },
-        { to: '/agency/activity',  icon: Activity,  label: 'Actividade' },
-        { to: '/agency/pipelines', icon: Layers,    label: 'Pipelines' },
-      ],
-    })
-  }
-
-  if (isAgencyManager || isLocationAdmin) {
-    navGroups.push({
-      label: 'Configurações',
-      items: [
-        { to: '/settings/team',    icon: UserCog,  label: 'Equipa' },
-        { to: '/settings/general', icon: Settings, label: 'Geral' },
-      ],
-    })
-  }
-
-  navGroups.push({ label: 'Sistema', items: [{ to: '/settings', icon: Settings, label: 'Definições' }] })
+  // Equipa e definições vivem num único sítio (/settings/*), em vez dos três
+  // ecrãs sobrepostos que existiam antes (/agency, /agency/users, /settings/team).
+  const definicoesItems: NavItem[] = [
+    { to: '/settings/team', icon: UserCog, label: 'Equipa' },
+    ...(isAgencyManager ? [{ to: '/agency/activity', icon: Activity, label: 'Actividade' }] : []),
+    { to: '/settings', icon: Settings, label: 'Definições' },
+  ]
+  navGroups.push({ label: 'Definições', items: definicoesItems })
 
   return (
     <motion.aside
@@ -148,7 +130,7 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
             boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
             overflow: 'hidden',
           }}>
-            <CasaFlowLogo size={26} />
+            <AlphaCrmLogo size={26} />
           </div>
 
           <AnimatePresence initial={false}>

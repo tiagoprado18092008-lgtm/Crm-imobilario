@@ -1,10 +1,7 @@
-export type Role = 'SUPER_ADMIN' | 'AGENCY_OWNER' | 'AGENCY_ADMIN' | 'TEAM_LEADER' | 'CONSULTANT' | 'LOCATION_ADMIN' | 'USER'
+export type Role = 'SUPER_ADMIN' | 'AGENCY_OWNER' | 'AGENCY_ADMIN' | 'TEAM_LEADER' | 'CONSULTANT' | 'USER'
 export type PermissionMap = Record<string, string[]>
 export type ContactType = 'BUYER' | 'OWNER' | 'PARTNER' | 'TENANT'
 export type ContactStatus = 'NEW' | 'QUALIFIED' | 'CONTACTED' | 'INACTIVE'
-export type PropertyType = 'APARTMENT' | 'HOUSE' | 'COMMERCIAL' | 'LAND' | 'GARAGE' | 'WAREHOUSE' | 'FARM' | 'OTHER'
-export type PropertyPurpose = 'SALE' | 'RENT' | 'TRESPASSE'
-export type PropertyStatus = 'AVAILABLE' | 'RESERVED' | 'SOLD' | 'RENTED' | 'IN_PROCESS'
 export type OpportunityStage =
   | 'LEAD_IN'
   | 'QUALIFYING'
@@ -37,7 +34,6 @@ export interface Location {
 
 export interface LocationSettings {
   id: string
-  locationId: string
   timezone: string
   locale: string
   currency: string
@@ -57,7 +53,6 @@ export interface AgencySettings {
 export interface ActivityLog {
   id: string
   agencyId?: string
-  locationId?: string
   userId?: string
   action: string
   entityType?: string
@@ -83,7 +78,6 @@ export interface User {
   avatarUrl?: string
   onboardingCompleted?: boolean
   createdAt: string
-  locationId?: string
   location?: Location
   permissions?: PermissionMap
   amiNumber?: string
@@ -106,11 +100,6 @@ export interface Contact {
   postalCode?: string
   nif?: string
   birthday?: string
-  budget_min?: number
-  budget_max?: number
-  interest_type?: string
-  interest_zones?: string
-  timeline?: string
   score?: number
   gdprConsent?: boolean
   gdprConsentDate?: string
@@ -122,14 +111,7 @@ export interface Contact {
   interactions?: Interaction[]
   tasks?: Task[]
   appointments?: Appointment[]
-  // Dynamic fields
-  selling_also?: boolean
-  needs_financing?: boolean
-  property_address?: string
-  asking_price?: number
-  sale_reason?: string
-  buying_also?: boolean
-  commission?: number
+  tags?: string[]
   createdAt: string
 }
 
@@ -159,93 +141,6 @@ export interface Snapshot {
   createdAt: string
 }
 
-export interface Property {
-  id: string
-  title: string
-  description?: string
-  type: PropertyType
-  purpose?: PropertyPurpose
-  status: PropertyStatus
-  price: number
-  address: string
-  district?: string
-  lat?: number
-  lng?: number
-  area?: number
-  bedrooms?: number
-  bathrooms?: number
-  parking?: number
-  reference?: string
-  energyCertificate?: string
-  yearBuilt?: number
-  condition?: string
-  features?: string
-  virtualTourUrl?: string
-  tags?: string
-  portalsPublished?: string
-  commission?: number
-  contractStart?: string
-  contractEnd?: string
-  viewCount?: number
-  imageUrls: string
-  // novos campos de localização
-  postalCode?: string
-  freguesia?: string
-  concelho?: string
-  // novos campos de características
-  tipologia?: string
-  areaUtil?: number
-  areaTereno?: number
-  anoConstrucao?: number
-  piso?: number
-  orientacao?: string
-  comodidades?: string[]
-  // novos campos de negócio
-  precoArrendamento?: number
-  despesasCondominio?: number
-  imiAnual?: number
-  // relações
-  photos?: PropertyPhoto[]
-  documents?: PropertyDocument[]
-  visits?: PropertyVisit[]
-  createdById?: string
-  createdAt: string
-  updatedAt?: string
-}
-
-export interface PropertyPhoto {
-  id: string
-  propertyId: string
-  url: string
-  categoria?: string
-  ordem: number
-  createdAt: string
-}
-
-export interface PropertyDocument {
-  id: string
-  propertyId: string
-  nome: string
-  tipo?: string
-  url: string
-  tamanho?: number
-  createdAt: string
-}
-
-export interface PropertyVisit {
-  id: string
-  propertyId: string
-  contactId?: string
-  userId: string
-  scheduledAt: string
-  status: 'agendada' | 'realizada' | 'cancelada'
-  interesse?: 'sim' | 'nao' | 'talvez'
-  notas?: string
-  createdAt: string
-  contactName?: string
-  userName?: string
-}
-
 export interface Opportunity {
   id: string
   title: string
@@ -259,8 +154,6 @@ export interface Opportunity {
   position: number
   contactId: string
   contact?: Contact
-  propertyId?: string
-  property?: Property
   assignedToId: string
   assignedTo?: User
   interactions?: Interaction[]
@@ -268,7 +161,6 @@ export interface Opportunity {
   // Dynamic fields
   selling_also?: boolean
   needs_financing?: boolean
-  property_address?: string
   asking_price?: number
   sale_reason?: string
   buying_also?: boolean
@@ -334,7 +226,6 @@ export interface ReportSummary {
   pipelineValue: number
   tasksDueToday: number
   closedWonThisMonth: number
-  propertiesByStatus?: Record<string, number>
 }
 
 export interface PipelineStage {
@@ -370,7 +261,6 @@ export interface Conversation {
   contact?: Contact
   assignedToId?: string
   assignedTo?: User
-  locationId?: string
   messages?: Message[]
   lastMessageAt: string
   createdAt: string
@@ -378,7 +268,6 @@ export interface Conversation {
 
 export interface MessageTemplate {
   id: string
-  locationId: string
   agencyId?: string
   name: string
   channel: 'WHATSAPP' | 'EMAIL' | 'SMS' | 'ALL'

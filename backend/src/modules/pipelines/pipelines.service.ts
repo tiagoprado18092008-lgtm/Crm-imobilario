@@ -37,7 +37,6 @@ export const list = async (user: any) => {
         name: 'Geral',
         position: 0,
         agencyId: user.agencyId || null,
-        locationId: !user.agencyId ? user.locationId || null : null,
         stages: { create: DEFAULT_STAGES },
       },
       include: {
@@ -71,7 +70,6 @@ export const create = async (name: string, user: any) => {
       name,
       position: count,
       agencyId: user.agencyId || null,
-      locationId: !user.agencyId ? user.locationId || null : null,
       stages: { create: DEFAULT_STAGES },
     },
     include: { stages: { orderBy: { position: 'asc' } } },

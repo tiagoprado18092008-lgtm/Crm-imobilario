@@ -30,20 +30,10 @@ export const createContactSchema = z.object({
   assignedToId: z.string().optional(),
   city: z.string().optional(),
   postalCode: z.string().optional(),
-  budget_min: z.number().optional(),
-  budget_max: z.number().optional(),
-  interest_type: z.string().optional(),
-  timeline: z.string().optional(),
   gdprConsent: z.boolean().optional(),
   gdprConsentOrigin: z.string().optional(),
   // BUYER fields
-  selling_also: z.boolean().optional(),
-  needs_financing: z.boolean().optional(),
   // OWNER fields
-  property_address: z.string().optional(),
-  asking_price: z.number().nonnegative().optional(),
-  sale_reason: z.string().optional(),
-  buying_also: z.boolean().optional(),
 });
 
 export const updateContactSchema = createContactSchema.partial();
@@ -65,14 +55,7 @@ export const createOpportunitySchema = z.object({
   notes: z.string().max(2000).optional(),
   position: z.number().int().nonnegative().default(0),
   contactId: z.string().min(1, 'Contacto obrigatório'),
-  propertyId: z.string().optional(),
   assignedToId: z.string().optional(),
-  selling_also: z.boolean().optional(),
-  needs_financing: z.boolean().optional(),
-  property_address: z.string().optional(),
-  asking_price: z.number().nonnegative().optional(),
-  sale_reason: z.string().optional(),
-  buying_also: z.boolean().optional(),
 });
 
 export const updateOpportunitySchema = createOpportunitySchema.partial();
@@ -97,27 +80,6 @@ export const createTaskSchema = z.object({
 
 export const updateTaskSchema = createTaskSchema.partial();
 
-// Properties
-export const createPropertySchema = z.object({
-  title: z.string().min(1, 'Título obrigatório'),
-  type: z.enum(['APARTMENT', 'HOUSE', 'COMMERCIAL', 'LAND', 'GARAGE', 'WAREHOUSE', 'FARM', 'OTHER']).default('APARTMENT'),
-  status: z.enum(['AVAILABLE', 'RESERVED', 'SOLD', 'RENTED', 'IN_PROCESS']).default('AVAILABLE'),
-  price: z.number().nonnegative().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  zipCode: z.string().optional(),
-  area: z.number().nonnegative().optional(),
-  bedrooms: z.number().int().nonnegative().optional(),
-  bathrooms: z.number().int().nonnegative().optional(),
-  parking: z.number().int().nonnegative().optional(),
-  reference: z.string().optional(),
-  description: z.string().optional(),
-  features: z.string().optional(),
-  imageUrls: z.string().optional(),
-  images: z.string().optional(),
-});
-
-export const updatePropertySchema = createPropertySchema.partial();
 
 // Campaigns
 export const createCampaignSchema = z.object({
@@ -167,7 +129,6 @@ export const createAppointmentSchema = z.object({
   notes: z.string().max(2000).optional(),
   location: z.string().max(500).optional(),
   contactId: z.string().optional(),
-  propertyId: z.string().optional(),
   opportunityId: z.string().optional(),
   assignedToId: z.string().optional(),
   status: z.enum(['SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'], { errorMap: () => ({ message: 'Estado inválido' }) }).default('SCHEDULED'),
@@ -185,7 +146,6 @@ export const updateAppointmentSchema = z.object({
   notes: z.string().max(2000).optional(),
   location: z.string().max(500).optional(),
   contactId: z.string().optional(),
-  propertyId: z.string().optional(),
   opportunityId: z.string().optional(),
   assignedToId: z.string().optional(),
   status: z.enum(['SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'], { errorMap: () => ({ message: 'Estado inválido' }) }).optional(),

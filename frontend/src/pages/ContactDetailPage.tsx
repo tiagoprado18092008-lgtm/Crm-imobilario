@@ -230,76 +230,6 @@ export const ContactDetailPage: React.FC = () => {
               </div>
             )}
 
-            {/* BUYER details */}
-            {contact.type === 'BUYER' && (contact.budget_min || contact.budget_max || contact.interest_type || contact.timeline) && (
-              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-                <p className="text-xs font-semibold uppercase mb-2" style={{ color: 'var(--text-secondary)' }}>Perfil de Compra</p>
-                <div className="space-y-1 text-sm">
-                  {(contact.budget_min || contact.budget_max) && (
-                    <div className="flex justify-between">
-                      <span style={{ color: 'var(--text-secondary)' }}>Budget</span>
-                      <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                        {contact.budget_min ? `${contact.budget_min.toLocaleString('pt-PT')} €` : '—'}
-                        {' – '}
-                        {contact.budget_max ? `${contact.budget_max.toLocaleString('pt-PT')} €` : '—'}
-                      </span>
-                    </div>
-                  )}
-                  {contact.interest_type && (
-                    <div className="flex justify-between">
-                      <span style={{ color: 'var(--text-secondary)' }}>Tipo de imóvel</span>
-                      <span style={{ color: 'var(--text-primary)' }}>{contact.interest_type}</span>
-                    </div>
-                  )}
-                  {(contact as any).selling_also && (
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Pretende também vender</p>
-                  )}
-                  {(contact as any).needs_financing && (
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Necessita financiamento</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* OWNER details */}
-            {contact.type === 'OWNER' && ((contact as any).property_address || (contact as any).asking_price) && (
-              <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-                <p className="text-xs font-semibold uppercase mb-2" style={{ color: 'var(--text-secondary)' }}>Dados do Imóvel</p>
-                <div className="space-y-1 text-sm">
-                  {(contact as any).property_address && (
-                    <div>
-                      <span style={{ color: 'var(--text-secondary)', fontSize: 11 }}>Morada</span>
-                      <p style={{ color: 'var(--text-primary)' }}>{(contact as any).property_address}</p>
-                    </div>
-                  )}
-                  {(contact as any).asking_price && (
-                    <div className="flex justify-between">
-                      <span style={{ color: 'var(--text-secondary)' }}>Asking price</span>
-                      <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                        {(contact as any).asking_price.toLocaleString('pt-PT')} €
-                      </span>
-                    </div>
-                  )}
-                  {(contact as any).commission && (
-                    <div className="flex justify-between">
-                      <span style={{ color: 'var(--text-secondary)' }}>Comissão (5%)</span>
-                      <span style={{ color: '#c9a84c', fontWeight: 600 }}>
-                        {(contact as any).commission.toLocaleString('pt-PT')} €
-                      </span>
-                    </div>
-                  )}
-                  {(contact as any).sale_reason && (
-                    <div className="flex justify-between">
-                      <span style={{ color: 'var(--text-secondary)' }}>Razão da venda</span>
-                      <span style={{ color: 'var(--text-primary)' }}>{(contact as any).sale_reason}</span>
-                    </div>
-                  )}
-                  {(contact as any).buying_also && (
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Pretende também comprar</p>
-                  )}
-                </div>
-              </div>
-            )}
           </Card>
 
           {/* Action Buttons */}
@@ -449,7 +379,6 @@ export const ContactDetailPage: React.FC = () => {
                           <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{opp.title}</p>
                           <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                             {STAGE_LABELS[opp.stage]}
-                            {opp.property && ` • ${opp.property.title}`}
                           </p>
                         </div>
                         {opp.value && (

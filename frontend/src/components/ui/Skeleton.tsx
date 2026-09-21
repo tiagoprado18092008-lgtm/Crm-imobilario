@@ -105,7 +105,7 @@ export const SkeletonTable: React.FC<{ rows?: number; cols?: number }> = ({ rows
 
 // Global keyframe — injected once
 if (typeof document !== 'undefined') {
-  const styleId = 'casaflow-skeleton-keyframes'
+  const styleId = 'alphacrm-skeleton-keyframes'
   if (!document.getElementById(styleId)) {
     const style = document.createElement('style')
     style.id = styleId

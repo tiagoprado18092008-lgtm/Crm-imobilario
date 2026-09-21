@@ -1,6 +1,6 @@
 export type Theme = 'light' | 'dark' | 'system';
 
-const STORAGE_KEY = 'casaflow-theme';
+const STORAGE_KEY = 'alphacrm-theme';
 
 export function getStoredTheme(): Theme {
   if (typeof window === 'undefined') return 'system';

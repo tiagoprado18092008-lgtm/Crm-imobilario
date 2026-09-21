@@ -47,7 +47,6 @@ export const list = async (currentUser?: any) => {
       onboardingCompleted: true,
       supervisorId: true,
       agencyId: true,
-      locationId: true,
       createdAt: true,
       updatedAt: true,
       supervisor: { select: { id: true, name: true } },

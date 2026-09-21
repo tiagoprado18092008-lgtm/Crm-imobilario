@@ -18,7 +18,6 @@ export const getAgencyDetail = async (id: string) => {
       users: {
         select: { id: true, name: true, email: true, role: true, isActive: true, createdAt: true },
       },
-      locations: { select: { id: true, name: true, slug: true, isActive: true } },
     },
   });
   if (!agency) throw Object.assign(new Error('Agência não encontrada'), { status: 404 });
@@ -38,15 +37,6 @@ export const createAgencyWithOwner = async (
       slug,
       email: agencyData.email,
       phone: agencyData.phone,
-    },
-  });
-
-  // Create default location
-  await prisma.location.create({
-    data: {
-      agencyId: agency.id,
-      name: agencyData.name,
-      slug,
     },
   });
 

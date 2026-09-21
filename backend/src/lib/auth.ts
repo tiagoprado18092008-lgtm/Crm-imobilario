@@ -21,7 +21,6 @@ const RANK: Record<string, number> = {
   SUPER_ADMIN: 100,
   AGENCY_OWNER: 80,
   AGENCY_ADMIN: 60,
-  LOCATION_ADMIN: 40,
   TEAM_LEADER: 30,
   CONSULTANT: 20,
   USER: 10,

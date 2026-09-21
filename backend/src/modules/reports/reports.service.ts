@@ -17,12 +17,6 @@ export const getSummary = async (user: any, filters?: { from?: Date; to?: Date; 
   const contactWhere = { ...baseContact, ...dateFilter, ...agentFilter };
   const oppWhere = { ...baseOpp, ...dateFilter, ...agentFilter };
 
-  const propertyScope = user.agencyId
-    ? { createdBy: { agencyId: user.agencyId } }
-    : user.locationId
-    ? { createdBy: { locationId: user.locationId } }
-    : { createdById: user.id };
-
   const today = new Date();
   const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
@@ -40,7 +34,6 @@ export const getSummary = async (user: any, filters?: { from?: Date; to?: Date; 
     closedWonThisMonth,
     newContactsThisMonth,
     closedWonWithDates,
-    propertiesByStatusResult,
   ] = await Promise.all([
     prisma.contact.count({ where: contactWhere }),
     prisma.contact.count({ where: { ...contactWhere, type: 'LEAD' } }),
@@ -80,11 +73,6 @@ export const getSummary = async (user: any, filters?: { from?: Date; to?: Date; 
       select: { createdAt: true, updatedAt: true },
       take: 100,
     }),
-    prisma.property.groupBy({
-      by: ['status'],
-      where: propertyScope,
-      _count: { _all: true },
-    }),
   ]);
 
   const avgDaysToClose =
@@ -109,10 +97,6 @@ export const getSummary = async (user: any, filters?: { from?: Date; to?: Date; 
     closedWonThisMonth,
     newContactsThisMonth,
     avgDaysToClose,
-    propertiesByStatus: propertiesByStatusResult.reduce((acc: any, r: any) => {
-      acc[r.status] = r._count._all;
-      return acc;
-    }, {}),
   };
 };
 
@@ -208,8 +192,6 @@ export const getConversationStats = async (user: any) => {
   if (user.role === 'AGENCY_OWNER' || user.role === 'AGENCY_ADMIN') {
     if (user.agencyId) baseWhere = { assignedTo: { agencyId: user.agencyId } };
     else baseWhere = { assignedToId: user.id };
-  } else if (user.role === 'LOCATION_ADMIN') {
-    baseWhere = user.locationId ? { assignedTo: { locationId: user.locationId } } : { assignedToId: user.id };
   } else if (user.role === 'TEAM_LEADER') {
     const subAgents = await prisma.user.findMany({
       where: { supervisorId: user.id },

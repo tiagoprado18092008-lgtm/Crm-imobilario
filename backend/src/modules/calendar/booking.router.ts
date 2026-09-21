@@ -78,7 +78,7 @@ router.post('/:userId/book', async (req: Request, res: Response, next: NextFunct
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, email: true, agencyId: true, locationId: true },
+      select: { id: true, name: true, email: true, agencyId: true },
     });
     if (!user) { res.status(404).json({ error: 'Consultor não encontrado' }); return; }
 
@@ -86,14 +86,13 @@ router.post('/:userId/book', async (req: Request, res: Response, next: NextFunct
     const endAt = new Date(startAt.getTime() + 60 * 60 * 1000);
 
     let contact = await prisma.contact.findFirst({
-      where: { email, ...(user.locationId ? { locationId: user.locationId } : user.agencyId ? { assignedTo: { agencyId: user.agencyId } } : {}) },
+      where: { email, ...(user.agencyId ? { assignedTo: { agencyId: user.agencyId } } : {}) },
     });
     if (!contact) {
       contact = await prisma.contact.create({
         data: {
           name, email, phone: phone || null,
           assignedToId: userId,
-          locationId: user.locationId || null,
           source: 'Agendamento Online',
           type: 'BUYER' as any,
         },
@@ -109,7 +108,6 @@ router.post('/:userId/book', async (req: Request, res: Response, next: NextFunct
         status: 'SCHEDULED',
         assignedToId: userId,
         contactId: contact.id,
-        locationId: user.locationId || null,
         notes: notes || null,
       },
     });
@@ -121,7 +119,7 @@ router.post('/:userId/book', async (req: Request, res: Response, next: NextFunct
         auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
       });
       await transporter.sendMail({
-        from: `"${process.env.FROM_NAME || 'CasaFlow'}" <${process.env.FROM_EMAIL}>`,
+        from: `"${process.env.FROM_NAME || 'AlphaCRM'}" <${process.env.FROM_EMAIL}>`,
         to: email,
         subject: `Agendamento confirmado com ${user.name}`,
         html: `

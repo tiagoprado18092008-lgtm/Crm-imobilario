@@ -64,11 +64,11 @@ export const InviteAcceptPage: React.FC = () => {
 
   const isOwner = inviteType === 'OWNER'
   const welcomeTitle = isOwner
-    ? `Bem-vindo(a) à ${agencyName || 'CasaFlow'}!`
+    ? `Bem-vindo(a) à ${agencyName || 'AlphaCRM'}!`
     : `Junte-se à equipa${agencyName ? ` ${agencyName}` : ''}`
   const welcomeDesc = isOwner
     ? 'Crie a sua conta para começar a gerir a sua agência.'
-    : 'Crie a sua conta para aceder à plataforma CasaFlow.'
+    : 'Crie a sua conta para aceder à plataforma AlphaCRM.'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#f4f6fb', padding: 24, fontFamily: "'DM Sans', sans-serif", gap: 20 }}>

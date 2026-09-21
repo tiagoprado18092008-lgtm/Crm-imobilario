@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, ArrowRight, AlertCircle, User, Mail, Lock, Building2 } from 'lucide-react'
 import { register, getMe } from '../api/auth.api'
 import { useAuthStore } from '../store/auth.store'
-import { CasaFlowLogo } from '../assets/casaflow-logo'
+import { AlphaCrmLogo } from '../assets/alphacrm-logo'
 
 const T = {
   navy:    '#0f2553',
@@ -144,7 +144,7 @@ export const RegisterPage: React.FC = () => {
             transition={{ duration: 0.55 }}
             style={{ display: 'flex', alignItems: 'center', gap: 14, zIndex: 1 }}
           >
-            <CasaFlowLogo size={34} />
+            <AlphaCrmLogo size={34} />
             <div>
               <div style={{ fontSize: 20, fontWeight: 700, color: T.white, letterSpacing: '-0.02em' }}>
                 CASA<span style={{ fontWeight: 400 }}>FLOW</span>
@@ -194,7 +194,7 @@ export const RegisterPage: React.FC = () => {
             transition={{ delay: 0.6 }}
             style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', margin: 0, zIndex: 1 }}
           >
-            © {new Date().getFullYear()} CasaFlow · Todos os direitos reservados
+            © {new Date().getFullYear()} AlphaCRM · Todos os direitos reservados
           </motion.p>
         </div>
 
@@ -216,7 +216,7 @@ export const RegisterPage: React.FC = () => {
 
             {/* Mobile logo */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }} className="cf-mobile-logo">
-              <CasaFlowLogo size={32} />
+              <AlphaCrmLogo size={32} />
               <div>
                 <div style={{ fontSize: 17, fontWeight: 700, color: T.navy, letterSpacing: '-0.02em' }}>
                   CASA<span style={{ fontWeight: 400 }}>FLOW</span>
