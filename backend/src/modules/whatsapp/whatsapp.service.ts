@@ -128,7 +128,7 @@ async function doInitWhatsApp(agencyId: string, userId?: string | null): Promise
         keys: makeCacheableSignalKeyStore(state.keys, waLogger),
       },
       printQRInTerminal: false,
-      browser: ['CasaFlow CRM', 'Chrome', '1.0.0'],
+      browser: ['AlphaCRM CRM', 'Chrome', '1.0.0'],
       connectTimeoutMs: 60000,
       qrTimeout: 60000,
       generateHighQualityLinkPreview: false,

@@ -18,7 +18,6 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/dashboard':     { title: 'Dashboard',               subtitle: 'Visão geral do negócio' },
   '/contacts':      { title: 'Contactos',               subtitle: 'Gestão de leads e clientes' },
   '/pipeline':      { title: 'Oportunidades',           subtitle: 'Oportunidades em curso' },
-  '/properties':    { title: 'Propriedades',            subtitle: 'Carteira de imóveis' },
   '/tasks':         { title: 'Tarefas',                 subtitle: 'Atividades pendentes' },
   '/calendar':      { title: 'Calendário',              subtitle: 'Agenda e visitas' },
   '/reports':       { title: 'Relatórios',              subtitle: 'Análise e performance' },

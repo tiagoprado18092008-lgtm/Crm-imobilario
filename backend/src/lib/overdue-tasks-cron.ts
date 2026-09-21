@@ -49,9 +49,9 @@ export const startOverdueTasksCron = () => {
         `).join('');
 
         await transporter.sendMail({
-          from: `"${process.env.FROM_NAME || 'CasaFlow'}" <${process.env.FROM_EMAIL}>`,
+          from: `"${process.env.FROM_NAME || 'AlphaCRM'}" <${process.env.FROM_EMAIL}>`,
           to: email,
-          subject: `⚠️ Tens ${tasks.length} tarefa(s) em atraso — CasaFlow`,
+          subject: `⚠️ Tens ${tasks.length} tarefa(s) em atraso — AlphaCRM`,
           html: `
             <div style="font-family:sans-serif;max-width:600px;margin:auto">
               <h2 style="color:#0f2553">Tarefas em atraso</h2>
@@ -72,7 +72,7 @@ export const startOverdueTasksCron = () => {
                   Ver tarefas
                 </a>
               </p>
-              <p style="color:#888;font-size:12px">CasaFlow CRM</p>
+              <p style="color:#888;font-size:12px">AlphaCRM CRM</p>
             </div>
           `,
         });

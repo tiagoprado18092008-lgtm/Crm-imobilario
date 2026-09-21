@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 
 const FROM =
   process.env.SMTP_FROM ||
-  `${process.env.SMTP_FROM_NAME || process.env.CRM_NAME || 'CasaFlow'} <${process.env.SMTP_USER}>`;
+  `${process.env.SMTP_FROM_NAME || process.env.CRM_NAME || 'AlphaCRM'} <${process.env.SMTP_USER}>`;
 
 export const EmailService = {
   async verify(): Promise<void> {

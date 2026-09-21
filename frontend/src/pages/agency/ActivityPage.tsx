@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Activity, User, Home, Phone, Mail, FileText, Calendar, MapPin, Briefcase, RefreshCw, Clock } from 'lucide-react'
+import { Activity, User, Phone, Mail, FileText, Calendar, MapPin, Briefcase, RefreshCw, Clock } from 'lucide-react'
 import { getActivity } from '../../api/activity.api'
 import { getUsers } from '../../api/users.api'
 import { PageSpinner } from '../../components/ui/Spinner'
@@ -20,7 +20,6 @@ interface ActivityLog {
 // Map action prefix → display config
 const ACTION_CONFIG: Record<string, { label: string; color: string; bg: string; Icon: any }> = {
   'contact':     { label: 'Contacto',    color: '#22c55e', bg: 'rgba(34,197,94,0.1)',    Icon: User },
-  'property':    { label: 'Propriedade', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',   Icon: Home },
   'opportunity': { label: 'Oportunidade',color: '#3b82f6', bg: 'rgba(59,130,246,0.1)',   Icon: Briefcase },
   'task':        { label: 'Tarefa',      color: '#10b981', bg: 'rgba(16,185,129,0.1)',   Icon: FileText },
   'call':        { label: 'Chamada',     color: '#6366f1', bg: 'rgba(99,102,241,0.1)',   Icon: Phone },
@@ -39,14 +38,13 @@ const ACTION_VERBS: Record<string, string> = {
 }
 
 const ENTITY_LABELS: Record<string, string> = {
-  'Contact': 'um contacto', 'Property': 'uma propriedade', 'Opportunity': 'uma oportunidade',
+  'Contact': 'um contacto', 'Opportunity': 'uma oportunidade',
   'Task': 'uma tarefa', 'Location': 'um escritório', 'Appointment': 'um agendamento',
 }
 
 const FILTERS = [
   { label: 'Todos', key: '' },
   { label: 'Contactos', key: 'contact' },
-  { label: 'Propriedades', key: 'property' },
   { label: 'Oportunidades', key: 'opportunity' },
   { label: 'Tarefas', key: 'task' },
   { label: 'Escritórios', key: 'location' },

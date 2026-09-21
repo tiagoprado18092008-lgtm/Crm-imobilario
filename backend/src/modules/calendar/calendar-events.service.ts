@@ -61,7 +61,6 @@ export const create = async (userId: string, dto: {
   attendees?: any[];
   contactId?: string;
   opportunityId?: string;
-  propertyId?: string;
 }) => {
   const event = await prisma.calendarEvent.create({
     data: {
@@ -107,7 +106,6 @@ export const update = async (userId: string, id: string, dto: {
   attendees?: any[];
   contactId?: string;
   opportunityId?: string;
-  propertyId?: string;
 }) => {
   const existing = await prisma.calendarEvent.findFirst({ where: { id, userId } });
   if (!existing) {

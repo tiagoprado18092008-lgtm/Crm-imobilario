@@ -98,7 +98,7 @@ export const create = async (
       email,
       type: invType,
       agencyId: resolvedAgencyId,
-      inviterName: inviter?.name || 'CasaFlow',
+      inviterName: inviter?.name || 'AlphaCRM',
       inviteUrl,
     });
   } catch (err: any) {
@@ -126,7 +126,7 @@ export const resend = async (id: string) => {
     email: inv.email,
     type: inv.type || 'CONSULTANT',
     agencyId: inv.agencyId,
-    inviterName: inviter?.name || 'CasaFlow',
+    inviterName: inviter?.name || 'AlphaCRM',
     inviteUrl,
   });
 

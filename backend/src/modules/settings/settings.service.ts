@@ -135,7 +135,7 @@ export const getCommunicationsConfig = async (agencyId?: string) => {
     twilioApiSecret: maskValue(get('TWILIO_API_SECRET')),
     publicUrl: get('PUBLIC_URL'),
     // General
-    crmName: get('CRM_NAME') || 'CasaFlow',
+    crmName: get('CRM_NAME') || 'AlphaCRM',
     timezone: get('TZ') || 'Europe/Lisbon',
     language: get('APP_LANGUAGE') || 'pt-PT',
   };

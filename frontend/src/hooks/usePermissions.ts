@@ -13,9 +13,8 @@ export const usePermissions = () => {
   }
 
   const isAgencyAdmin = user?.role === 'AGENCY_OWNER' || user?.role === 'AGENCY_ADMIN'
-  const isLocationAdmin = user?.role === 'LOCATION_ADMIN'
   const isAgencyManager = isAgencyAdmin
   const role: Role | undefined = user?.role as Role | undefined
 
-  return { can, role, isAgencyAdmin, isLocationAdmin, isAgencyManager }
+  return { can, role, isAgencyAdmin, isAgencyManager }
 }

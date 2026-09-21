@@ -343,7 +343,7 @@ export const SettingsPage: React.FC = () => {
   const [twilioApiSecret, setTwilioApiSecret] = useState('')
   const [publicUrl, setPublicUrl] = useState('')
   const [showTwilioToken, setShowTwilioToken] = useState(false)
-  const [crmName, setCrmNameLocal] = useState(localStorage.getItem('imocrm-name') || 'CasaFlow')
+  const [crmName, setCrmNameLocal] = useState(localStorage.getItem('imocrm-name') || 'AlphaCRM')
 
   // Phone numbers (Twilio)
   const [phoneNumbers, setPhoneNumbers] = useState<any[]>([])
@@ -1009,7 +1009,7 @@ export const SettingsPage: React.FC = () => {
                       type="text"
                       value={email.fromName}
                       onChange={(e) => setEmail({ ...email, fromName: e.target.value })}
-                      placeholder="CasaFlow"
+                      placeholder="AlphaCRM"
                       className={inputClass}
                       style={inputStyle}
                     />
@@ -1136,7 +1136,7 @@ export const SettingsPage: React.FC = () => {
                         type="text"
                         value={publicUrl}
                         onChange={(e) => setPublicUrl(e.target.value)}
-                        placeholder="https://casaflow-backend-production.up.railway.app"
+                        placeholder="https://alphacrm-backend-production.up.railway.app"
                         className={inputClass}
                         style={inputStyle}
                       />

@@ -4,7 +4,6 @@ export const DEFAULT_PERMISSIONS: Record<string, PermissionMap> = {
   AGENCY_OWNER: {
     contacts: ['view', 'create', 'edit', 'delete', 'export'],
     opportunities: ['view', 'create', 'edit', 'delete'],
-    properties: ['view', 'create', 'edit', 'delete'],
     tasks: ['view', 'create', 'edit', 'delete'],
     appointments: ['view', 'create', 'edit', 'delete'],
     conversations: ['view', 'create', 'edit', 'delete'],
@@ -18,7 +17,6 @@ export const DEFAULT_PERMISSIONS: Record<string, PermissionMap> = {
   AGENCY_ADMIN: {
     contacts: ['view', 'create', 'edit', 'delete', 'export'],
     opportunities: ['view', 'create', 'edit', 'delete'],
-    properties: ['view', 'create', 'edit', 'delete'],
     tasks: ['view', 'create', 'edit', 'delete'],
     appointments: ['view', 'create', 'edit', 'delete'],
     conversations: ['view', 'create', 'edit', 'delete'],
@@ -29,24 +27,9 @@ export const DEFAULT_PERMISSIONS: Record<string, PermissionMap> = {
     settings: ['view', 'edit'],
     users: ['view', 'create', 'edit', 'delete'],
   },
-  LOCATION_ADMIN: {
-    contacts: ['view', 'create', 'edit', 'delete', 'export'],
-    opportunities: ['view', 'create', 'edit', 'delete'],
-    properties: ['view', 'create', 'edit', 'delete'],
-    tasks: ['view', 'create', 'edit', 'delete'],
-    appointments: ['view', 'create', 'edit', 'delete'],
-    conversations: ['view', 'create', 'edit', 'delete'],
-    campaigns: ['view', 'create', 'edit', 'delete'],
-    forms: ['view', 'create', 'edit', 'delete'],
-    automations: ['view', 'create', 'edit', 'delete'],
-    reports: ['view'],
-    settings: ['view', 'edit'],
-    users: ['view', 'create', 'edit'],
-  },
   TEAM_LEADER: {
     contacts: ['view', 'create', 'edit', 'delete', 'export'],
     opportunities: ['view', 'create', 'edit', 'delete'],
-    properties: ['view', 'create', 'edit'],
     tasks: ['view', 'create', 'edit', 'delete'],
     appointments: ['view', 'create', 'edit', 'delete'],
     conversations: ['view', 'create', 'edit'],
@@ -60,7 +43,6 @@ export const DEFAULT_PERMISSIONS: Record<string, PermissionMap> = {
   CONSULTANT: {
     contacts: ['view', 'create', 'edit'],
     opportunities: ['view', 'create', 'edit'],
-    properties: ['view'],
     tasks: ['view', 'create', 'edit'],
     appointments: ['view', 'create', 'edit'],
     conversations: ['view', 'create'],
@@ -74,7 +56,6 @@ export const DEFAULT_PERMISSIONS: Record<string, PermissionMap> = {
   USER: {
     contacts: ['view', 'create', 'edit'],
     opportunities: ['view', 'create', 'edit'],
-    properties: ['view'],
     tasks: ['view', 'create', 'edit'],
     appointments: ['view', 'create', 'edit'],
     conversations: ['view', 'create'],

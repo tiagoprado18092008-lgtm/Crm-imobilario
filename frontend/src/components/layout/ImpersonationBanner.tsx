@@ -12,7 +12,7 @@ export const ImpersonationBanner: React.FC = () => {
         A visualizar como <strong>{user?.name}</strong>
         {user?.role && (
           <span className="ml-1 opacity-80">
-            ({user.role === 'LOCATION_ADMIN' ? 'Admin de Escritório' : user.role === 'USER' || user.role === 'CONSULTANT' ? 'Consultor' : user.role})
+            ({user.role === 'USER' || user.role === 'CONSULTANT' ? 'Comercial' : user.role})
           </span>
         )}
       </span>

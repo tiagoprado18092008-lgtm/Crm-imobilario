@@ -14,11 +14,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { getOpportunities, createOpportunity, updateOpportunity, deleteOpportunity, moveOpportunityStage } from '../../api/opportunities.api'
 import { getContacts } from '../../api/contacts.api'
-import { getProperties } from '../../api/properties.api'
 import { getUsers } from '../../api/users.api'
 import { getInteractions } from '../../api/interactions.api'
 import { getTasks } from '../../api/tasks.api'
-import type { Opportunity, Contact, Property, User } from '../../types'
+import type { Opportunity, Contact, User } from '../../types'
 import { KanbanColumn } from './KanbanColumn'
 import { Modal } from '../ui/Modal'
 import { Button } from '../ui/Button'
@@ -44,21 +43,9 @@ const oppSchema = z.object({
   expectedCloseDate: z.string().optional(),
   notes: z.string().optional(),
   contactId: z.string().min(1, 'Contacto obrigatório'),
-  propertyId: z.string().optional(),
   assignedToId: z.string().min(1, 'Responsável obrigatório'),
   lostReason: z.string().optional(),
   probability: z.preprocess(v => (v === '' || v == null ? undefined : Number(v)), z.number().min(0).max(100).optional()),
-  // Dynamic fields
-  budget_min: z.preprocess(v => (v === '' || v == null ? undefined : Number(v)), z.number().positive().optional()),
-  budget_max: z.preprocess(v => (v === '' || v == null ? undefined : Number(v)), z.number().positive().optional()),
-  interest_type: z.string().optional(),
-  timeline: z.string().optional(),
-  selling_also: z.boolean().optional(),
-  needs_financing: z.boolean().optional(),
-  property_address: z.string().optional(),
-  asking_price: z.preprocess(v => (v === '' || v == null ? undefined : Number(v)), z.number().positive().optional()),
-  sale_reason: z.string().optional(),
-  buying_also: z.boolean().optional(),
 })
 
 type OppFormData = z.infer<typeof oppSchema>
@@ -72,12 +59,7 @@ interface OppFormProps {
 }
 
 const SOURCE_OPTIONS_FORM = [
-  'Website', 'E-mail', 'Presencial', 'Portal imobiliário', 'Indicação', 'Telefone/WhatsApp',
-]
-
-const SALE_REASON_OPTIONS = [
-  'Mudança de residência', 'Separação / Divórcio', 'Herança',
-  'Dificuldades financeiras', 'Upgrade / Downgrade', 'Investimento', 'Outro',
+  'Cold call', 'Website', 'E-mail', 'Presencial', 'Indicação', 'Telefone/WhatsApp',
 ]
 
 const inputStyle: React.CSSProperties = {
@@ -94,7 +76,6 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
   const { user: currentUser } = useAuthStore()
   const [submitting, setSubmitting] = useState(false)
   const [contacts, setContacts] = useState<Contact[]>([])
-  const [properties, setProperties] = useState<Property[]>([])
   const [users, setUsers] = useState<User[]>([])
 
   const { register, handleSubmit, watch, setValue: setFormValue, formState: { errors } } = useForm<OppFormData>({
@@ -107,20 +88,9 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
       expectedCloseDate: opportunity?.expectedCloseDate ? opportunity.expectedCloseDate.slice(0, 10) : '',
       notes: opportunity?.notes || '',
       contactId: opportunity?.contactId || '',
-      propertyId: opportunity?.propertyId || '',
       assignedToId: opportunity?.assignedToId || currentUser?.id || '',
       lostReason: opportunity?.lostReason || '',
       probability: (opportunity as any)?.probability ?? 50,
-      budget_min: (opportunity as any)?.budget_min,
-      budget_max: (opportunity as any)?.budget_max,
-      interest_type: (opportunity as any)?.interest_type || '',
-      timeline: (opportunity as any)?.timeline || '',
-      selling_also: (opportunity as any)?.selling_also ?? false,
-      needs_financing: (opportunity as any)?.needs_financing ?? false,
-      property_address: (opportunity as any)?.property_address || '',
-      asking_price: (opportunity as any)?.asking_price,
-      sale_reason: (opportunity as any)?.sale_reason || '',
-      buying_also: (opportunity as any)?.buying_also ?? false,
     }
   })
 
@@ -135,10 +105,9 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
         : (initialStage || 'LEAD_IN')
       setFormValue('stage', defaultStage)
     }
-    Promise.all([getContacts({ limit: 200 }), getProperties({ limit: 200 }), getUsers()])
-      .then(([cRes, pRes, uRes]) => {
+    Promise.all([getContacts({ limit: 200 }), getUsers()])
+      .then(([cRes, uRes]) => {
         const cd = cRes.data; setContacts(Array.isArray(cd) ? cd : cd.data || [])
-        const pd = pRes.data; setProperties(Array.isArray(pd) ? pd : pd.data || [])
         const ud = uRes.data; setUsers(Array.isArray(ud) ? ud : ud.data || [])
         // Always re-set assignedToId after options load to prevent DOM race condition
         // where select snaps to first item before options are available
@@ -167,25 +136,11 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
         expectedCloseDate: data.expectedCloseDate || undefined,
         notes: data.notes || undefined,
         contactId: data.contactId,
-        propertyId: data.propertyId || undefined,
         assignedToId: data.assignedToId,
         lostReason: data.lostReason || undefined,
         probability: data.probability ?? 50,
       }
-      const dynamicPayload = contactType === 'BUYER' ? {
-        budget_min: data.budget_min,
-        budget_max: data.budget_max,
-        interest_type: data.interest_type || undefined,
-        timeline: data.timeline || undefined,
-        selling_also: data.selling_also ?? false,
-        needs_financing: data.needs_financing ?? false,
-      } : contactType === 'OWNER' ? {
-        property_address: data.property_address || undefined,
-        asking_price: data.asking_price,
-        sale_reason: data.sale_reason || undefined,
-        buying_also: data.buying_also ?? false,
-      } : {}
-      const payload = { ...basePayload, ...dynamicPayload }
+      const payload = basePayload
       if (opportunity) {
         await updateOpportunity(opportunity.id, payload)
         showToast('Oportunidade atualizada', 'success')
@@ -207,13 +162,6 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
 
   const watchedStage = watch('stage')
   const watchedContactId = watch('contactId')
-  const watchedAskingPrice = watch('asking_price')
-  const sellingAlso = watch('selling_also') ?? false
-  const needsFinancing = watch('needs_financing') ?? false
-  const buyingAlso = watch('buying_also') ?? false
-  const selectedContact = contacts.find(c => c.id === watchedContactId)
-  const contactType = selectedContact?.type
-  const oppCommission = watchedAskingPrice ? Number(watchedAskingPrice) * 0.05 : null
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -232,7 +180,6 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
         <Select label="Contacto" required error={errors.contactId?.message} placeholder="Selecionar contacto" options={contacts.map(c => ({ value: c.id, label: c.name }))} {...register('contactId')} />
         <Select label="Responsável" required error={errors.assignedToId?.message} placeholder="Selecionar responsável" options={users.map(u => ({ value: u.id, label: u.name }))} {...register('assignedToId')} />
         <Select label="Fonte" placeholder="Selecionar fonte" options={SOURCE_OPTIONS_FORM.map(s => ({ value: s, label: s }))} {...register('source')} />
-        <Select label="Propriedade" placeholder="Nenhuma" options={properties.map(p => ({ value: p.id, label: p.title }))} {...register('propertyId')} />
         <DatePickerInput
           label="Data de Fecho Prevista"
           value={watch('expectedCloseDate')}
@@ -267,102 +214,6 @@ const OppForm: React.FC<OppFormProps> = ({ opportunity, initialStage, activePipe
               outline: 'none', resize: 'vertical', fontFamily: 'inherit',
             }}
           />
-        </div>
-      )}
-
-      {/* Dynamic fields — BUYER */}
-      {contactType === 'BUYER' && (
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Perfil de Compra</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-            <div>
-              <label style={labelStyle}>Budget Mínimo (€)</label>
-              <input {...register('budget_min', { valueAsNumber: true })} type="number" placeholder="ex: 150 000" style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Budget Máximo (€)</label>
-              <input {...register('budget_max', { valueAsNumber: true })} type="number" placeholder="ex: 500 000" style={inputStyle} />
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-            <div>
-              <CustomSelect
-                label="Tipo de Imóvel"
-                value={watch('interest_type') || ''}
-                onChange={v => setFormValue('interest_type', v)}
-                placeholder="Selecionar..."
-                options={[
-                  { value: 'APARTMENT', label: 'Apartamento' },
-                  { value: 'HOUSE', label: 'Moradia' },
-                  { value: 'COMMERCIAL', label: 'Comercial' },
-                  { value: 'LAND', label: 'Terreno' },
-                  { value: 'GARAGE', label: 'Garagem' },
-                  { value: 'WAREHOUSE', label: 'Armazém' },
-                  { value: 'FARM', label: 'Quinta' },
-                ]}
-              />
-            </div>
-            <div>
-              <CustomSelect
-                label="Urgência"
-                value={watch('timeline') || ''}
-                onChange={v => setFormValue('timeline', v)}
-                placeholder="Selecionar..."
-                options={[
-                  { value: 'IMMEDIATE', label: 'Imediato' },
-                  { value: '1_3_MONTHS', label: '1 a 3 meses' },
-                  { value: '3_6_MONTHS', label: '3 a 6 meses' },
-                  { value: '6_PLUS_MONTHS', label: 'Mais de 6 meses' },
-                ]}
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-              <input type="checkbox" {...register('selling_also')} checked={sellingAlso} onChange={e => setFormValue('selling_also', e.target.checked)} style={{ accentColor: 'var(--accent)', width: 15, height: 15 }} />
-              Pretende também vender
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-              <input type="checkbox" {...register('needs_financing')} checked={needsFinancing} onChange={e => setFormValue('needs_financing', e.target.checked)} style={{ accentColor: 'var(--accent)', width: 15, height: 15 }} />
-              Necessita de financiamento
-            </label>
-          </div>
-        </div>
-      )}
-
-      {/* Dynamic fields — OWNER */}
-      {contactType === 'OWNER' && (
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Dados do Imóvel</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div>
-              <label style={labelStyle}>Morada do Imóvel</label>
-              <input {...register('property_address')} type="text" placeholder="ex: Rua das Flores 12, Lisboa" style={inputStyle} />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <label style={labelStyle}>Asking Price (€)</label>
-                <input {...register('asking_price', { valueAsNumber: true })} type="number" placeholder="ex: 320 000" style={inputStyle} />
-              </div>
-              <div>
-                <label style={labelStyle}>Comissão estimada (5%)</label>
-                <input type="text" readOnly value={oppCommission !== null ? `${oppCommission.toLocaleString('pt-PT', { minimumFractionDigits: 2 })} €` : '—'} style={{ ...inputStyle, background: 'var(--surface-3)', color: 'var(--text-muted)', cursor: 'default' }} />
-              </div>
-            </div>
-            <div>
-              <CustomSelect
-                label="Razão da Venda"
-                value={watch('sale_reason') || ''}
-                onChange={v => setFormValue('sale_reason', v)}
-                placeholder="Selecionar..."
-                options={SALE_REASON_OPTIONS.map(r => ({ value: r, label: r }))}
-              />
-            </div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
-              <input type="checkbox" {...register('buying_also')} checked={buyingAlso} onChange={e => setFormValue('buying_also', e.target.checked)} style={{ accentColor: 'var(--accent)', width: 15, height: 15 }} />
-              Necessita de comprar além de vender
-            </label>
-          </div>
         </div>
       )}
 
@@ -1376,7 +1227,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
               {(selectedOpp as any).probability != null && <InfoRow label="Probabilidade" value={`${(selectedOpp as any).probability}%`} />}
               {selectedOpp.source && <InfoRow label="Fonte" value={selectedOpp.source} />}
               {selectedOpp.contact && <InfoRow label="Contacto" value={selectedOpp.contact.name} />}
-              {selectedOpp.property && <InfoRow label="Propriedade" value={selectedOpp.property.title} />}
               {selectedOpp.assignedTo && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Responsável</span>

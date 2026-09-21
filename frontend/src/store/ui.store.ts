@@ -25,7 +25,7 @@ interface UIState {
 const initialDark = resolveTheme(getStoredTheme()) === 'dark'
 
 export const useUIStore = create<UIState>((set) => ({
-  crmName: localStorage.getItem('imocrm-name') || 'CasaFlow',
+  crmName: localStorage.getItem('imocrm-name') || 'AlphaCRM',
   setCrmName: (name: string) => {
     localStorage.setItem('imocrm-name', name)
     set({ crmName: name })

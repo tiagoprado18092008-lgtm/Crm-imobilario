@@ -1,18 +1,17 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Users, Building2, TrendingUp } from 'lucide-react'
+import { Search, Users, TrendingUp } from 'lucide-react'
 import { globalSearch } from '../../api/search.api'
 
 interface SearchResult {
   contacts: any[]
-  properties: any[]
   opportunities: any[]
 }
 
 export const GlobalSearch: React.FC = () => {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<SearchResult>({ contacts: [], properties: [], opportunities: [] })
+  const [results, setResults] = useState<SearchResult>({ contacts: [], opportunities: [] })
   const [loading, setLoading] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -22,7 +21,6 @@ export const GlobalSearch: React.FC = () => {
   // Build flat list of all results for keyboard navigation
   const allItems: { type: string; id: string; label: string; sub: string; path: string }[] = []
   results.contacts.forEach(c => allItems.push({ type: 'contact', id: c.id, label: c.name, sub: c.email || c.phone || c.type, path: `/contacts/${c.id}` }))
-  results.properties.forEach(p => allItems.push({ type: 'property', id: p.id, label: p.title, sub: p.city || p.type, path: `/properties/${p.id}` }))
   results.opportunities.forEach(o => allItems.push({ type: 'opportunity', id: o.id, label: o.title, sub: o.stage, path: `/opportunities/${o.id}` }))
 
   // Ctrl+K / Cmd+K listener
@@ -42,7 +40,7 @@ export const GlobalSearch: React.FC = () => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 50)
       setQuery('')
-      setResults({ contacts: [], properties: [], opportunities: [] })
+      setResults({ contacts: [], opportunities: [] })
       setSelectedIndex(0)
     }
   }, [open])
@@ -50,7 +48,7 @@ export const GlobalSearch: React.FC = () => {
   // Debounced search
   useEffect(() => {
     if (!query || query.length < 2) {
-      setResults({ contacts: [], properties: [], opportunities: [] })
+      setResults({ contacts: [], opportunities: [] })
       return
     }
     setLoading(true)
@@ -85,12 +83,10 @@ export const GlobalSearch: React.FC = () => {
   const hasResults = allItems.length > 0
   const iconFor = (type: string) => {
     if (type === 'contact') return <Users style={{ width: 16, height: 16, color: 'var(--accent)' }} />
-    if (type === 'property') return <Building2 style={{ width: 16, height: 16, color: '#8b5cf6' }} />
     return <TrendingUp style={{ width: 16, height: 16, color: '#22c55e' }} />
   }
   const labelFor = (type: string) => {
     if (type === 'contact') return 'Contactos'
-    if (type === 'property') return 'Propriedades'
     return 'Oportunidades'
   }
 
@@ -110,7 +106,7 @@ export const GlobalSearch: React.FC = () => {
           return (
             <div
               key={item.id}
-              onClick={() => goTo(type === 'contact' ? `/contacts/${item.id}` : type === 'property' ? `/properties/${item.id}` : `/opportunities/${item.id}`)}
+              onClick={() => goTo(type === 'contact' ? `/contacts/${item.id}` : `/opportunities/${item.id}`)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', cursor: 'pointer',
                 background: isSelected ? 'var(--surface-3)' : 'transparent', transition: 'background 100ms',
@@ -123,7 +119,7 @@ export const GlobalSearch: React.FC = () => {
                   {type === 'contact' ? item.name : item.title}
                 </div>
                 <div style={{ fontSize: 12, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {type === 'contact' ? (item.email || item.phone || item.type) : type === 'property' ? (item.address || item.type) : item.stage}
+                  {type === 'contact' ? (item.email || item.phone || item.type) : item.stage}
                 </div>
               </div>
             </div>
@@ -185,7 +181,6 @@ export const GlobalSearch: React.FC = () => {
           ) : (
             <div style={{ paddingBottom: 8, paddingTop: 4 }}>
               {renderSection('contact', results.contacts)}
-              {renderSection('property', results.properties)}
               {renderSection('opportunity', results.opportunities)}
             </div>
           )}

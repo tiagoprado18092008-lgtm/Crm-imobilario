@@ -151,14 +151,8 @@ model Contact {
   notes       String?
   preferences String?
 
-  assignedToId String
-  assignedTo   User   @relation(fields: [assignedToId], references: [id])
-
-  budget_min        Float?
-  budget_max        Float?
-  interest_type     String?
-  interest_zones    String?
-  timeline          String?
+  assignedToId      String
+  assignedTo        User      @relation(fields: [assignedToId], references: [id])
   score             Int       @default(0)
   tags              String[]  @default([])
   gdprConsent       Boolean   @default(false)
@@ -169,15 +163,6 @@ model Contact {
   nif               String?
   birthday          DateTime?
   lastContactedAt   DateTime?
-
-  // Campos dinâmicos por tipo
-  selling_also     Boolean @default(false) // Comprador que também quer vender
-  needs_financing  Boolean @default(false) // Comprador precisa de financiamento
-  property_address String? // Morada do imóvel (Proprietário)
-  asking_price     Float? // Preço pedido (Proprietário)
-  sale_reason      String? // Razão da venda (Proprietário)
-  buying_also      Boolean @default(false) // Proprietário que também quer comprar
-  commission       Float? // 5% × asking_price
 
   opportunities         Opportunity[]
   interactions          Interaction[]
@@ -198,7 +183,6 @@ model Opportunity {
   title             String
   stage             String         @default("LEAD_IN")
   value             Float?
-  commission        Float?
   probability       Int            @default(50)
   source            String?
   expectedCloseDate DateTime?
@@ -216,15 +200,6 @@ model Opportunity {
   assignedTo   User    @relation(fields: [assignedToId], references: [id])
   agencyId     String?
   agency       Agency? @relation(fields: [agencyId], references: [id])
-
-  // Campos dinâmicos por tipo (espelho do Contact)
-  selling_also     Boolean @default(false)
-  needs_financing  Boolean @default(false)
-  property_address String?
-  asking_price     Float?
-  sale_reason      String?
-  buying_also      Boolean @default(false)
-  opp_commission   Float? // comissão 5% calculada (renomeado para evitar conflito com commission existente)
 
   interactions Interaction[]
   tasks        Task[]

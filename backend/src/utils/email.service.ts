@@ -25,7 +25,7 @@ export async function sendEmail(opts: {
     });
 
     const info = await transporter.sendMail({
-      from: `"CasaFlow CRM" <${from}>`,
+      from: `"AlphaCRM CRM" <${from}>`,
       to: opts.to,
       subject: opts.subject,
       html: opts.html,

@@ -260,9 +260,9 @@ export const forgotPassword = async (email: string): Promise<void> => {
   const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
 
   await getMailTransporter().sendMail({
-    from: `"${process.env.FROM_NAME || 'CasaFlow'}" <${process.env.FROM_EMAIL}>`,
+    from: `"${process.env.FROM_NAME || 'AlphaCRM'}" <${process.env.FROM_EMAIL}>`,
     to: email,
-    subject: 'Recuperação de password — CasaFlow',
+    subject: 'Recuperação de password — AlphaCRM',
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:auto">
         <h2 style="color:#0f2553">Recuperar password</h2>

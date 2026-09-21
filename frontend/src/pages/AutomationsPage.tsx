@@ -85,7 +85,6 @@ const TRIGGER_STYLE: Record<TriggerType, { color: string; bg: string }> = {
   lead_stage_changed: { color: '#d97706', bg: '#fffbeb' },
   lead_assigned:      { color: '#2563eb', bg: '#eff6ff' },
   lead_tag_added:     { color: '#9333ea', bg: '#fdf4ff' },
-  property_added:     { color: '#db2777', bg: '#fdf2f8' },
   form_submitted:     { color: '#059669', bg: '#ecfdf5' },
   scheduled:          { color: '#ea580c', bg: '#fff7ed' },
 }

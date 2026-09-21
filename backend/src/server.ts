@@ -64,9 +64,9 @@ app.use(helmet({
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
-  'https://casaflow.pt',
-  'https://www.casaflow.pt',
-  'https://casaflow-frontend.onrender.com',
+  'https://alphacrm.pt',
+  'https://www.alphacrm.pt',
+  'https://alphacrm-frontend.onrender.com',
   ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map(u => u.trim()) : []),
 ];
 app.use(
@@ -74,8 +74,8 @@ app.use(
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
       if (allowedOrigins.includes(origin)) return cb(null, true);
-      // Allow any *.casaflow.pt and *.onrender.com subdomain
-      if (/^https:\/\/([a-z0-9-]+\.)?casaflow\.pt$/i.test(origin)) return cb(null, true);
+      // Allow any *.alphacrm.pt and *.onrender.com subdomain
+      if (/^https:\/\/([a-z0-9-]+\.)?alphacrm\.pt$/i.test(origin)) return cb(null, true);
       if (/^https:\/\/[a-z0-9-]+\.onrender\.com$/i.test(origin)) return cb(null, true);
       if (/^https:\/\/[a-z0-9-]+\.up\.railway\.app$/i.test(origin)) return cb(null, true);
       cb(new Error(`CORS blocked: ${origin}`));
@@ -159,7 +159,7 @@ app.use(requestLogger);
 const uploadsPath = (() => {
   const fromSrc = path.resolve(__dirname, '../../uploads');       // ts-node path
   const fromDist = path.resolve(__dirname, '../../../uploads');   // compiled path
-  if (fs.existsSync(fromSrc + '/properties') || fs.existsSync(fromSrc)) return fromSrc;
+  if (fs.existsSync(fromSrc)) return fromSrc;
   return fromDist;
 })();
 app.use('/uploads', express.static(uploadsPath));

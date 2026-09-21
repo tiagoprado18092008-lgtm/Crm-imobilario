@@ -228,7 +228,7 @@ export default function PublicBookingPage() {
           )}
         </div>
 
-        <p style={{ textAlign: 'center', fontSize: 12, color: '#b0b7c3', marginTop: 24 }}>Powered by CasaFlow</p>
+        <p style={{ textAlign: 'center', fontSize: 12, color: '#b0b7c3', marginTop: 24 }}>Powered by AlphaCRM</p>
       </div>
     </div>
   );

@@ -87,25 +87,14 @@ export const create = async (
     assignedToId?: string;
     city?: string;
     postalCode?: string;
-    budget_min?: number;
-    budget_max?: number;
-    interest_type?: string;
-    timeline?: string;
     gdprConsent?: boolean;
     gdprConsentOrigin?: string;
     // Dynamic fields
-    selling_also?: boolean;
-    needs_financing?: boolean;
-    property_address?: string;
-    asking_price?: number;
-    sale_reason?: string;
-    buying_also?: boolean;
     tags?: string[];
   },
   user: any
 ) => {
   const userId = typeof user === 'string' ? user : user.id;
-  const commission = dto.asking_price ? dto.asking_price * 0.05 : undefined;
 
   const contact = await prisma.contact.create({
     data: {
@@ -121,20 +110,9 @@ export const create = async (
       assignedToId: dto.assignedToId || userId,
       city: dto.city,
       postalCode: dto.postalCode,
-      budget_min: dto.budget_min,
-      budget_max: dto.budget_max,
-      interest_type: dto.interest_type,
-      timeline: dto.timeline,
       gdprConsent: dto.gdprConsent ?? false,
       gdprConsentOrigin: dto.gdprConsentOrigin,
       gdprConsentDate: dto.gdprConsent ? new Date() : undefined,
-      selling_also: dto.selling_also ?? false,
-      needs_financing: dto.needs_financing ?? false,
-      property_address: dto.property_address,
-      asking_price: dto.asking_price,
-      sale_reason: dto.sale_reason,
-      buying_also: dto.buying_also ?? false,
-      commission,
       tags: dto.tags ?? [],
     },
     include: {
@@ -282,19 +260,9 @@ export const update = async (
     assignedToId?: string;
     city?: string;
     postalCode?: string;
-    budget_min?: number;
-    budget_max?: number;
-    interest_type?: string;
-    timeline?: string;
     gdprConsent?: boolean;
     gdprConsentOrigin?: string;
     // Dynamic fields
-    selling_also?: boolean;
-    needs_financing?: boolean;
-    property_address?: string;
-    asking_price?: number;
-    sale_reason?: string;
-    buying_also?: boolean;
     tags?: string[];
   },
   user: any
@@ -308,8 +276,6 @@ export const update = async (
     err.status = 404;
     throw err;
   }
-
-  const commission = dto.asking_price !== undefined ? dto.asking_price * 0.05 : undefined;
 
   const updated = await prisma.contact.update({
     where: { id },
@@ -326,20 +292,9 @@ export const update = async (
       assignedToId: dto.assignedToId,
       city: dto.city,
       postalCode: dto.postalCode,
-      budget_min: dto.budget_min,
-      budget_max: dto.budget_max,
-      interest_type: dto.interest_type,
-      timeline: dto.timeline,
       gdprConsent: dto.gdprConsent,
       gdprConsentOrigin: dto.gdprConsentOrigin,
       gdprConsentDate: dto.gdprConsent === true ? new Date() : undefined,
-      selling_also: dto.selling_also,
-      needs_financing: dto.needs_financing,
-      property_address: dto.property_address,
-      asking_price: dto.asking_price,
-      sale_reason: dto.sale_reason,
-      buying_also: dto.buying_also,
-      commission,
       ...(dto.tags !== undefined && { tags: dto.tags }),
     },
     include: {

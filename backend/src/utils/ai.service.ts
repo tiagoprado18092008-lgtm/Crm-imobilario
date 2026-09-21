@@ -2,9 +2,11 @@ import prisma from '../config/database';
 
 interface QualificationData {
   budget?: number
-  propertyType?: string
+  /** Serviço em que a lead demonstrou interesse */
+  service?: 'WEBSITE' | 'ADS' | 'REDES_SOCIAIS' | 'SEO'
+  /** Setor da clínica/empresa */
+  sector?: string
   location?: string
-  bedrooms?: number
   urgency?: 'LOW' | 'MEDIUM' | 'HIGH'
   notes?: string
 }
@@ -62,7 +64,7 @@ async function qualifyWithOpenAI(message: string): Promise<QualificationData> {
       messages: [
         {
           role: 'system',
-          content: `Extrai dados de qualificação imobiliária da mensagem. Responde APENAS em JSON com os campos: budget (número em euros), propertyType (APARTMENT/HOUSE/COMMERCIAL/LAND), location (string), bedrooms (número), urgency (LOW/MEDIUM/HIGH). Omite campos que não consigues determinar.`
+          content: `Extrai dados de qualificação B2B de uma agência de marketing digital. Responde APENAS em JSON com os campos: budget (número em euros), service (WEBSITE/ADS/REDES_SOCIAIS/SEO), sector (setor da empresa, ex: fisioterapia, dentária, veterinária), location (string), urgency (LOW/MEDIUM/HIGH). Omite campos que não consigues determinar.`
         },
         { role: 'user', content: message }
       ],
@@ -88,15 +90,17 @@ function qualifyWithRules(message: string): QualificationData {
     data.budget = lower.includes('mil') || lower.includes('k') ? val * 1000 : val
   }
 
-  // Tipologia
-  if (lower.includes('t1') || lower.includes('t2') || lower.includes('t3') || lower.includes('t4')) {
-    const match = lower.match(/t(\d)/)
-    if (match) data.bedrooms = parseInt(match[1])
-  }
-  if (lower.includes('aparta') || lower.includes('andar')) data.propertyType = 'APARTMENT'
-  if (lower.includes('moradia') || lower.includes('vivenda') || lower.includes('casa')) data.propertyType = 'HOUSE'
-  if (lower.includes('terreno')) data.propertyType = 'LAND'
-  if (lower.includes('comercial') || lower.includes('loja') || lower.includes('escritório')) data.propertyType = 'COMMERCIAL'
+  // Serviço pretendido
+  if (lower.includes('site') || lower.includes('website') || lower.includes('página')) data.service = 'WEBSITE'
+  if (lower.includes('google ads') || lower.includes('anúncio') || lower.includes('campanha') || lower.includes('meta ads')) data.service = 'ADS'
+  if (lower.includes('instagram') || lower.includes('facebook') || lower.includes('redes sociais')) data.service = 'REDES_SOCIAIS'
+  if (lower.includes('seo') || lower.includes('google')) data.service = 'SEO'
+
+  // Setor da clínica
+  if (lower.includes('fisioterapia')) data.sector = 'fisioterapia'
+  if (lower.includes('dentária') || lower.includes('dentista')) data.sector = 'dentária'
+  if (lower.includes('veterinár')) data.sector = 'veterinária'
+  if (lower.includes('estética')) data.sector = 'medicina estética'
 
   // Urgência
   if (lower.includes('urgent') || lower.includes('já') || lower.includes('imediato') || lower.includes('esta semana')) {

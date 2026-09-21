@@ -88,12 +88,6 @@ export const create = async (
     contactId: string;
     assignedToId?: string;
     // Dynamic fields
-    selling_also?: boolean;
-    needs_financing?: boolean;
-    property_address?: string;
-    asking_price?: number;
-    sale_reason?: string;
-    buying_also?: boolean;
   },
   user: any
 ) => {
@@ -105,7 +99,6 @@ export const create = async (
     select: { position: true },
   });
   const position = lastInStage ? lastInStage.position + 1 : 0;
-  const opp_commission = dto.asking_price ? dto.asking_price * 0.05 : undefined;
 
   const opp = await prisma.opportunity.create({
     data: {
@@ -122,13 +115,6 @@ export const create = async (
       contactId: dto.contactId,
       assignedToId: (user.role === 'CONSULTANT' ? user.id : dto.assignedToId) || user.id,
       agencyId: user.agencyId ?? null,
-      selling_also: dto.selling_also ?? false,
-      needs_financing: dto.needs_financing ?? false,
-      property_address: dto.property_address,
-      asking_price: dto.asking_price,
-      sale_reason: dto.sale_reason,
-      buying_also: dto.buying_also ?? false,
-      opp_commission,
     },
     include: {
       contact: { select: { id: true, name: true, email: true, phone: true } },
@@ -368,12 +354,6 @@ export const update = async (
     contactId?: string;
     assignedToId?: string;
     // Dynamic fields
-    selling_also?: boolean;
-    needs_financing?: boolean;
-    property_address?: string;
-    asking_price?: number;
-    sale_reason?: string;
-    buying_also?: boolean;
   },
   user: any
 ) => {
@@ -394,8 +374,6 @@ export const update = async (
   if (dto.assignedToId !== undefined && dto.assignedToId !== existing.assignedToId) changes.assignedToId = { from: existing.assignedToId, to: dto.assignedToId };
   if (dto.title !== undefined && dto.title !== existing.title) changes.title = { from: existing.title, to: dto.title };
 
-  const opp_commission = dto.asking_price !== undefined ? dto.asking_price * 0.05 : undefined;
-
   const updated = await prisma.opportunity.update({
     where: { id },
     data: {
@@ -409,13 +387,6 @@ export const update = async (
       // Never overwrite position via update — use moveStage for that
       contactId: dto.contactId || undefined,
       assignedToId: dto.assignedToId || undefined,
-      selling_also: dto.selling_also,
-      needs_financing: dto.needs_financing,
-      property_address: dto.property_address,
-      asking_price: dto.asking_price,
-      sale_reason: dto.sale_reason,
-      buying_also: dto.buying_also,
-      opp_commission,
     },
     include: {
       contact: { select: { id: true, name: true, email: true, phone: true } },

@@ -119,7 +119,7 @@ router.post('/:userId/book', async (req: Request, res: Response, next: NextFunct
         auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
       });
       await transporter.sendMail({
-        from: `"${process.env.FROM_NAME || 'CasaFlow'}" <${process.env.FROM_EMAIL}>`,
+        from: `"${process.env.FROM_NAME || 'AlphaCRM'}" <${process.env.FROM_EMAIL}>`,
         to: email,
         subject: `Agendamento confirmado com ${user.name}`,
         html: `

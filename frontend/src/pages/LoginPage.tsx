@@ -4,7 +4,7 @@ import { SignIn, useAuth, useSession, useClerk } from '@clerk/clerk-react'
 import { motion } from 'framer-motion'
 import { AlertCircle } from 'lucide-react'
 import { useAuthStore } from '../store/auth.store'
-import { CasaFlowLogo } from '../assets/casaflow-logo'
+import { AlphaCrmLogo } from '../assets/alphacrm-logo'
 
 // Module-level: survives component unmount/remount cycles caused by redirects
 // v2: fixed loop where useRef was lost on unmount
@@ -90,7 +90,7 @@ export const LoginPage: React.FC = () => {
           <div style={{ position: 'absolute', bottom: '-60px', left: '-60px', width: 300, height: 300, borderRadius: '50%', border: '50px solid rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
 
           <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }} style={{ display: 'flex', alignItems: 'center', gap: 14, zIndex: 1 }}>
-            <CasaFlowLogo size={36} />
+            <AlphaCrmLogo size={36} />
             <div>
               <div style={{ fontSize: 20, fontWeight: 700, color: T.white, letterSpacing: '-0.02em' }}>
                 CASA<span style={{ fontWeight: 400 }}>FLOW</span>
@@ -118,7 +118,7 @@ export const LoginPage: React.FC = () => {
           </motion.div>
 
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', margin: 0, zIndex: 1 }}>
-            © {new Date().getFullYear()} CasaFlow · Todos os direitos reservados
+            © {new Date().getFullYear()} AlphaCRM · Todos os direitos reservados
           </motion.p>
         </div>
 
@@ -127,7 +127,7 @@ export const LoginPage: React.FC = () => {
 
           {/* Mobile logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }} className="cf-mobile-logo">
-            <CasaFlowLogo size={34} />
+            <AlphaCrmLogo size={34} />
             <div>
               <div style={{ fontSize: 18, fontWeight: 700, color: T.navy, letterSpacing: '-0.02em' }}>CASA<span style={{ fontWeight: 400 }}>FLOW</span></div>
               <div style={{ fontSize: 9, color: T.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1 }}>CRM Imobiliário</div>

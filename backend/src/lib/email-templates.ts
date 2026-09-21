@@ -18,10 +18,10 @@ const base = (body: string) => `<!DOCTYPE html>
 <body>
 <div class="wrap">
   <div class="header">
-    <h1>CasaFlow</h1>
+    <h1>AlphaCRM</h1>
   </div>
   <div class="body">${body}</div>
-  <div class="footer">CasaFlow — Plataforma de Gestão Imobiliária<br/>Este email foi enviado automaticamente. Por favor não responda a esta mensagem.</div>
+  <div class="footer">AlphaCRM — Plataforma de Gestão Imobiliária<br/>Este email foi enviado automaticamente. Por favor não responda a esta mensagem.</div>
 </div>
 </body>
 </html>`;
@@ -31,10 +31,10 @@ export function inviteOwnerTemplate(opts: {
   inviteUrl: string;
 }): { subject: string; html: string } {
   return {
-    subject: `Convite para gerir a agência "${opts.agencyName}" no CasaFlow`,
+    subject: `Convite para gerir a agência "${opts.agencyName}" no AlphaCRM`,
     html: base(`
       <p>Olá,</p>
-      <p>Foi convidado(a) para ser <strong>proprietário(a) da agência "${opts.agencyName}"</strong> na plataforma CasaFlow.</p>
+      <p>Foi convidado(a) para ser <strong>proprietário(a) da agência "${opts.agencyName}"</strong> na plataforma AlphaCRM.</p>
       <p>Clique no botão abaixo para aceitar o convite e criar a sua conta:</p>
       <p style="text-align:center"><a class="btn" href="${opts.inviteUrl}">Aceitar Convite</a></p>
       <p>Este link é válido por <strong>7 dias</strong>. Se não estava à espera deste convite, pode ignorar este email.</p>
@@ -48,10 +48,10 @@ export function inviteConsultantTemplate(opts: {
   inviteUrl: string;
 }): { subject: string; html: string } {
   return {
-    subject: `${opts.inviterName} convidou-o(a) para a equipa ${opts.agencyName} no CasaFlow`,
+    subject: `${opts.inviterName} convidou-o(a) para a equipa ${opts.agencyName} no AlphaCRM`,
     html: base(`
       <p>Olá,</p>
-      <p><strong>${opts.inviterName}</strong> convidou-o(a) para se juntar à equipa <strong>${opts.agencyName}</strong> como consultor(a) no CasaFlow.</p>
+      <p><strong>${opts.inviterName}</strong> convidou-o(a) para se juntar à equipa <strong>${opts.agencyName}</strong> como consultor(a) no AlphaCRM.</p>
       <p>Clique no botão abaixo para aceitar o convite e criar a sua conta:</p>
       <p style="text-align:center"><a class="btn" href="${opts.inviteUrl}">Aceitar Convite</a></p>
       <p>Este link é válido por <strong>7 dias</strong>. Se não estava à espera deste convite, pode ignorar este email.</p>
@@ -64,10 +64,10 @@ export function accountActivatedTemplate(opts: {
   loginUrl: string;
 }): { subject: string; html: string } {
   return {
-    subject: 'A sua conta CasaFlow está activa',
+    subject: 'A sua conta AlphaCRM está activa',
     html: base(`
       <p>Olá, <strong>${opts.name}</strong>!</p>
-      <p>A sua conta foi criada e activada com sucesso. Pode agora iniciar sessão na plataforma CasaFlow.</p>
+      <p>A sua conta foi criada e activada com sucesso. Pode agora iniciar sessão na plataforma AlphaCRM.</p>
       <p style="text-align:center"><a class="btn" href="${opts.loginUrl}">Iniciar Sessão</a></p>
     `),
   };

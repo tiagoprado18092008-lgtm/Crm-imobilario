@@ -134,7 +134,7 @@ export const OnboardingWizard: React.FC<Props> = ({ onComplete }) => {
         {step === 0 && (
           <div>
             <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-              Bem-vindo ao CasaFlow
+              Bem-vindo ao AlphaCRM
             </h2>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', margin: '0 0 28px' }}>
               Vamos configurar o teu perfil em segundos.

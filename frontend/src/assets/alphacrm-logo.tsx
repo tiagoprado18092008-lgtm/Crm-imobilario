@@ -1,7 +1,7 @@
 import React from 'react'
 
-/* CasaFlow logo icon — navy house outline + gold S-curve (matches brand image) */
-export const CasaFlowLogo = ({ size = 32 }: { size?: number }) => (
+/* AlphaCRM logo icon — navy house outline + gold S-curve (matches brand image) */
+export const AlphaCrmLogo = ({ size = 32 }: { size?: number }) => (
   <svg
     width={size}
     height={size}
@@ -75,7 +75,7 @@ export const CasaFlowLogo = ({ size = 32 }: { size?: number }) => (
 )
 
 /* Wordmark: CASA bold + FLOW regular, navy */
-export const CasaFlowWordmark = ({ height = 28 }: { height?: number }) => (
+export const AlphaCrmWordmark = ({ height = 28 }: { height?: number }) => (
   <span
     style={{
       fontFamily: "'DM Sans', sans-serif",
