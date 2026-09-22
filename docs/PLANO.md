@@ -2,7 +2,7 @@
 
 > Data: 2026-09-21 · Fase 0 · Autor: Claude Opus 5
 > Base: [`docs/AUDITORIA.md`](AUDITORIA.md). Prompt mestre nas secções 1–15 (as §5 e §11 foram substituídas pela §5 da auditoria).
-> **Estado: Fases 0–3 e 5 concluídas. Fases 4 e 6 parciais (bloqueadas em contas externas: Zadarma e DocuSign).**
+> **Estado: Fases 0–3, 5 e 7 concluídas. Fases 4 e 6 parciais (bloqueadas em contas externas: Zadarma e DocuSign). A seguir: Fase 8 (Receita).**
 
 ---
 
@@ -73,7 +73,7 @@ Cada fase: branch próprio, PR com checklist, `tsc --noEmit` limpo, `eslint` lim
 | **4 — Telefonia Zadarma** 🟡 | `ITelephonyProvider`; `ZadarmaProvider`; HMAC testado; extensões SIP; softphone SIP.js; webhooks; gravações em storage próprio; dispositions; power dialer; compliance | ✅ `ITelephonyProvider` + `ZadarmaProvider`; ✅ HMAC testado contra o cliente PHP; ✅ modelo `Call`/`CallEvent`/`Recording`/`AgentExtension`; ✅ webhooks com mitigações R2; ✅ dispositions + opt-out testado; ✅ horário validado no servidor; ✅ jobs de offload e retenção; ✅ `docs/RGPD.md`; ⬜ softphone SIP.js (precisa de conta); ⬜ power dialer | **em curso** |
 | **5 — Comunicação** ✅ | Inbox com atribuição e templates; sequências multicanal com paragem à resposta; links de marcação; lembretes | Sequência de 5 passos para sozinha à resposta; link de marcação cria evento + atividade | 2 sem |
 | **6 — Fecho** 🟡 | Produtos, line items, propostas com link público e PDF, DocuSign, webhook → Ganho | ✅ produtos + line items com snapshot de preço; ✅ propostas com versões; ✅ link público com token e rate limit; ✅ aceitar fecha o negócio na mesma transação; ✅ 23 testes de aritmética; ⬜ PDF; ⬜ DocuSign (precisa de conta) | **em curso** |
-| **7 — Entrega** | Clientes, Projetos, templates (Website/Ads), entregáveis, briefing, automação Ganho→Projeto | Ganhar negócio cria projeto + checklist + email automaticamente | 2 sem |
+| **7 — Entrega** ✅ | Clientes, Projetos, templates (Website/Ads), entregáveis, briefing, automação Ganho→Projeto | ✅ `Project`/`ProjectTask`/`Deliverable`/`ProjectTemplate`; ✅ 4 templates reais (website, ads, redes, SEO); ✅ ganhar cria projeto + checklist, idempotente; ✅ empresa promovida a cliente; ✅ quadro por estado com progresso; 19 testes | **concluída** |
 | **8 — Receita** | Avenças, MRR decomposto, faturas, cobranças, saúde do cliente, export CSV | MRR correto face aos contratos ativos; aging funcional | 2 sem |
 | **9 — Gestão** | Metas, leaderboard, relatórios com drill-down, permissões por papel | BDR autenticado não vê negócios de outro (teste automatizado) | 1–2 sem |
 | **10 — Automações** | Motor de workflows + os 7 templates da §8.9 | 7 workflows ativos com `WorkflowRun` registado | 2 sem |
