@@ -17,31 +17,30 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-/** One cheap read per model the app depends on. */
-const CHECKS = [
-  ['Contact', () => prisma.contact.findFirst({ select: { id: true, agencyId: true } })],
-  ['Opportunity', () => prisma.opportunity.findFirst({ select: { id: true, agencyId: true, rottingAt: true, nextActivityAt: true } })],
-  ['Conversation', () => prisma.conversation.findFirst({ select: { id: true, agencyId: true } })],
-  ['Message', () => prisma.message.findFirst({ select: { id: true, agencyId: true } })],
-  ['PipelineStage', () => prisma.pipelineStage.findFirst({ select: { id: true, rotDays: true, requiredFields: true } })],
-  ['Lead', () => prisma.lead.findFirst({ select: { id: true } })],
-  ['Company', () => prisma.company.findFirst({ select: { id: true } })],
-  ['SavedView', () => prisma.savedView.findFirst({ select: { id: true } })],
-  ['Call', () => prisma.call.findFirst({ select: { id: true } })],
-  ['CallEvent', () => prisma.callEvent.findFirst({ select: { id: true } })],
-  ['Recording', () => prisma.recording.findFirst({ select: { id: true } })],
-  ['AgentExtension', () => prisma.agentExtension.findFirst({ select: { id: true } })],
-  ['Product', () => prisma.product.findFirst({ select: { id: true } })],
-  ['DealLineItem', () => prisma.dealLineItem.findFirst({ select: { id: true } })],
-  ['Quote', () => prisma.quote.findFirst({ select: { id: true } })],
-  ['Project', () => prisma.project.findFirst({ select: { id: true } })],
-  ['ProjectTask', () => prisma.projectTask.findFirst({ select: { id: true } })],
-  ['Deliverable', () => prisma.deliverable.findFirst({ select: { id: true } })],
-  ['Subscription', () => prisma.subscription.findFirst({ select: { id: true } })],
-  ['Invoice', () => prisma.invoice.findFirst({ select: { id: true } })],
-  ['RevenueSnapshot', () => prisma.revenueSnapshot.findFirst({ select: { id: true } })],
-  ['ClientHealth', () => prisma.clientHealth.findFirst({ select: { id: true } })],
-];
+/**
+ * Every model the client knows about, read once.
+ *
+ * Derived from the client rather than hand-listed: the first version of this
+ * file only checked the models added during the rebuild, so pre-existing ones
+ * that had drifted — Contact.tags, SystemSettings.id — passed the check and
+ * then failed in the app.
+ *
+ * findFirst with no select reads every column, which is what catches a
+ * missing one.
+ */
+const MODELS = Object.keys(prisma).filter(
+  (key) =>
+    !key.startsWith('$') &&
+    !key.startsWith('_') &&
+    typeof prisma[key] === 'object' &&
+    prisma[key] !== null &&
+    typeof prisma[key].findFirst === 'function',
+);
+
+const CHECKS = MODELS.map((name) => [
+  name.charAt(0).toUpperCase() + name.slice(1),
+  () => prisma[name].findFirst(),
+]);
 
 const failures = [];
 

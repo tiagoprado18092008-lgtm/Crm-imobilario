@@ -102,6 +102,7 @@ model Agency {
   Invoice         Invoice[]
   RevenueSnapshot RevenueSnapshot[]
   ClientHealth    ClientHealth[]
+  Goal            Goal[]
 }
 
 model AgencySettings {
@@ -182,6 +183,8 @@ model User {
 
   ownedProjects Project[]     @relation("ProjectOwner")
   projectTasks  ProjectTask[] @relation("ProjectTaskAssignee")
+
+  goals Goal[]
 }
 
 model Contact {
@@ -1631,4 +1634,54 @@ model ClientHealth {
   computedAt DateTime @default(now())
 
   @@index([agencyId, status])
+}
+
+// ─── Management ───────────────────────────────────────────────────────────────
+
+enum GoalMetric {
+  CHAMADAS
+  CONVERSAS
+  REUNIOES
+  NEGOCIOS_CRIADOS
+  VALOR_FECHADO
+  MRR_NOVO
+}
+
+enum GoalPeriod {
+  SEMANAL
+  MENSAL
+  TRIMESTRAL
+}
+
+/// A target for one person or the whole team.
+///
+/// The metric that matters most to AlphaScale is meetings booked per week:
+/// everything downstream follows from it, and it is the one a BDR can move
+/// today.
+model Goal {
+  id String @id @default(cuid())
+
+  metric GoalMetric
+  period GoalPeriod @default(MENSAL)
+  /// Value to reach in the period. Money in euros, everything else a count.
+  target Float
+
+  /// A goal belongs to a person, or to the workspace when userId is null.
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// First day of the period this goal applies to.
+  startsAt DateTime
+  endsAt   DateTime
+
+  isActive Boolean @default(true)
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId, userId, isActive])
+  @@index([agencyId, metric, startsAt])
 }
