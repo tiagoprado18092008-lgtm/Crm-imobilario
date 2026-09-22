@@ -1,11 +1,9 @@
 {
   "_comment": "Português europeu. Nunca pt-BR: equipa (não time), utilizador (não usuário), ficheiro (não arquivo), gerir (não gerenciar), ecrã (não tela), telemóvel (não celular), contacto (não contato), palavra-passe (não senha). Tratamento por tu implícito — evitar 'você'.",
-
   "app": {
     "name": "AlphaCRM",
     "tagline": "Sistema operativo comercial"
   },
-
   "nav": {
     "trabalho": "Trabalho",
     "gestao": "Gestão",
@@ -27,7 +25,6 @@
     "actividade": "Actividade",
     "pipelines": "Pipelines"
   },
-
   "actions": {
     "criar": "Criar",
     "guardar": "Guardar",
@@ -45,7 +42,6 @@
     "anular": "Anular",
     "tentarNovamente": "Tentar novamente"
   },
-
   "contacts": {
     "singular": "contacto",
     "plural": "contactos",
@@ -62,7 +58,6 @@
     "erroCarregar": "Não foi possível carregar os contactos.",
     "erroEliminar": "Não foi possível eliminar o contacto."
   },
-
   "deals": {
     "singular": "negócio",
     "plural": "negócios",
@@ -75,20 +70,17 @@
     "perdido": "Perdido",
     "motivoPerda": "Motivo da perda"
   },
-
   "empty": {
     "semResultados": "Sem resultados",
     "semResultadosFiltro": "Nenhum registo corresponde aos filtros.",
     "limparFiltros": "Limpar filtros"
   },
-
   "errors": {
     "generico": "Algo correu mal. Tenta novamente.",
     "semLigacao": "Sem ligação ao servidor.",
     "semPermissao": "Não tens permissão para ver isto.",
     "naoEncontrado": "Não encontrado."
   },
-
   "command": {
     "placeholder": "Procurar contactos, negócios ou ir para…",
     "irPara": "Ir para",

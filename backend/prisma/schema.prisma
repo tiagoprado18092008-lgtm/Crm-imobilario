@@ -82,18 +82,22 @@ model Agency {
   calendarSlot           CalendarSlot[]
   pipelineStage          PipelineStage[]
 
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  Company        Company[]
-  Lead           Lead[]
-  SavedView      SavedView[]
-  Call           Call[]
-  CallEvent      CallEvent[]
-  Recording      Recording[]
-  AgentExtension AgentExtension[]
-  Product        Product[]
-  DealLineItem   DealLineItem[]
-  Quote          Quote[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  Company         Company[]
+  Lead            Lead[]
+  SavedView       SavedView[]
+  Call            Call[]
+  CallEvent       CallEvent[]
+  Recording       Recording[]
+  AgentExtension  AgentExtension[]
+  Product         Product[]
+  DealLineItem    DealLineItem[]
+  Quote           Quote[]
+  Project         Project[]
+  ProjectTask     ProjectTask[]
+  Deliverable     Deliverable[]
+  ProjectTemplate ProjectTemplate[]
 }
 
 model AgencySettings {
@@ -171,6 +175,9 @@ model User {
 
   calls          Call[]
   agentExtension AgentExtension?
+
+  ownedProjects Project[]     @relation("ProjectOwner")
+  projectTasks  ProjectTask[] @relation("ProjectTaskAssignee")
 }
 
 model Contact {
@@ -273,6 +280,8 @@ model Opportunity {
 
   lineItems DealLineItem[]
   quotes    Quote[]
+
+  projects Project[]
 
   @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([agencyId, stageId, position])
@@ -912,6 +921,8 @@ model Company {
 
   calls Call[]
 
+  projects Project[]
+
   @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([agencyId, type, sector])
   @@index([agencyId, nif])
@@ -1298,4 +1309,150 @@ model Quote {
   @@unique([agencyId, number, version])
   @@index([agencyId, state, createdAt(sort: Desc)])
   @@index([agencyId, validUntil])
+}
+
+// ─── Delivery ─────────────────────────────────────────────────────────────────
+
+enum ProjectType {
+  WEBSITE
+  ADS
+  REDES_SOCIAIS
+  SEO
+  OUTRO
+}
+
+enum ProjectState {
+  ONBOARDING
+  EM_CURSO
+  EM_REVISAO
+  ENTREGUE
+  EM_PAUSA
+  TERMINADO
+}
+
+enum DeliverableState {
+  RASCUNHO
+  SUBMETIDO
+  EM_APROVACAO
+  APROVADO
+  ALTERACOES_PEDIDAS
+}
+
+/// Work sold and now owed. Created when a deal is won, so nothing falls
+/// through the gap between closing and delivering.
+model Project {
+  id String @id @default(cuid())
+
+  name  String
+  type  ProjectType  @default(OUTRO)
+  state ProjectState @default(ONBOARDING)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  /// The deal this came from, kept so delivery can be traced to what was sold.
+  dealId String?
+  deal   Opportunity? @relation(fields: [dealId], references: [id])
+
+  ownerId String?
+  owner   User?   @relation("ProjectOwner", fields: [ownerId], references: [id])
+
+  startDate   DateTime?
+  dueDate     DateTime?
+  /// Set when the project reaches ENTREGUE, for cycle-time reporting.
+  deliveredAt DateTime?
+
+  notes String?
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  tasks        ProjectTask[]
+  deliverables Deliverable[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([agencyId, state, dueDate])
+  @@index([agencyId, companyId])
+  @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
+}
+
+/// A checklist item on a project, instantiated from a template.
+model ProjectTask {
+  id String @id @default(cuid())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  position    Int     @default(0)
+
+  isDone Boolean   @default(false)
+  doneAt DateTime?
+
+  assigneeId String?
+  assignee   User?   @relation("ProjectTaskAssignee", fields: [assigneeId], references: [id])
+
+  dueDate DateTime?
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId, position])
+  @@index([agencyId, isDone, dueDate])
+}
+
+/// Something handed to the client for approval.
+model Deliverable {
+  id String @id @default(cuid())
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name  String
+  url   String?
+  state DeliverableState @default(RASCUNHO)
+
+  /// What the client said when asking for changes. Kept so the next version
+  /// answers the actual objection.
+  clientFeedback String?
+
+  submittedAt DateTime?
+  approvedAt  DateTime?
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId, state])
+  @@index([agencyId, state])
+}
+
+/// A reusable checklist. Winning a deal instantiates one of these rather than
+/// leaving someone to remember the steps.
+model ProjectTemplate {
+  id String @id @default(cuid())
+
+  name  String
+  type  ProjectType @default(OUTRO)
+  /// Steps as [{ title, description?, offsetDays? }].
+  tasks Json
+
+  isActive Boolean @default(true)
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId, type, isActive])
 }

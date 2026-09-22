@@ -14,6 +14,7 @@ const PublicQuotePage = lazy(() => import('./pages/PublicQuotePage'))
 const SuperAdminLayout = lazy(() => import('./pages/super-admin/SuperAdminLayout').then(m => ({ default: m.SuperAdminLayout })))
 const SuperAdminAgenciesPage = lazy(() => import('./pages/super-admin/SuperAdminAgenciesPage').then(m => ({ default: m.SuperAdminAgenciesPage })))
 const SuperAdminAgencyDetailPage = lazy(() => import('./pages/super-admin/SuperAdminAgencyDetailPage').then(m => ({ default: m.SuperAdminAgencyDetailPage })))
+const ProjetosPage = lazy(() => import('./pages/ProjetosPage').then(m => ({ default: m.ProjetosPage })))
 const LeadsPage = lazy(() => import('./pages/LeadsPage').then(m => ({ default: m.LeadsPage })))
 const HojePage = lazy(() => import('./pages/HojePage').then(m => ({ default: m.HojePage })))
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
@@ -85,6 +86,7 @@ function App() {
         <Route index element={<Navigate to="/hoje" replace />} />
         <Route path="hoje" element={<HojePage />} />
         <Route path="leads" element={<LeadsPage />} />
+        <Route path="projetos" element={<ProjetosPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="contacts" element={<ContactsPage />} />
         <Route path="contacts/:id" element={<ContactDetailPage />} />
