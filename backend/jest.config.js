@@ -7,6 +7,15 @@ module.exports = {
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
   },
-  setupFilesAfterSetup: [],
+
+  /**
+   * Baileys ships as ESM and Jest does not transform node_modules, so any test
+   * whose import chain reaches the WhatsApp socket failed to parse before it
+   * ran a single assertion. No test needs a real socket, so it is stubbed.
+   */
+  moduleNameMapper: {
+    '^@whiskeysockets/baileys$': '<rootDir>/src/__mocks__/baileys.ts',
+  },
+
   testTimeout: 15000,
 };

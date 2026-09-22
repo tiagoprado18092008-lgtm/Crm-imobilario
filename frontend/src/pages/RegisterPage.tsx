@@ -147,7 +147,7 @@ export const RegisterPage: React.FC = () => {
             <AlphaCrmLogo size={34} />
             <div>
               <div style={{ fontSize: 20, fontWeight: 700, color: T.white, letterSpacing: '-0.02em' }}>
-                CASA<span style={{ fontWeight: 400 }}>FLOW</span>
+                Alpha<span style={{ fontWeight: 400 }}>CRM</span>
               </div>
               <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.14em', textTransform: 'uppercase', marginTop: 1 }}>
                 CRM Imobiliário
@@ -219,7 +219,7 @@ export const RegisterPage: React.FC = () => {
               <AlphaCrmLogo size={32} />
               <div>
                 <div style={{ fontSize: 17, fontWeight: 700, color: T.navy, letterSpacing: '-0.02em' }}>
-                  CASA<span style={{ fontWeight: 400 }}>FLOW</span>
+                  Alpha<span style={{ fontWeight: 400 }}>CRM</span>
                 </div>
                 <div style={{ fontSize: 9, color: T.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1 }}>
                   CRM Imobiliário

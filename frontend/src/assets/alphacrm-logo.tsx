@@ -1,6 +1,19 @@
-import React from 'react'
+/**
+ * AlphaCRM mark.
+ *
+ * An "A" built from two strokes, with a connecting node where they meet and a
+ * second on the crossbar — the swoosh-and-nodes idea from the AlphaScale
+ * brand. Navy carries the letter; the cyan nodes are the only bright element,
+ * which is the same restraint the interface uses.
+ *
+ * It replaces a house outline left over from the real-estate product. A house
+ * on the login screen of a marketing agency's CRM undoes the rename before
+ * anyone reads a word.
+ */
 
-/* AlphaCRM logo icon — navy house outline + gold S-curve (matches brand image) */
+const NAVY = '#143253'
+const CYAN = '#00CDFF'
+
 export const AlphaCrmLogo = ({ size = 32 }: { size?: number }) => (
   <svg
     width={size}
@@ -8,86 +21,53 @@ export const AlphaCrmLogo = ({ size = 32 }: { size?: number }) => (
     viewBox="0 0 200 200"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
+    role="img"
+    aria-label="AlphaCRM"
   >
-    {/* Roof / house outline */}
+    {/* Left leg of the A */}
     <path
-      d="M100 28 L172 90"
-      stroke="#0f2553"
-      strokeWidth="13"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M100 28 L28 90"
-      stroke="#0f2553"
-      strokeWidth="13"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    {/* Left wall */}
-    <path
-      d="M28 90 L28 160"
-      stroke="#0f2553"
-      strokeWidth="13"
+      d="M38 168 L100 36"
+      stroke={NAVY}
+      strokeWidth="18"
       strokeLinecap="round"
     />
-    {/* Right outer wall */}
+    {/* Right leg */}
     <path
-      d="M172 90 L172 160"
-      stroke="#0f2553"
-      strokeWidth="13"
+      d="M100 36 L162 168"
+      stroke={NAVY}
+      strokeWidth="18"
       strokeLinecap="round"
     />
-    {/* Right inner arch (door/window) */}
+    {/* Crossbar, shortened so the nodes sit on its ends rather than past them */}
     <path
-      d="M126 160 L126 132 Q126 110 148 110 Q170 110 170 132 L170 160"
-      stroke="#0f2553"
-      strokeWidth="11"
+      d="M70 120 L130 120"
+      stroke={NAVY}
+      strokeWidth="16"
       strokeLinecap="round"
-      strokeLinejoin="round"
-      fill="none"
     />
-    {/* Gold S-curve flowing through the house */}
-    <path
-      d="M52 72 C52 106, 148 106, 148 140"
-      stroke="#b8963e"
-      strokeWidth="12"
-      strokeLinecap="round"
-      fill="none"
-    />
-    {/* Gold curve extension left */}
-    <path
-      d="M32 100 C52 94, 52 72, 100 72"
-      stroke="#b8963e"
-      strokeWidth="12"
-      strokeLinecap="round"
-      fill="none"
-    />
-    {/* Gold curve extension right */}
-    <path
-      d="M148 140 C148 160, 168 160, 180 155"
-      stroke="#b8963e"
-      strokeWidth="12"
-      strokeLinecap="round"
-      fill="none"
-    />
+
+    {/* Nodes: the apex, and one end of the crossbar. Two is enough — a third
+        turns a mark into a diagram. */}
+    <circle cx="100" cy="36" r="15" fill={CYAN} />
+    <circle cx="130" cy="120" r="11" fill={CYAN} />
   </svg>
 )
 
-/* Wordmark: CASA bold + FLOW regular, navy */
 export const AlphaCrmWordmark = ({ height = 28 }: { height?: number }) => (
   <span
     style={{
-      fontFamily: "'DM Sans', sans-serif",
+      fontFamily: "'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', system-ui, sans-serif",
       fontSize: height,
-      letterSpacing: '-0.03em',
+      letterSpacing: '-0.025em',
       lineHeight: 1,
       display: 'inline-flex',
       alignItems: 'baseline',
       userSelect: 'none',
     }}
   >
-    <span style={{ color: '#0f2553', fontWeight: 700 }}>CASA</span>
-    <span style={{ color: '#0f2553', fontWeight: 400 }}>FLOW</span>
+    {/* Weight carries the split, not colour: two colours in a four-syllable
+        wordmark reads as decoration. */}
+    <span style={{ color: NAVY, fontWeight: 800 }}>Alpha</span>
+    <span style={{ color: NAVY, fontWeight: 400 }}>CRM</span>
   </span>
 )

@@ -74,7 +74,7 @@ export const InviteAcceptPage: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#f4f6fb', padding: 24, fontFamily: "'DM Sans', sans-serif", gap: 20 }}>
       <div style={{ textAlign: 'center', maxWidth: 360 }}>
         <div style={{ fontSize: 18, fontWeight: 700, color: T.navy, letterSpacing: '-0.02em', marginBottom: 6 }}>
-          CASA<span style={{ fontWeight: 400 }}>FLOW</span>
+          Alpha<span style={{ fontWeight: 400 }}>CRM</span>
         </div>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: T.navy, margin: '0 0 8px' }}>{welcomeTitle}</h1>
         <p style={{ color: T.muted, fontSize: 14, margin: 0 }}>{welcomeDesc}</p>

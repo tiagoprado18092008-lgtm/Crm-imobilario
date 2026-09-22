@@ -11,15 +11,17 @@ import { AlphaCrmLogo } from '../assets/alphacrm-logo'
 const _processedSessions = new Set<string>()
 let _isExchanging = false
 
+/* AlphaScale palette. The names gold/goldLt are kept so the many references
+   below need not change; the values are the brand cyan. */
 const T = {
-  navy:    '#0f2553',
-  navyMid: '#1a3a6e',
-  gold:    '#b8963e',
-  goldLt:  '#d4af5a',
+  navy:    '#143253',
+  navyMid: '#1E4570',
+  gold:    '#00CDFF',
+  goldLt:  '#5CDEFF',
   white:   '#ffffff',
-  border:  '#dce3ef',
-  muted:   '#6b7a99',
-  error:   '#c0392b',
+  border:  '#DEE7F0',
+  muted:   '#5E6E82',
+  error:   '#C81E1E',
 }
 
 const Spinner = () => (
@@ -86,14 +88,14 @@ export const LoginPage: React.FC = () => {
           display: 'none', flexDirection: 'column', justifyContent: 'space-between',
           padding: '48px 52px', position: 'relative', overflow: 'hidden',
         }} className="cf-left-panel">
-          <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: 380, height: 380, borderRadius: '50%', border: '60px solid rgba(184,150,62,0.07)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: 380, height: 380, borderRadius: '50%', border: '60px solid rgba(0,205,255,0.08)', pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', bottom: '-60px', left: '-60px', width: 300, height: 300, borderRadius: '50%', border: '50px solid rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
 
           <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }} style={{ display: 'flex', alignItems: 'center', gap: 14, zIndex: 1 }}>
             <AlphaCrmLogo size={36} />
             <div>
               <div style={{ fontSize: 20, fontWeight: 700, color: T.white, letterSpacing: '-0.02em' }}>
-                CASA<span style={{ fontWeight: 400 }}>FLOW</span>
+                Alpha<span style={{ fontWeight: 400 }}>CRM</span>
               </div>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.14em', textTransform: 'uppercase', marginTop: 1 }}>Sistema operativo comercial</div>
             </div>
@@ -129,7 +131,7 @@ export const LoginPage: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }} className="cf-mobile-logo">
             <AlphaCrmLogo size={34} />
             <div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: T.navy, letterSpacing: '-0.02em' }}>CASA<span style={{ fontWeight: 400 }}>FLOW</span></div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: T.navy, letterSpacing: '-0.02em' }}>Alpha<span style={{ fontWeight: 400 }}>CRM</span></div>
               <div style={{ fontSize: 9, color: T.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1 }}>Sistema operativo comercial</div>
             </div>
           </div>

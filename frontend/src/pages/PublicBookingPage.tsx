@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getConsultorProfile, getAvailableSlots, createBooking, ConsultorProfile } from '../api/booking.api';
+import { getConsultorProfile, getAvailableSlots, createBooking,  } from '../api/booking.api'
+import type { ConsultorProfile } from '../api/booking.api';
 
 type Step = 'date' | 'time' | 'form' | 'done';
 

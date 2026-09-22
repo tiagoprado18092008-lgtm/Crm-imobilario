@@ -25,9 +25,11 @@ interface UIState {
 const initialDark = resolveTheme(getStoredTheme()) === 'dark'
 
 export const useUIStore = create<UIState>((set) => ({
-  crmName: localStorage.getItem('imocrm-name') || 'AlphaCRM',
+  // Key renamed from imocrm-name: browsers that used the product before the
+  // rename still hold "CasaFlow" under the old one, and would keep showing it.
+  crmName: localStorage.getItem('alphacrm-name') || 'AlphaCRM',
   setCrmName: (name: string) => {
-    localStorage.setItem('imocrm-name', name)
+    localStorage.setItem('alphacrm-name', name)
     set({ crmName: name })
   },
   sidebarOpen: true,

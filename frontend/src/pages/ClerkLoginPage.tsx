@@ -61,8 +61,31 @@ export const ClerkLoginPage: React.FC = () => {
   if (isSignedIn && !token && !exchangeFailed) return <Spinner />
 
   return (
-    <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f0f2f8' }}>
-      <SignIn routing="hash" />
+    <main
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        background: 'var(--surface-2)',
+      }}
+    >
+      {/* The heading text inside this widget ("Sign in to …") comes from the
+          Clerk dashboard, not from here — set the application name there.
+          What can be controlled is the styling, so the button and links match
+          the brand rather than Clerk's defaults. */}
+      <SignIn
+        routing="hash"
+        appearance={{
+          variables: {
+            colorPrimary: '#143253',
+            colorText: '#0C1B2D',
+            colorTextSecondary: '#46596F',
+            borderRadius: '8px',
+            fontFamily: "'Inter Variable', 'Inter', system-ui, sans-serif",
+          },
+        }}
+      />
     </main>
   )
 }

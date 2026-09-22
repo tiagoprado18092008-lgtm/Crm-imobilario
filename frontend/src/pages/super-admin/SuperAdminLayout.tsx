@@ -25,7 +25,7 @@ export const SuperAdminLayout: React.FC = () => {
       }}>
         <div style={{ padding: '0 20px 24px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: T.white, letterSpacing: '-0.02em' }}>
-            CASA<span style={{ fontWeight: 400 }}>FLOW</span>
+            Alpha<span style={{ fontWeight: 400 }}>CRM</span>
           </div>
           <div style={{ fontSize: 10, color: T.gold, letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>
             Super Admin

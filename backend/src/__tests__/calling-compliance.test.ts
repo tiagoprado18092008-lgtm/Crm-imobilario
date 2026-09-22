@@ -1,4 +1,4 @@
-import { assertWithinCallingHours } from '../modules/telephony/calls.service';
+import { assertWithinCallingHours } from '../lib/calling-hours';
 import { effectOf } from '../lib/dispositions';
 
 /**

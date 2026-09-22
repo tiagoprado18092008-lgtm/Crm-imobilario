@@ -343,7 +343,7 @@ export const SettingsPage: React.FC = () => {
   const [twilioApiSecret, setTwilioApiSecret] = useState('')
   const [publicUrl, setPublicUrl] = useState('')
   const [showTwilioToken, setShowTwilioToken] = useState(false)
-  const [crmName, setCrmNameLocal] = useState(localStorage.getItem('imocrm-name') || 'AlphaCRM')
+  const [crmName, setCrmNameLocal] = useState(localStorage.getItem('alphacrm-name') || 'AlphaCRM')
 
   // Phone numbers (Twilio)
   const [phoneNumbers, setPhoneNumbers] = useState<any[]>([])

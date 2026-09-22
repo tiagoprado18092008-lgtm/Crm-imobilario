@@ -656,8 +656,8 @@ export const ConversationsPage: React.FC = () => {
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const selectedIdRef = useRef<string | null>(null)
-  const pollConvRef = useRef<ReturnType<typeof setInterval>>()
-  const pollMsgRef = useRef<ReturnType<typeof setInterval>>()
+  const pollConvRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
+  const pollMsgRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
 
   const loadConversations = useCallback(async () => {
     try {

@@ -18,17 +18,21 @@ import { useUIStore } from '../store/ui.store'
 import { formatDate, getInitials } from '../utils/formatters'
 import { ROLE_LABELS } from '../utils/constants'
 
+// Keyed on the roles the system actually has. The previous map named
+// ADMIN, PRINCIPAL_CONSULTANT and SUB_AGENT, none of which exist.
 const roleVariant: Record<string, any> = {
-  ADMIN: 'danger',
-  PRINCIPAL_CONSULTANT: 'info',
-  SUB_AGENT: 'default'
+  AGENCY_OWNER: 'danger',
+  AGENCY_ADMIN: 'danger',
+  TEAM_LEADER: 'info',
+  CONSULTANT: 'default',
+  USER: 'default',
 }
 
 const userSchema = z.object({
   name: z.string().min(2, 'Nome obrigatório'),
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'Password mínimo 6 caracteres').optional().or(z.literal('')),
-  role: z.enum(['ADMIN', 'PRINCIPAL_CONSULTANT', 'CONSULTANT', 'SUB_AGENT', 'VIEWER']),
+  role: z.enum(['AGENCY_OWNER', 'AGENCY_ADMIN', 'TEAM_LEADER', 'CONSULTANT', 'USER']),
   phone: z.string().optional(),
   supervisorId: z.string().optional()
 })
@@ -52,7 +56,9 @@ const UserForm: React.FC<UserFormProps> = ({ user, supervisors, onSuccess, onCan
       name: user?.name || '',
       email: user?.email || '',
       password: '',
-      role: user?.role || 'SUB_AGENT',
+      // SUPER_ADMIN is a real role but is not assignable here: it is granted
+      // out of band, never through this form.
+      role: (user?.role === 'SUPER_ADMIN' ? undefined : user?.role) ?? 'CONSULTANT',
       phone: user?.phone || '',
       supervisorId: user?.supervisorId || ''
     }
@@ -68,7 +74,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, supervisors, onSuccess, onCan
         email: data.email,
         role: data.role,
         phone: data.phone || undefined,
-        supervisorId: data.role === 'SUB_AGENT' ? (data.supervisorId || undefined) : undefined
+        supervisorId: data.role === 'CONSULTANT' ? (data.supervisorId || undefined) : undefined
       }
       if (data.password) payload.password = data.password
 
@@ -113,7 +119,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, supervisors, onSuccess, onCan
           {...register('role')}
         />
         <Input label="Telefone" {...register('phone')} />
-        {roleValue === 'SUB_AGENT' && supervisors.length > 0 && (
+        {roleValue === 'CONSULTANT' && supervisors.length > 0 && (
           <div className="col-span-2">
             <Select
               label="Supervisor"
@@ -206,7 +212,11 @@ export const UsersPage: React.FC = () => {
     }
   }
 
-  const supervisors = users.filter(u => u.role === 'PRINCIPAL_CONSULTANT' || u.role === 'ADMIN')
+  // Who can supervise a comercial. This filtered on roles that do not exist,
+  // so the supervisor list was always empty and the field never appeared.
+  const supervisors = users.filter(
+    (u) => u.role === 'TEAM_LEADER' || u.role === 'AGENCY_ADMIN' || u.role === 'AGENCY_OWNER',
+  )
 
   return (
     <div className="space-y-4">
