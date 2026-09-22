@@ -14,6 +14,7 @@ import contactsRouter from './modules/contacts/contacts.router';
 import leadsRouter from './modules/leads/leads.router';
 import zadarmaWebhooks from './modules/telephony/webhooks.router';
 import quotesRouter, { publicRouter as quotesPublicRouter } from './modules/quotes/quotes.router';
+import projectsRouter from './modules/projects/projects.router';
 import opportunitiesRouter from './modules/opportunities/opportunities.router';
 import interactionsRouter from './modules/interactions/interactions.router';
 import tasksRouter from './modules/tasks/tasks.router';
@@ -433,6 +434,7 @@ app.use('/api/leads', leadsRouter);
 // a path secret plus an IP allowlist inside the router.
 app.use('/api/webhooks/zadarma', zadarmaWebhooks);
 app.use('/api/quotes', quotesRouter);
+app.use('/api/projects', projectsRouter);
 // Public proposal page: the recipient has no session, so the token in the URL
 // is the authorisation. Rate limited inside the router.
 app.use('/p/proposta', quotesPublicRouter);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Sun, Inbox, Users, Kanban, BarChart3, UserCog, LogOut, Settings,
+  LayoutDashboard, Sun, Inbox, Users, Kanban, BarChart3, UserCog, LogOut, Settings, FolderKanban,
   CalendarClock, ChevronRight,
   UserCircle, ChevronsUpDown, UserPlus, MessageSquare, Activity, Layers, PhoneCall,
 } from 'lucide-react'
@@ -72,6 +72,11 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
     ...(can('appointments', 'view')  ? [{ to: '/appointments',  icon: CalendarClock, label: t('nav.agenda') }]                      : []),
   ]
 
+  // CLIENTES — o que já foi vendido e está por entregar
+  const clientesItems: NavItem[] = [
+    { to: '/projetos', icon: FolderKanban, label: t('nav.projetos') },
+  ]
+
   // GESTÃO — leitura e configuração, não trabalho diário
   const gestaoItems: NavItem[] = [
     ...(can('reports', 'view') ? [{ to: '/reports', icon: BarChart3, label: t('nav.relatorios') }] : []),
@@ -80,6 +85,7 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
 
   const navGroups: NavGroup[] = [
     { label: t('nav.trabalho'), items: trabalhoItems },
+    { label: 'Clientes', items: clientesItems },
     ...(gestaoItems.length ? [{ label: t('nav.gestao'), items: gestaoItems }] : []),
   ]
 

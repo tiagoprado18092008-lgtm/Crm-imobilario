@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import prisma from '../../config/database';
 import { withWorkspace, workspaceIdFor } from '../../lib/workspace';
 import { quoteTotals, canAccept, isExpired, type LineItem } from '../../lib/quotes';
+import * as projectsService from '../projects/projects.service';
 
 /**
  * Proposals.
@@ -263,6 +264,18 @@ export const respondPublic = async (token: string, accept: boolean) => {
       });
     }
 
+    return updated;
+  }).then(async (updated) => {
+    // Opening the delivery projects sits outside the transaction: the client's
+    // acceptance is recorded either way, and a template failure must not undo
+    // a deal the client has already agreed to.
+    if (accept && quote.agencyId) {
+      await projectsService
+        .createFromWonDeal(quote.dealId, { id: null, agencyId: quote.agencyId })
+        .catch((err: any) => {
+          console.error('[Quotes] Proposta aceite mas projeto não criado:', err?.message ?? err);
+        });
+    }
     return updated;
   });
 };
