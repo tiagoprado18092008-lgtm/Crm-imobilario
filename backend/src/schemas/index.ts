@@ -56,9 +56,20 @@ export const createOpportunitySchema = z.object({
   position: z.number().int().nonnegative().default(0),
   contactId: z.string().min(1, 'Contacto obrigatório'),
   assignedToId: z.string().optional(),
+  // Activity-based selling: a deal should start with a next step scheduled.
+  nextActivityAt: optionalDate,
 });
 
-export const updateOpportunitySchema = createOpportunitySchema.partial();
+/**
+ * Update accepts the activity clock as well.
+ *
+ * A stage can require nextActivityAt before it will admit a deal, so the field
+ * has to be writable — otherwise the rule demands something the API refuses to
+ * accept, and the deal can never move.
+ */
+export const updateOpportunitySchema = createOpportunitySchema.partial().extend({
+  lastActivityAt: optionalDate,
+});
 
 export const moveStageSchema = z.object({
   stage: z.string().min(1, 'Fase obrigatória'),

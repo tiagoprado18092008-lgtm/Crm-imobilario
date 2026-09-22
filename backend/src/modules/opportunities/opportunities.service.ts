@@ -93,7 +93,10 @@ export const create = async (
     position?: number;
     contactId: string;
     assignedToId?: string;
-    // Dynamic fields
+    /** Scheduling the next step at creation is the whole point of
+     *  activity-based selling: a deal starts with one. */
+    nextActivityAt?: string | null;
+    lastActivityAt?: string | null;
   },
   user: any
 ) => {
@@ -117,6 +120,12 @@ export const create = async (
       expectedCloseDate: dto.expectedCloseDate ? new Date(dto.expectedCloseDate) : undefined,
       lostReason: dto.lostReason,
       notes: dto.notes,
+      ...(dto.nextActivityAt !== undefined && {
+        nextActivityAt: dto.nextActivityAt ? new Date(dto.nextActivityAt) : null,
+      }),
+      ...(dto.lastActivityAt !== undefined && {
+        lastActivityAt: dto.lastActivityAt ? new Date(dto.lastActivityAt) : null,
+      }),
       position,
       contactId: dto.contactId,
       assignedToId: (user.role === 'CONSULTANT' ? user.id : dto.assignedToId) || user.id,
@@ -360,7 +369,10 @@ export const update = async (
     position?: number;
     contactId?: string;
     assignedToId?: string;
-    // Dynamic fields
+    /** A stage can require this before admitting a deal, so it must be
+     *  writable — otherwise the rule demands what the API refuses. */
+    nextActivityAt?: string | null;
+    lastActivityAt?: string | null;
   },
   user: any
 ) => {
@@ -391,6 +403,12 @@ export const update = async (
       expectedCloseDate: dto.expectedCloseDate ? new Date(dto.expectedCloseDate) : undefined,
       lostReason: dto.lostReason,
       notes: dto.notes,
+      ...(dto.nextActivityAt !== undefined && {
+        nextActivityAt: dto.nextActivityAt ? new Date(dto.nextActivityAt) : null,
+      }),
+      ...(dto.lastActivityAt !== undefined && {
+        lastActivityAt: dto.lastActivityAt ? new Date(dto.lastActivityAt) : null,
+      }),
       // Never overwrite position via update — use moveStage for that
       contactId: dto.contactId || undefined,
       assignedToId: dto.assignedToId || undefined,

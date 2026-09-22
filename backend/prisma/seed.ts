@@ -88,26 +88,47 @@ async function main() {
 
   // ─── PIPELINES ──────────────────────────────────────────────────────────────
   // Duas linhas de negócio distintas: projetos one-off e avenças recorrentes.
-  const pipelines: { name: string; stages: string[] }[] = [
+  /**
+   * Stages carry their own rules. A stage created without them has no rotting
+   * threshold and demands nothing before a deal enters, which is how the
+   * pipeline quietly stops enforcing anything.
+   *
+   * rotDays: how long a deal may sit here before it is flagged as going cold.
+   * requiredFields: what a deal must have before it is allowed in.
+   */
+  type StageDef = {
+    name: string;
+    probability: number;
+    rotDays: number | null;
+    requiredFields?: string[];
+  };
+
+  const pipelines: { name: string; stages: StageDef[] }[] = [
     {
       name: 'Websites',
       stages: [
-        'Novo',
-        'Contactado',
-        'Reunião Marcada',
-        'Reunião Feita',
-        'Proposta Enviada',
-        'Negociação',
+        { name: 'Novo',             probability: 10, rotDays: 7 },
+        { name: 'Contactado',       probability: 20, rotDays: 5 },
+        { name: 'Reunião Marcada',  probability: 40, rotDays: 10 },
+        { name: 'Reunião Feita',    probability: 55, rotDays: 5 },
+        // A proposal with no value cannot be forecast, and finding that out at
+        // the end of the month is too late.
+        { name: 'Proposta Enviada', probability: 70, rotDays: 7,
+          requiredFields: ['value', 'expectedCloseDate'] },
+        { name: 'Negociação',       probability: 85, rotDays: 5,
+          requiredFields: ['value', 'nextActivityAt'] },
       ],
     },
     {
       name: 'Avenças / Ads',
       stages: [
-        'Novo',
-        'Diagnóstico Feito',
-        'Proposta Enviada',
-        'Negociação',
-        'Contrato Assinado',
+        { name: 'Novo',               probability: 10, rotDays: 7 },
+        { name: 'Diagnóstico Feito',  probability: 30, rotDays: 14 },
+        { name: 'Proposta Enviada',   probability: 60, rotDays: 7,
+          requiredFields: ['value', 'expectedCloseDate'] },
+        { name: 'Negociação',         probability: 80, rotDays: 5,
+          requiredFields: ['value', 'nextActivityAt'] },
+        { name: 'Contrato Assinado',  probability: 95, rotDays: null },
       ],
     },
   ];
@@ -123,10 +144,14 @@ async function main() {
     });
 
     await prisma.pipelineStage.createMany({
-      data: def.stages.map((name, position) => ({
+      data: def.stages.map((stage, position) => ({
         pipelineId: pipeline.id,
-        name,
+        agencyId: agency.id,
+        name: stage.name,
         position,
+        probability: stage.probability,
+        rotDays: stage.rotDays,
+        requiredFields: stage.requiredFields ?? undefined,
       })),
     });
   }
