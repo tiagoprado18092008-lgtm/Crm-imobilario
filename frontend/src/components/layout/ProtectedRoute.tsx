@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '@clerk/clerk-react'
 import { useAuthStore } from '../../store/auth.store'
@@ -17,6 +17,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   const { can } = usePermissions()
   const { isSignedIn, isLoaded: clerkLoaded } = useAuth()
 
+  // Clearing the store is a side effect, so it belongs in an effect rather
+  // than in the render pass. Calling logout() during render made React warn
+  // about updating one component while rendering another, and the redirect
+  // below happens either way.
+  const signedOut = hydrated && clerkLoaded && !isSignedIn
+  const hasStaleSession = Boolean(token || user)
+
+  useEffect(() => {
+    if (signedOut && hasStaleSession) logout()
+  }, [signedOut, hasStaleSession, logout])
+
   // Wait for both Clerk and local store to be ready
   if (!hydrated || !clerkLoaded) {
     return (
@@ -27,9 +38,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     )
   }
 
-  // Clerk signed out — clear CRM store and redirect to login
+  // Clerk signed out — the effect above clears the stale store.
   if (!isSignedIn) {
-    if (token || user) logout()
     return <Navigate to="/login" replace />
   }
 

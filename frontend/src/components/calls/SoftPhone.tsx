@@ -88,6 +88,19 @@ export const SoftPhone: React.FC = () => {
 
       device.on('registered', () => console.log('[Twilio] Device registered'))
       device.on('error', (err: any) => {
+        // 20101 is a rejected access token. The SDK reconnects on its own, so
+        // without tearing the device down it retries forever and fills the
+        // console. Voice has moved to Zadarma; stale Twilio credentials should
+        // leave the softphone quietly unavailable, not looping.
+        const isAuthFailure = err?.code === 20101 || /AccessToken/i.test(String(err?.message ?? ''))
+        if (isAuthFailure) {
+          console.warn('[Twilio] Credenciais de voz recusadas — softphone desativado')
+          try { device.destroy() } catch { /* already gone */ }
+          deviceRef.current = null
+          setConfigured(false)
+          setPhoneState('idle')
+          return
+        }
         console.error('[Twilio] Device error', err)
         setPhoneState('error')
       })

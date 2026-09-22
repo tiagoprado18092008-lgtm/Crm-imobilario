@@ -131,7 +131,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
         {/* Count + total value row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-            {opportunities.length} Oportunidade{opportunities.length !== 1 ? 's' : ''}
+            {opportunities.length} negócio{opportunities.length !== 1 ? 's' : ''}
           </span>
           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>·</span>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
@@ -152,7 +152,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
               color: 'var(--text-secondary)',
               cursor: 'pointer',
             }}
-            title="Adicionar oportunidade"
+            title="Novo negócio"
           >
             <Plus size={11} />
           </button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Sun, Inbox, Users, Kanban, BarChart3, UserCog, LogOut, Settings, FolderKanban,
+  Sun, Inbox, Users, Kanban, BarChart3, UserCog, LogOut, Settings, FolderKanban,
   CalendarClock, ChevronRight, Wallet,
   UserCircle, ChevronsUpDown, UserPlus, MessageSquare, Activity, Layers, PhoneCall,
 } from 'lucide-react'
@@ -62,9 +62,11 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
 
   // TRABALHO — o trabalho do dia, por ordem de utilização
   const trabalhoItems: NavItem[] = [
+    // Dashboard is deliberately absent: /hoje replaced it, and keeping both
+    // means two screens answering the same question from the same data.
+    // It stays reachable at /dashboard for anyone with it bookmarked.
     { to: '/hoje',         icon: Sun,             label: t('nav.hoje') },
     ...(can('contacts', 'view')      ? [{ to: '/leads',         icon: Inbox,         label: t('nav.leads') }]                : []),
-    { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
     ...(can('contacts', 'view')      ? [{ to: '/contacts',      icon: Users,         label: t('nav.contactos') }]                   : []),
     ...(can('opportunities', 'view') ? [{ to: '/pipeline',      icon: Kanban,        label: t('nav.pipeline') }]                    : []),
     ...(can('conversations', 'view') ? [{ to: '/conversations', icon: MessageSquare, label: t('nav.conversas'), badge: convBadge }] : []),
@@ -81,7 +83,6 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   // GESTÃO — leitura e configuração, não trabalho diário
   const gestaoItems: NavItem[] = [
     ...(can('reports', 'view') ? [{ to: '/reports', icon: BarChart3, label: t('nav.relatorios') }] : []),
-    ...(isAgencyManager ? [{ to: '/agency/pipelines', icon: Layers, label: t('nav.pipelines') }] : []),
   ]
 
   const navGroups: NavGroup[] = [
@@ -94,6 +95,7 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   // ecrãs sobrepostos que existiam antes (/agency, /agency/users, /settings/team).
   const definicoesItems: NavItem[] = [
     { to: '/settings/team', icon: UserCog, label: t('nav.equipa') },
+    ...(isAgencyManager ? [{ to: '/agency/pipelines', icon: Layers, label: t('nav.pipelines') }] : []),
     ...(isAgencyManager ? [{ to: '/agency/activity', icon: Activity, label: t('nav.actividade') }] : []),
     { to: '/settings', icon: Settings, label: t('nav.definicoes') },
   ]

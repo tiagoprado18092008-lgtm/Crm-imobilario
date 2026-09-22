@@ -645,7 +645,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
         {/* Title + Tabs row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 0 }}>
           {[
-            { key: 'opportunities', label: 'Oportunidades Potenciais' },
+            { key: 'opportunities', label: 'Negócios' },
             { key: 'pipelines',     label: 'Pipelines' },
             { key: 'bulk',          label: 'Ações em massa' },
           ].map(t => (
@@ -751,7 +751,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
 
           {/* Count */}
           <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
-            {totalOpps} oportunidades potenciais
+            {totalOpps} negócio{totalOpps === 1 ? '' : 's'}
           </span>
 
           <div style={{ flex: 1 }} />
@@ -811,7 +811,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
               border: 'none', cursor: 'pointer',
             }}
           >
-            <Plus size={14} /> Adicionar oportunidade
+            <Plus size={14} /> Novo negócio
           </button>
         </div>
 

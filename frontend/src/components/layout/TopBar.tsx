@@ -15,9 +15,13 @@ import type { Task } from '../../types'
 import { format, isPast, parseISO, isToday, isTomorrow } from 'date-fns'
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
+  '/hoje':          { title: 'Hoje',                    subtitle: 'O trabalho do dia, por ordem de prioridade' },
+  '/leads':         { title: 'Leads',                   subtitle: 'Triagem antes do pipeline' },
+  '/projetos':      { title: 'Projetos',                subtitle: 'Trabalho vendido, por entregar' },
+  '/receita':       { title: 'Receita',                 subtitle: 'Avenças, faturação e cobranças' },
   '/dashboard':     { title: 'Dashboard',               subtitle: 'Visão geral do negócio' },
   '/contacts':      { title: 'Contactos',               subtitle: 'Gestão de leads e clientes' },
-  '/pipeline':      { title: 'Oportunidades',           subtitle: 'Oportunidades em curso' },
+  '/pipeline':      { title: 'Pipeline',                 subtitle: 'Negócios em curso' },
   '/tasks':         { title: 'Tarefas',                 subtitle: 'Atividades pendentes' },
   '/calendar':      { title: 'Calendário',              subtitle: 'Agenda e visitas' },
   '/reports':       { title: 'Relatórios',              subtitle: 'Análise e performance' },
