@@ -9,7 +9,9 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "test": "jest --forceExit --detectOpenHandles",
-    "test:tenant": "jest src/__tests__/tenant-isolation.test.ts"
+    "test:tenant": "jest src/__tests__/tenant-isolation.test.ts",
+    "check:schema": "node scripts/check-schema.mjs",
+    "migrate:baseline": "node scripts/baseline-migrations.mjs"
   },
   "dependencies": {
     "@azure/msal-node": "^5.1.2",
