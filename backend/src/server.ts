@@ -16,6 +16,7 @@ import zadarmaWebhooks from './modules/telephony/webhooks.router';
 import quotesRouter, { publicRouter as quotesPublicRouter } from './modules/quotes/quotes.router';
 import projectsRouter from './modules/projects/projects.router';
 import revenueRouter from './modules/revenue/revenue.router';
+import goalsRouter from './modules/goals/goals.router';
 import opportunitiesRouter from './modules/opportunities/opportunities.router';
 import interactionsRouter from './modules/interactions/interactions.router';
 import tasksRouter from './modules/tasks/tasks.router';
@@ -437,6 +438,7 @@ app.use('/api/webhooks/zadarma', zadarmaWebhooks);
 app.use('/api/quotes', quotesRouter);
 app.use('/api/projects', projectsRouter);
 app.use('/api/revenue', revenueRouter);
+app.use('/api/goals', goalsRouter);
 // Public proposal page: the recipient has no session, so the token in the URL
 // is the authorisation. Rate limited inside the router.
 app.use('/p/proposta', quotesPublicRouter);
