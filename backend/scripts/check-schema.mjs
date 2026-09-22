@@ -37,6 +37,10 @@ const CHECKS = [
   ['Project', () => prisma.project.findFirst({ select: { id: true } })],
   ['ProjectTask', () => prisma.projectTask.findFirst({ select: { id: true } })],
   ['Deliverable', () => prisma.deliverable.findFirst({ select: { id: true } })],
+  ['Subscription', () => prisma.subscription.findFirst({ select: { id: true } })],
+  ['Invoice', () => prisma.invoice.findFirst({ select: { id: true } })],
+  ['RevenueSnapshot', () => prisma.revenueSnapshot.findFirst({ select: { id: true } })],
+  ['ClientHealth', () => prisma.clientHealth.findFirst({ select: { id: true } })],
 ];
 
 const failures = [];

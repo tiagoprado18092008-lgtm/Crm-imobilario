@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Sun, Inbox, Users, Kanban, BarChart3, UserCog, LogOut, Settings, FolderKanban,
-  CalendarClock, ChevronRight,
+  CalendarClock, ChevronRight, Wallet,
   UserCircle, ChevronsUpDown, UserPlus, MessageSquare, Activity, Layers, PhoneCall,
 } from 'lucide-react'
 import { AlphaCrmLogo } from '../../assets/alphacrm-logo'
@@ -75,6 +75,7 @@ export const Sidebar: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   // CLIENTES — o que já foi vendido e está por entregar
   const clientesItems: NavItem[] = [
     { to: '/projetos', icon: FolderKanban, label: t('nav.projetos') },
+    { to: '/receita',  icon: Wallet,        label: t('nav.receita') },
   ]
 
   // GESTÃO — leitura e configuração, não trabalho diário

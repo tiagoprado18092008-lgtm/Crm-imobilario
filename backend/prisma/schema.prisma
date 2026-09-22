@@ -98,6 +98,10 @@ model Agency {
   ProjectTask     ProjectTask[]
   Deliverable     Deliverable[]
   ProjectTemplate ProjectTemplate[]
+  Subscription    Subscription[]
+  Invoice         Invoice[]
+  RevenueSnapshot RevenueSnapshot[]
+  ClientHealth    ClientHealth[]
 }
 
 model AgencySettings {
@@ -282,6 +286,9 @@ model Opportunity {
   quotes    Quote[]
 
   projects Project[]
+
+  subscriptions Subscription[]
+  invoices      Invoice[]
 
   @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([agencyId, stageId, position])
@@ -923,6 +930,10 @@ model Company {
 
   projects Project[]
 
+  subscriptions Subscription[]
+  invoices      Invoice[]
+  health        ClientHealth?
+
   @@index([agencyId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([agencyId, type, sector])
   @@index([agencyId, nif])
@@ -1225,6 +1236,8 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  subscriptions Subscription[]
+
   @@index([agencyId, isActive, position])
 }
 
@@ -1455,4 +1468,167 @@ model ProjectTemplate {
   updatedAt DateTime @updatedAt
 
   @@index([agencyId, type, isActive])
+}
+
+// ─── Revenue ──────────────────────────────────────────────────────────────────
+
+enum SubscriptionState {
+  ATIVA
+  EM_PAUSA
+  CANCELADA
+}
+
+enum InvoiceState {
+  RASCUNHO
+  EMITIDA
+  PAGA
+  VENCIDA
+  ANULADA
+}
+
+enum HealthStatus {
+  VERDE
+  AMARELO
+  VERMELHO
+}
+
+/// A retainer. This is the number the business actually runs on: one-off
+/// websites pay for a month, subscriptions pay for the year.
+model Subscription {
+  id String @id @default(cuid())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+
+  /// Snapshot, so repricing the product does not rewrite an existing contract.
+  name         String
+  monthlyValue Float
+
+  state SubscriptionState @default(ATIVA)
+
+  /// Day of the month the invoice goes out, 1-28. Capped at 28 so it exists
+  /// in February.
+  billingDay Int @default(1)
+
+  startDate DateTime
+  endDate   DateTime?
+  /// Next renewal, denormalised so the renewal list is one indexed read.
+  renewsAt  DateTime?
+
+  cancelledAt  DateTime?
+  cancelReason String?
+
+  dealId String?
+  deal   Opportunity? @relation(fields: [dealId], references: [id])
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  invoices Invoice[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agencyId, state, renewsAt])
+  @@index([agencyId, companyId])
+}
+
+/// An invoice. Certified AT invoicing is deliberately out of scope: this
+/// records what is owed and links to the number issued by the accountant's
+/// software, and exports to CSV.
+model Invoice {
+  id String @id @default(cuid())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  dealId String?
+  deal   Opportunity? @relation(fields: [dealId], references: [id])
+
+  /// Internal sequence. The legal number lives in externalRef.
+  number Int
+
+  amount    Float
+  vatAmount Float @default(0)
+  total     Float
+
+  state InvoiceState @default(RASCUNHO)
+
+  issuedAt DateTime?
+  dueAt    DateTime?
+  paidAt   DateTime?
+
+  /// Number from the certified invoicing software, once issued there.
+  externalRef String?
+  pdfUrl      String?
+
+  notes String?
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agencyId, number])
+  @@index([agencyId, state, dueAt])
+  @@index([agencyId, companyId, issuedAt(sort: Desc)])
+}
+
+/// Monthly MRR snapshot, so the revenue chart is a read rather than a
+/// recomputation over every subscription's history.
+model RevenueSnapshot {
+  id String @id @default(cuid())
+
+  /// First day of the month it describes.
+  month DateTime
+
+  mrr         Float @default(0)
+  newMrr      Float @default(0)
+  expansion   Float @default(0)
+  contraction Float @default(0)
+  churn       Float @default(0)
+
+  activeClients Int @default(0)
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([agencyId, month])
+  @@index([agencyId, month(sort: Desc)])
+}
+
+/// A client's traffic light, stored rather than recomputed per row.
+model ClientHealth {
+  id String @id @default(cuid())
+
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  status  HealthStatus @default(VERDE)
+  /// Why it is what it is, so the number is arguable rather than oracular.
+  reasons Json?
+
+  daysSinceContact  Int?
+  overdueInvoices   Int  @default(0)
+  overdueTasks      Int  @default(0)
+  daysSinceDelivery Int?
+
+  /// True when the retainer is at risk of not renewing.
+  renewalRisk Boolean @default(false)
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  computedAt DateTime @default(now())
+
+  @@index([agencyId, status])
 }
