@@ -1,5 +1,5 @@
 import React from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { CommandPalette } from '../command/CommandPalette'
 import { TopBar } from './TopBar'
@@ -19,6 +19,7 @@ export const AppShell: React.FC = () => {
   const { user, setAuth, token, impersonating } = useAuthStore()
   const showOnboarding = user?.onboardingCompleted === false
   const isMobile = useIsMobile()
+  const { pathname } = useLocation()
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--surface-2)' }}>
@@ -60,7 +61,9 @@ export const AppShell: React.FC = () => {
             paddingBottom: isMobile ? 'calc(56px + env(safe-area-inset-bottom) + 12px)' : 'clamp(12px, 4vw, 28px)',
           }}
         >
-          <ErrorBoundary inline>
+          {/* Keyed on the route: without it one page's error stayed on screen
+              for every section opened afterwards. */}
+          <ErrorBoundary inline key={pathname}>
             <Outlet />
           </ErrorBoundary>
         </main>
