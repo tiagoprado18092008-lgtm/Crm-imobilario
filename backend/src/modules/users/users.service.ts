@@ -36,7 +36,6 @@ export const list = async (currentUser?: any) => {
       role: true,
       phone: true,
       avatarUrl: true,
-      amiNumber: true,
       isActive: true,
       onboardingCompleted: true,
       supervisorId: true,
@@ -110,7 +109,6 @@ export const getById = async (id: string, requestingUser?: any) => {
       role: true,
       phone: true,
       avatarUrl: true,
-      amiNumber: true,
       isActive: true,
       onboardingCompleted: true,
       supervisorId: true,
@@ -159,7 +157,6 @@ export const update = async (
     supervisorId?: string;
     isActive?: boolean;
     onboardingCompleted?: boolean;
-    amiNumber?: string;
   }
 ) => {
   const updateData: any = {};
@@ -171,7 +168,6 @@ export const update = async (
   if (dto.supervisorId !== undefined) updateData.supervisorId = dto.supervisorId;
   if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
   if (dto.onboardingCompleted !== undefined) updateData.onboardingCompleted = dto.onboardingCompleted;
-  if (dto.amiNumber !== undefined) updateData.amiNumber = dto.amiNumber;
   if (dto.password) {
     updateData.passwordHash = await bcrypt.hash(dto.password, 12);
   }
@@ -186,7 +182,6 @@ export const update = async (
       role: true,
       phone: true,
       avatarUrl: true,
-      amiNumber: true,
       isActive: true,
       onboardingCompleted: true,
       supervisorId: true,

@@ -21,7 +21,7 @@ const base = (body: string) => `<!DOCTYPE html>
     <h1>AlphaCRM</h1>
   </div>
   <div class="body">${body}</div>
-  <div class="footer">AlphaCRM — Plataforma de Gestão Imobiliária<br/>Este email foi enviado automaticamente. Por favor não responda a esta mensagem.</div>
+  <div class="footer">AlphaCRM — AlphaScale AI<br/>Este email foi enviado automaticamente. Por favor não responda a esta mensagem.</div>
 </div>
 </body>
 </html>`;

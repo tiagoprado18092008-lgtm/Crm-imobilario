@@ -45,7 +45,7 @@ export const create = async (userId: string, dto: any) => {
       startAt: new Date(dto.startAt),
       endAt: new Date(dto.endAt),
       status: dto.status || 'SCHEDULED',
-      type: dto.type || 'VISIT',
+      type: dto.type || 'GENERAL_MEETING',
       notes: dto.notes,
       location: dto.location,
       contactId: dto.contactId || undefined,

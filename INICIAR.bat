@@ -1,6 +1,6 @@
 @echo off
 echo ============================================
-echo   CasaFlow - Iniciar Aplicacao
+echo   AlphaCRM - Iniciar Aplicacao
 echo ============================================
 echo.
 

@@ -4,8 +4,8 @@ import { withWorkspace } from '../../lib/workspace';
 const DEFAULT_STAGES = [
   { name: 'Lead Novo',         color: '#6366f1', position: 0 },
   { name: 'Primeiro Contacto', color: '#8b5cf6', position: 1 },
-  { name: 'Visita Agendada',   color: '#f59e0b', position: 2 },
-  { name: 'Visita Realizada',  color: '#10b981', position: 3 },
+  { name: 'Reunião Marcada',   color: '#f59e0b', position: 2 },
+  { name: 'Reunião Feita',     color: '#10b981', position: 3 },
   { name: 'Proposta Enviada',  color: '#3b82f6', position: 4 },
   { name: 'Negociação',        color: '#f97316', position: 5 },
   { name: 'Negócio Fechado',   color: '#22c55e', position: 6 },

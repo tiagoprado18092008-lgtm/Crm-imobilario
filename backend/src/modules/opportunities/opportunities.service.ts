@@ -163,7 +163,7 @@ export const bulkImport = async (
   importPipelineId?: string
 ) => {
   const results = { created: 0, skipped: 0, errors: [] as string[] };
-  const VALID_STAGES = ['LEAD_IN','QUALIFYING','VISIT_SCHEDULED','VISIT_DONE','PROPOSAL_SENT','NEGOTIATION','CPCV_SIGNED','FINANCING','ESCRITURA_SCHEDULED','CLOSED_WON','CLOSED_LOST'];
+  const VALID_STAGES = ['LEAD_IN','QUALIFYING','MEETING_SCHEDULED','MEETING_DONE','PROPOSAL_SENT','NEGOTIATION','CLOSED_WON','CLOSED_LOST'];
   const BATCH_SIZE = 500;
 
   // Filter rows with a title
@@ -434,8 +434,8 @@ export const update = async (
   // Fire automation triggers based on stage change
   if (dto.stage && dto.stage !== existing.stage) {
     const contactId = updated.contactId;
-    if (dto.stage === 'VISIT_SCHEDULED') {
-      fireTrigger('VISIT_SCHEDULED', contactId).catch(() => {});
+    if (dto.stage === 'MEETING_SCHEDULED') {
+      fireTrigger('MEETING_SCHEDULED', contactId).catch(() => {});
     } else if (dto.stage === 'PROPOSAL_SENT') {
       fireTrigger('PROPOSAL_SENT', contactId).catch(() => {});
     } else if (dto.stage === 'QUALIFIED') {
@@ -535,8 +535,8 @@ export const moveStage = async (
 
   // Fire automation triggers on stage change
   if (newStage !== existing.stage) {
-    if (newStage === 'VISIT_SCHEDULED') {
-      fireTrigger('VISIT_SCHEDULED', result.contactId).catch(() => {});
+    if (newStage === 'MEETING_SCHEDULED') {
+      fireTrigger('MEETING_SCHEDULED', result.contactId).catch(() => {});
     } else if (newStage === 'PROPOSAL_SENT') {
       fireTrigger('PROPOSAL_SENT', result.contactId).catch(() => {});
     } else if (newStage === 'QUALIFIED') {

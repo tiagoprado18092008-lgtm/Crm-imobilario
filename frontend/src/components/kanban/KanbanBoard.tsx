@@ -1019,7 +1019,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                   autoFocus
                   value={newPipelineName}
                   onChange={e => setNewPipelineName(e.target.value)}
-                  placeholder="Nome da pipeline (ex: Compradores, Angariação...)"
+                  placeholder="Nome da pipeline (ex: Clínicas, Websites...)"
                   style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', fontSize: 13, fontFamily: 'inherit', marginBottom: 12, boxSizing: 'border-box' as const, outline: 'none', background: 'var(--surface-2)', color: 'var(--text-primary)' }}
                 />
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -1132,7 +1132,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                 ) : (
                   listOpps.map(opp => {
                     const stageColors: Record<string, string> = {
-                      LEAD_IN: '#2E6BE6', QUALIFYING: '#7C3AED', VISIT_SCHEDULED: '#f59e0b',
+                      LEAD_IN: '#2E6BE6', QUALIFYING: '#7C3AED', MEETING_SCHEDULED: '#f59e0b', MEETING_DONE: '#10b981',
                       PROPOSAL_SENT: '#f97316', NEGOTIATION: '#ec4899', CLOSED_WON: '#10b981', CLOSED_LOST: '#ef4444',
                     }
                     const sc = stageColors[opp.stage] || '#94a3b8'

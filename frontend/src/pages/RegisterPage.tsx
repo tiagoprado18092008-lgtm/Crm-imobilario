@@ -150,7 +150,7 @@ export const RegisterPage: React.FC = () => {
                 Alpha<span style={{ fontWeight: 400 }}>CRM</span>
               </div>
               <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.14em', textTransform: 'uppercase', marginTop: 1 }}>
-                CRM Imobiliário
+                Marketing Digital
               </div>
             </div>
           </motion.div>
@@ -168,7 +168,7 @@ export const RegisterPage: React.FC = () => {
               lineHeight: 1.2, letterSpacing: '-0.03em', margin: '0 0 18px',
             }}>
               Junte-se a centenas<br />de profissionais<br />
-              <span style={{ color: T.goldLt }}>imobiliários.</span>
+              <span style={{ color: T.goldLt }}>de marketing.</span>
             </h2>
             <p style={{ fontSize: 14.5, color: 'rgba(255,255,255,0.45)', lineHeight: 1.7, fontWeight: 300, margin: 0 }}>
               Crie a sua conta gratuitamente e comece a gerir o seu negócio hoje mesmo.
@@ -222,7 +222,7 @@ export const RegisterPage: React.FC = () => {
                   Alpha<span style={{ fontWeight: 400 }}>CRM</span>
                 </div>
                 <div style={{ fontSize: 9, color: T.muted, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1 }}>
-                  CRM Imobiliário
+                  Marketing Digital
                 </div>
               </div>
             </div>

@@ -7,7 +7,7 @@ import { eventBus } from './event-bus';
 
 export type TriggerType =
   | 'NEW_LEAD'
-  | 'VISIT_SCHEDULED'
+  | 'MEETING_SCHEDULED'
   | 'MISSED_CALL'
   | 'NO_RESPONSE_2H'
   | 'LEAD_QUALIFIED'
@@ -730,7 +730,7 @@ export function registerV2EventListeners(): void {
 
 const TRIGGER_EVENTS: TriggerType[] = [
   'NEW_LEAD',
-  'VISIT_SCHEDULED',
+  'MEETING_SCHEDULED',
   'MISSED_CALL',
   'NO_RESPONSE_2H',
   'LEAD_QUALIFIED',

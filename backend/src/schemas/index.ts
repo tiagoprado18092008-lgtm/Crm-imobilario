@@ -22,7 +22,7 @@ export const createContactSchema = z.object({
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   phone: z.string().optional(),
   whatsapp: z.string().optional(),
-  type: z.enum(['LEAD', 'CLIENT', 'OWNER', 'PARTNER', 'BUYER']).default('LEAD'),
+  type: z.enum(['LEAD', 'PROSPECT', 'CLIENT', 'PARTNER']).default('LEAD'),
   status: z.enum(['NEW', 'QUALIFIED', 'CONTACTED', 'INACTIVE']).default('NEW'),
   source: z.string().optional(),
   notes: z.string().optional(),
@@ -32,13 +32,11 @@ export const createContactSchema = z.object({
   postalCode: z.string().optional(),
   gdprConsent: z.boolean().optional(),
   gdprConsentOrigin: z.string().optional(),
-  // BUYER fields
-  // OWNER fields
 });
 
 export const updateContactSchema = createContactSchema.partial();
 
-const VALID_STAGES = ['LEAD_IN', 'QUALIFYING', 'VISIT_SCHEDULED', 'VISIT_DONE', 'PROPOSAL_SENT', 'NEGOTIATION', 'CPCV_SIGNED', 'FINANCING', 'ESCRITURA_SCHEDULED', 'CLOSED_WON', 'CLOSED_LOST'] as const;
+const VALID_STAGES = ['LEAD_IN', 'QUALIFYING', 'MEETING_SCHEDULED', 'MEETING_DONE', 'PROPOSAL_SENT', 'NEGOTIATION', 'CLOSED_WON', 'CLOSED_LOST'] as const;
 
 const optionalDate = z.string().refine(s => !s || !isNaN(Date.parse(s)), { message: 'Data inválida' }).optional();
 
@@ -131,9 +129,14 @@ const validDateTimeString = (label: string) =>
   z.string().min(1, `${label} obrigatória`).refine(s => !isNaN(Date.parse(s)), { message: `${label} inválida` });
 
 // Appointments
+// Must match APPOINTMENT_TYPE_LABELS in the frontend. The frontend offered
+// DISCOVERY, PROPOSAL_MEETING, ONBOARDING and FOLLOW_UP while this list still
+// held the real-estate types, so saving any of them failed with "Tipo inválido".
+export const APPOINTMENT_TYPES = ['DISCOVERY', 'PROPOSAL_MEETING', 'ONBOARDING', 'FOLLOW_UP', 'GENERAL_MEETING', 'CALL', 'OTHER'] as const;
+
 export const createAppointmentSchema = z.object({
   title: z.string().min(1, 'Título obrigatório').max(200, 'Título demasiado longo'),
-  type: z.enum(['VISIT', 'CALL', 'MEETING', 'OTHER', 'ANGARIACAO_MEETING', 'CPCV', 'ESCRITURA', 'GENERAL_MEETING'], { errorMap: () => ({ message: 'Tipo inválido' }) }).default('VISIT'),
+  type: z.enum(APPOINTMENT_TYPES, { errorMap: () => ({ message: 'Tipo inválido' }) }).default('GENERAL_MEETING'),
   startAt: validDateTimeString('Data de início'),
   endAt: validDateTimeString('Data de fim'),
   description: z.string().max(2000).optional(),
@@ -150,7 +153,7 @@ export const createAppointmentSchema = z.object({
 
 export const updateAppointmentSchema = z.object({
   title: z.string().min(1, 'Título obrigatório').max(200).optional(),
-  type: z.enum(['VISIT', 'CALL', 'MEETING', 'OTHER', 'ANGARIACAO_MEETING', 'CPCV', 'ESCRITURA', 'GENERAL_MEETING'], { errorMap: () => ({ message: 'Tipo inválido' }) }).optional(),
+  type: z.enum(APPOINTMENT_TYPES, { errorMap: () => ({ message: 'Tipo inválido' }) }).optional(),
   startAt: validDateTimeString('Data de início').optional(),
   endAt: validDateTimeString('Data de fim').optional(),
   description: z.string().max(2000).optional(),

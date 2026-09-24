@@ -12,6 +12,7 @@ import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
 import { CustomSelect } from '../components/ui/CustomSelect'
 import type { Contact } from '../types'
+import { APPOINTMENT_TYPE_LABELS } from '../utils/constants'
 
 const STATUS_COLORS: Record<string, string> = {
   SCHEDULED: 'var(--accent)', CONFIRMED: '#10b981', CANCELLED: '#ef4444',
@@ -21,13 +22,7 @@ const STATUS_LABELS: Record<string, string> = {
   SCHEDULED: 'Agendado', CONFIRMED: 'Confirmado', CANCELLED: 'Cancelado',
   COMPLETED: 'Concluído', NO_SHOW: 'Não compareceu',
 }
-const TYPE_LABELS: Record<string, string> = {
-  VISIT:              'Visita',
-  ANGARIACAO_MEETING: 'Reunião de angariação',
-  CPCV:               'CPCV',
-  ESCRITURA:          'Escritura',
-  GENERAL_MEETING:    'Reunião geral',
-}
+const TYPE_LABELS = APPOINTMENT_TYPE_LABELS
 
 const WEEK_DAYS_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const MONTHS_PT = [
@@ -41,7 +36,7 @@ const GRID_START_HOUR = 6
 
 const EMPTY_FORM = {
   title: '', description: '', startAt: '', endAt: '', status: 'SCHEDULED',
-  type: 'VISIT', location: '', notes: '', contactId: '', opportunityId: '',
+  type: 'GENERAL_MEETING', location: '', notes: '', contactId: '', opportunityId: '',
 }
 
 function toLocalDatetimeInput(iso: string | undefined): string {
@@ -1362,7 +1357,7 @@ export const AppointmentsPage: React.FC = () => {
               value={form.title}
               onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
               style={inputStyle}
-              placeholder="ex: Visita ao apartamento T3"
+              placeholder="ex: Reunião de diagnóstico — Clínica Sorriso"
               onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.style.boxShadow = '0 0 0 2px rgba(46,107,230,0.12)' }}
               onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none' }}
             />

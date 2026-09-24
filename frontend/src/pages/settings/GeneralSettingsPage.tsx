@@ -23,7 +23,7 @@ export const GeneralSettingsPage: React.FC = () => {
   const { showToast } = useUIStore()
   const token = localStorage.getItem('crm_token') || ''
 
-  const [profile, setProfile] = useState({ name: user?.name || '', phone: user?.phone || '', email: user?.email || '', amiNumber: user?.amiNumber || '' })
+  const [profile, setProfile] = useState({ name: user?.name || '', phone: user?.phone || '', email: user?.email || '' })
   const [savingProfile, setSavingProfile] = useState(false)
   const [copied, setCopied] = useState(false)
   const bookingUrl = user ? `${window.location.origin}/book/${user.id}` : ''
@@ -45,7 +45,7 @@ export const GeneralSettingsPage: React.FC = () => {
     if (!user) return
     setSavingProfile(true)
     try {
-      await updateUser(user.id, { name: profile.name, phone: profile.phone, amiNumber: profile.amiNumber || undefined })
+      await updateUser(user.id, { name: profile.name, phone: profile.phone })
       setAuth({ ...user, name: profile.name, phone: profile.phone }, token)
       showToast('Perfil atualizado.', 'success')
     } catch (err: any) {
@@ -95,11 +95,6 @@ export const GeneralSettingsPage: React.FC = () => {
             <div>
               <label style={labelStyle}>Telefone</label>
               <input style={inputStyle} value={profile.phone} onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))} placeholder="+351 91..."
-                onFocus={e => (e.target.style.borderColor = '#6366f1')} onBlur={e => (e.target.style.borderColor = '#dce3ef')} />
-            </div>
-            <div>
-              <label style={labelStyle}>Número AMI</label>
-              <input style={inputStyle} value={profile.amiNumber} onChange={e => setProfile(p => ({ ...p, amiNumber: e.target.value }))} placeholder="ex: 12345"
                 onFocus={e => (e.target.style.borderColor = '#6366f1')} onBlur={e => (e.target.style.borderColor = '#dce3ef')} />
             </div>
           </div>

@@ -19,7 +19,7 @@ const CONTACT_FIELDS = [
   { key: 'email', label: 'Email', required: false },
   { key: 'phone', label: 'Telefone', required: false },
   { key: 'whatsapp', label: 'WhatsApp', required: false },
-  { key: 'type', label: 'Tipo (BUYER/OWNER/PARTNER)', required: false },
+  { key: 'type', label: 'Tipo (LEAD/PROSPECT/CLIENT/PARTNER)', required: false },
   { key: 'status', label: 'Estado (NEW/QUALIFIED/CONTACTED)', required: false },
   { key: 'source', label: 'Origem', required: false },
   { key: 'notes', label: 'Notas', required: false },
@@ -39,8 +39,8 @@ const OPPORTUNITY_FIELDS = [
 
 const CONTACTS_SAMPLE = [
   ['nome', 'email', 'telefone', 'whatsapp', 'tipo', 'estado', 'origem', 'notas', 'cidade'],
-  ['João Silva', 'joao@exemplo.com', '+351912345678', '+351912345678', 'BUYER', 'NEW', 'Website', '', 'Lisboa'],
-  ['Maria Santos', 'maria@exemplo.com', '+351923456789', '', 'OWNER', 'QUALIFIED', 'Indicação', 'Proprietária VIP', 'Porto'],
+  ['João Silva', 'joao@exemplo.com', '+351912345678', '+351912345678', 'LEAD', 'NEW', 'Website', '', 'Lisboa'],
+  ['Maria Santos', 'maria@exemplo.com', '+351923456789', '', 'CLIENT', 'QUALIFIED', 'Indicação', 'Cliente de websites', 'Porto'],
 ]
 
 const OPPORTUNITIES_SAMPLE = [

@@ -42,9 +42,10 @@ const STATUS_STYLE: Record<string, { bg: string; color: string; label: string }>
   INACTIVE:  { bg: 'var(--surface-3)',           color: 'var(--text-muted)',     label: 'Inativo' },
 }
 const TYPE_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  BUYER:   { bg: 'var(--accent-soft)',           color: 'var(--accent)',  label: 'Comprador' },
-  OWNER:   { bg: 'rgba(124,58,237,0.1)',         color: '#7C3AED',       label: 'Proprietário' },
-  PARTNER: { bg: 'rgba(217,119,6,0.1)',          color: 'var(--warning)', label: 'Parceiro' },
+  LEAD:     { bg: 'var(--accent-soft)',           color: 'var(--accent)',  label: 'Lead' },
+  PROSPECT: { bg: 'rgba(124,58,237,0.1)',         color: '#7C3AED',       label: 'Prospeto' },
+  CLIENT:   { bg: 'rgba(22,163,74,0.1)',          color: 'var(--success)', label: 'Cliente' },
+  PARTNER:  { bg: 'rgba(217,119,6,0.1)',          color: 'var(--warning)', label: 'Parceiro' },
 }
 
 function Pill({ bg, color, label }: { bg: string; color: string; label: string }) {

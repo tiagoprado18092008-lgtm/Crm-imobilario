@@ -13,10 +13,10 @@ const GRADIENTS = [
 ]
 
 const AREAS = [
-  { id: 'compra_venda', label: 'Compra & Venda', desc: 'Leads de compradores e vendedores de imóveis', icon: '🏠' },
-  { id: 'arrendamento', label: 'Arrendamento', desc: 'Gestão de arrendamentos e contratos', icon: '🔑' },
-  { id: 'angariacao', label: 'Angariação', desc: 'Captação de novas propriedades e proprietários', icon: '📋' },
-  { id: 'misto', label: 'Misto', desc: 'Todas as áreas do negócio imobiliário', icon: '⚡' },
+  { id: 'websites', label: 'Websites', desc: 'Criação e manutenção de sites para clientes', icon: '🌐' },
+  { id: 'ads', label: 'Publicidade paga', desc: 'Campanhas Google Ads e Meta Ads', icon: '📈' },
+  { id: 'social', label: 'Redes sociais', desc: 'Gestão de conteúdo e comunidades', icon: '💬' },
+  { id: 'misto', label: 'Serviço completo', desc: 'Todas as áreas de marketing digital', icon: '⚡' },
 ]
 
 interface Props {

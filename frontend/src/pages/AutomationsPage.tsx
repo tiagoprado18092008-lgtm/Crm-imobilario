@@ -64,7 +64,7 @@ interface Rule {
 
 const TRIGGERS = [
   { value: 'NEW_LEAD', label: 'Novo Lead criado' },
-  { value: 'VISIT_SCHEDULED', label: 'Visita agendada' },
+  { value: 'MEETING_SCHEDULED', label: 'Reunião marcada' },
   { value: 'MISSED_CALL', label: 'Chamada não atendida' },
   { value: 'NO_RESPONSE_2H', label: 'Sem resposta após 2h' },
   { value: 'LEAD_QUALIFIED', label: 'Lead qualificado' },

@@ -22,7 +22,6 @@ function substituteVars(text: string, contact?: Contact | null, user?: User | nu
     .replace(/\{\{consultor\}\}/g, user?.name || '')
     .replace(/\{\{data\}\}/g, today)
     .replace(/\{\{hora\}\}/g, '')
-    .replace(/\{\{imovel\}\}/g, '')
     .replace(/\{\{link\}\}/g, '')
 }
 

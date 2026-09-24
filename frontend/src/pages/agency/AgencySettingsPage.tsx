@@ -6,8 +6,8 @@ import { PageSpinner } from '../../components/ui/Spinner'
 import { CustomSelect } from '../../components/ui/CustomSelect'
 
 const NICHES = [
-  'Agência imobiliária', 'Consultoria imobiliária', 'Gestão de propriedades',
-  'Investimento imobiliário', 'Arrendamento', 'Outro',
+  'Agência de marketing digital', 'Websites', 'Publicidade paga',
+  'Redes sociais', 'SEO', 'Outro',
 ]
 
 const CURRENCIES = [

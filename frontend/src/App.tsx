@@ -31,7 +31,6 @@ const ConversationsPage = lazy(() => import('./pages/ConversationsPage').then(m 
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })))
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const AutomationsPage = lazy(() => import('./pages/AutomationsPage').then(m => ({ default: m.AutomationsPage })))
-const SnapshotsPage = lazy(() => import('./pages/SnapshotsPage').then(m => ({ default: m.SnapshotsPage })))
 const PhoneNumbersPage = lazy(() => import('./pages/PhoneNumbersPage').then(m => ({ default: m.PhoneNumbersPage })))
 const CallsPage = lazy(() => import('./pages/CallsPage').then(m => ({ default: m.CallsPage })))
 const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage').then(m => ({ default: m.AppointmentsPage })))
@@ -107,7 +106,6 @@ function App() {
         />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="automations" element={<AutomationsPage />} />
-        <Route path="snapshots" element={<SnapshotsPage />} />
         <Route path="conversations" element={<ConversationsPage />} />
         <Route path="phone-numbers" element={<Navigate to="/settings" replace />} />
         <Route path="calls" element={<CallsPage />} />

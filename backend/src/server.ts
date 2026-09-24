@@ -654,7 +654,7 @@ app.post('/webhook/twilio/status', async (req, res) => {
 
       await sendSMS(
         callerNumber,
-        `Olá! Sou ${name}. Estou numa visita agora, mas vi a sua chamada. O que procura exatamente? Responda aqui e entrarei em contacto brevemente.`
+        `Olá! Sou ${name}. Estou em reunião agora, mas vi a sua chamada. Em que posso ajudar? Responda aqui e entrarei em contacto brevemente.`
       )
       console.log(`[Missed Call Text Back] SMS enviado para ${callerNumber}`)
     } catch (err) {

@@ -1,17 +1,14 @@
 export type Role = 'SUPER_ADMIN' | 'AGENCY_OWNER' | 'AGENCY_ADMIN' | 'TEAM_LEADER' | 'CONSULTANT' | 'USER'
 export type PermissionMap = Record<string, string[]>
-export type ContactType = 'BUYER' | 'OWNER' | 'PARTNER' | 'TENANT'
+export type ContactType = 'LEAD' | 'PROSPECT' | 'CLIENT' | 'PARTNER'
 export type ContactStatus = 'NEW' | 'QUALIFIED' | 'CONTACTED' | 'INACTIVE'
 export type OpportunityStage =
   | 'LEAD_IN'
   | 'QUALIFYING'
-  | 'VISIT_SCHEDULED'
-  | 'VISIT_DONE'
+  | 'MEETING_SCHEDULED'
+  | 'MEETING_DONE'
   | 'PROPOSAL_SENT'
   | 'NEGOTIATION'
-  | 'CPCV_SIGNED'
-  | 'FINANCING'
-  | 'ESCRITURA_SCHEDULED'
   | 'CLOSED_WON'
   | 'CLOSED_LOST'
 export type InteractionType = 'EMAIL' | 'WHATSAPP' | 'CALL' | 'MEETING' | 'NOTE'
@@ -80,7 +77,6 @@ export interface User {
   createdAt: string
   location?: Location
   permissions?: PermissionMap
-  amiNumber?: string
   googleId?: string
   passwordHash?: string
 }
@@ -130,15 +126,6 @@ export interface AutomationAction {
   delay?: number
   template?: string
   value?: string
-}
-
-export interface Snapshot {
-  id: string
-  name: string
-  description?: string
-  category: 'BUYERS' | 'SELLERS' | 'RENTAL'
-  rules: AutomationRule[]
-  createdAt: string
 }
 
 export interface Opportunity {

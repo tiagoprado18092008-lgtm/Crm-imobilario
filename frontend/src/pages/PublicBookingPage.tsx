@@ -36,7 +36,7 @@ export default function PublicBookingPage() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedTime, setSelectedTime] = useState('');
 
-  const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '', type: 'GENERAL_MEETING' as 'VISIT' | 'GENERAL_MEETING' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '', type: 'GENERAL_MEETING' as 'GENERAL_MEETING' | 'DISCOVERY' });
   const [submitting, setSubmitting] = useState(false);
   const [bookingError, setBookingError] = useState('');
 
@@ -118,7 +118,6 @@ export default function PublicBookingPage() {
             </div>
           )}
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f2553', margin: '0 0 4px' }}>{profile?.name}</h1>
-          {profile?.amiNumber && <p style={{ fontSize: 13, color: '#6b7a99', margin: 0 }}>AMI {profile.amiNumber}</p>}
           {profile?.phone && <p style={{ fontSize: 13, color: '#6b7a99', margin: '2px 0 0' }}>{profile.phone}</p>}
         </div>
 
@@ -197,7 +196,7 @@ export default function PublicBookingPage() {
                   <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as any }))}
                     style={{ display: 'block', width: '100%', marginTop: 4, padding: '9px 12px', borderRadius: 8, border: '1.5px solid #e5e9f2', fontSize: 14, boxSizing: 'border-box', background: '#fff' }}>
                     <option value="GENERAL_MEETING">Reunião</option>
-                    <option value="VISIT">Visita ao imóvel</option>
+                    <option value="DISCOVERY">Reunião de diagnóstico</option>
                   </select>
                 </label>
                 <label style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>

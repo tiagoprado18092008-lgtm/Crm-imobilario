@@ -98,17 +98,9 @@ export const APPOINTMENT_TYPE_LABELS: Record<string, string> = {
   ONBOARDING:         'Onboarding de cliente',
   FOLLOW_UP:          'Follow-up',
   GENERAL_MEETING:    'Reunião geral',
+  CALL:               'Chamada',
+  OTHER:              'Outro',
 }
-
-export const SALE_REASON_OPTIONS = [
-  'Mudança de residência',
-  'Separação / Divórcio',
-  'Herança',
-  'Dificuldades financeiras',
-  'Upgrade / Downgrade',
-  'Investimento',
-  'Outro',
-]
 
 export const INTERACTION_TYPE_LABELS: Record<string, string> = {
   EMAIL: 'Email',

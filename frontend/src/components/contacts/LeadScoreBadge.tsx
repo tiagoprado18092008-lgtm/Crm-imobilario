@@ -59,7 +59,7 @@ export const calcLeadScore = (contact: {
 
   // +pontos por stage da oportunidade
   const stages: Record<string, number> = {
-    LEAD_IN: 5, QUALIFYING: 10, VISIT_SCHEDULED: 20,
+    LEAD_IN: 5, QUALIFYING: 10, MEETING_SCHEDULED: 20, MEETING_DONE: 25,
     PROPOSAL_SENT: 30, NEGOTIATION: 40,
     CLOSED_WON: 100, CLOSED_LOST: 0,
   }

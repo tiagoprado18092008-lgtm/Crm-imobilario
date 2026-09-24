@@ -223,7 +223,7 @@ export const bulkImport = async (
       email: row.email || undefined,
       phone: row.phone || undefined,
       whatsapp: row.whatsapp || undefined,
-      type: (['BUYER','OWNER','PARTNER'].includes(row.type?.toUpperCase() ?? '') ? row.type!.toUpperCase() : 'BUYER') as any,
+      type: (['LEAD','PROSPECT','CLIENT','PARTNER'].includes(row.type?.toUpperCase() ?? '') ? row.type!.toUpperCase() : 'LEAD') as any,
       status: (['NEW','QUALIFIED','CONTACTED','INACTIVE'].includes(row.status?.toUpperCase() ?? '') ? row.status!.toUpperCase() : 'NEW') as any,
       source: row.source || undefined,
       notes: row.notes || undefined,

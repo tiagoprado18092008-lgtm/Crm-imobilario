@@ -16,10 +16,9 @@ interface EventModalProps {
 }
 
 const EVENT_TYPES = [
-  { value: 'visit', label: 'Visita' },
-  { value: 'meeting', label: 'Reunião de angariação' },
-  { value: 'cpcv', label: 'CPCV' },
-  { value: 'escritura', label: 'Escritura' },
+  { value: 'meeting', label: 'Reunião' },
+  { value: 'discovery', label: 'Reunião de diagnóstico' },
+  { value: 'proposal', label: 'Apresentação de proposta' },
   { value: 'call', label: 'Chamada' },
   { value: 'other', label: 'Outro' },
 ]

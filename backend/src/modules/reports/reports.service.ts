@@ -111,7 +111,8 @@ export const getPipeline = async (user: any, filters?: { from?: Date; to?: Date;
   const stages = [
     'LEAD_IN',
     'QUALIFYING',
-    'VISIT_SCHEDULED',
+    'MEETING_SCHEDULED',
+    'MEETING_DONE',
     'PROPOSAL_SENT',
     'NEGOTIATION',
     'CLOSED_WON',

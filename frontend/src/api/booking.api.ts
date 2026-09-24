@@ -7,7 +7,6 @@ export interface ConsultorProfile {
   name: string;
   avatarUrl?: string;
   phone?: string;
-  amiNumber?: string;
 }
 
 export interface BookingPayload {
@@ -17,7 +16,7 @@ export interface BookingPayload {
   email: string;
   phone?: string;
   notes?: string;
-  type?: 'VISIT' | 'GENERAL_MEETING';
+  type?: 'GENERAL_MEETING' | 'DISCOVERY';
 }
 
 export const getConsultorProfile = async (userId: string): Promise<{ user: ConsultorProfile; slots: any[] }> => {

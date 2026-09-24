@@ -19,8 +19,6 @@ fi
 
 echo "Applying safety migrations (idempotent)..."
 npx prisma db execute --stdin <<'SQL'
-ALTER TABLE "Agency" ADD COLUMN IF NOT EXISTS "amiNumber" TEXT;
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "amiNumber" TEXT;
 ALTER TABLE "Contact" ADD COLUMN IF NOT EXISTS "tags" TEXT[] DEFAULT ARRAY[]::TEXT[];
 INSERT INTO "_prisma_migrations" (id, checksum, finished_at, migration_name, logs, rolled_back_at, started_at, applied_steps_count)
 SELECT gen_random_uuid()::text, 'manual', NOW(), '20260509000000_add_ami_number_and_contact_tags', NULL, NULL, NOW(), 1

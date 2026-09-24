@@ -3,13 +3,12 @@ import prisma from '../../config/database';
 import { decrypt, encrypt } from '../../lib/encryption';
 
 const TYPE_LABELS: Record<string, string> = {
-  VISIT: 'Visita',
-  ANGARIACAO_MEETING: 'Reunião de angariação',
-  CPCV: 'CPCV',
-  ESCRITURA: 'Escritura',
+  DISCOVERY: 'Reunião de diagnóstico',
+  PROPOSAL_MEETING: 'Apresentação de proposta',
+  ONBOARDING: 'Onboarding de cliente',
+  FOLLOW_UP: 'Follow-up',
   GENERAL_MEETING: 'Reunião geral',
   CALL: 'Chamada',
-  MEETING: 'Reunião',
   OTHER: 'Outro',
 };
 

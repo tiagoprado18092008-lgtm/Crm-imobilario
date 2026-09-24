@@ -12,6 +12,7 @@ import { useUIStore } from '../../store/ui.store'
 import { useCallStore } from '../../store/call.store'
 import { useAuthStore } from '../../store/auth.store'
 import { useNavigate } from 'react-router-dom'
+import { APPOINTMENT_TYPE_LABELS } from '../../utils/constants'
 
 interface QuickActionModalProps {
   opportunity: Opportunity
@@ -48,7 +49,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
   // ── Calendar / Agendamento ────────────────────────────────────────────────
   if (action === 'calendar') {
     const [title, setTitle] = useState('')
-    const [type, setType] = useState('VISIT')
+    const [type, setType] = useState('GENERAL_MEETING')
     const [startAt, setStartAt] = useState(() => {
       const d = new Date(); d.setMinutes(0, 0, 0)
       const pad = (n: number) => String(n).padStart(2, '0')
@@ -103,13 +104,7 @@ export const QuickActionModal: React.FC<QuickActionModalProps> = ({ opportunity,
           <CustomSelect
             value={type}
             onChange={v => setType(v)}
-            options={[
-              { value: 'VISIT', label: 'Visita' },
-              { value: 'ANGARIACAO_MEETING', label: 'Reunião de angariação' },
-              { value: 'CPCV', label: 'CPCV' },
-              { value: 'ESCRITURA', label: 'Escritura' },
-              { value: 'GENERAL_MEETING', label: 'Reunião geral' },
-            ]}
+            options={Object.entries(APPOINTMENT_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
           />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>

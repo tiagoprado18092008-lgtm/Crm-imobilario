@@ -249,7 +249,7 @@ export const CampaignsPage: React.FC = () => {
                     options={[
                       { value: 'LEAD', label: 'Todos os Leads' },
                       { value: 'CLIENT', label: 'Todos os Clientes' },
-                      { value: 'OWNER', label: 'Todos os Proprietários' },
+                      { value: 'PARTNER', label: 'Todos os Parceiros' },
                     ]}
                   />
                 </div>
