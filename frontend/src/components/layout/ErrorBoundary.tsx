@@ -1,5 +1,6 @@
 import React from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { isStaleChunkError, reloadForNewBuild } from '../../lib/staleBuild'
 
 interface Props {
   children: React.ReactNode
@@ -19,7 +20,15 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
+    if (isStaleChunkError(error) && reloadForNewBuild()) return
     console.error('[ErrorBoundary]', error, info.componentStack)
+  }
+
+  // React.lazy caches a rejected import, so clearing the error state re-throws
+  // the same failure. A chunk error only clears with a fresh page load.
+  private retry = () => {
+    if (isStaleChunkError(this.state.error)) window.location.reload()
+    else this.setState({ hasError: false, error: null })
   }
 
   render() {
@@ -35,7 +44,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
           <p className="text-sm font-semibold text-slate-700">Algo correu mal</p>
           <p className="text-xs text-slate-400 mt-1 mb-4">{this.state.error?.message}</p>
           <button
-            onClick={() => this.setState({ hasError: false, error: null })}
+            onClick={this.retry}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white"
             style={{ background: '#6366f1', border: 'none', cursor: 'pointer' }}
           >

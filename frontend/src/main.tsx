@@ -9,6 +9,7 @@ import './index.css'
 import App from './App.tsx'
 import { ErrorBoundary } from './components/layout/ErrorBoundary.tsx'
 import { applyTheme, getStoredTheme, watchSystemTheme } from './lib/theme'
+import { reloadForNewBuild } from './lib/staleBuild'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
@@ -25,6 +26,12 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
+})
+
+// Vite fires this when a chunk of a build that has since been replaced fails
+// to preload; reloading fetches the current build instead of erroring.
+window.addEventListener('vite:preloadError', (event) => {
+  if (reloadForNewBuild()) event.preventDefault()
 })
 
 applyTheme(getStoredTheme())
