@@ -23,10 +23,32 @@ api.interceptors.request.use((config) => {
 let isRefreshing = false
 let refreshQueue: Array<(token: string) => void> = []
 
+// A backend that is starting up or restarting (tsx watch, a Railway deploy)
+// refuses connections for a few seconds. Reads fail in that window and each
+// page shows its own "Erro ao carregar ..." toast, although nothing is wrong.
+// Reads are safe to repeat, so wait and try again; writes are never retried,
+// because a request that timed out may still have been saved.
+const RETRY_DELAYS_MS = [700, 1500, 3000]
+const RETRYABLE_STATUS = new Set([502, 503, 504])
+
+const isTransient = (error: any) =>
+  !error.response || RETRYABLE_STATUS.has(error.response.status)
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original = error.config
+
+    const method = (original?.method ?? 'get').toLowerCase()
+    if (original && method === 'get' && isTransient(error) && !axios.isCancel(error)) {
+      const attempt: number = original._transientRetries ?? 0
+      if (attempt < RETRY_DELAYS_MS.length) {
+        original._transientRetries = attempt + 1
+        await new Promise((r) => setTimeout(r, RETRY_DELAYS_MS[attempt]))
+        return api(original)
+      }
+    }
+
     const is401 = error.response?.status === 401
     const isAuthEndpoint = original?.url?.includes('/auth/')
 
