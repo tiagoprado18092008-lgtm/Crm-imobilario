@@ -295,8 +295,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
       if (selectFirst && list.length > 0 && !externalPipelineId) {
         setActivePipeline(list[0])
       }
-    } catch {
-      showToast('Erro ao carregar pipelines', 'error')
+    } catch (err: any) {
+      // Say why: "Erro ao carregar pipelines" alone could not tell a server
+      // that is down from a database missing a column.
+      const detail = err?.response
+        ? `${err.response.status} — ${err.response.data?.error ?? 'erro do servidor'}`
+        : 'sem ligação ao servidor'
+      showToast(`Erro ao carregar pipelines (${detail})`, 'error')
     } finally {
       setPipelinesLoading(false)
     }
