@@ -18,6 +18,8 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY prisma ./prisma
+# entrypoint.sh runs check-schema.mjs before starting the server
+COPY scripts ./scripts
 COPY entrypoint.sh ./entrypoint.sh
 RUN chmod +x entrypoint.sh
 
