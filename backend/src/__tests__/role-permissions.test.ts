@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { canSeeEveryone } from '../modules/goals/goals.service';
 import { buildScope } from '../lib/scope';
+import { requireRole } from '../middleware/rbac.middleware';
 
 /**
  * Role-based access.
@@ -143,5 +144,45 @@ describe('authentication on API routers', () => {
     );
     const stale = [...PUBLIC.keys()].filter((k) => !live.has(k));
     expect(stale).toEqual([]);
+  });
+});
+
+describe('requireRole', () => {
+  const run = (role: string | undefined, allowed: string[]) => {
+    const req: any = role === undefined ? {} : { user: { id: 'u', role } };
+    const res: any = {
+      statusCode: 0,
+      body: null as any,
+      status(code: number) { this.statusCode = code; return this; },
+      json(payload: any) { this.body = payload; return this; },
+    };
+    let passed = false;
+    requireRole(...allowed)(req, res, () => { passed = true; });
+    return { passed, status: res.statusCode };
+  };
+
+  it('lets a listed role through', () => {
+    expect(run('AGENCY_OWNER', ['AGENCY_OWNER', 'AGENCY_ADMIN']).passed).toBe(true);
+  });
+
+  it('refuses a role that is not listed', () => {
+    const { passed, status } = run('CONSULTANT', ['AGENCY_OWNER', 'AGENCY_ADMIN']);
+    expect(passed).toBe(false);
+    expect(status).toBe(403);
+  });
+
+  /**
+   * SUPER_ADMIN sits above the agency hierarchy, so no route lists it. Before
+   * this it was denied settings, user management and reports — the account
+   * with the most authority could do the least.
+   */
+  it('lets SUPER_ADMIN through a route that does not list it', () => {
+    expect(run('SUPER_ADMIN', ['AGENCY_OWNER', 'AGENCY_ADMIN']).passed).toBe(true);
+  });
+
+  it('still demands authentication before any role check', () => {
+    const { passed, status } = run(undefined, ['SUPER_ADMIN']);
+    expect(passed).toBe(false);
+    expect(status).toBe(401);
   });
 });

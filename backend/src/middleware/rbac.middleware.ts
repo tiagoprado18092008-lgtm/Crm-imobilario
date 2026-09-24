@@ -28,6 +28,15 @@ export const requireRole = (...roles: string[]) => {
       return;
     }
 
+    // SUPER_ADMIN is above the agency hierarchy, so no caller lists it among
+    // the roles it allows. Without this it was denied everything gated by
+    // requireRole — settings, user management, reports — while appearing to be
+    // the most privileged account in the product.
+    if (req.user.role === ROLES.SUPER_ADMIN) {
+      next();
+      return;
+    }
+
     if (!roles.includes(req.user.role)) {
       res.status(403).json({
         error: `Access denied. Required roles: ${roles.join(', ')}`,

@@ -3,6 +3,12 @@ import AccessToken = require('twilio/lib/jwt/AccessToken')
 import VoiceGrant = AccessToken.VoiceGrant
 
 export function isTwilioConfigured(): boolean {
+  // Voice has moved to Zadarma. The Twilio credentials are still in .env but
+  // the account no longer validates them, so reporting "configured" makes the
+  // browser build a Device that Twilio rejects (error 20101) and retries
+  // forever. Twilio now has to be turned on deliberately.
+  if (process.env.TWILIO_ENABLED !== 'true') return false
+
   // Phone number is optional — we can look one up from the DB when needed
   return !!(
     process.env.TWILIO_ACCOUNT_SID &&
