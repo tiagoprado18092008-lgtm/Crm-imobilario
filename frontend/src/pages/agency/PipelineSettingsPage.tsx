@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Plus, Trash2, Check, X } from 'lucide-react'
+import { Plus, Trash2, Check, X, Pencil } from 'lucide-react'
 import {
-  getPipelines,
+  getPipelines, updatePipeline,
   createStage, updateStage, deleteStage,
   type Pipeline, type PipelineStage
 } from '../../api/pipelines.api'
@@ -21,6 +21,8 @@ export const PipelineSettingsPage: React.FC = () => {
   const [addingStage, setAddingStage] = useState(false)
   const [newStageForm, setNewStageForm] = useState({ name: '', color: '#6366f1' })
   const [deletingPipeline, setDeletingPipeline] = useState<Pipeline | null>(null)
+  const [editingPipelineId, setEditingPipelineId] = useState<string | null>(null)
+  const [pipelineNameForm, setPipelineNameForm] = useState('')
 
   const load = async () => {
     setLoading(true)
@@ -41,6 +43,19 @@ export const PipelineSettingsPage: React.FC = () => {
     setDeletingPipeline(null)
     if (activePipelineId === id) setActivePipelineId(null)
     load()
+  }
+
+  const handleRenamePipeline = async (pipeline: Pipeline) => {
+    const name = pipelineNameForm.trim()
+    if (!name || name === pipeline.name) { setEditingPipelineId(null); return }
+    try {
+      await updatePipeline(pipeline.id, { name })
+      showToast('Pipeline renomeada', 'success')
+      setEditingPipelineId(null)
+      load()
+    } catch (e: any) {
+      showToast(e?.response?.data?.error || 'Erro ao renomear pipeline', 'error')
+    }
   }
 
   const handleSaveStage = async (stage: PipelineStage) => {
@@ -99,23 +114,58 @@ export const PipelineSettingsPage: React.FC = () => {
           {pipelines.map(p => (
             <div
               key={p.id}
-              onClick={() => setActivePipelineId(p.id)}
+              onClick={() => editingPipelineId !== p.id && setActivePipelineId(p.id)}
               style={{
                 padding: '8px 12px', borderRadius: 8, marginBottom: 4,
                 background: activePipelineId === p.id ? 'rgba(99,102,241,0.1)' : '#fff',
                 border: `1px solid ${activePipelineId === p.id ? '#6366f1' : '#e5e9f2'}`,
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                cursor: editingPipelineId === p.id ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
               }}
             >
-              <span style={{ fontSize: 13, fontWeight: 600, color: activePipelineId === p.id ? '#6366f1' : '#374151' }}>
-                {p.name}
-                <span style={{ fontWeight: 400, color: '#9ca3af' }}> · {p._count?.opportunities ?? 0}</span>
-              </span>
-              <button
-                title="Eliminar pipeline"
-                onClick={e => { e.stopPropagation(); setDeletingPipeline(p) }}
-                style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#ef4444', padding: 0, display: 'flex' }}
-              ><Trash2 size={12} /></button>
+              {editingPipelineId === p.id ? (
+                <>
+                  <input
+                    autoFocus
+                    value={pipelineNameForm}
+                    onChange={e => setPipelineNameForm(e.target.value)}
+                    onClick={e => e.stopPropagation()}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleRenamePipeline(p)
+                      if (e.key === 'Escape') setEditingPipelineId(null)
+                    }}
+                    style={{ flex: 1, minWidth: 0, padding: '4px 6px', borderRadius: 6, border: '1.5px solid #6366f1', fontSize: 13, fontFamily: 'inherit', outline: 'none', background: '#f8f9fc', color: '#0f2553' }}
+                  />
+                  <button
+                    title="Guardar"
+                    onClick={e => { e.stopPropagation(); handleRenamePipeline(p) }}
+                    style={{ border: 'none', background: '#6366f1', color: '#fff', borderRadius: 6, padding: 4, cursor: 'pointer', display: 'flex', flexShrink: 0 }}
+                  ><Check size={12} /></button>
+                  <button
+                    title="Cancelar"
+                    onClick={e => { e.stopPropagation(); setEditingPipelineId(null) }}
+                    style={{ border: '1px solid #e5e9f2', background: '#fff', borderRadius: 6, padding: 4, cursor: 'pointer', display: 'flex', flexShrink: 0 }}
+                  ><X size={12} /></button>
+                </>
+              ) : (
+                <>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: activePipelineId === p.id ? '#6366f1' : '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {p.name}
+                    <span style={{ fontWeight: 400, color: '#9ca3af' }}> · {p._count?.opportunities ?? 0}</span>
+                  </span>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button
+                      title="Renomear pipeline"
+                      onClick={e => { e.stopPropagation(); setEditingPipelineId(p.id); setPipelineNameForm(p.name) }}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#6b7a99', padding: 0, display: 'flex' }}
+                    ><Pencil size={12} /></button>
+                    <button
+                      title="Eliminar pipeline"
+                      onClick={e => { e.stopPropagation(); setDeletingPipeline(p) }}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#ef4444', padding: 0, display: 'flex' }}
+                    ><Trash2 size={12} /></button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
