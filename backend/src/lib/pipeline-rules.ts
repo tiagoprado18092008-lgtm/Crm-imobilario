@@ -102,3 +102,30 @@ export function daysInStage(stageEnteredAt: Date | null | undefined): number {
   if (!stageEnteredAt) return 0;
   return Math.floor((Date.now() - stageEnteredAt.getTime()) / 86_400_000);
 }
+
+type NamedStage = { id: string; name: string };
+
+const stageKey = (name: string) =>
+  name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+
+/**
+ * Where each stage's deals land when their pipeline is folded into another.
+ *
+ * A deal keeps its place when the destination has a stage of the same name, so
+ * "Reunião Marcada" stays "Reunião Marcada"; anything without a counterpart
+ * goes to the destination's first stage rather than disappearing off the board.
+ * `to` must be in board order.
+ */
+export function mapStagesByName(from: NamedStage[], to: NamedStage[]): Map<string, string> {
+  if (to.length === 0) {
+    throw Object.assign(new Error('A pipeline de destino não tem etapas.'), { status: 400 });
+  }
+
+  const byName = new Map<string, string>();
+  for (const stage of to) {
+    const key = stageKey(stage.name);
+    if (!byName.has(key)) byName.set(key, stage.id);
+  }
+
+  return new Map(from.map((stage) => [stage.id, byName.get(stageKey(stage.name)) ?? to[0].id]));
+}

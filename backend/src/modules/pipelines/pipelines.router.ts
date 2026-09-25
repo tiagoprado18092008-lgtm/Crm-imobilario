@@ -33,10 +33,13 @@ router.put('/:id', requireAuth, async (req: any, res) => {
 
 router.delete('/:id', requireAuth, async (req: any, res) => {
   try {
-    await svc.remove(req.params.id, req.user);
-    res.json({ ok: true });
+    const moveTo = typeof req.query.moveTo === 'string' ? req.query.moveTo : undefined;
+    const deleteOpportunities = req.query.deleteOpportunities === 'true';
+    res.json({ ok: true, ...(await svc.remove(req.params.id, req.user, { moveTo, deleteOpportunities })) });
   } catch (e: any) {
-    res.status(e.status || 500).json({ error: e.message });
+    // The count lets the client ask what to do with the deals instead of
+    // showing a dead end.
+    res.status(e.status || 500).json({ error: e.message, ...(e.count != null && { count: e.count }) });
   }
 });
 

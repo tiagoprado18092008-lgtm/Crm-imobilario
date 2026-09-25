@@ -30,7 +30,8 @@ import { PageSpinner } from '../ui/Spinner'
 import { useUIStore } from '../../store/ui.store'
 import { STAGE_ORDER, STAGE_LABELS } from '../../utils/constants'
 import type { PipelineStage, Pipeline } from '../../api/pipelines.api'
-import { getPipelines, createPipeline, deletePipeline } from '../../api/pipelines.api'
+import { getPipelines, createPipeline } from '../../api/pipelines.api'
+import { DeletePipelineModal } from './DeletePipelineModal'
 import { formatCurrency, formatDate, getInitials } from '../../utils/formatters'
 import { useIsMobile } from '../../hooks/useIsMobile'
 import api from '../../api/client'
@@ -268,6 +269,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
   const [pageTab, setPageTab] = useState<'opportunities' | 'pipelines' | 'bulk'>('opportunities')
   const [showPipelineDropdown, setShowPipelineDropdown] = useState(false)
   const [allPipelines, setAllPipelines] = useState<Pipeline[]>([])
+  const [deletingPipeline, setDeletingPipeline] = useState<Pipeline | null>(null)
   const [newPipelineName, setNewPipelineName] = useState('')
   const [creatingPipeline, setCreatingPipeline] = useState(false)
   const [pipelinesLoading, setPipelinesLoading] = useState(false)
@@ -329,15 +331,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
     }
   }
 
-  const handleDeletePipeline = async (id: string, name: string) => {
-    if (!confirm(`Eliminar a pipeline "${name}"? Esta ação não pode ser desfeita.`)) return
-    try {
-      await deletePipeline(id)
-      showToast('Pipeline eliminada', 'success')
-      loadAllPipelines()
-    } catch {
-      showToast('Erro ao eliminar pipeline', 'error')
-    }
+  const handlePipelineDeleted = (id: string) => {
+    setDeletingPipeline(null)
+    // The board must not keep showing a pipeline that no longer exists, and
+    // deals moved into the open one have to appear on it.
+    const wasActive = activePipeline?.id === id
+    loadAllPipelines(wasActive)
+    if (!wasActive) fetchOpportunities(true)
   }
 
   const fetchOpportunities = useCallback(async (silent = false) => {
@@ -1051,7 +1051,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
                         Ver
                       </button>
                       <button
-                        onClick={() => handleDeletePipeline(p.id, p.name)}
+                        onClick={() => setDeletingPipeline(p)}
+                        title="Eliminar pipeline"
                         style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid #fee2e2', background: '#fef2f2', fontSize: 12, cursor: 'pointer', color: '#ef4444', fontFamily: 'inherit' }}
                       >
                         <Trash2 size={13} />
@@ -1064,6 +1065,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
           </div>
         </div>
       )}
+
+      <DeletePipelineModal
+        pipeline={deletingPipeline}
+        pipelines={allPipelines}
+        onClose={() => setDeletingPipeline(null)}
+        onDeleted={handlePipelineDeleted}
+      />
 
       {/* ── Bulk Actions Tab ── */}
       {pageTab === 'bulk' && (

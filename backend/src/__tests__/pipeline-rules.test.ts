@@ -3,6 +3,7 @@ import {
   computeRottingAt,
   isRotting,
   daysInStage,
+  mapStagesByName,
 } from '../lib/pipeline-rules';
 
 const daysFromNow = (n: number) => new Date(Date.now() + n * 86_400_000);
@@ -87,5 +88,40 @@ describe('daysInStage', () => {
     // Deals created before this field existed must not read as ancient.
     expect(daysInStage(null)).toBe(0);
     expect(daysInStage(undefined)).toBe(0);
+  });
+});
+
+describe('mapStagesByName', () => {
+  const target = [
+    { id: 't-lead', name: 'Lead Novo' },
+    { id: 't-meeting', name: 'Reunião Marcada' },
+    { id: 't-won', name: 'Fechado' },
+  ];
+
+  it('keeps a deal in the stage of the same name', () => {
+    const map = mapStagesByName([{ id: 's-meeting', name: 'Reunião Marcada' }], target);
+    expect(map.get('s-meeting')).toBe('t-meeting');
+  });
+
+  it('ignores case, accents and surrounding spaces when matching', () => {
+    const map = mapStagesByName([{ id: 's', name: '  reuniao marcada ' }], target);
+    expect(map.get('s')).toBe('t-meeting');
+  });
+
+  it('sends a stage with no counterpart to the first stage', () => {
+    const map = mapStagesByName([{ id: 's-odd', name: 'nao atendido' }], target);
+    expect(map.get('s-odd')).toBe('t-lead');
+  });
+
+  it('picks the first of two stages sharing a name', () => {
+    const dupes = [
+      { id: 't-a', name: 'Proposta Enviada' },
+      { id: 't-b', name: 'Proposta Enviada' },
+    ];
+    expect(mapStagesByName([{ id: 's', name: 'Proposta Enviada' }], dupes).get('s')).toBe('t-a');
+  });
+
+  it('refuses a destination with no stages, which could not hold the deals', () => {
+    expect(() => mapStagesByName([{ id: 's', name: 'Lead Novo' }], [])).toThrow();
   });
 });

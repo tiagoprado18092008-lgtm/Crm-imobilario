@@ -24,8 +24,15 @@ export const createPipeline = (name: string) =>
 export const updatePipeline = (id: string, data: { name?: string; position?: number }) =>
   api.put<Pipeline>(`/pipelines/${id}`, data);
 
-export const deletePipeline = (id: string) =>
-  api.delete(`/pipelines/${id}`);
+/**
+ * A pipeline that still holds deals is refused with 409 unless told what to do
+ * with them: move them to `moveTo`, or delete them with `deleteOpportunities`.
+ */
+export const deletePipeline = (
+  id: string,
+  opts: { moveTo?: string; deleteOpportunities?: boolean } = {},
+) =>
+  api.delete<{ ok: true; moved: number; deleted: number }>(`/pipelines/${id}`, { params: opts });
 
 export const createStage = (pipelineId: string, data: { name: string; color?: string }) =>
   api.post<PipelineStage>(`/pipelines/${pipelineId}/stages`, data);

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { Plus, Trash2, Check, X } from 'lucide-react'
 import {
-  getPipelines, deletePipeline,
+  getPipelines,
   createStage, updateStage, deleteStage,
   type Pipeline, type PipelineStage
 } from '../../api/pipelines.api'
 import { useUIStore } from '../../store/ui.store'
 import { PageSpinner } from '../../components/ui/Spinner'
+import { DeletePipelineModal } from '../../components/kanban/DeletePipelineModal'
 
 const PRESET_COLORS = ['#6366f1','#8b5cf6','#f59e0b','#10b981','#3b82f6','#f97316','#22c55e','#ef4444','#06b6d4','#ec4899']
 
@@ -19,6 +20,7 @@ export const PipelineSettingsPage: React.FC = () => {
   const [stageForm, setStageForm] = useState({ name: '', color: '#6366f1' })
   const [addingStage, setAddingStage] = useState(false)
   const [newStageForm, setNewStageForm] = useState({ name: '', color: '#6366f1' })
+  const [deletingPipeline, setDeletingPipeline] = useState<Pipeline | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -35,16 +37,10 @@ export const PipelineSettingsPage: React.FC = () => {
 
   const activePipeline = pipelines.find(p => p.id === activePipelineId) || null
 
-  const handleDeletePipeline = async (p: Pipeline) => {
-    if (!confirm(`Eliminar pipeline "${p.name}"?`)) return
-    try {
-      await deletePipeline(p.id)
-      showToast('Pipeline eliminada', 'success')
-      setActivePipelineId(null)
-      load()
-    } catch (e: any) {
-      showToast(e?.response?.data?.error || 'Erro ao eliminar', 'error')
-    }
+  const handlePipelineDeleted = (id: string) => {
+    setDeletingPipeline(null)
+    if (activePipelineId === id) setActivePipelineId(null)
+    load()
   }
 
   const handleSaveStage = async (stage: PipelineStage) => {
@@ -111,9 +107,13 @@ export const PipelineSettingsPage: React.FC = () => {
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}
             >
-              <span style={{ fontSize: 13, fontWeight: 600, color: activePipelineId === p.id ? '#6366f1' : '#374151' }}>{p.name}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: activePipelineId === p.id ? '#6366f1' : '#374151' }}>
+                {p.name}
+                <span style={{ fontWeight: 400, color: '#9ca3af' }}> · {p._count?.opportunities ?? 0}</span>
+              </span>
               <button
-                onClick={e => { e.stopPropagation(); handleDeletePipeline(p) }}
+                title="Eliminar pipeline"
+                onClick={e => { e.stopPropagation(); setDeletingPipeline(p) }}
                 style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#ef4444', padding: 0, display: 'flex' }}
               ><Trash2 size={12} /></button>
             </div>
@@ -177,6 +177,13 @@ export const PipelineSettingsPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <DeletePipelineModal
+        pipeline={deletingPipeline}
+        pipelines={pipelines}
+        onClose={() => setDeletingPipeline(null)}
+        onDeleted={handlePipelineDeleted}
+      />
     </div>
   )
 }
