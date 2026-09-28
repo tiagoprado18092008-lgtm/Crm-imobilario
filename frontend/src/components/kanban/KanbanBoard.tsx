@@ -459,9 +459,20 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
   // Filtering + sorting
   const allOpps = Object.values(columns).flat()
 
+  // Strips everything but digits so "912 345 678" matches "+351 912-345-678"
+  const onlyDigits = (v: string) => v.replace(/\D/g, '')
+
   const applyFilters = (opps: Opportunity[]) => {
+    const searchLower = search.toLowerCase()
+    const searchDigits = onlyDigits(search)
     return opps
-      .filter(o => !search || o.title.toLowerCase().includes(search.toLowerCase()) || o.contact?.name.toLowerCase().includes(search.toLowerCase()))
+      .filter(o => {
+        if (!search) return true
+        if (o.title.toLowerCase().includes(searchLower)) return true
+        if (o.contact?.name.toLowerCase().includes(searchLower)) return true
+        if (searchDigits && o.contact?.phone && onlyDigits(o.contact.phone).includes(searchDigits)) return true
+        return false
+      })
       .filter(o => !filterSource || o.source === filterSource)
       .filter(o => !filterAssignee || o.assignedToId === filterAssignee)
   }
