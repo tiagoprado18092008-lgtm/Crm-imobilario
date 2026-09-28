@@ -343,13 +343,29 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ pipelineId: externalPi
   const fetchOpportunities = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     try {
-      const oppParams: any = { limit: 500 }
+      const PAGE_SIZE = 500
+      const oppParams: any = { limit: PAGE_SIZE, page: 1 }
       if (pipelineId) oppParams.pipelineId = pipelineId
       const [res, uRes] = await Promise.all([
         getOpportunities(oppParams),
         getUsers(),
       ])
-      const data: Opportunity[] = Array.isArray(res.data) ? res.data : res.data.data || []
+      let data: Opportunity[] = Array.isArray(res.data) ? res.data : res.data.data || []
+      // The board needs every deal to lay out its columns correctly, so a
+      // pipeline past the first page's worth (e.g. 500+ deals) can't stop
+      // there — cards beyond that page would render as if they didn't exist.
+      const totalPages: number = Array.isArray(res.data) ? 1 : res.data.totalPages || 1
+      if (totalPages > 1) {
+        const restPages = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, i) =>
+            getOpportunities({ ...oppParams, page: i + 2 })
+          )
+        )
+        for (const pageRes of restPages) {
+          const pageData: Opportunity[] = Array.isArray(pageRes.data) ? pageRes.data : pageRes.data.data || []
+          data = data.concat(pageData)
+        }
+      }
       const cols: ColumnsMap = {}
       const usingDynamicStages = stages && stages.length > 0
       const stageKeys = usingDynamicStages ? stages!.map(s => s.id) : STAGE_ORDER

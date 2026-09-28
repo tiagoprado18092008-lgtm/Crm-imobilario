@@ -101,9 +101,13 @@ export const create = async (
   user: any
 ) => {
   const targetStage = (dto.stage as any) ?? 'LEAD_IN';
-  // Auto-assign position to end of the target stage
+  // Auto-assign position to end of the target stage. A dynamic pipeline stores
+  // its real stage in stageId and leaves the legacy `stage` enum pinned to
+  // LEAD_IN, so scoping this lookup by `stage` alone would pool every dynamic
+  // stage's cards together and hand new opportunities a position far past
+  // whatever `list` (limit 500) ever returns — they'd save but never show up.
   const lastInStage = await prisma.opportunity.findFirst({
-    where: withWorkspace(user, { stage: targetStage }),
+    where: withWorkspace(user, dto.stageId ? { stageId: dto.stageId } : { stage: targetStage }),
     orderBy: { position: 'desc' },
     select: { position: true },
   });
@@ -486,26 +490,34 @@ export const moveStage = async (
 
   const result = await prisma.$transaction(async (tx) => {
     const oldStage = existing.stage as string;
+    const oldStageId = existing.stageId;
     const oldPosition = existing.position;
     // Scope reorder to user's agency/location so we never touch other tenants' data
     const tenantScope: any = user.agencyId
       ? { agencyId: user.agencyId }
       : { assignedToId: user.id };
+    // A dynamic pipeline stage stores its identity in stageId and leaves the
+    // legacy `stage` enum pinned to LEAD_IN; scoping the reorder by `stage`
+    // alone would renumber every dynamic stage's cards together, so use
+    // stageId when the card has one.
+    const oldColumnScope = oldStageId ? { stageId: oldStageId } : { stage: oldStage as any };
+    const newColumnScope = newStageId ? { stageId: newStageId } : { stage: newStage as any };
+    const movingColumn = oldStageId || newStageId ? oldStageId !== newStageId : oldStage !== newStage;
 
     // Close the gap in the source stage
     await tx.opportunity.updateMany({
       where: {
         ...tenantScope,
-        stage: oldStage as any,
+        ...oldColumnScope,
         position: { gt: oldPosition },
         id: { not: id },
       },
       data: { position: { decrement: 1 } },
     });
 
-    // Adjust newPosition if moving within the same stage and forward
+    // Adjust newPosition if moving within the same column and forward
     const adjustedPosition =
-      oldStage === newStage && newPosition > oldPosition
+      !movingColumn && newPosition > oldPosition
         ? newPosition - 1
         : newPosition;
 
@@ -513,7 +525,7 @@ export const moveStage = async (
     await tx.opportunity.updateMany({
       where: {
         ...tenantScope,
-        stage: newStage as any,
+        ...newColumnScope,
         position: { gte: adjustedPosition },
         id: { not: id },
       },
